@@ -1,0 +1,12 @@
+## Archivos que no se comitean en Vite
+node_modules/
+dist/
+.env
+pnpm-lock.yaml
+
+## Typst
+Informe/*.pdf
+
+.vscode/
+proyecto_modelo.mwb.bak
+.*~
