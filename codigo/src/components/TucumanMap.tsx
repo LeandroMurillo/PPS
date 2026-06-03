@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
+import FiltroCategoriasCulturales from './FiltroCategoriasCulturales';
 import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
 import type { FeatureCollection, Geometry, Position } from 'geojson';
@@ -18,27 +19,52 @@ type ProvinceProperties = {
 	nombre_completo?: string;
 };
 
-const POINTS = [
+type CulturalPoint = {
+	name: string;
+	description: string;
+	category: string;
+	departamento: string;
+	position: L.LatLngExpression;
+};
+
+const POINTS: CulturalPoint[] = [
 	{
 		name: 'San Miguel de Tucumán',
 		description: 'Capital de la provincia',
-		position: [-26.8241, -65.2226] as L.LatLngExpression,
+		category: 'Patrimonio',
+		position: [-26.8241, -65.2226],
 	},
 	{
 		name: 'Tafí del Valle',
 		description: 'Valles Calchaquíes',
-		position: [-26.8528, -65.7094] as L.LatLngExpression,
+		category: 'Patrimonio',
+		position: [-26.8528, -65.7094],
 	},
 	{
 		name: 'Amaicha del Valle',
 		description: 'Comunidad y paisaje vallisto',
-		position: [-26.5934, -65.9187] as L.LatLngExpression,
+		category: 'Artesanías',
+		position: [-26.5934, -65.9187],
 	},
 	{
 		name: 'Concepción',
 		description: 'Sur tucumano',
-		position: [-27.3448, -65.5966] as L.LatLngExpression,
+		category: 'Música',
+		position: [-27.3448, -65.5966],
 	},
+];
+
+const CATEGORIAS_CULTURALES = [
+	'Música',
+	'Danza',
+	'Teatro',
+	'Artes visuales',
+	'Literatura',
+	'Cine',
+	'Fotografía',
+	'Artesanías',
+	'Patrimonio',
+	'Diseño',
 ];
 
 function geometryToRings(geometry: Geometry): Position[][] {
@@ -133,6 +159,29 @@ export default function TucumanMap() {
 		ProvinceProperties
 	> | null>(null);
 
+	const [categoriasSeleccionadas, setCategoriasSeleccionadas] = React.useState<string[]>([]);
+	const [busqueda, setBusqueda] = React.useState<string>('');
+	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
+
+	const filteredPoints = POINTS.filter((point) => {
+		const textoBusqueda = busqueda.toLowerCase().trim();
+
+		const coincideBusqueda =
+			textoBusqueda === '' ||
+			point.name.toLowerCase().includes(textoBusqueda) ||
+			point.description.toLowerCase().includes(textoBusqueda) ||
+			point.category.toLowerCase().includes(textoBusqueda) ||
+			point.departamento.toLowerCase().includes(textoBusqueda);
+
+		const coincideCategoria =
+			categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(point.category);
+
+		const coincideDepartamento =
+			departamentoSeleccionado === '' || point.departamento === departamentoSeleccionado;
+
+		return coincideBusqueda && coincideCategoria && coincideDepartamento;
+	});
+
 	React.useEffect(() => {
 		const controller = new AbortController();
 
@@ -171,6 +220,7 @@ export default function TucumanMap() {
 	return (
 		<Box
 			sx={{
+				position: 'relative',
 				height: 'calc(100vh - 64px)',
 				width: '100%',
 				overflow: 'hidden',
@@ -182,6 +232,29 @@ export default function TucumanMap() {
 				},
 			}}
 		>
+			<Box
+				sx={{
+					position: 'absolute',
+					top: 16,
+					right: 16,
+					zIndex: 1000,
+					width: 360,
+					maxWidth: 'calc(100% - 32px)',
+					bgcolor: 'background.paper',
+					borderRadius: 2,
+					boxShadow: 4,
+				}}
+			>
+				<FiltroCategoriasCulturales
+					categoriasSeleccionadas={categoriasSeleccionadas}
+					onCambiarCategorias={setCategoriasSeleccionadas}
+					busqueda={busqueda}
+					onCambiarBusqueda={setBusqueda}
+					departamentoSeleccionado={departamentoSeleccionado}
+					onCambiarDepartamento={setDepartamentoSeleccionado}
+				/>
+			</Box>
+
 			<MapContainer
 				bounds={TUCUMAN_BOUNDS}
 				boundsOptions={{ padding: [24, 24] }}
@@ -240,7 +313,7 @@ export default function TucumanMap() {
 					) : null}
 				</Pane>
 
-				{POINTS.map((point) => (
+				{filteredPoints.map((point) => (
 					<CircleMarker
 						key={point.name}
 						center={point.position}
@@ -255,6 +328,8 @@ export default function TucumanMap() {
 							<strong>{point.name}</strong>
 							<br />
 							{point.description}
+							<br />
+							<small>Categoría: {point.category}</small>
 						</Popup>
 					</CircleMarker>
 				))}
