@@ -4,12 +4,11 @@ import FiltroCategoriasCulturales from './FiltroCategoriasCulturales';
 import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
 import type { FeatureCollection, Geometry, Position } from 'geojson';
+// @ts-ignore
 import 'leaflet/dist/leaflet.css';
 
 const TUCUMAN_CENTER: L.LatLngExpression = [-26.8241, -65.2226];
-
 const TUCUMAN_BOUNDS = L.latLngBounds([-27.95, -66.35], [-25.75, -64.45]);
-
 const TUCUMAN_GEOJSON_URL = '/data/tucuman.geojson';
 
 type ProvinceProperties = {
@@ -30,24 +29,28 @@ type CulturalPoint = {
 const POINTS: CulturalPoint[] = [
 	{
 		name: 'San Miguel de Tucumán',
+		departamento: 'Capital',
 		description: 'Capital de la provincia',
 		category: 'Patrimonio',
 		position: [-26.8241, -65.2226],
 	},
 	{
 		name: 'Tafí del Valle',
+		departamento: 'Capital',
 		description: 'Valles Calchaquíes',
 		category: 'Patrimonio',
 		position: [-26.8528, -65.7094],
 	},
 	{
 		name: 'Amaicha del Valle',
+		departamento: 'Capital',
 		description: 'Comunidad y paisaje vallisto',
 		category: 'Artesanías',
 		position: [-26.5934, -65.9187],
 	},
 	{
 		name: 'Concepción',
+		departamento: 'Capital',
 		description: 'Sur tucumano',
 		category: 'Música',
 		position: [-27.3448, -65.5966],
@@ -273,7 +276,7 @@ export default function TucumanMap() {
 					}}
 				>
 					<TileLayer
-						attribution='&copy; OpenStreetMap contributors'
+						attribution=''
 						maxZoom={19}
 						url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 					/>
@@ -287,7 +290,7 @@ export default function TucumanMap() {
 					}}
 				>
 					<TileLayer
-						attribution='&copy; OpenStreetMap contributors'
+						attribution=''
 						maxZoom={19}
 						url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 					/>

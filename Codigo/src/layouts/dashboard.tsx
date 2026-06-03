@@ -4,11 +4,10 @@ import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 
 
 export default function Layout() {
-  
 
-  return (
-    <DashboardLayout >
-      <Outlet />
-    </DashboardLayout>
-  );
+	return (
+		<DashboardLayout >
+			<Outlet />
+		</DashboardLayout>
+	);
 }
