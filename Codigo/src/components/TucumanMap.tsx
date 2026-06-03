@@ -70,92 +70,6 @@ const CATEGORIAS_CULTURALES = [
 	'Diseño',
 ];
 
-function geometryToRings(geometry: Geometry): Position[][] {
-	if (geometry.type === 'Polygon') {
-		return geometry.coordinates;
-	}
-
-	if (geometry.type === 'MultiPolygon') {
-		return geometry.coordinates.flat();
-	}
-
-	return [];
-}
-
-function buildClipPathFromGeoJson(
-	geoJson: FeatureCollection<Geometry, ProvinceProperties>,
-	map: L.Map,
-) {
-	const pathParts: string[] = [];
-
-	geoJson.features.forEach((feature) => {
-		const geometry = feature.geometry;
-
-		if (!geometry) {
-			return;
-		}
-
-		const rings = geometryToRings(geometry);
-
-		rings.forEach((ring) => {
-			if (ring.length === 0) {
-				return;
-			}
-
-			const points = ring.map(([lng, lat]) => map.latLngToContainerPoint([lat, lng]));
-
-			const [firstPoint, ...otherPoints] = points;
-
-			if (!firstPoint) {
-				return;
-			}
-
-			const path = `M ${firstPoint.x} ${firstPoint.y} ${otherPoints
-				.map((point) => `L ${point.x} ${point.y}`)
-				.join(' ')} Z`;
-
-			pathParts.push(path);
-		});
-	});
-
-	return pathParts.join(' ');
-}
-
-function TucumanColorClip({
-	tucumanGeoJson,
-	paneName,
-}: {
-	tucumanGeoJson: FeatureCollection<Geometry, ProvinceProperties>;
-	paneName: string;
-}) {
-	const map = useMap();
-
-	React.useEffect(() => {
-		function updateClip() {
-			const pane = map.getPane(paneName);
-
-			if (!pane) {
-				return;
-			}
-
-			const clipPath = buildClipPathFromGeoJson(tucumanGeoJson, map);
-
-			pane.style.clipPath = `path("${clipPath}")`;
-			pane.style.setProperty('-webkit-clip-path', `path("${clipPath}")`);
-		}
-
-		updateClip();
-
-		map.on('zoom move resize', updateClip);
-
-		return () => {
-			map.off('zoom move resize', updateClip);
-		};
-	}, [map, paneName, tucumanGeoJson]);
-
-	return null;
-}
-
 export default function TucumanMap() {
 	const [tucumanGeoJson, setTucumanGeoJson] = React.useState<FeatureCollection<
 		Geometry,
@@ -268,40 +182,15 @@ export default function TucumanMap() {
 				maxBoundsViscosity={0.75}
 				style={{ height: '100%', width: '100%' }}
 			>
-				<Pane
-					name='gray-map'
-					style={{
-						zIndex: 200,
-						filter: 'grayscale(1) saturate(0.15) contrast(0.9)',
-					}}
-				>
-					<TileLayer
-						attribution=''
-						maxZoom={19}
-						url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-					/>
-				</Pane>
+				<TileLayer
+					attribution=''
+					maxZoom={19}
+					url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+				/>
 
-				<Pane
-					name='color-map'
-					style={{
-						zIndex: 300,
-						pointerEvents: 'none',
-					}}
-				>
-					<TileLayer
-						attribution=''
-						maxZoom={19}
-						url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-					/>
-				</Pane>
-
+				{/* Tucumán border */}
 				{tucumanGeoJson ? (
-					<TucumanColorClip tucumanGeoJson={tucumanGeoJson} paneName='color-map' />
-				) : null}
-
-				<Pane name='tucuman-border' style={{ zIndex: 700 }}>
-					{tucumanGeoJson ? (
+					<Pane name='tucuman-border' style={{ zIndex: 700 }}>
 						<GeoJSON
 							data={tucumanGeoJson}
 							interactive={false}
@@ -310,12 +199,13 @@ export default function TucumanMap() {
 								weight: 4,
 								opacity: 1,
 								fillColor: '#1976d2',
-								fillOpacity: 0.08,
+								fillOpacity: 0,
 							}}
 						/>
-					) : null}
-				</Pane>
+					</Pane>
+				) : null}
 
+				{/* Cultural points */}
 				{filteredPoints.map((point) => (
 					<CircleMarker
 						key={point.name}
