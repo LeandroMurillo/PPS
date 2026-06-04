@@ -1,0 +1,59 @@
+name: ESLint
+
+# Controls when the workflow will run
+on:
+  push:
+    paths:
+      - 'Codigo/**'
+      # - '.github/workflows/**'
+
+jobs:
+  eslint:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-24.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+
+      - name: npm install frontend
+        run: |
+          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 1
+          npm install
+
+      # - name: npm install backend
+      #   run: |
+      #     cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 1
+      #     npm install
+
+      - name: ESLint y tsc
+        run: |
+          fracaso=0
+
+          # echo "🏁🏁🏁🏁🏁 Lint backend 🤖"
+          # cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 2
+          # npm run lint || fracaso=1
+
+          # echo "🏁🏁🏁🏁🏁 Build backend 🍇"
+          # cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 5
+          # ls config.js > /dev/null 2>&1 || echo "export const { LOG_LEVEL = 0, PORT = 1, PORT_FRONTEND = 2, DB_HOST = '3', DB_USER = '4', DB_PASSWORD = '5', DB_NAME = '6', LIMITE_VACANTES_QUERY = 7, SECRET_JWT_KEY = '8', JWT_SECRET = 'secreto'} = process.env;" > config.js
+          # npm run build || fracaso=1
+
+          echo "🏁🏁🏁🏁🏁 Lint frontend 🚀"
+          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 3
+          npm run lint || fracaso=1
+
+          echo "🏁🏁🏁🏁🏁 Build frontend 🛠️"
+          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 4
+          npm run build || fracaso=1
+
+          if [ ${fracaso} -eq 1 ]; then
+            echo "Se encontraron errores en el código 😱"
+            exit 1
+          else
+            echo "Tudo bom, tudo legal 🌟✨"
+          fi

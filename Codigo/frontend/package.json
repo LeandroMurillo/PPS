@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "vite",
-    "preview": "vite preview"
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@emotion/react": "^11",
@@ -24,8 +26,12 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^4.3.2",
-    "eslint": "^8",
+    "@eslint/js": "^9.16.0",
+    "eslint": "^9.16.0",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.6.0",
     "typescript": "^5",
+    "typescript-eslint": "^8.60.1",
     "vite": "^5.4.8"
   }
 }
