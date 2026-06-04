@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import Layout from './layouts/dashboard';
 import Mapa from './pages/mapa';
@@ -15,11 +15,20 @@ const router = createBrowserRouter([
 				Component: Layout,
 				children: [
 					{
-						path: '',
+						// CORRECCIÓN 2: Usar 'index: true' en lugar de 'path: \'\'' para la ruta raíz
+						index: true,
 						Component: Mapa,
 					},
 					{
-						path: 'employees/:employeeId?/*',
+						path: 'actores',
+						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'confirmaciones',
+						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'usuarios',
 						Component: EmployeesCrudPage,
 					},
 				],
