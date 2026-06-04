@@ -4,6 +4,7 @@ import FiltroCategoriasCulturales from './FiltroCategoriasCulturales';
 import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer } from 'react-leaflet';
 import type { FeatureCollection, Geometry } from 'geojson';
+import { useColorScheme } from '@mui/material/styles';
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
 
@@ -381,6 +382,8 @@ const POINTS: CulturalPoint[] =
 	];
 
 export default function TucumanMap() {
+	const { mode, systemMode } = useColorScheme();
+	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 	const [tucumanGeoJson, setTucumanGeoJson] = React.useState<FeatureCollection<
 		Geometry,
 		ProvinceProperties
@@ -456,6 +459,13 @@ export default function TucumanMap() {
 				borderColor: 'divider',
 				'& .leaflet-container': {
 					fontFamily: 'inherit',
+				},
+				// 2. Aplicar filtro a los mapas base si es modo oscuro
+				'& .leaflet-tile-pane': {
+					filter: isDarkMode
+						? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)'
+						: 'none',
+					transition: 'filter 0.3s ease',
 				},
 			}}
 		>

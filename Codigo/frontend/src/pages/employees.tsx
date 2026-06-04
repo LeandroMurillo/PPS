@@ -1,13 +1,11 @@
 import * as React from 'react';
 
-
 import { useParams } from 'react-router';
 import { Crud } from '@toolpad/core/Crud';
 import { employeesDataSource, Employee, employeesCache } from '../data/employees';
 
 
 export default function EmployeesCrudPage() {
-
 	const { employeeId } = useParams();
 
 	return (
