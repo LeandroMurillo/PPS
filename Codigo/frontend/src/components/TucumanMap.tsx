@@ -2,8 +2,8 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import FiltroCategoriasCulturales from './FiltroCategoriasCulturales';
 import L from 'leaflet';
-import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
-import type { FeatureCollection, Geometry, Position } from 'geojson';
+import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer } from 'react-leaflet';
+import type { FeatureCollection, Geometry } from 'geojson';
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
 
@@ -55,19 +55,6 @@ const POINTS: CulturalPoint[] = [
 		category: 'Música',
 		position: [-27.3448, -65.5966],
 	},
-];
-
-const CATEGORIAS_CULTURALES = [
-	'Música',
-	'Danza',
-	'Teatro',
-	'Artes visuales',
-	'Literatura',
-	'Cine',
-	'Fotografía',
-	'Artesanías',
-	'Patrimonio',
-	'Diseño',
 ];
 
 export default function TucumanMap() {
