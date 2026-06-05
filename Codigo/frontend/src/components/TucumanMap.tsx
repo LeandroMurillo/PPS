@@ -13,7 +13,6 @@ import 'leaflet/dist/leaflet.css';
 
 const TUCUMAN_CENTER: L.LatLngExpression = [-26.8241, -65.2226];
 const TUCUMAN_BOUNDS = L.latLngBounds([-27.95, -66.35], [-25.75, -64.45]);
-const TUCUMAN_GEOJSON_URL = '/data/tucuman.geojson';
 const DEPARTAMENTOS_GEOJSON_URL = '/data/departamentos.geojson';
 const PUNTOS_JSON_URL = '/data/puntos.json';
 
@@ -93,13 +92,12 @@ export default function TucumanMap() {
 		async function loadMapData() {
 			try {
 				// 3. Cargamos ambos GeoJSON en paralelo
-				const [resTucuman, resDeptos, resPuntos] = await Promise.all([
-					fetch(TUCUMAN_GEOJSON_URL, { signal: controller.signal }),
+				const [resDeptos, resPuntos] = await Promise.all([
 					fetch(DEPARTAMENTOS_GEOJSON_URL, { signal: controller.signal }),
 					fetch(PUNTOS_JSON_URL, { signal: controller.signal })
 				]);
 
-				if (!resTucuman.ok || !resDeptos.ok || !resPuntos.ok) {
+				if (!resDeptos.ok || !resPuntos.ok) {
 					throw new Error('Error cargando archivos de datos');
 				}
 
