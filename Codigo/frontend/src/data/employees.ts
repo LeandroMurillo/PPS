@@ -173,14 +173,12 @@ export const employeesDataSource: DataSource<Employee> = {
 		setEmployeesStore(employeesStore.filter((employee) => employee.id !== Number(employeeId)));
 	},
 	validate: z.object({
-		name: z.string({ required_error: 'Name is required' }).nonempty('Name is required'),
-		age: z.number({ required_error: 'Age is required' }).min(18, 'Age must be at least 18'),
-		joinDate: z
-			.string({ required_error: 'Join date is required' })
-			.nonempty('Join date is required'),
+		name: z.string({ error: 'Name is required' }).min(1, 'Name is required'), // Note: .nonempty() on strings is heavily discouraged in v4; use .min(1) instead.
+		age: z.number({ error: 'Age is required' }).min(18, 'Age must be at least 18'),
+		joinDate: z.string({ error: 'Join date is required' }),
 		role: z.enum(['Market', 'Finance', 'Development'], {
-			errorMap: () => ({ message: 'Role must be "Market", "Finance" or "Development"' }),
-		}),
+			error: 'Invalid role',
+		})
 	})['~standard'].validate,
 };
 
