@@ -2,8 +2,8 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import FiltroCategoriasCulturales from './FiltroCategoriasCulturales';
 import L from 'leaflet';
-import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer } from 'react-leaflet';
-import type { FeatureCollection, Geometry } from 'geojson';
+import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
+import type { FeatureCollection, Geometry, Feature, Polygon, MultiPolygon } from 'geojson';
 import { useColorScheme } from '@mui/material/styles';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point as turfPoint } from '@turf/helpers';
@@ -17,11 +17,10 @@ const TUCUMAN_GEOJSON_URL = '/data/tucuman.geojson';
 const DEPARTAMENTOS_GEOJSON_URL = '/data/departamentos.geojson';
 const PUNTOS_JSON_URL = '/data/puntos.json';
 
-type ProvinceProperties = {
-	id?: string;
-	nam?: string;
-	nombre?: string;
-	nombre_completo?: string;
+type DepartmentProperties = {
+	name?: string;
+	admin_level?: string;
+	[key: string]: unknown;
 };
 
 type CulturalPoint = {
@@ -32,18 +31,54 @@ type CulturalPoint = {
 	position: L.LatLngExpression;
 };
 
+function MapBoundsUpdater({
+	departamentoSeleccionado,
+	departamentosGeoJson
+}: {
+	departamentoSeleccionado: string;
+	departamentosGeoJson: FeatureCollection<Geometry, DepartmentProperties> | null;
+}) {
+	const map = useMap();
+
+	React.useEffect(() => {
+		// Si no hay departamento seleccionado (se limpió el filtro), volvemos a la vista general
+		if (!departamentoSeleccionado) {
+			map.flyToBounds(TUCUMAN_BOUNDS, { padding: [24, 24], duration: 1.2 });
+			return;
+		}
+
+		if (departamentosGeoJson) {
+			// Buscamos el polígono correspondiente al departamento seleccionado
+			const feature = departamentosGeoJson.features.find((f: Feature<Geometry, DepartmentProperties>) => {
+				const properties = f.properties || {};
+				const isDepartment = properties.admin_level === '5' || (properties.name && properties.name.includes('Departamento'));
+				if (!isDepartment) return false;
+
+				const nombreDepto = properties.name?.replace('Departamento ', '') || '';
+				return nombreDepto === departamentoSeleccionado;
+			});
+
+			if (feature) {
+				// Creamos temporalmente un objeto GeoJSON de Leaflet para calcular sus límites exactos (Bounds)
+				const bounds = L.geoJSON(feature).getBounds();
+				if (bounds.isValid()) {
+					// Hacemos que la cámara vuele hacia esos límites con un margen
+					map.flyToBounds(bounds, { padding: [24, 24], duration: 1.2 });
+				}
+			}
+		}
+	}, [departamentoSeleccionado, departamentosGeoJson, map]);
+
+	return null;
+}
+
 export default function TucumanMap() {
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 
-	const [tucumanGeoJson, setTucumanGeoJson] = React.useState<FeatureCollection<
-		Geometry,
-		ProvinceProperties
-	> | null>(null);
-
 	const [departamentosGeoJson, setDepartamentosGeoJson] = React.useState<FeatureCollection<
 		Geometry,
-		any
+		DepartmentProperties
 	> | null>(null);
 
 	const [categoriasSeleccionadas, setCategoriasSeleccionadas] = React.useState<string[]>([]);
@@ -68,19 +103,9 @@ export default function TucumanMap() {
 					throw new Error('Error cargando archivos de datos');
 				}
 
-				const tucumanData = await resTucuman.json();
 				const deptosData = await resDeptos.json();
 				const puntosData: CulturalPoint[] = await resPuntos.json();
 
-				// Filtrar frontera provincial si es necesario
-				const tucumanOnly = {
-					...tucumanData,
-					features: tucumanData.features.filter(
-						(f: any) => f.properties?.id === '90' || f.properties?.nombre === 'Tucumán'
-					),
-				};
-
-				setTucumanGeoJson(tucumanOnly);
 				setDepartamentosGeoJson(deptosData);
 
 				// Calcular dinámicamente en qué departamento cae cada punto
@@ -90,20 +115,20 @@ export default function TucumanMap() {
 					const pt = turfPoint([positionArray[1], positionArray[0]]);
 
 					// Buscamos qué polígono contiene al punto
-					const departamentoEncontrado = deptosData.features.find((feature: any) => {
-						const props = feature.properties || {};
+					const departamentoEncontrado = deptosData.features.find((feature: Feature<Geometry, DepartmentProperties>) => {
+						const properties = feature.properties || {};
 						// Evitamos que haga "match" con el polígono de toda la provincia entera
 						// Forzamos a que sea un departamento (admin_level 5 o que su nombre tenga la palabra)
-						const isDepartment = props.admin_level === '5' || (props.name && props.name.includes('Departamento'));
+						const isDepartment = properties.admin_level === '5' || (properties.name && properties.name.includes('Departamento'));
 
-						return isDepartment && booleanPointInPolygon(pt, feature);
+						return isDepartment && booleanPointInPolygon(pt, feature as Feature<Polygon | MultiPolygon>);
 					});
 
 					let nombreDepto = punto.departamento; // Fallback al original por si acaso
 
 					if (departamentoEncontrado) {
 						// Limpiamos el texto, ej: "Departamento Famaillá" -> "Famaillá"
-						nombreDepto = departamentoEncontrado.properties.name.replace('Departamento ', '');
+						nombreDepto = departamentoEncontrado.properties?.name?.replace('Departamento ', '') || nombreDepto;
 					}
 
 					return { ...punto, departamento: nombreDepto };
@@ -204,21 +229,11 @@ export default function TucumanMap() {
 					url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 				/>
 
-				{/* Tucumán border */}
-				{/* {tucumanGeoJson && (
-					<Pane name='tucuman-border' style={{ zIndex: 700 }}>
-						<GeoJSON
-							data={tucumanGeoJson}
-							interactive={false}
-							style={{
-								color: isDarkMode ? '#bbdefb' : '#000000',
-								weight: 4,
-								opacity: 1,
-								fillOpacity: 0,
-							}}
-						/>
-					</Pane>
-				)} */}
+				{/* Componente invisible que actualiza la cámara al cambiar de departamento */}
+				<MapBoundsUpdater
+					departamentoSeleccionado={departamentoSeleccionado}
+					departamentosGeoJson={departamentosGeoJson}
+				/>
 
 				{/* 6. Renderizar las líneas divisorias de los Departamentos */}
 				{departamentosGeoJson && (
@@ -231,7 +246,7 @@ export default function TucumanMap() {
 								color: isDarkMode ? '#90caf9' : '#666666',
 								weight: 1.5,
 								dashArray: '4 4', // Línea punteada para departamentos
-								fillOpacity: 0.05,
+								fillOpacity: 0,
 								fillColor: isDarkMode ? '#1976d2' : '#e3f2fd'
 							}}
 						/>
