@@ -179,12 +179,44 @@ export default function TucumanMap() {
 				'& .leaflet-container': {
 					fontFamily: 'inherit',
 				},
-				// 2. Aplicar filtro a los mapas base si es modo oscuro
+				// Aplicar filtro a los mapas base si es modo oscuro
 				'& .leaflet-tile-pane': {
 					filter: isDarkMode
 						? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)'
 						: 'none',
 					transition: 'filter 0.3s ease',
+				},
+				// Aplicar colores del tema actual a los popups (el contenedor y la flecha)
+				'& .leaflet-popup-content-wrapper, & .leaflet-popup-tip': {
+					backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
+					color: isDarkMode ? '#ffffff' : '#333333',
+					transition: 'background-color 0.3s ease, color 0.3s ease',
+					boxShadow: isDarkMode ? '0 3px 14px rgba(0,0,0,0.6)' : '0 3px 14px rgba(0,0,0,0.4)',
+				},
+				// Aplicar colores a los botones de control (Zoom)
+				'& .leaflet-bar': {
+					border: isDarkMode ? 'none' : 'none',
+					boxShadow: isDarkMode ? '0 1px 5px rgba(0,0,0,0.65)' : '0 1px 5px rgba(0,0,0,0.65)',
+				},
+				'& .leaflet-bar a': {
+					backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
+					color: isDarkMode ? '#ffffff' : '#333333',
+					borderBottom: isDarkMode ? '1px solid #333333' : '1px solid #ccc',
+				},
+				'& .leaflet-bar a:hover': {
+					backgroundColor: isDarkMode ? '#333333' : '#f4f4f4',
+					color: isDarkMode ? '#ffffff' : '#333333',
+				},
+				'& .leaflet-bar a:last-child': {
+					borderBottom: 'none',
+				},
+				// Aplicar colores al texto de atribución de Leaflet
+				'& .leaflet-control-attribution': {
+					backgroundColor: isDarkMode ? 'rgba(30, 30, 30, 0.8) !important' : 'rgba(255, 255, 255, 0.8) !important',
+					color: isDarkMode ? '#cccccc !important' : '#333333 !important',
+				},
+				'& .leaflet-control-attribution a': {
+					color: isDarkMode ? '#90caf9 !important' : '#0078A8 !important',
 				},
 			}}
 		>
@@ -222,7 +254,7 @@ export default function TucumanMap() {
 				style={{ height: '100%', width: '100%' }}
 			>
 				<TileLayer
-					attribution=''
+					attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 					maxZoom={19}
 					url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 				/>
@@ -270,7 +302,7 @@ export default function TucumanMap() {
 							<br />
 							<small>Categoría: {point.category}</small>
 							<br />
-							<small>Departamento: {point.departamento}</small>
+							{/* <small>Departamento: {point.departamento}</small> */}
 						</Popup>
 					</CircleMarker>
 				))}
