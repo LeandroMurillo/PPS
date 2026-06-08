@@ -5,6 +5,7 @@ import App from './App';
 import Layout from './layouts/dashboard';
 import Mapa from './pages/mapa';
 import EmployeesCrudPage from './pages/employees';
+import ActorPortfolio from './pages/ActorPortfolio';
 
 const router = createBrowserRouter([
 	{
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
 					{
 						path: 'usuarios',
 						Component: EmployeesCrudPage,
+					},
+					{
+						path: "/actores/:id",
+						element: <ActorPortfolio />,
 					},
 				],
 			},

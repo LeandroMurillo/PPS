@@ -7,6 +7,7 @@ import type { FeatureCollection, Geometry, Feature, Polygon, MultiPolygon } from
 import { useColorScheme } from '@mui/material/styles';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point as turfPoint } from '@turf/helpers';
+import { Link } from 'react-router';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
@@ -23,11 +24,17 @@ type DepartmentProperties = {
 };
 
 type CulturalPoint = {
+	id: number;
 	name: string;
 	description: string;
 	category: string;
 	departamento: string;
 	position: L.LatLngExpression;
+};
+
+// Función auxiliar para normalizar texto (quitar acentos y pasar a minúsculas)
+const normalizeText = (text: string) => {
+	return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 };
 
 function MapBoundsUpdater({
@@ -148,14 +155,18 @@ export default function TucumanMap() {
 
 	// 5. El filtro ahora usa puntosProcesados en vez de la constante POINTS directa
 	const filteredPoints = puntosProcesados.filter((point) => {
-		const textoBusqueda = busqueda.toLowerCase().trim();
+		// Separar la búsqueda en palabras individuales y normalizarlas
+		const searchTerms = normalizeText(busqueda).split(/\s+/).filter(Boolean);
 
+		// Combinar toda la data del punto en un solo string normalizado
+		const pointDataCombined = normalizeText(
+			`${point.name} ${point.description} ${point.category} ${point.departamento}`
+		);
+
+		// Verificar que TODOS los términos buscados estén en la data del punto (sin importar el orden)
 		const coincideBusqueda =
-			textoBusqueda === '' ||
-			point.name.toLowerCase().includes(textoBusqueda) ||
-			point.description.toLowerCase().includes(textoBusqueda) ||
-			point.category.toLowerCase().includes(textoBusqueda) ||
-			point.departamento.toLowerCase().includes(textoBusqueda);
+			searchTerms.length === 0 ||
+			searchTerms.every((term) => pointDataCombined.includes(term));
 
 		const coincideCategoria =
 			categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(point.category);
@@ -255,7 +266,6 @@ export default function TucumanMap() {
 			>
 				<TileLayer
 					attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-					maxZoom={19}
 					url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 				/>
 
@@ -274,7 +284,7 @@ export default function TucumanMap() {
 							filter={(feature) => feature.geometry.type !== 'Point' && feature.geometry.type !== 'MultiPoint'}
 							style={{
 								color: isDarkMode ? '#90caf9' : '#666666',
-								weight: 1.5,
+								weight: 1,
 								dashArray: '4 4', // Línea punteada para departamentos
 								fillOpacity: 0,
 								fillColor: isDarkMode ? '#1976d2' : '#e3f2fd'
@@ -286,7 +296,7 @@ export default function TucumanMap() {
 				{/* Puntos Culturales */}
 				{filteredPoints.map((point) => (
 					<CircleMarker
-						key={point.name}
+						key={point.id}
 						center={point.position}
 						fillColor='#1976d2'
 						fillOpacity={0.85}
@@ -302,7 +312,11 @@ export default function TucumanMap() {
 							<br />
 							<small>Categoría: {point.category}</small>
 							<br />
-							{/* <small>Departamento: {point.departamento}</small> */}
+							<Box sx={{ mt: 1 }}>
+								<Link to={`/actores/${point.id}`}>
+									Ver portafolio
+								</Link>
+							</Box>
 						</Popup>
 					</CircleMarker>
 				))}

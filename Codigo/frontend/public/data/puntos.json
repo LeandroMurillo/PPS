@@ -1,5 +1,6 @@
 [
 	{
+		"id": 1,
 		"name": "Festival de la Alfalfa",
 		"departamento": "Burruyacú",
 		"description": "Tradicional festival folclórico que reúne a músicos locales y provinciales celebrando las raíces rurales.",
@@ -10,6 +11,7 @@
 		]
 	},
 	{
+		"id": 2,
 		"name": "Taller de Tejido Criollo de Burruyacú",
 		"departamento": "Burruyacú",
 		"description": "Espacio comunitario dedicado a la preservación de técnicas ancestrales de hilado y telar criollo.",
@@ -20,6 +22,7 @@
 		]
 	},
 	{
+		"id": 3,
 		"name": "Grupo Ráfaga",
 		"departamento": "Capital",
 		"description": "Histórica y reconocida banda de cumbia con una enorme trayectoria y un vínculo entrañable con el público tucumano en grandes festivales populares.",
@@ -30,6 +33,7 @@
 		]
 	},
 	{
+		"id": 4,
 		"name": "Homenaje a Mercedes Sosa",
 		"departamento": "Capital",
 		"description": "Espacio cultural y actividades conmemorativas dedicadas a mantener vivo el legado de 'La Voz de América'.",
@@ -40,6 +44,7 @@
 		]
 	},
 	{
+		"id": 5,
 		"name": "Teatro San Martín",
 		"departamento": "Capital",
 		"description": "Principal coliseo de la provincia, sede de los cuerpos estables de teatro, ballet y ópera.",
@@ -50,6 +55,7 @@
 		]
 	},
 	{
+		"id": 6,
 		"name": "Centro Cultural Eugenio Flavio Virla",
 		"departamento": "Capital",
 		"description": "Espacio artístico de la UNT que alberga muestras plásticas, recitales e importantes debates culturales.",
@@ -60,6 +66,7 @@
 		]
 	},
 	{
+		"id": 7,
 		"name": "Escuela Universitaria de Cine, Video y Televisión",
 		"departamento": "Capital",
 		"description": "Semillero fundamental de realizadores audiovisuales que impulsan el cine independiente en el NOA.",
@@ -70,6 +77,7 @@
 		]
 	},
 	{
+		"id": 8,
 		"name": "Fotoclub Tucumán",
 		"departamento": "Capital",
 		"description": "Asociación que nuclea a fotógrafos locales enfocada en la documentación identitaria e histórica de la provincia.",
@@ -80,6 +88,7 @@
 		]
 	},
 	{
+		"id": 9,
 		"name": "Marca Diseño de Autor Tucumano",
 		"departamento": "Capital",
 		"description": "Colectivo de diseñadores locales que fusionan iconografía calchaquí con tendencias de indumentaria moderna.",
@@ -90,6 +99,7 @@
 		]
 	},
 	{
+		"id": 10,
 		"name": "Biblioteca Sarmiento",
 		"departamento": "Capital",
 		"description": "Institución centenaria dedicada al resguardo bibliográfico y la promoción de la literatura regional.",
@@ -100,6 +110,7 @@
 		]
 	},
 	{
+		"id": 11,
 		"name": "Casa Histórica de la Independencia",
 		"departamento": "Capital",
 		"description": "Monumento nacional icónico donde se proclamó la Declaración de la Independencia en 1816.",
@@ -110,6 +121,7 @@
 		]
 	},
 	{
+		"id": 12,
 		"name": "Ballet Contemporáneo de la Provincia",
 		"departamento": "Capital",
 		"description": "Compañía artística oficial que desarrolla producciones coreográficas de vanguardia y giras regionales.",
@@ -120,6 +132,7 @@
 		]
 	},
 	{
+		"id": 13,
 		"name": "Teatro Estación Concepción",
 		"departamento": "Chicligasta",
 		"description": "Antigua estación ferroviaria recuperada como sala de teatro independiente y talleres comunitarios.",
@@ -130,6 +143,7 @@
 		]
 	},
 	{
+		"id": 14,
 		"name": "Biblioteca Popular Mariano Moreno",
 		"departamento": "Chicligasta",
 		"description": "Espacio de fomento a la lectura que realiza ciclos de cafés literarios con autores del sur de la provincia.",
@@ -140,6 +154,7 @@
 		]
 	},
 	{
+		"id": 15,
 		"name": "Feria de Artesanos del Sur",
 		"departamento": "Chicligasta",
 		"description": "Punto de encuentro semanal para artesanos del cuero, metal y cestería en la plaza principal de Concepción.",
@@ -150,6 +165,7 @@
 		]
 	},
 	{
+		"id": 16,
 		"name": "Academia de Danzas Tradicionales Banda del Río Salí",
 		"departamento": "Cruz Alta",
 		"description": "Escuela de formación para jóvenes bailarines enfocada en el malambo y las danzas folclóricas del NOA.",
@@ -160,6 +176,7 @@
 		]
 	},
 	{
+		"id": 17,
 		"name": "Festival de la Humita",
 		"departamento": "Cruz Alta",
 		"description": "Encuentro gastronómico y cultural que rinde homenaje a este plato ancestral del norte argentino.",
@@ -170,6 +187,7 @@
 		]
 	},
 	{
+		"id": 18,
 		"name": "Fiesta Nacional de la Empanada",
 		"departamento": "Famaillá",
 		"description": "Famoso festival nacional que premia a los mejores campeones del repulgue y reúne grandes espectáculos folclóricos.",
@@ -180,6 +198,7 @@
 		]
 	},
 	{
+		"id": 19,
 		"name": "Festival de Cortometrajes de Famaillá",
 		"departamento": "Famaillá",
 		"description": "Muestra competitiva de cine que convoca a realizadores independientes de cortometrajes y documentales.",
@@ -190,6 +209,7 @@
 		]
 	},
 	{
+		"id": 20,
 		"name": "Fiesta Provincial del Locro",
 		"departamento": "Graneros",
 		"description": "Encuentro masivo de cocina tradicional acompañado por peñas folclóricas al aire libre.",
@@ -200,6 +220,7 @@
 		]
 	},
 	{
+		"id": 21,
 		"name": "Encuentro de Cantores Populares de Graneros",
 		"departamento": "Graneros",
 		"description": "Reunión anual de copleros y cantores de tonadas tradicionales del sur tucumano.",
@@ -210,6 +231,7 @@
 		]
 	},
 	{
+		"id": 22,
 		"name": "Centro Cultural Alberdi",
 		"departamento": "Juan Bautista Alberdi",
 		"description": "Espacio público que promueve la actividad escénica a través de colectivos teatrales independientes.",
@@ -220,6 +242,7 @@
 		]
 	},
 	{
+		"id": 23,
 		"name": "Cine Teatro Marconi",
 		"departamento": "Juan Bautista Alberdi",
 		"description": "Histórico edificio cinematográfico y de artes escénicas recuperado para la comunidad del sur provincial.",
@@ -230,6 +253,7 @@
 		]
 	},
 	{
+		"id": 24,
 		"name": "Festival de la Cocha y el Canto",
 		"departamento": "La Cocha",
 		"description": "Importante cita invernal de la música folclórica que congrega a reconocidas figuras nacionales.",
@@ -240,6 +264,7 @@
 		]
 	},
 	{
+		"id": 25,
 		"name": "Muestra Fotográfica 'Rostros del Tabaco'",
 		"departamento": "La Cocha",
 		"description": "Exposición itinerante de fotoperiodismo sobre la vida, el trabajo y las tradiciones rurales locales.",
@@ -250,6 +275,7 @@
 		]
 	},
 	{
+		"id": 26,
 		"name": "Artesanos del Mimbre de Bella Vista",
 		"departamento": "Leales",
 		"description": "Agrupación de familias dedicadas a la cestería tradicional utilizando fibras naturales del entorno.",
@@ -260,6 +286,7 @@
 		]
 	},
 	{
+		"id": 27,
 		"name": "Teatro Comunitario de Leales",
 		"departamento": "Leales",
 		"description": "Colectivo teatral integrado por vecinos que relatan la historia azucarera del departamento a través de obras abiertas.",
@@ -270,6 +297,7 @@
 		]
 	},
 	{
+		"id": 28,
 		"name": "Ruinas de San José de Lules",
 		"departamento": "Lules",
 		"description": "Antiguo conjunto arquitectónico jesuítico del siglo XVII, declarado Monumento Histórico Nacional.",
@@ -280,6 +308,7 @@
 		]
 	},
 	{
+		"id": 29,
 		"name": "Lules Coral",
 		"departamento": "Lules",
 		"description": "Encuentro que congrega a coros polifónicos de diversas provincias en las históricas iglesias lulistas.",
@@ -290,6 +319,7 @@
 		]
 	},
 	{
+		"id": 30,
 		"name": "Encuentro de Escritores 'Monteros de la Patria'",
 		"departamento": "Monteros",
 		"description": "Prestigioso foro literario del NOA donde poetas y novelistas exponen sus obras anualmente.",
@@ -300,6 +330,7 @@
 		]
 	},
 	{
+		"id": 31,
 		"name": "Fortaleza del Folklore",
 		"departamento": "Monteros",
 		"description": "Uno de los festivales de música folclórica más antiguos y masivos del noroeste del país.",
@@ -310,6 +341,7 @@
 		]
 	},
 	{
+		"id": 32,
 		"name": "Corsos de Carnaval de Aguilares",
 		"departamento": "Río Chico",
 		"description": "La mayor fiesta de carnaval de la provincia, famosa por el despliegue de sus comparsas y escuelas de danza.",
@@ -320,6 +352,7 @@
 		]
 	},
 	{
+		"id": 33,
 		"name": "Salón de Pintura Aguilares",
 		"departamento": "Río Chico",
 		"description": "Certamen anual de artes plásticas que expone lienzos inspirados en el paisaje y la idiosincrasia sureña.",
@@ -330,6 +363,7 @@
 		]
 	},
 	{
+		"id": 34,
 		"name": "Feria de Simoca",
 		"departamento": "Simoca",
 		"description": "Feria centenaria viva, famosa por sus comidas típicas, artesanías y la clásica presencia del sulky.",
@@ -340,6 +374,7 @@
 		]
 	},
 	{
+		"id": 35,
 		"name": "Festival Nacional del Sulky",
 		"departamento": "Simoca",
 		"description": "Homenaje al tradicional medio de transporte y a la cultura gaucha con desfiles y shows musicales.",
@@ -350,6 +385,7 @@
 		]
 	},
 	{
+		"id": 36,
 		"name": "Ruinas de Quilmes",
 		"departamento": "Tafí del Valle",
 		"description": "Uno de los asentamientos prehispánicos más importantes del país, bastión de la resistencia calchaquí.",
@@ -360,6 +396,7 @@
 		]
 	},
 	{
+		"id": 37,
 		"name": "Museo Jesuítico La Banda",
 		"departamento": "Tafí del Valle",
 		"description": "Estancia colonial del siglo XVIII que preserva mobiliario, arte sacro y vestigios arqueológicos vallistos.",
@@ -370,6 +407,7 @@
 		]
 	},
 	{
+		"id": 38,
 		"name": "Ruta del Artesano de Tafí del Valle",
 		"departamento": "Tafí del Valle",
 		"description": "Circuito cultural que conecta talleres familiares de tejidos en telar, platería y cerámica rústica.",
@@ -380,6 +418,7 @@
 		]
 	},
 	{
+		"id": 39,
 		"name": "Poesía en las Nubes (Amaicha del Valle)",
 		"departamento": "Tafí del Valle",
 		"description": "Recital poético anual bajo el límpido cielo de los valles, impulsado por escritores indígenas.",
@@ -390,6 +429,7 @@
 		]
 	},
 	{
+		"id": 40,
 		"name": "Festival Nacional del Limón",
 		"departamento": "Tafí Viejo",
 		"description": "Gran festival del folclore argentino que celebra la producción citrícola característica de la 'Capital del Limón'.",
@@ -400,6 +440,7 @@
 		]
 	},
 	{
+		"id": 41,
 		"name": "Talleres Ferroviarios de Tafí Viejo",
 		"departamento": "Tafí Viejo",
 		"description": "Patrimonio industrial e histórico que forjó la identidad social, obrera y cultural de la ciudad.",
@@ -410,6 +451,7 @@
 		]
 	},
 	{
+		"id": 42,
 		"name": "Fiesta Nacional del Caballo",
 		"departamento": "Trancas",
 		"description": "Cita fundamental de la tradición gaucha con jineteadas, destrezas ecuestres y destacados grupos folclóricos.",
@@ -420,6 +462,7 @@
 		]
 	},
 	{
+		"id": 43,
 		"name": "Trancas Canta a la Patria",
 		"departamento": "Trancas",
 		"description": "Peña folclórica de vigilia que convoca a artistas locales en fechas patrias.",
@@ -430,6 +473,7 @@
 		]
 	},
 	{
+		"id": 44,
 		"name": "Encuentro de Cine Independiente del NOA",
 		"departamento": "Yerba Buena",
 		"description": "Muestra audiovisual anual de directores emergentes del noroeste argentino.",
@@ -440,6 +484,7 @@
 		]
 	},
 	{
+		"id": 45,
 		"name": "Estudio de Diseño Sostenible Yerba Buena",
 		"departamento": "Yerba Buena",
 		"description": "Laboratorio de diseño enfocado en la creación de mobiliario contemporáneo con materiales reciclados y maderas nativas.",
@@ -450,6 +495,7 @@
 		]
 	},
 	{
+		"id": 46,
 		"name": "Galería de Arte Contemporáneo 'El Árbol'",
 		"departamento": "Yerba Buena",
 		"description": "Espacio expositivo rodeado de yungas dedicado a la pintura, escultura e instalaciones conceptuales.",
@@ -460,6 +506,7 @@
 		]
 	},
 	{
+		"id": 47,
 		"name": "Estudio de Danza Contemporánea Yerba Buena",
 		"departamento": "Yerba Buena",
 		"description": "Centro formativo de danzas modernas e investigación del movimiento corporal.",
@@ -470,6 +517,7 @@
 		]
 	},
 	{
+		"id": 48,
 		"name": "Teatro de la Paz",
 		"departamento": "Capital",
 		"description": "Espacio escénico independiente alternativo con fuerte enfoque en comedia musical y drama local.",
@@ -480,6 +528,7 @@
 		]
 	},
 	{
+		"id": 49,
 		"name": "Cerámica Ancestral de Amaicha del Valle",
 		"departamento": "Tafí del Valle",
 		"description": "Taller enfocado en réplicas de vasijas e iconografía de la cultura Santa María.",
@@ -490,6 +539,7 @@
 		]
 	},
 	{
+		"id": 50,
 		"name": "Muestra Visual del Sur",
 		"departamento": "Chicligasta",
 		"description": "Salón anual de fotografía artística que premia las mejores capturas de paisajes y retratos tucumanos.",
