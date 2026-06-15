@@ -40,15 +40,31 @@ jobs:
           PGP_PRIVATE_KEY: ${{ secrets.PGP_PRIVATE_KEY }}
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
         run: |
+          # --- 0. Robust Import PGP Key ---
+          printf "%s" "$PGP_PRIVATE_KEY" | gpg --batch --import
+
           # --- 1. Compile with Typst ---
           typst compile --root . --pdf-standard=a-3u "Informe/1 - Informe.typ"
 
-          # --- 2. Dynamic Variables ---
+          # --- 2. Protect with qpdf ---
+          qpdf --replace-input --encrypt "" "$PGP_PASSPHRASE" 256 --modify=none -- "Informe/1 - Informe.pdf"
+
+          # --- 3. Dynamic Variables ---
           BUILD_DATE=$(date +'%d-%m-%Y')
           INFORME_NAME="Informe/${{ steps.nombre.outputs.NOMBRE }}.pdf"
 
-          # --- 3. Rename ---
+          # --- 4. Rename & Sign ---
           mv -v "Informe/1 - Informe.pdf" "$INFORME_NAME"
+
+          echo "Signing $INFORME_NAME..."
+          gpg --batch --yes --pinentry-mode loopback \
+              --passphrase "$PGP_PASSPHRASE" \
+              --detach-sign --armor \
+              --output "${INFORME_NAME}.asc" \
+              "$INFORME_NAME"
+
+          echo "Verifying signature for $INFORME_NAME..."
+          gpg --verify "${INFORME_NAME}.asc" "$INFORME_NAME"
 
       - name: Upload artifacts (PDFs + Signatures)
         uses: actions/upload-artifact@v7
