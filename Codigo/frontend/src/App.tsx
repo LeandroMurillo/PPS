@@ -1,10 +1,11 @@
 import * as React from 'react';
-import MapIcon from '@mui/icons-material/Map';
-import PersonIcon from '@mui/icons-material/Person';
-import PeopleIcon from '@mui/icons-material/People';
-import ChecklistIcon from '@mui/icons-material/Checklist';
 import { Outlet } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
+import ChecklistIcon from '@mui/icons-material/Checklist';
+import InfoIcon from '@mui/icons-material/Info';
+import MapIcon from '@mui/icons-material/Map';
+import PeopleIcon from '@mui/icons-material/People';
+import PersonIcon from '@mui/icons-material/Person';
 import type { Navigation } from '@toolpad/core/AppProvider';
 
 const NAVIGATION: Navigation = [
@@ -34,6 +35,14 @@ const NAVIGATION: Navigation = [
 		title: 'Usuarios',
 		segment: 'usuarios',
 		icon: <PersonIcon />,
+	},
+	{
+		kind: 'divider',
+	},
+	{
+		title: 'Acerca de',
+		segment: 'acerca',
+		icon: <InfoIcon />,
 	},
 	// {
 	// 	segment: 'employees',
