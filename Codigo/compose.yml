@@ -1,0 +1,55 @@
+services:
+  # ----------------------------------------
+  # MariaDB Database Service
+  # ----------------------------------------
+  db:
+    image: mariadb:lts-noble # Use a stable MariaDB version
+    container_name: cultura-db
+    restart: unless-stopped
+    environment:
+      # Use .env file for these values
+      MYSQL_ROOT_HOST: '%' # Allows root to connect from any container
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      # Expose on host port 3306 for easy access with a DB client like DBeaver
+      - '3306:3306'
+    volumes:
+      # Persist database data
+      - mariadb-data:/var/lib/mysql
+      # Mount all your SQL scripts to initialize the database
+      # The entrypoint runs them in alphabetical order.
+      - ./DB/cultura.sql:/docker-entrypoint-initdb.d/1_schema.sql
+
+  # ----------------------------------------
+  # Frontend Service
+  # ----------------------------------------
+  frontend:
+    container_name: cultura-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '5173:5173'
+    # environment:
+    #   # This URL is used by the *browser* to find the API
+    #   VITE_API_URL: 'http://cultura.com:3000'
+    volumes:
+      # Only mount node_modules
+      - /app/node_modules
+    # depends_on:
+    #   - backend
+    develop:
+      watch:
+        - path: ./frontend/package.json
+          action: rebuild
+        # This 'sync' action replaces the old volume mount
+        - path: ./frontend
+          target: /app # <-- Make sure this target matches your Dockerfile WORKDIR
+          action: sync
+
+# Define the named volume for database persistence
+volumes:
+  mariadb-data:
