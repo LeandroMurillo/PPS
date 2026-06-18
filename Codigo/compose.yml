@@ -22,6 +22,7 @@ services:
       # Mount all your SQL scripts to initialize the database
       # The entrypoint runs them in alphabetical order.
       - ./DB/cultura.sql:/docker-entrypoint-initdb.d/1_schema.sql
+      - ./db/datos.sql:/docker-entrypoint-initdb.d/2_data.sql
 
   # ----------------------------------------
   # Frontend Service
