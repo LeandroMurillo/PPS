@@ -8,22 +8,16 @@
   "Stored procedure",
   "Descripción",
   "Parámetros de entrada",
-  "Creado",
-  "Modificado",
 )
 
 #let celda_sp(nombre) = raw(nombre)
 
 #let celda_params(params) = raw(params.replace(" | ", "\n"))
 
-#let celda_fecha(fecha) = fecha.replace(" ", "\n")
-
 #let formatear_fila(fila) = (
   celda_sp(fila.at(0)),
   fila.at(1),
   celda_params(fila.at(2)),
-  celda_fecha(fila.at(3)),
-  celda_fecha(fila.at(4)),
 )
 
 
@@ -31,7 +25,7 @@
 
 #text(size: 8pt)[
   #table(
-    columns: (2.4fr, 2.0fr, 2.0fr, 0.9fr, 0.9fr),
+    columns: (2.6fr, 3.2fr, 3fr),
     stroke: 0.4pt,
     inset: 3pt,
 

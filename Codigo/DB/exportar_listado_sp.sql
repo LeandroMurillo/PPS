@@ -18,11 +18,7 @@ SELECT
             )
     END AS descripcion,
 
-    COALESCE(p.parametros_entrada, 'Sin parámetros de entrada') AS parametros_entrada,
-
-    DATE_FORMAT(r.CREATED, '%d-%m-%Y %H:%i:%s') AS fecha_creacion,
-
-    DATE_FORMAT(r.LAST_ALTERED, '%d-%m-%Y %H:%i:%s') AS ultima_modificacion
+    COALESCE(p.parametros_entrada, 'Sin parámetros de entrada') AS parametros_entrada
 
 FROM information_schema.ROUTINES r
 
