@@ -1,6 +1,6 @@
 -- ================================================================
 -- Mosaico Cultural
--- Base de datos: cultura v1.0.1
+-- Base de datos: cultura v1.0.2
 -- Autores: Cesar Ezequiel Herrera, Leandro Murillo
 -- ================================================================
 
