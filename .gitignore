@@ -9,5 +9,5 @@ Informe/*.pdf
 Informe/listado_sp.tsv
 
 .vscode/
-.mwb.bak
+*.mwb.bak
 .*~
