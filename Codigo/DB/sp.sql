@@ -8,9 +8,9 @@ USE `cultura`;
 
 SET NAMES utf8mb4;
 
-DELIMITER //
+DELIMITER / /
 
-DROP PROCEDURE IF EXISTS sp_admin_listar_usuarios //
+DROP PROCEDURE IF EXISTS sp_admin_listar_usuarios / /
 
 CREATE PROCEDURE sp_admin_listar_usuarios(
 	IN pBusqueda VARCHAR(255),
@@ -133,7 +133,7 @@ BEGIN
 	LIMIT vLimit OFFSET vOffset;
 END//
 
-DROP PROCEDURE IF EXISTS sp_admin_listar_actores //
+DROP PROCEDURE IF EXISTS sp_admin_listar_actores / /
 
 CREATE PROCEDURE sp_admin_listar_actores(
 	IN pBusqueda VARCHAR(255),
@@ -291,7 +291,7 @@ BEGIN
 	LIMIT vLimit OFFSET vOffset;
 END//
 
-DROP PROCEDURE IF EXISTS sp_admin_listar_eventos //
+DROP PROCEDURE IF EXISTS sp_admin_listar_eventos / /
 
 CREATE PROCEDURE sp_admin_listar_eventos(
 	IN pBusqueda VARCHAR(255),
@@ -354,11 +354,11 @@ BEGIN
 				INNER JOIN Actores a
 					ON a.idActor = ae.idActor
 				WHERE ae.idEvento = e.idEvento
-				  AND (
+				AND (
 					a.nombre LIKE CONCAT('%', pBusqueda, '%')
 					OR a.cuit LIKE CONCAT('%', pBusqueda, '%')
 					OR a.tipoActor LIKE CONCAT('%', pBusqueda, '%')
-				  )
+				)
 			)
 		)
 		AND (
@@ -420,11 +420,11 @@ BEGIN
 				INNER JOIN Actores a
 					ON a.idActor = ae.idActor
 				WHERE ae.idEvento = e.idEvento
-				  AND (
+				AND (
 					a.nombre LIKE CONCAT('%', pBusqueda, '%')
 					OR a.cuit LIKE CONCAT('%', pBusqueda, '%')
 					OR a.tipoActor LIKE CONCAT('%', pBusqueda, '%')
-				  )
+				)
 			)
 		)
 		AND (
@@ -472,7 +472,7 @@ BEGIN
 	LIMIT vLimit OFFSET vOffset;
 END//
 
-DROP PROCEDURE IF EXISTS sp_publico_mapa_actores_buscar //
+DROP PROCEDURE IF EXISTS sp_publico_mapa_actores_buscar / /
 
 CREATE PROCEDURE sp_publico_mapa_actores_buscar(
 	IN pBusqueda VARCHAR(255),
@@ -498,10 +498,10 @@ BEGIN
 	INNER JOIN Ubicaciones ub
 		ON ub.idUbicacion = a.idUbicacion
 	WHERE c.estado = 'A'
-	  AND ub.esPublica = 1
-	  AND ub.latitud IS NOT NULL
-	  AND ub.longitud IS NOT NULL
-	  AND (
+	AND ub.esPublica = 1
+	AND ub.latitud IS NOT NULL
+	AND ub.longitud IS NOT NULL
+	AND (
 			pBusqueda IS NULL
 			OR pBusqueda = ''
 			OR a.nombre LIKE CONCAT('%', pBusqueda, '%')
@@ -510,13 +510,13 @@ BEGIN
 			OR ub.departamento LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.localidad LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.direccion LIKE CONCAT('%', pBusqueda, '%')
-	  )
-	  AND (
+	)
+	AND (
 			pDepartamento IS NULL
 			OR pDepartamento = ''
 			OR ub.departamento = pDepartamento
-	  )
-	  AND (
+	)
+	AND (
 			pCategoriasJson IS NULL
 			OR JSON_LENGTH(pCategoriasJson) = 0
 			OR JSON_CONTAINS(
@@ -524,8 +524,8 @@ BEGIN
 				CAST(c.idCategoria AS CHAR),
 				'$'
 			)
-	  )
+	)
 	ORDER BY a.nombre ASC;
-END//
+END //
 
-DELIMITER;
+DELIMITER ;

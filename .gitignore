@@ -8,6 +8,8 @@ pnpm-lock.yaml
 Informe/*.pdf
 Informe/listado_sp.tsv
 
+Codigo/DB/db.pdf
+
 .vscode/
 *.mwb.bak
 .*~
