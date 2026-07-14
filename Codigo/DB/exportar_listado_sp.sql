@@ -1,3 +1,5 @@
+USE cultura;
+
 SET SESSION group_concat_max_len = 100000;
 
 SELECT

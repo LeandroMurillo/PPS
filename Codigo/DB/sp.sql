@@ -8,9 +8,9 @@ USE `cultura`;
 
 SET NAMES utf8mb4;
 
-DELIMITER / /
+DELIMITER //
 
-DROP PROCEDURE IF EXISTS sp_admin_listar_usuarios / /
+DROP PROCEDURE IF EXISTS sp_admin_listar_usuarios //
 
 CREATE PROCEDURE sp_admin_listar_usuarios(
 	IN pBusqueda VARCHAR(255),
@@ -133,7 +133,7 @@ BEGIN
 	LIMIT vLimit OFFSET vOffset;
 END//
 
-DROP PROCEDURE IF EXISTS sp_admin_listar_actores / /
+DROP PROCEDURE IF EXISTS sp_admin_listar_actores //
 
 CREATE PROCEDURE sp_admin_listar_actores(
 	IN pBusqueda VARCHAR(255),
@@ -291,7 +291,7 @@ BEGIN
 	LIMIT vLimit OFFSET vOffset;
 END//
 
-DROP PROCEDURE IF EXISTS sp_admin_listar_eventos / /
+DROP PROCEDURE IF EXISTS sp_admin_listar_eventos //
 
 CREATE PROCEDURE sp_admin_listar_eventos(
 	IN pBusqueda VARCHAR(255),
@@ -472,7 +472,7 @@ BEGIN
 	LIMIT vLimit OFFSET vOffset;
 END//
 
-DROP PROCEDURE IF EXISTS sp_publico_mapa_actores_buscar / /
+DROP PROCEDURE IF EXISTS sp_publico_mapa_actores_buscar //
 
 CREATE PROCEDURE sp_publico_mapa_actores_buscar(
 	IN pBusqueda VARCHAR(255),
