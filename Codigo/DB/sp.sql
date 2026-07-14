@@ -10,6 +10,9 @@ SET NAMES utf8mb4;
 
 DELIMITER //
 
+-- -----------------------------------------------------
+-- 1. sp_admin_listar_usuarios
+-- -----------------------------------------------------
 DROP PROCEDURE IF EXISTS sp_admin_listar_usuarios //
 
 CREATE PROCEDURE sp_admin_listar_usuarios(
@@ -33,77 +36,41 @@ BEGIN
 
 	SET vSortBy = CASE
 		WHEN pSortBy IN (
-			'idUsuario',
-			'nombre',
-			'apellido',
-			'dni',
-			'email',
-			'rol',
-			'estado',
-			'fechaRegistro'
+			'idUsuario', 'nombre', 'apellido', 'CUIL', 'email', 'rol', 'estado', 'fechaRegistro'
 		)
 		THEN pSortBy
 		ELSE 'idUsuario'
 	END;
 
-	SET vSortDir = CASE
-		WHEN UPPER(pSortDir) = 'DESC' THEN 'DESC'
-		ELSE 'ASC'
-	END;
+	SET vSortDir = CASE WHEN UPPER(pSortDir) = 'DESC' THEN 'DESC' ELSE 'ASC' END;
 
 	SELECT COUNT(*) AS total
 	FROM Usuarios u
 	WHERE
 		(
-			pBusqueda IS NULL
-			OR pBusqueda = ''
+			pBusqueda IS NULL OR pBusqueda = ''
 			OR u.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR u.apellido LIKE CONCAT('%', pBusqueda, '%')
 			OR u.email LIKE CONCAT('%', pBusqueda, '%')
-			OR u.dni LIKE CONCAT('%', pBusqueda, '%')
+			OR u.CUIL LIKE CONCAT('%', pBusqueda, '%')
 		)
-		AND (
-			pRol IS NULL
-			OR pRol = ''
-			OR u.rol = pRol
-		)
-		AND (
-			pEstado IS NULL
-			OR pEstado = ''
-			OR u.estado = pEstado
-		);
+		AND (pRol IS NULL OR pRol = '' OR u.rol = pRol)
+		AND (pEstado IS NULL OR pEstado = '' OR u.estado = pEstado);
 
 	SELECT
-		u.idUsuario,
-		u.nombre,
-		u.apellido,
-		u.dni,
-		u.genero,
-		u.fechaNacimiento,
-		u.email,
-		u.fechaRegistro,
-		u.rol,
-		u.estado
+		u.idUsuario, u.nombre, u.apellido, u.CUIL, u.genero,
+		u.fechaNacimiento, u.email, u.fechaRegistro, u.rol, u.estado
 	FROM Usuarios u
 	WHERE
 		(
-			pBusqueda IS NULL
-			OR pBusqueda = ''
+			pBusqueda IS NULL OR pBusqueda = ''
 			OR u.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR u.apellido LIKE CONCAT('%', pBusqueda, '%')
 			OR u.email LIKE CONCAT('%', pBusqueda, '%')
-			OR u.dni LIKE CONCAT('%', pBusqueda, '%')
+			OR u.CUIL LIKE CONCAT('%', pBusqueda, '%')
 		)
-		AND (
-			pRol IS NULL
-			OR pRol = ''
-			OR u.rol = pRol
-		)
-		AND (
-			pEstado IS NULL
-			OR pEstado = ''
-			OR u.estado = pEstado
-		)
+		AND (pRol IS NULL OR pRol = '' OR u.rol = pRol)
+		AND (pEstado IS NULL OR pEstado = '' OR u.estado = pEstado)
 	ORDER BY
 		CASE WHEN vSortBy = 'idUsuario' AND vSortDir = 'ASC' THEN u.idUsuario END ASC,
 		CASE WHEN vSortBy = 'idUsuario' AND vSortDir = 'DESC' THEN u.idUsuario END DESC,
@@ -114,8 +81,8 @@ BEGIN
 		CASE WHEN vSortBy = 'apellido' AND vSortDir = 'ASC' THEN u.apellido END ASC,
 		CASE WHEN vSortBy = 'apellido' AND vSortDir = 'DESC' THEN u.apellido END DESC,
 
-		CASE WHEN vSortBy = 'dni' AND vSortDir = 'ASC' THEN u.dni END ASC,
-		CASE WHEN vSortBy = 'dni' AND vSortDir = 'DESC' THEN u.dni END DESC,
+		CASE WHEN vSortBy = 'CUIL' AND vSortDir = 'ASC' THEN u.CUIL END ASC,
+		CASE WHEN vSortBy = 'CUIL' AND vSortDir = 'DESC' THEN u.CUIL END DESC,
 
 		CASE WHEN vSortBy = 'email' AND vSortDir = 'ASC' THEN u.email END ASC,
 		CASE WHEN vSortBy = 'email' AND vSortDir = 'DESC' THEN u.email END DESC,
@@ -131,8 +98,11 @@ BEGIN
 
 		u.idUsuario ASC
 	LIMIT vLimit OFFSET vOffset;
-END//
+END //
 
+-- -----------------------------------------------------
+-- 2. sp_admin_listar_actores
+-- -----------------------------------------------------
 DROP PROCEDURE IF EXISTS sp_admin_listar_actores //
 
 CREATE PROCEDURE sp_admin_listar_actores(
@@ -156,15 +126,8 @@ BEGIN
 
 	SET vSortBy = CASE
 		WHEN pSortBy IN (
-			'idActor',
-			'nombre',
-			'cuit',
-			'tipoActor',
-			'fechaCreacion',
-			'categoria',
-			'usuarioDueno',
-			'departamento',
-			'localidad'
+			'idActor', 'nombre', 'cuit', 'tipoActor', 'fechaCreacion',
+			'categoria', 'usuarioDueno', 'departamento', 'localidad'
 		)
 		THEN pSortBy
 		ELSE 'idActor'
@@ -177,12 +140,11 @@ BEGIN
 
 	SELECT COUNT(*) AS total
 	FROM Actores a
-	INNER JOIN Categorias c
-		ON c.idCategoria = a.idCategoria
-	INNER JOIN Usuarios u
-		ON u.idUsuario = a.`idUsuarioDueño`
-	INNER JOIN Ubicaciones ub
-		ON ub.idUbicacion = a.idUbicacion
+	INNER JOIN Subcategorias s ON s.idSubcategoria = a.idSubcategoria
+	INNER JOIN Categorias c ON c.idCategoria = s.idCategoria
+	INNER JOIN Integrantes i ON i.idActor = a.idActor AND i.esDueño = 1
+	INNER JOIN Usuarios u ON u.idUsuario = i.idUsuario
+	INNER JOIN Ubicaciones ub ON ub.idUbicacion = a.idUbicacion
 	WHERE
 		(
 			pBusqueda IS NULL
@@ -198,14 +160,8 @@ BEGIN
 			OR ub.localidad LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.direccion LIKE CONCAT('%', pBusqueda, '%')
 		)
-		AND (
-			pIdCategoria IS NULL
-			OR a.idCategoria = pIdCategoria
-		)
-		AND (
-			pIdUsuarioDueno IS NULL
-			OR a.`idUsuarioDueño` = pIdUsuarioDueno
-		);
+		AND (pIdCategoria IS NULL OR c.idCategoria = pIdCategoria)
+		AND (pIdUsuarioDueno IS NULL OR i.idUsuario = pIdUsuarioDueno);
 
 	SELECT
 		a.idActor,
@@ -213,6 +169,7 @@ BEGIN
 		a.cuit,
 		a.tipoActor,
 		a.fechaCreacion,
+		a.estado,
 
 		c.idCategoria,
 		c.nombre AS categoria,
@@ -220,6 +177,8 @@ BEGIN
 		u.idUsuario AS idUsuarioDueno,
 		CONCAT(u.nombre, ' ', u.apellido) AS usuarioDueno,
 		u.email AS emailUsuarioDueno,
+
+		#TODO: ver que el usuario sea el dueño
 
 		ub.idUbicacion,
 		ub.provincia,
@@ -230,12 +189,11 @@ BEGIN
 		ub.longitud,
 		ub.esPublica
 	FROM Actores a
-	INNER JOIN Categorias c
-		ON c.idCategoria = a.idCategoria
-	INNER JOIN Usuarios u
-		ON u.idUsuario = a.`idUsuarioDueño`
-	INNER JOIN Ubicaciones ub
-		ON ub.idUbicacion = a.idUbicacion
+	INNER JOIN Subcategorias s ON s.idSubcategoria = a.idSubcategoria
+	INNER JOIN Categorias c ON c.idCategoria = s.idCategoria
+	INNER JOIN Integrantes i ON i.idActor = a.idActor AND i.esDueño = 1
+	INNER JOIN Usuarios u ON u.idUsuario = i.idUsuario
+	INNER JOIN Ubicaciones ub ON ub.idUbicacion = a.idUbicacion
 	WHERE
 		(
 			pBusqueda IS NULL
@@ -251,14 +209,8 @@ BEGIN
 			OR ub.localidad LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.direccion LIKE CONCAT('%', pBusqueda, '%')
 		)
-		AND (
-			pIdCategoria IS NULL
-			OR a.idCategoria = pIdCategoria
-		)
-		AND (
-			pIdUsuarioDueno IS NULL
-			OR a.`idUsuarioDueño` = pIdUsuarioDueno
-		)
+		AND (pIdCategoria IS NULL OR c.idCategoria = pIdCategoria)
+		AND (pIdUsuarioDueno IS NULL OR i.idUsuario = pIdUsuarioDueno)
 	ORDER BY
 		CASE WHEN vSortBy = 'idActor' AND vSortDir = 'ASC' THEN a.idActor END ASC,
 		CASE WHEN vSortBy = 'idActor' AND vSortDir = 'DESC' THEN a.idActor END DESC,
@@ -289,14 +241,16 @@ BEGIN
 
 		a.idActor ASC
 	LIMIT vLimit OFFSET vOffset;
-END//
+END //
 
+-- -----------------------------------------------------
+-- 3. sp_admin_listar_eventos
+-- -----------------------------------------------------
 DROP PROCEDURE IF EXISTS sp_admin_listar_eventos //
 
 CREATE PROCEDURE sp_admin_listar_eventos(
 	IN pBusqueda VARCHAR(255),
 	IN pEstado CHAR(1),
-	IN pTipo VARCHAR(45),
 	IN pLimit INT,
 	IN pOffset INT,
 	IN pSortBy VARCHAR(50),
@@ -314,74 +268,41 @@ BEGIN
 
 	SET vSortBy = CASE
 		WHEN pSortBy IN (
-			'idEvento',
-			'nombre',
-			'tipo',
-			'estado',
-			'fechaInicio',
-			'fechaFin',
-			'fechaCreacion',
-			'departamento',
-			'localidad',
-			'cantidadActores'
+			'idEvento', 'nombre', 'estado', 'fecha', 'fechaCreacion',
+			'departamento', 'localidad', 'nombreActor'
 		)
 		THEN pSortBy
 		ELSE 'idEvento'
 	END;
 
-	SET vSortDir = CASE
-		WHEN UPPER(pSortDir) = 'DESC' THEN 'DESC'
-		ELSE 'ASC'
-	END;
+	SET vSortDir = CASE WHEN UPPER(pSortDir) = 'DESC' THEN 'DESC' ELSE 'ASC' END;
 
 	SELECT COUNT(*) AS total
 	FROM Eventos e
-	INNER JOIN Ubicaciones ub
-		ON ub.idUbicacion = e.idUbicacion
+	INNER JOIN Actores a ON a.idActor = e.idActor
+	INNER JOIN Ubicaciones ub ON ub.idUbicacion = a.idUbicacion
 	WHERE
 		(
-			pBusqueda IS NULL
-			OR pBusqueda = ''
+			pBusqueda IS NULL OR pBusqueda = ''
 			OR e.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR e.descripcion LIKE CONCAT('%', pBusqueda, '%')
-			OR e.tipo LIKE CONCAT('%', pBusqueda, '%')
+			OR a.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.departamento LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.localidad LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.direccion LIKE CONCAT('%', pBusqueda, '%')
-			OR EXISTS (
-				SELECT 1
-				FROM ActoresEventos ae
-				INNER JOIN Actores a
-					ON a.idActor = ae.idActor
-				WHERE ae.idEvento = e.idEvento
-				AND (
-					a.nombre LIKE CONCAT('%', pBusqueda, '%')
-					OR a.cuit LIKE CONCAT('%', pBusqueda, '%')
-					OR a.tipoActor LIKE CONCAT('%', pBusqueda, '%')
-				)
-			)
 		)
-		AND (
-			pEstado IS NULL
-			OR pEstado = ''
-			OR e.estado = pEstado
-		)
-		AND (
-			pTipo IS NULL
-			OR pTipo = ''
-			OR e.tipo = pTipo
-		);
+		AND (pEstado IS NULL OR pEstado = '' OR e.estado = pEstado);
 
 	SELECT
 		e.idEvento,
 		e.nombre,
 		e.descripcion,
-		e.tipo,
-		e.fechaInicio,
-		e.fechaFin,
+		e.fecha,
 		e.estado,
-		e.esAnual,
 		e.fechaCreacion,
+
+		a.idActor,
+		a.nombre AS nombreActor,
 
 		ub.idUbicacion,
 		ub.provincia,
@@ -390,53 +311,21 @@ BEGIN
 		ub.direccion,
 		ub.latitud,
 		ub.longitud,
-		ub.esPublica,
-
-		COALESCE(actores_evento.cantidadActores, 0) AS cantidadActores
+		ub.esPublica
 	FROM Eventos e
-	INNER JOIN Ubicaciones ub
-		ON ub.idUbicacion = e.idUbicacion
-	LEFT JOIN (
-		SELECT
-			ae.idEvento,
-			COUNT(*) AS cantidadActores
-		FROM ActoresEventos ae
-		GROUP BY ae.idEvento
-	) actores_evento
-		ON actores_evento.idEvento = e.idEvento
+	INNER JOIN Actores a ON a.idActor = e.idActor
+	INNER JOIN Ubicaciones ub ON ub.idUbicacion = a.idUbicacion
 	WHERE
 		(
-			pBusqueda IS NULL
-			OR pBusqueda = ''
+			pBusqueda IS NULL OR pBusqueda = ''
 			OR e.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR e.descripcion LIKE CONCAT('%', pBusqueda, '%')
-			OR e.tipo LIKE CONCAT('%', pBusqueda, '%')
+			OR a.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.departamento LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.localidad LIKE CONCAT('%', pBusqueda, '%')
 			OR ub.direccion LIKE CONCAT('%', pBusqueda, '%')
-			OR EXISTS (
-				SELECT 1
-				FROM ActoresEventos ae
-				INNER JOIN Actores a
-					ON a.idActor = ae.idActor
-				WHERE ae.idEvento = e.idEvento
-				AND (
-					a.nombre LIKE CONCAT('%', pBusqueda, '%')
-					OR a.cuit LIKE CONCAT('%', pBusqueda, '%')
-					OR a.tipoActor LIKE CONCAT('%', pBusqueda, '%')
-				)
-			)
 		)
-		AND (
-			pEstado IS NULL
-			OR pEstado = ''
-			OR e.estado = pEstado
-		)
-		AND (
-			pTipo IS NULL
-			OR pTipo = ''
-			OR e.tipo = pTipo
-		)
+		AND (pEstado IS NULL OR pEstado = '' OR e.estado = pEstado)
 	ORDER BY
 		CASE WHEN vSortBy = 'idEvento' AND vSortDir = 'ASC' THEN e.idEvento END ASC,
 		CASE WHEN vSortBy = 'idEvento' AND vSortDir = 'DESC' THEN e.idEvento END DESC,
@@ -444,17 +333,11 @@ BEGIN
 		CASE WHEN vSortBy = 'nombre' AND vSortDir = 'ASC' THEN e.nombre END ASC,
 		CASE WHEN vSortBy = 'nombre' AND vSortDir = 'DESC' THEN e.nombre END DESC,
 
-		CASE WHEN vSortBy = 'tipo' AND vSortDir = 'ASC' THEN e.tipo END ASC,
-		CASE WHEN vSortBy = 'tipo' AND vSortDir = 'DESC' THEN e.tipo END DESC,
-
 		CASE WHEN vSortBy = 'estado' AND vSortDir = 'ASC' THEN e.estado END ASC,
 		CASE WHEN vSortBy = 'estado' AND vSortDir = 'DESC' THEN e.estado END DESC,
 
-		CASE WHEN vSortBy = 'fechaInicio' AND vSortDir = 'ASC' THEN e.fechaInicio END ASC,
-		CASE WHEN vSortBy = 'fechaInicio' AND vSortDir = 'DESC' THEN e.fechaInicio END DESC,
-
-		CASE WHEN vSortBy = 'fechaFin' AND vSortDir = 'ASC' THEN e.fechaFin END ASC,
-		CASE WHEN vSortBy = 'fechaFin' AND vSortDir = 'DESC' THEN e.fechaFin END DESC,
+		CASE WHEN vSortBy = 'fecha' AND vSortDir = 'ASC' THEN e.fecha END ASC,
+		CASE WHEN vSortBy = 'fecha' AND vSortDir = 'DESC' THEN e.fecha END DESC,
 
 		CASE WHEN vSortBy = 'fechaCreacion' AND vSortDir = 'ASC' THEN e.fechaCreacion END ASC,
 		CASE WHEN vSortBy = 'fechaCreacion' AND vSortDir = 'DESC' THEN e.fechaCreacion END DESC,
@@ -465,13 +348,16 @@ BEGIN
 		CASE WHEN vSortBy = 'localidad' AND vSortDir = 'ASC' THEN ub.localidad END ASC,
 		CASE WHEN vSortBy = 'localidad' AND vSortDir = 'DESC' THEN ub.localidad END DESC,
 
-		CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'ASC' THEN COALESCE(actores_evento.cantidadActores, 0) END ASC,
-		CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'DESC' THEN COALESCE(actores_evento.cantidadActores, 0) END DESC,
+		CASE WHEN vSortBy = 'nombreActor' AND vSortDir = 'ASC' THEN a.nombre END ASC,
+		CASE WHEN vSortBy = 'nombreActor' AND vSortDir = 'DESC' THEN a.nombre END DESC,
 
 		e.idEvento ASC
 	LIMIT vLimit OFFSET vOffset;
-END//
+END //
 
+-- -----------------------------------------------------
+-- 4. sp_publico_mapa_actores_buscar
+-- -----------------------------------------------------
 DROP PROCEDURE IF EXISTS sp_publico_mapa_actores_buscar //
 
 CREATE PROCEDURE sp_publico_mapa_actores_buscar(
@@ -493,17 +379,15 @@ BEGIN
 		ub.latitud,
 		ub.longitud
 	FROM Actores a
-	INNER JOIN Categorias c
-		ON c.idCategoria = a.idCategoria
-	INNER JOIN Ubicaciones ub
-		ON ub.idUbicacion = a.idUbicacion
+	INNER JOIN Subcategorias s ON s.idSubcategoria = a.idSubcategoria
+	INNER JOIN Categorias c ON c.idCategoria = s.idCategoria
+	INNER JOIN Ubicaciones ub ON ub.idUbicacion = a.idUbicacion
 	WHERE c.estado = 'A'
 	AND ub.esPublica = 1
 	AND ub.latitud IS NOT NULL
 	AND ub.longitud IS NOT NULL
 	AND (
-			pBusqueda IS NULL
-			OR pBusqueda = ''
+			pBusqueda IS NULL OR pBusqueda = ''
 			OR a.nombre LIKE CONCAT('%', pBusqueda, '%')
 			OR a.tipoActor LIKE CONCAT('%', pBusqueda, '%')
 			OR c.nombre LIKE CONCAT('%', pBusqueda, '%')
@@ -512,20 +396,14 @@ BEGIN
 			OR ub.direccion LIKE CONCAT('%', pBusqueda, '%')
 	)
 	AND (
-			pDepartamento IS NULL
-			OR pDepartamento = ''
+			pDepartamento IS NULL OR pDepartamento = ''
 			OR ub.departamento = pDepartamento
 	)
 	AND (
-			pCategoriasJson IS NULL
-			OR JSON_LENGTH(pCategoriasJson) = 0
-			OR JSON_CONTAINS(
-				pCategoriasJson,
-				CAST(c.idCategoria AS CHAR),
-				'$'
-			)
+			pCategoriasJson IS NULL OR JSON_LENGTH(pCategoriasJson) = 0
+			OR JSON_CONTAINS(pCategoriasJson, CAST(c.idCategoria AS CHAR), '$')
 	)
 	ORDER BY a.nombre ASC;
 END //
 
-DELIMITER ;
+DELIMITER;
