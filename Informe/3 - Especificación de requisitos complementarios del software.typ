@@ -8,9 +8,9 @@ Esta especificación tiene como objetivo analizar y documentar las necesidades f
 Los objetivos de esta tarea son identificar a los responsables de cada una de las unidades y a los principales usuarios implicados. En la organización se identificaron los siguientes usuarios:
 
 - *Ente cultural de Tucumán*: son los solicitantes de la página web.
-- *Grupo de administradores*: son las personas encargadas de gestionar la plataforma de cultura de forma global, gestionar el acceso de los moderadores y usuarios a la plataforma, y crear o administrar los eventos de la cartelera.
-- *Grupo de moderadores de categoría cultural (Editores)*: son los que se encargan de validar los datos de los actores culturales de una categoría y gestionar a los usuarios correspondientes a su sector. Además, son los encargados de registrar espacios y crear los eventos (festivales y mercados) de la cartelera.
-- *Grupo de actores culturales*: son las personas o grupo de personas con datos validados y publicados en el sitio de la plataforma. Estos actores tienen la capacidad de postularse a los eventos vigentes para participar en ellos.
+- *Grupo de administradores*: son las personas encargadas de gestionar la plataforma de cultura de forma global, gestionar el acceso de los moderadores y usuarios a la plataforma, crear o administrar las convocatorias.
+- *Grupo de moderadores de categoría cultural (Editores)*: son los que se encargan de validar los datos de los actores culturales de una categoría y gestionar a los usuarios correspondientes a su sector. Además, son los encargados de registrar espacios y crear las convocatorias.
+- *Grupo de actores culturales*: son las personas o grupo de personas con datos validados y publicados en el sitio de la plataforma. Estos actores tienen la capacidad de postularse a las convocatorias vigentes para participar en ellas y también pueden gestionar sus eventos de cartelera.
 - *Grupo de usuarios*: son las personas registradas en el sitio que están en condiciones de solicitar la publicación de un actor cultural en el sitio de la plataforma.
 - *Grupo de personas*: grupo que puede visualizar los datos públicos (portafolios) de la plataforma sin necesidad de registrarse.
 
@@ -23,10 +23,11 @@ Además debe permitir a las personas visualizar los datos públicos del sistema 
 == Definiciones, acrónimos y abreviaturas
 
 - *Definiciones*:
-  - *Artesanos/as*: son aquellos hacedores culturales que elaboran artesanías, es decir, objetos de origen utilitario que cobran significación cultural, realizados manualmente con técnicas que son transmitidas de generación en generación o con máquinas movidas con energía básicamente humana, en forma individual o colectiva. (Art. 2º Ley 8083).
   - *Artesanía*: son los objetos elaborados manualmente, mediante la transformación de la materia prima con ayuda de recursos instrumentales y el dominio de técnicas específicas del oficio, que expresan un criterio estético funcional con valor cultural.
+  - *Artesanos/as*: son aquellos hacedores culturales que elaboran artesanías, es decir, objetos de origen utilitario que cobran significación cultural, realizados manualmente con técnicas que son transmitidas de generación en generación o con máquinas movidas con energía básicamente humana, en forma individual o colectiva. (Art. 2º Ley 8083).
+  - *Convocatoria*: invitación a donde los actores se pueden postular.
+  - *Evento*: un suceso futuro que puede destacar un actor.
   - *Mapa georeferenciado*: es una representación cartográfica que ha sido vinculada a una ubicación real y precisa sobre la superficie terrestre mediante coordenadas geográficas.
-  - *Evento*: festivales o mercados culturales que se encuentran calendarizados y se realizan periódicamente (todos los años).
   - *Portafolio*: recopilación organizada de evidencias, proyectos, trabajos y logros de una persona u organización. Es la cara visible y pública del actor cultural.
   - *_Web responsive_*: hacer que un sitio web sea accesible y adaptable en todos los dispositivos: _tablets_, _smartphones_, etc.
 
@@ -41,7 +42,7 @@ La plataforma de cultura será administrada globalmente por un equipo de adminis
 
 Los administradores tienen control total de la plataforma. Tienen la capacidad de cargar datos de los usuarios, y acceder sin restricciones a todos los usuarios y actores culturales registrados. Son responsables de gestionar el acceso de los espacios e instituciones a la plataforma, asignando, modificando o retirando recursos según sea necesario. // Cada espacio o categoría se registra con un nombre único y un estado de actividad (activa o inactiva).
 
-Los administradores son los responsables de crear, modificar y eliminar tanto categorías como moderadores, además de revisar y aprobar los actores culturales pendientes en la bandeja de registros. Los administradores definen las categorías culturales, cada una con un nombre único y un formulario de registro dinámico. La estructura de estos formularios varía obligatoriamente según la categoría; por ejemplo, para registrar un artesano se requerirán datos de la rama productiva, procedencia de materia prima y técnicas, mientras que para un músico se requerirán géneros musicales y roles.
+Los administradores son los responsables de crear, modificar y eliminar categorías, subcategorías y moderadores. Los administradores definen las categorías culturales (y sus subcategorías), cada una con un nombre único y un formulario de registro dinámico. La estructura de estos formularios varía obligatoriamente según la categoría; por ejemplo, para registrar un artesano se requerirán datos de la rama productiva, procedencia de materia prima y técnicas, mientras que para un músico se requerirán géneros musicales y roles.
 
 Cada categoría cuenta con un nombre único, su formulario específico, y un estado (activa o dada de baja), permitiendo un borrado lógico cuando una categoría ya no se utiliza. Las categorías que tengan actores asociados no pueden ser eliminadas. Al cambiar su estado a "dado de baja", estas categorías dejarán de aparecer en la clasificación de actores. La plataforma también debe ofrecer funcionalidad para gestionar las categorías.
 
@@ -70,7 +71,7 @@ Un usuario puede darse de baja por comportamiento inapropiado, contrario a las p
 
 === Grupo de Moderadores:
 
-Los moderadores (editores) son parte del _staff_ del Ente organizado por sector cultural. Una vez habilitados, pueden validar a los artistas de su categoría, registrar espacios culturales y crear los eventos en el sistema. Tienen restringida la modificación de datos sensibles (como el DNI) de los usuarios.
+Los moderadores (editores) son parte del _staff_ del Ente organizado por sector cultural. Una vez habilitados, pueden validar a los artistas de su categoría, registrar espacios culturales y crear las convocatorias en el sistema. Tienen restringida la modificación de datos sensibles (como el DNI) de los usuarios.
 
 === Grupo de Administradores:
 
