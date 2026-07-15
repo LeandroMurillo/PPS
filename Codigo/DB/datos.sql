@@ -66,19 +66,18 @@ INSERT INTO `cultura`.`Categorias` (`idCategoria`, `nombre`, `estado`) VALUES
 -- -----------------------------------------------------
 -- 4. Subcategorías (Clave compuesta PK: idSubcategoria, idCategoria)
 -- -----------------------------------------------------
-INSERT INTO `cultura`.`Subcategorias` (`idSubcategoria`, `idCategoria`, `nombre`) VALUES
-(1, 1, 'Folclore'),
-(2, 1, 'Rock / Pop'),
-(3, 1, 'Música Clásica y Académica'),
-(1, 2, 'Textil'),
-(2, 2, 'Cerámica y Alfarería'),
-(3, 2, 'Luthería'),
-(1, 3, 'Teatro de Texto'),
-(2, 3, 'Danza Contemporánea'),
-(3, 3, 'Circo y Murga'),
-(1, 4, 'Cine Ficción'),
-(2, 4, 'Documental');
-
+INSERT INTO cultura.Subcategorias (idCategoria, nombre) VALUES
+(1, 'Folclore'),                   -- idSubcategoria = 1
+(1, 'Rock / Pop'),                 -- idSubcategoria = 2
+(1, 'Música Clásica y Académica'), -- idSubcategoria = 3
+(2, 'Textil'),                     -- idSubcategoria = 4
+(2, 'Cerámica y Alfarería'),       -- idSubcategoria = 5
+(2, 'Luthería'),                   -- idSubcategoria = 6
+(3, 'Teatro de Texto'),            -- idSubcategoria = 7
+(3, 'Danza Contemporánea'),        -- idSubcategoria = 8
+(3, 'Circo y Murga'),              -- idSubcategoria = 9
+(4, 'Cine Ficción'),               -- idSubcategoria = 10
+(4, 'Documental');                 -- idSubcategoria = 11
 -- -----------------------------------------------------
 -- 5. Moderadores x Categorías
 -- -----------------------------------------------------
@@ -99,16 +98,15 @@ INSERT INTO `cultura`.`Ubicaciones` (`idUbicacion`, `provincia`, `departamento`,
 (6, 'Tucumán', 'Lules', 'San Isidro de Lules', 'Ruta Provincial 301', -26.92000000, -65.34000000, 1);
 
 -- -----------------------------------------------------
--- 7. Actores Culturales (Con Clave Subrogada)
+-- 7. Actores Culturales (Corregido)
 -- -----------------------------------------------------
-INSERT INTO `cultura`.`Actores` (`idActor`, `idSubcategoria`, `idCategoria`, `idUbicacion`, `nombre`, `descripcion`, `fotoPerfilUrl`, `cuit`, `tipoActor`, `fechaCreacion`, `estado`) VALUES
-(1, 1, 2, 3, 'Tejidos Ancestrales María', 'Producción de ponchos y ruanas en telar criollo.', 'https://img.com/tejidos.jpg', '27351112229', 'INDIVIDUO', '2026-06-11 10:00:00', 'A'),
-(2, 1, 1, 1, 'Los Tucu Cantores', 'Agrupación folclórica con más de 10 años de trayectoria.', 'https://img.com/tucucantores.jpg', '30777888991', 'COLECTIVO', '2026-06-16 09:30:00', 'A'),
-(3, 1, 3, 5, 'Teatro Alberdi', 'Espacio cultural histórico administrado por la UNT.', 'https://img.com/alberdi.jpg', '30500011122', 'ESPACIO', '2026-06-05 08:00:00', 'A'),
-(4, 2, 1, 4, 'Los Carpinchos del Alba', 'Banda de Indie Rock emergente de Yerba Buena.', 'https://img.com/carpinchos.jpg', '33666555449', 'COLECTIVO', '2026-06-18 10:00:00', 'A'),
-(5, 1, 4, 6, 'Casino Royale Producciones', 'Productora audiovisual independiente de cortometrajes.', 'https://img.com/casinoroyale.jpg', '20311113337', 'INDIVIDUO', '2026-06-18 10:10:00', 'P'),
-(6, 3, 3, 2, 'Compañía Circo Fuego', 'Colectivo de artistas callejeros y teatro de calle.', 'https://img.com/circofuego.jpg', '30111222334', 'COLECTIVO', '2026-06-21 11:00:00', 'A');
-
+INSERT INTO cultura.Actores (idActor, idSubcategoria, idUbicacion, nombre, descripcion, fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado) VALUES
+(1, 4, 3, 'Tejidos Ancestrales María', 'Producción de ponchos y ruanas en telar criollo.', 'https://img.com/tejidos.jpg', '27351112229', 'INDIVIDUO', '2026-06-11 10:00:00', 'A'), -- 4 = Textil
+(2, 1, 1, 'Los Tucu Cantores', 'Agrupación folclórica con más de 10 años de trayectoria.', 'https://img.com/tucucantores.jpg', '30777888991', 'COLECTIVO', '2026-06-16 09:30:00', 'A'), -- 1 = Folclore
+(3, 7, 5, 'Teatro Alberdi', 'Espacio cultural histórico administrado por la UNT.', 'https://img.com/alberdi.jpg', '30500011122', 'ESPACIO', '2026-06-05 08:00:00', 'A'), -- 7 = Teatro de Texto
+(4, 2, 4, 'Los Carpinchos del Alba', 'Banda de Indie Rock emergente de Yerba Buena.', 'https://img.com/carpinchos.jpg', '33666555449', 'COLECTIVO', '2026-06-18 10:00:00', 'A'), -- 2 = Rock / Pop
+(5, 10, 6, 'Casino Royale Producciones', 'Productora audiovisual independiente de cortometrajes.', 'https://img.com/casinoroyale.jpg', '20311113337', 'INDIVIDUO', '2026-06-18 10:10:00', 'P'), -- 10 = Cine Ficción
+(6, 9, 2, 'Compañía Circo Fuego', 'Colectivo de artistas callejeros y teatro de calle.', 'https://img.com/circofuego.jpg', '30111222334', 'COLECTIVO', '2026-06-21 11:00:00', 'A'); -- 9 = Circo y Murga
 -- -----------------------------------------------------
 -- 8. Integrantes (Relación N:M, 'esDueño' define administración)
 -- -----------------------------------------------------
@@ -170,11 +168,10 @@ INSERT INTO `cultura`.`Formularios` (`idCategoria`, `idCampo`, `orden`, `esOblig
 (4, 5, 1, 1, 0, 'A'); -- Audiovisual -> Equipos (Privado/Técnico)
 
 -- -----------------------------------------------------
--- 14. FormulariosSubcategoria (Campos ultra-específicos)
+-- 14. FormulariosSubcategoria (Corregido)
 -- -----------------------------------------------------
-INSERT INTO `cultura`.`FormulariosSubcategoria` (`idCampo`, `idSubcategoria`, `idCategoria`, `orden`, `esObligatorio`, `esPublico`, `estado`) VALUES
-(6, 1, 3, 1, 1, 1, 'A'); -- "Capacidad espectadores" solo para "Teatro de Texto" (Subcat 1 de Cat 3)
-
+INSERT INTO cultura.FormulariosSubcategoria (idCampo, idSubcategoria, orden, esObligatorio, esPublico, estado) VALUES
+(6, 7, 1, 1, 1, 'A'); -- "Capacidad espectadores" solo para "Teatro de Texto" (Subcat 7)
 -- -----------------------------------------------------
 -- 15. Respuestas a Campos (La data dinámica de los Actores)
 -- -----------------------------------------------------
@@ -190,12 +187,12 @@ INSERT INTO `cultura`.`RespuestasCampo` (`idCampo`, `idActor`, `valor`) VALUES
 -- -----------------------------------------------------
 -- 16. Ítems de Portafolio (Galería Pública de cada Actor)
 -- -----------------------------------------------------
-INSERT INTO `cultura`.`ItemsPortafolio` (`idItem`, `idActor`, `tipo`, `descripcion`, `url`, `orden`) VALUES
-(1, 1, 'IMAGEN', 'Poncho tucumano en telar', 'https://mi-servidor.com/tejidos/poncho.jpg', 1),
-(2, 2, 'LINK', 'Video de la presentación en Cosquín', 'https://youtube.com/watch?v=12345', 1),
-(3, 4, 'LINK', 'Videoclip oficial "Ruta 307"', 'https://youtube.com/watch?v=rutaza', 1),
-(4, 5, 'LINK', 'Reel de Cortometrajes 2025', 'https://vimeo.com/casinoroyale', 1),
-(5, 6, 'IMAGEN', 'Espectáculo de fuego en Plaza Independencia', 'https://img.com/circo_fuego1.jpg', 1),
-(6, 6, 'IMAGEN', 'Clown y malabares', 'https://img.com/circo_clown.jpg', 2);
+INSERT INTO `cultura`.`ItemsPortafolio` (`idItem`, `idActor`, `tipo`, `descripcion`, `url`) VALUES
+(1, 1, 'IMAGEN', 'Poncho tucumano en telar', 'https://mi-servidor.com/tejidos/poncho.jpg'),
+(2, 2, 'LINK', 'Video de la presentación en Cosquín', 'https://youtube.com/watch?v=12345'),
+(3, 4, 'LINK', 'Videoclip oficial "Ruta 307"', 'https://youtube.com/watch?v=rutaza'),
+(4, 5, 'LINK', 'Reel de Cortometrajes 2025', 'https://vimeo.com/casinoroyale'),
+(5, 6, 'IMAGEN', 'Espectáculo de fuego en Plaza Independencia', 'https://img.com/circo_fuego1.jpg'),
+(6, 6, 'IMAGEN', 'Clown y malabares', 'https://img.com/circo_clown.jpg');
 
 SET FOREIGN_KEY_CHECKS = 1;
