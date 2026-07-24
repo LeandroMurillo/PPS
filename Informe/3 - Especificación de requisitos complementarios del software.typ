@@ -114,7 +114,7 @@ La identidad pública de cada actor se complementa mediante un Portafolio, el cu
 
 - *Requisitos de usuario*: Los usuarios del sistema se dividen en cuatro perfiles claros: Administradores, Moderadores, Usuarios y Personas. Las interfaces deben ser _responsive_ (adaptables), intuitivas y fáciles de navegar, permitiendo que un usuario sin conocimientos técnicos pueda registrarse y cargar su actor cultural sin necesidad de capacitación previa. Asimismo, los administradores deben poder gestionar la plataforma con una curva de aprendizaje mínima.
 - *Requisitos tecnológicos*: La aplicación seguirá una arquitectura Cliente/Servidor sobre Internet.
-  - *Servidor*: Deberá estar configurado para soportar el entorno de ejecución Django y un motor de base de datos relacional robusto (que soporte sintaxis de comprobación de restricciones y tipos JSON, como MySQL 8.x o PostgreSQL), dimensionado para gestionar múltiples conexiones concurrentes.
+  - *Servidor*: Deberá estar configurado para soportar el entorno de ejecución NodeJS y un motor de base de datos relacional robusto (que soporte sintaxis de comprobación de restricciones y tipos JSON, como MySQL 8.x o PostgreSQL), dimensionado para gestionar múltiples conexiones concurrentes.
   - *Cliente*: La interfaz de usuario se ejecutará en el navegador web del cliente (Chrome, Firefox, Edge, Safari), comunicándose con el servidor mediante peticiones HTTP asíncronas (API REST).
 - *Disponibilidad*: La aplicación deberá operar en un régimen de 24x7 para permitir que las personas accedan a los datos públicos del sitio en todo momento.
 

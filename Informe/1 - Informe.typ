@@ -20,7 +20,7 @@
   meses.at(hoy.month() - 1) + " de " + str(hoy.year())
 )
 
-#set text(font: "Cantarell", size: 12pt, lang: "es")
+#set text(font: "Roboto", size: 12pt, lang: "es")
 
 #let arkheion(
   title: "",
@@ -33,9 +33,9 @@
 ) = {
   // Set the document's basic properties.
   set document(author: authors.map(a => a.name), title: title)
-  set page(
-    margin: (left: 31.7mm, right: 31.7mm, top: 25.4mm, bottom: 25.4mm),
-  )
+  // set page(
+  //   margin: (left: 31.7mm, right: 31.7mm, top: 25.4mm, bottom: 25.4mm),
+  // )
   show math.equation: set text(weight: 400)
   show math.equation: set block(spacing: 0.65em)
   set math.equation(numbering: "(1)")
@@ -195,7 +195,7 @@
 
 // CORRECCIÓN DE HYDRA Y ENCABEZADOS
 #set page(
-  margin: (left: 31.7mm, right: 31.7mm, top: 25.4mm, bottom: 25.4mm),
+  margin: (left: 25.4mm, right: 25.4mm, top: 25.4mm, bottom: 25.4mm),
 
   // Header corregido: Título a la izq, Autores a la derecha, Línea separadora
   header: [

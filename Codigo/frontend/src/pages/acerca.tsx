@@ -45,6 +45,11 @@ export default function AcercaDe() {
 				</Box>
 
 				<Typography variant="body2" color="text.secondary" paragraph>
+					Detrás de cada rincón de nuestro territorio,
+					hay una historia que contar y un talento por descubrir.
+				</Typography>
+
+				<Typography variant="body2" color="text.secondary" paragraph>
 					<strong>Copyright &copy; 2026 Leandro Murillo y César Ezequiel Herrera</strong>
 				</Typography>
 

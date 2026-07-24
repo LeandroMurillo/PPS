@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS `cultura`.`ItemsPortafolio` (
   `tipo` ENUM('IMAGEN', 'LINK', 'RRSS') NOT NULL,
   `descripcion` VARCHAR(455) NOT NULL COMMENT 'Ejemplo: \"Ultimo recital del Indio (2000). El pogo más grande de la historia\"\n               \"Enlace a Facebook:\"',
   `url` VARCHAR(245) NOT NULL,
+  `fechaCreacion` DATETIME NOT NULL,
   PRIMARY KEY (`idItem`),
   INDEX `fk_ItemsPortafolio_Actores1_idx` (`idActor` ASC) VISIBLE,
   CONSTRAINT `fk_ItemsPortafolio_Actores1`

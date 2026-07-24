@@ -52,6 +52,30 @@
 
 = Anexo: Listado de Stored Procedures
 
+/*TODO
+- sp_publico_dame_ficha_actor
+Descripción: Devuelve la ficha tecnica publica de un actor. Sus datos de actor cultural y sus respuestas publicas del formulario.
+IN: pIdActor int(11)
+
+- sp_usuario_activar
+- sp_usuario_baja_fisica
+- sp_actor_aprobar_rechazar
+- sp_actor_baja_logica
+- sp_agrupacion_agregar_integrante
+- sp_formularios_obtener_esquema
+- sp_formularios_guardar_respuestas
+- sp_admin_crear_convocatoria
+- sp_actor_postular_convocatoria
+- sp_actor_agregar_item_portafolio
+
+- sp_publico_mapa_actores_buscar ()
+
+- sp_actor_perfil_publico : Trae la información principal del actor cruzando la tabla Actores , su ubicación en Ubicaciones y su galería en ItemsPortafolio . Se debe excluir estrictamente la información sensible y los datos de contacto privado personal del resultado público.
+
+
+
+*/
+
 #text(size: 8pt)[
 
   #show table: set par(justify: false)
