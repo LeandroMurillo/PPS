@@ -1,3 +1,4 @@
+import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
@@ -19,8 +20,9 @@ export default [
 		},
 		rules: {
 			'react/react-in-jsx-scope': 'off',
-			"@typescript-eslint/ban-ts-comment": "off"
+			'@typescript-eslint/ban-ts-comment': 'off',
 			// "react/jsx-uses-react": "off",
 		},
 	},
+	eslintConfigPrettier,
 ];

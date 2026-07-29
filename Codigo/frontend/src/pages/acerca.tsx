@@ -26,7 +26,7 @@ export default function AcercaDe() {
 					border: '1px solid',
 					borderColor: isDarkMode ? '#333333' : '#eaeaea',
 					borderRadius: 2,
-					backgroundColor: isDarkMode ? '#121212' : '#fdfdfc'
+					backgroundColor: isDarkMode ? '#121212' : '#fdfdfc',
 				}}
 			>
 				<Box sx={{ textAlign: 'center', mb: 3 }}>
@@ -45,8 +45,7 @@ export default function AcercaDe() {
 				</Box>
 
 				<Typography variant="body2" color="text.secondary" paragraph>
-					Detrás de cada rincón de nuestro territorio,
-					hay una historia que contar y un talento por descubrir.
+					Detrás de cada rincón de nuestro territorio, hay una historia que contar y un talento por descubrir.
 				</Typography>
 
 				<Typography variant="body2" color="text.secondary" paragraph>
@@ -60,15 +59,17 @@ export default function AcercaDe() {
 					Leandro Murillo y César Ezequiel Herrera.
 				</Typography>
 
-				<Box sx={{
-					backgroundColor: isDarkMode ? '#1e1e1e' : '#f9f9f9',
-					p: 2,
-					borderRadius: 1,
-					overflowX: 'auto',
-					fontFamily: 'monospace',
-					fontSize: '0.8rem',
-					color: isDarkMode ? '#cccccc' : '#444444'
-				}}>
+				<Box
+					sx={{
+						backgroundColor: isDarkMode ? '#1e1e1e' : '#f9f9f9',
+						p: 2,
+						borderRadius: 1,
+						overflowX: 'auto',
+						fontFamily: 'monospace',
+						fontSize: '0.8rem',
+						color: isDarkMode ? '#cccccc' : '#444444',
+					}}
+				>
 					<Typography variant="body2" component="pre" sx={{ margin: 0, whiteSpace: 'pre-wrap' }}>
 						{`Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

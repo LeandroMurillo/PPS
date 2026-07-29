@@ -178,7 +178,7 @@ export const employeesDataSource: DataSource<Employee> = {
 		joinDate: z.string({ error: 'Join date is required' }),
 		role: z.enum(['Market', 'Finance', 'Development'], {
 			error: 'Invalid role',
-		})
+		}),
 	})['~standard'].validate,
 };
 

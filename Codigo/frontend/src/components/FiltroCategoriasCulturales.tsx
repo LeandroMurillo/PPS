@@ -92,13 +92,13 @@ export default function FiltroCategoriasCulturales({
 			>
 				<TextField
 					fullWidth
-					label='Buscar'
-					placeholder='Buscar por actor cultural, localidad, categoría...'
+					label="Buscar"
+					placeholder="Buscar por actor cultural, localidad, categoría..."
 					value={busqueda}
 					onChange={handleBusquedaChange}
 					InputProps={{
 						startAdornment: (
-							<InputAdornment position='start'>
+							<InputAdornment position="start">
 								<SearchIcon />
 							</InputAdornment>
 						),
@@ -106,16 +106,16 @@ export default function FiltroCategoriasCulturales({
 				/>
 
 				<FormControl fullWidth>
-					<InputLabel id='departamento-label'>Departamento</InputLabel>
+					<InputLabel id="departamento-label">Departamento</InputLabel>
 
 					<Select
-						labelId='departamento-label'
-						id='departamento-select'
+						labelId="departamento-label"
+						id="departamento-select"
 						value={departamentoSeleccionado}
-						label='Departamento'
+						label="Departamento"
 						onChange={handleDepartamentoChange}
 					>
-						<MenuItem value=''>
+						<MenuItem value="">
 							<em>Todos</em>
 						</MenuItem>
 
@@ -128,15 +128,15 @@ export default function FiltroCategoriasCulturales({
 				</FormControl>
 
 				<FormControl fullWidth>
-					<InputLabel id='categorias-culturales-label'>Categorías</InputLabel>
+					<InputLabel id="categorias-culturales-label">Categorías</InputLabel>
 
 					<Select
-						labelId='categorias-culturales-label'
-						id='categorias-culturales-select'
+						labelId="categorias-culturales-label"
+						id="categorias-culturales-select"
 						multiple
 						value={categoriasSeleccionadas}
 						onChange={handleCategoriasChange}
-						input={<OutlinedInput label='Categorías' />}
+						input={<OutlinedInput label="Categorías" />}
 						renderValue={(selected) => (
 							<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
 								{selected.map((categoria) => (

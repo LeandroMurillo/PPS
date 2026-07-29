@@ -84,10 +84,12 @@ const ActorPortfolio = () => {
 
 			{/* Grid para dividir el Carrusel y el Mapa */}
 			<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4, mb: 4 }}>
-
 				{/* COLUMNA IZQUIERDA: Carrusel de imágenes */}
 				<Box>
-					<Paper elevation={3} sx={{ position: 'relative', overflow: 'hidden', borderRadius: 2, height: 300 }}>
+					<Paper
+						elevation={3}
+						sx={{ position: 'relative', overflow: 'hidden', borderRadius: 2, height: 300 }}
+					>
 						<img
 							src={MOCK_IMAGES[currentImageIndex]}
 							alt={`Imagen ${currentImageIndex + 1} de ${actor.name}`}
@@ -95,11 +97,34 @@ const ActorPortfolio = () => {
 						/>
 
 						{/* Controles del carrusel */}
-						<Box sx={{ position: 'absolute', top: '50%', left: 0, right: 0, display: 'flex', justifyContent: 'space-between', px: 1, transform: 'translateY(-50%)' }}>
-							<IconButton onClick={handlePrevImage} sx={{ bgcolor: 'rgba(255,255,255,0.7)', '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}>
+						<Box
+							sx={{
+								position: 'absolute',
+								top: '50%',
+								left: 0,
+								right: 0,
+								display: 'flex',
+								justifyContent: 'space-between',
+								px: 1,
+								transform: 'translateY(-50%)',
+							}}
+						>
+							<IconButton
+								onClick={handlePrevImage}
+								sx={{
+									bgcolor: 'rgba(255,255,255,0.7)',
+									'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+								}}
+							>
 								<ArrowBackIosNewIcon fontSize="small" />
 							</IconButton>
-							<IconButton onClick={handleNextImage} sx={{ bgcolor: 'rgba(255,255,255,0.7)', '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}>
+							<IconButton
+								onClick={handleNextImage}
+								sx={{
+									bgcolor: 'rgba(255,255,255,0.7)',
+									'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+								}}
+							>
 								<ArrowForwardIosIcon fontSize="small" />
 							</IconButton>
 						</Box>
@@ -130,8 +155,7 @@ const ActorPortfolio = () => {
 								stroke
 								color="#ffffff"
 								weight={2}
-							>
-							</CircleMarker>
+							></CircleMarker>
 						</MapContainer>
 					</Paper>
 				</Box>

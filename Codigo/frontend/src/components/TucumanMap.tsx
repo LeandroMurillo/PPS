@@ -34,12 +34,15 @@ type CulturalPoint = {
 
 // Función auxiliar para normalizar texto (quitar acentos y pasar a minúsculas)
 const normalizeText = (text: string) => {
-	return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+	return text
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase();
 };
 
 function MapBoundsUpdater({
 	departamentoSeleccionado,
-	departamentosGeoJson
+	departamentosGeoJson,
 }: {
 	departamentoSeleccionado: string;
 	departamentosGeoJson: FeatureCollection<Geometry, DepartmentProperties> | null;
@@ -57,7 +60,8 @@ function MapBoundsUpdater({
 			// Buscamos el polígono correspondiente al departamento seleccionado
 			const feature = departamentosGeoJson.features.find((f: Feature<Geometry, DepartmentProperties>) => {
 				const properties = f.properties || {};
-				const isDepartment = properties.admin_level === '5' || (properties.name && properties.name.includes('Departamento'));
+				const isDepartment =
+					properties.admin_level === '5' || (properties.name && properties.name.includes('Departamento'));
 				if (!isDepartment) return false;
 
 				const nombreDepto = properties.name?.replace('Departamento ', '') || '';
@@ -101,7 +105,7 @@ export default function TucumanMap() {
 				// 3. Cargamos ambos GeoJSON en paralelo
 				const [resDeptos, resPuntos] = await Promise.all([
 					fetch(DEPARTAMENTOS_GEOJSON_URL, { signal: controller.signal }),
-					fetch(PUNTOS_JSON_URL, { signal: controller.signal })
+					fetch(PUNTOS_JSON_URL, { signal: controller.signal }),
 				]);
 
 				if (!resDeptos.ok || !resPuntos.ok) {
@@ -120,27 +124,33 @@ export default function TucumanMap() {
 					const pt = turfPoint([positionArray[1], positionArray[0]]);
 
 					// Buscamos qué polígono contiene al punto
-					const departamentoEncontrado = deptosData.features.find((feature: Feature<Geometry, DepartmentProperties>) => {
-						const properties = feature.properties || {};
-						// Evitamos que haga "match" con el polígono de toda la provincia entera
-						// Forzamos a que sea un departamento (admin_level 5 o que su nombre tenga la palabra)
-						const isDepartment = properties.admin_level === '5' || (properties.name && properties.name.includes('Departamento'));
+					const departamentoEncontrado = deptosData.features.find(
+						(feature: Feature<Geometry, DepartmentProperties>) => {
+							const properties = feature.properties || {};
+							// Evitamos que haga "match" con el polígono de toda la provincia entera
+							// Forzamos a que sea un departamento (admin_level 5 o que su nombre tenga la palabra)
+							const isDepartment =
+								properties.admin_level === '5' ||
+								(properties.name && properties.name.includes('Departamento'));
 
-						return isDepartment && booleanPointInPolygon(pt, feature as Feature<Polygon | MultiPolygon>);
-					});
+							return (
+								isDepartment && booleanPointInPolygon(pt, feature as Feature<Polygon | MultiPolygon>)
+							);
+						},
+					);
 
 					let nombreDepto = punto.departamento; // Fallback al original por si acaso
 
 					if (departamentoEncontrado) {
 						// Limpiamos el texto, ej: "Departamento Famaillá" -> "Famaillá"
-						nombreDepto = departamentoEncontrado.properties?.name?.replace('Departamento ', '') || nombreDepto;
+						nombreDepto =
+							departamentoEncontrado.properties?.name?.replace('Departamento ', '') || nombreDepto;
 					}
 
 					return { ...punto, departamento: nombreDepto };
 				});
 
 				setPuntosProcesados(puntosConDepartamentoDinamico);
-
 			} catch (error) {
 				if (!(error instanceof DOMException && error.name === 'AbortError')) {
 					console.error('Error cargando datos del mapa:', error);
@@ -160,19 +170,17 @@ export default function TucumanMap() {
 
 		// Combinar toda la data del punto en un solo string normalizado
 		const pointDataCombined = normalizeText(
-			`${point.name} ${point.description} ${point.category} ${point.departamento}`
+			`${point.name} ${point.description} ${point.category} ${point.departamento}`,
 		);
 
 		// Verificar que TODOS los términos buscados estén en la data del punto (sin importar el orden)
 		const coincideBusqueda =
-			searchTerms.length === 0 ||
-			searchTerms.every((term) => pointDataCombined.includes(term));
+			searchTerms.length === 0 || searchTerms.every((term) => pointDataCombined.includes(term));
 
 		const coincideCategoria =
 			categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(point.category);
 
-		const coincideDepartamento =
-			departamentoSeleccionado === '' || point.departamento === departamentoSeleccionado;
+		const coincideDepartamento = departamentoSeleccionado === '' || point.departamento === departamentoSeleccionado;
 
 		return coincideBusqueda && coincideCategoria && coincideDepartamento;
 	});
@@ -192,9 +200,7 @@ export default function TucumanMap() {
 				},
 				// Aplicar filtro a los mapas base si es modo oscuro
 				'& .leaflet-tile-pane': {
-					filter: isDarkMode
-						? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)'
-						: 'none',
+					filter: isDarkMode ? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)' : 'none',
 					transition: 'filter 0.3s ease',
 				},
 				// Aplicar colores del tema actual a los popups (el contenedor y la flecha)
@@ -223,7 +229,9 @@ export default function TucumanMap() {
 				},
 				// Aplicar colores al texto de atribución de Leaflet
 				'& .leaflet-control-attribution': {
-					backgroundColor: isDarkMode ? 'rgba(30, 30, 30, 0.8) !important' : 'rgba(255, 255, 255, 0.8) !important',
+					backgroundColor: isDarkMode
+						? 'rgba(30, 30, 30, 0.8) !important'
+						: 'rgba(255, 255, 255, 0.8) !important',
 					color: isDarkMode ? '#cccccc !important' : '#333333 !important',
 				},
 				'& .leaflet-control-attribution a': {
@@ -266,7 +274,7 @@ export default function TucumanMap() {
 			>
 				<TileLayer
 					attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-					url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 				/>
 
 				{/* Componente invisible que actualiza la cámara al cambiar de departamento */}
@@ -277,17 +285,19 @@ export default function TucumanMap() {
 
 				{/* 6. Renderizar las líneas divisorias de los Departamentos */}
 				{departamentosGeoJson && (
-					<Pane name='departamentos-borders' style={{ zIndex: 690 }}>
+					<Pane name="departamentos-borders" style={{ zIndex: 690 }}>
 						<GeoJSON
 							data={departamentosGeoJson}
 							interactive={false}
-							filter={(feature) => feature.geometry.type !== 'Point' && feature.geometry.type !== 'MultiPoint'}
+							filter={(feature) =>
+								feature.geometry.type !== 'Point' && feature.geometry.type !== 'MultiPoint'
+							}
 							style={{
 								color: isDarkMode ? '#90caf9' : '#666666',
 								weight: 1,
 								dashArray: '4 4', // Línea punteada para departamentos
 								fillOpacity: 0,
-								fillColor: isDarkMode ? '#1976d2' : '#e3f2fd'
+								fillColor: isDarkMode ? '#1976d2' : '#e3f2fd',
 							}}
 						/>
 					</Pane>
@@ -298,11 +308,11 @@ export default function TucumanMap() {
 					<CircleMarker
 						key={point.id}
 						center={point.position}
-						fillColor='#1976d2'
+						fillColor="#1976d2"
 						fillOpacity={0.85}
 						radius={8}
 						stroke
-						color='#ffffff'
+						color="#ffffff"
 						weight={2}
 					>
 						<Popup>
@@ -313,9 +323,7 @@ export default function TucumanMap() {
 							<small>Categoría: {point.category}</small>
 							<br />
 							<Box sx={{ mt: 1 }}>
-								<Link to={`/actores/${point.id}`}>
-									Ver portafolio
-								</Link>
+								<Link to={`/actores/${point.id}`}>Ver portafolio</Link>
 							</Box>
 						</Popup>
 					</CircleMarker>

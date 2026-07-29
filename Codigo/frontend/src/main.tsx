@@ -22,7 +22,15 @@ const router = createBrowserRouter([
 						Component: Mapa,
 					},
 					{
-						path: 'actores',
+						path: 'actoresPublico',
+						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'actoresUsuario',
+						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'convocatoriasUsuario',
 						Component: EmployeesCrudPage,
 					},
 					{
@@ -34,11 +42,19 @@ const router = createBrowserRouter([
 						Component: EmployeesCrudPage,
 					},
 					{
+						path: 'convocatoriasAdmin',
+						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'categorias',
+						Component: EmployeesCrudPage,
+					},
+					{
 						path: 'acerca',
 						Component: AcercaDe,
 					},
 					{
-						path: "/actores/:id",
+						path: '/actores/:id',
 						element: <ActorPortfolio />,
 					},
 				],

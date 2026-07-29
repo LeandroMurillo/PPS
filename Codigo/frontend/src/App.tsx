@@ -1,11 +1,14 @@
 import * as React from 'react';
 import { Outlet } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
+import AddCommentIcon from '@mui/icons-material/AddComment';
+import AnnouncementIcon from '@mui/icons-material/Announcement';
+import CategoryIcon from '@mui/icons-material/Category';
 import ChecklistIcon from '@mui/icons-material/Checklist';
+import GroupIcon from '@mui/icons-material/Group';
 import InfoIcon from '@mui/icons-material/Info';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
-import PersonIcon from '@mui/icons-material/Person';
 import type { Navigation } from '@toolpad/core/AppProvider';
 
 const NAVIGATION: Navigation = [
@@ -19,8 +22,22 @@ const NAVIGATION: Navigation = [
 	},
 	{
 		title: 'Actores',
-		segment: 'actores',
+		segment: 'actoresPublico',
 		icon: <PeopleIcon />,
+	},
+	{
+		kind: 'header',
+		title: 'Usuario',
+	},
+	{
+		title: 'Mis actores',
+		segment: 'actoresUsuario',
+		icon: <PeopleIcon />,
+	},
+	{
+		title: 'Convocatorias',
+		segment: 'convocatoriasUsuario',
+		icon: <AnnouncementIcon />,
 	},
 	{
 		kind: 'header',
@@ -34,7 +51,17 @@ const NAVIGATION: Navigation = [
 	{
 		title: 'Usuarios',
 		segment: 'usuarios',
-		icon: <PersonIcon />,
+		icon: <GroupIcon />,
+	},
+	{
+		title: 'Convocatorias',
+		segment: 'convocatoriasAdmin',
+		icon: <AddCommentIcon />,
+	},
+	{
+		title: 'Categorías',
+		segment: 'categorias',
+		icon: <CategoryIcon />,
 	},
 	{
 		kind: 'divider',
