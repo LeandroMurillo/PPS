@@ -5,84 +5,84 @@
 
 ALTER TABLE `cultura`.`ActividadesArca`
   ADD CONSTRAINT `chk_ActividadesArca_codigo`
-    CHECK (`codigo` REGEXP '^[0-9]{6}$') ENFORCED,
+    CHECK (`codigo` REGEXP '^[0-9]{6}$'),
   ADD CONSTRAINT `chk_ActividadesArca_descripcion`
-    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '') ENFORCED;
+    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '');
 
 ALTER TABLE `cultura`.`Usuarios`
   ADD CONSTRAINT `chk_Usuarios_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '') ENFORCED,
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
   ADD CONSTRAINT `chk_Usuarios_apellido`
-    CHECK (`apellido` = TRIM(`apellido`) AND `apellido` <> '') ENFORCED,
+    CHECK (`apellido` = TRIM(`apellido`) AND `apellido` <> ''),
   ADD CONSTRAINT `chk_Usuarios_nacionalidad`
-    CHECK (`nacionalidad` = TRIM(`nacionalidad`) AND `nacionalidad` <> '') ENFORCED,
+    CHECK (`nacionalidad` = TRIM(`nacionalidad`) AND `nacionalidad` <> ''),
   ADD CONSTRAINT `chk_Usuarios_email`
     CHECK (
       `email` = TRIM(`email`)
       AND `email` REGEXP '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
-    ) ENFORCED,
+    ),
   ADD CONSTRAINT `chk_Usuarios_contrasena_hash`
     CHECK (
       `contraseña` = TRIM(`contraseña`)
       AND CHAR_LENGTH(`contraseña`) >= 60
-    ) ENFORCED,
+    ),
   ADD CONSTRAINT `chk_Usuarios_CUIL_formato`
-    CHECK (`CUIL` REGEXP '^[0-9]{11}$') ENFORCED,
+    CHECK (`CUIL` REGEXP '^[0-9]{11}$'),
   ADD CONSTRAINT `chk_Usuarios_fechas`
-    CHECK (`fechaNacimiento` < `fechaRegistro`) ENFORCED;
+    CHECK (`fechaNacimiento` < `fechaRegistro`);
 
 ALTER TABLE `cultura`.`Ubicaciones`
   ADD CONSTRAINT `chk_Ubicaciones_provincia`
-    CHECK (`provincia` = TRIM(`provincia`) AND `provincia` <> '') ENFORCED,
+    CHECK (`provincia` = TRIM(`provincia`) AND `provincia` <> ''),
   ADD CONSTRAINT `chk_Ubicaciones_departamento`
-    CHECK (`departamento` = TRIM(`departamento`) AND `departamento` <> '') ENFORCED,
+    CHECK (`departamento` = TRIM(`departamento`) AND `departamento` <> ''),
   ADD CONSTRAINT `chk_Ubicaciones_localidad`
-    CHECK (`localidad` = TRIM(`localidad`) AND `localidad` <> '') ENFORCED,
+    CHECK (`localidad` = TRIM(`localidad`) AND `localidad` <> ''),
   ADD CONSTRAINT `chk_Ubicaciones_direccion`
-    CHECK (`direccion` = TRIM(`direccion`) AND `direccion` <> '') ENFORCED,
+    CHECK (`direccion` = TRIM(`direccion`) AND `direccion` <> ''),
   ADD CONSTRAINT `chk_Ubicaciones_latitud`
-    CHECK (`latitud` BETWEEN -90.00000000 AND 90.00000000) ENFORCED,
+    CHECK (`latitud` BETWEEN -90.00000000 AND 90.00000000),
   ADD CONSTRAINT `chk_Ubicaciones_longitud`
-    CHECK (`longitud` BETWEEN -180.00000000 AND 180.00000000) ENFORCED,
+    CHECK (`longitud` BETWEEN -180.00000000 AND 180.00000000),
   ADD CONSTRAINT `chk_Ubicaciones_esPublica`
-    CHECK (`esPublica` IN (0, 1)) ENFORCED;
+    CHECK (`esPublica` IN (0, 1));
 
 ALTER TABLE `cultura`.`Categorias`
   ADD CONSTRAINT `chk_Categorias_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '') ENFORCED;
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '');
 
 ALTER TABLE `cultura`.`Subcategorias`
   ADD CONSTRAINT `chk_Subcategorias_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '') ENFORCED;
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '');
 
 ALTER TABLE `cultura`.`Actores`
   ADD CONSTRAINT `chk_Actores_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '') ENFORCED,
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
   ADD CONSTRAINT `chk_Actores_descripcion`
-    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '') ENFORCED,
+    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> ''),
   ADD CONSTRAINT `chk_Actores_fotoPerfilUrl`
     CHECK (
       `fotoPerfilUrl` IS NULL
       OR `fotoPerfilUrl` REGEXP '^https?://[^[:space:]]+$'
-    ) ENFORCED,
+    ),
   ADD CONSTRAINT `chk_Actores_cuit_formato`
-    CHECK (`cuit` IS NULL OR `cuit` REGEXP '^[0-9]{11}$') ENFORCED;
+    CHECK (`cuit` IS NULL OR `cuit` REGEXP '^[0-9]{11}$');
 
 ALTER TABLE `cultura`.`Eventos`
   ADD CONSTRAINT `chk_Eventos_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '') ENFORCED,
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
   ADD CONSTRAINT `chk_Eventos_descripcion`
-    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '') ENFORCED;
+    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '');
 
 ALTER TABLE `cultura`.`ItemsPortafolio`
   ADD CONSTRAINT `chk_ItemsPortafolio_descripcion`
-    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '') ENFORCED,
+    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> ''),
   ADD CONSTRAINT `chk_ItemsPortafolio_url`
-    CHECK (`url` REGEXP '^https?://[^[:space:]]+$') ENFORCED;
+    CHECK (`url` REGEXP '^https?://[^[:space:]]+$');
 
 ALTER TABLE `cultura`.`Preguntas`
   ADD CONSTRAINT `chk_Preguntas_texto`
-    CHECK (`pregunta` = TRIM(`pregunta`) AND `pregunta` <> '') ENFORCED,
+    CHECK (`pregunta` = TRIM(`pregunta`) AND `pregunta` <> ''),
   ADD CONSTRAINT `chk_Preguntas_opciones_segun_tipo`
     CHECK (
       (
@@ -96,66 +96,66 @@ ALTER TABLE `cultura`.`Preguntas`
         `tipoDato` NOT IN ('OPCION_UNICA', 'OPCION_MULTIPLE')
         AND `opciones` IS NULL
       )
-    ) ENFORCED;
+    );
 
 ALTER TABLE `cultura`.`Integrantes`
   ADD CONSTRAINT `chk_Integrantes_rol`
-    CHECK (`rol` = TRIM(`rol`) AND `rol` <> '') ENFORCED,
+    CHECK (`rol` = TRIM(`rol`) AND `rol` <> ''),
   ADD CONSTRAINT `chk_Integrantes_esDueno`
-    CHECK (`esDueño` IN (0, 1)) ENFORCED,
+    CHECK (`esDueño` IN (0, 1)),
   ADD CONSTRAINT `chk_Integrantes_dueno_rol`
     CHECK (
       (`esDueño` = 1 AND `rol` = 'Dueño')
       OR
       (`esDueño` = 0 AND `rol` <> 'Dueño')
-    ) ENFORCED;
+    );
 
 ALTER TABLE `cultura`.`Convocatorias`
   ADD CONSTRAINT `chk_Convocatorias_titulo`
-    CHECK (`titulo` = TRIM(`titulo`) AND `titulo` <> '') ENFORCED,
+    CHECK (`titulo` = TRIM(`titulo`) AND `titulo` <> ''),
   ADD CONSTRAINT `chk_Convocatorias_descripcion`
-    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '') ENFORCED,
+    CHECK (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> ''),
   ADD CONSTRAINT `chk_Convocatorias_fechas`
-    CHECK (`fechaCierre` > `fechaCreacion`) ENFORCED;
+    CHECK (`fechaCierre` > `fechaCreacion`);
 
 ALTER TABLE `cultura`.`Formularios`
   ADD CONSTRAINT `chk_Formularios_titulo`
-    CHECK (`titulo` = TRIM(`titulo`) AND `titulo` <> '') ENFORCED,
+    CHECK (`titulo` = TRIM(`titulo`) AND `titulo` <> ''),
   ADD CONSTRAINT `chk_Formularios_descripcion`
     CHECK (
       `descripcion` IS NULL
       OR (`descripcion` = TRIM(`descripcion`) AND `descripcion` <> '')
-    ) ENFORCED;
+    );
 
 ALTER TABLE `cultura`.`PreguntasFormulario`
   ADD CONSTRAINT `chk_PreguntasFormulario_orden`
-    CHECK (`orden` > 0) ENFORCED,
+    CHECK (`orden` > 0),
   ADD CONSTRAINT `chk_PreguntasFormulario_esObligatorio`
-    CHECK (`esObligatorio` IN (0, 1)) ENFORCED,
+    CHECK (`esObligatorio` IN (0, 1)),
   ADD CONSTRAINT `chk_PreguntasFormulario_esPublico`
-    CHECK (`esPublico` IN (0, 1)) ENFORCED,
+    CHECK (`esPublico` IN (0, 1)),
   ADD CONSTRAINT `chk_PreguntasFormulario_no_autorreemplazo`
     CHECK (
       `idPreguntaReemplazada` IS NULL
       OR `idPreguntaReemplazada` <> `idPregunta`
-    ) ENFORCED,
+    ),
   ADD CONSTRAINT `chk_PreguntasFormulario_estado_fecha`
     CHECK (
       (`estado` = 'A' AND `fechaDesactivacion` IS NULL)
       OR
       (`estado` = 'I' AND `fechaDesactivacion` IS NOT NULL)
-    ) ENFORCED,
+    ),
   ADD CONSTRAINT `chk_PreguntasFormulario_fechas`
     CHECK (
       `fechaDesactivacion` IS NULL
       OR `fechaDesactivacion` >= `fechaIncorporacion`
-    ) ENFORCED;
+    );
 
 ALTER TABLE `cultura`.`Respuestas`
   ADD CONSTRAINT `chk_Respuestas_valor_no_nulo_json`
-    CHECK (JSON_TYPE(`valor`) <> 'NULL') ENFORCED,
+    CHECK (JSON_TYPE(`valor`) <> 'NULL'),
   ADD CONSTRAINT `chk_Respuestas_fechas`
     CHECK (
       `fechaUltimaModificacion` >= `fechaCreacion`
       AND `fechaUltimaConfirmacion` >= `fechaCreacion`
-    ) ENFORCED;
+    );

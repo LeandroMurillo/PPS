@@ -18,7 +18,7 @@ DROP SCHEMA IF EXISTS `cultura` ;
 -- -----------------------------------------------------
 -- Schema cultura
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `cultura` DEFAULT CHARACTER SET utf8 ;
+CREATE SCHEMA IF NOT EXISTS `cultura`;
 USE `cultura` ;
 
 -- -----------------------------------------------------
