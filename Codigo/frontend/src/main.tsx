@@ -6,6 +6,7 @@ import Layout from './layouts/dashboard';
 import Mapa from './pages/mapa';
 import EmployeesCrudPage from './pages/employees';
 import ActorPortfolio from './pages/ActorPortfolio';
+import ActoresPublico from './pages/ActoresPublico';
 import AcercaDe from './pages/acerca';
 
 const router = createBrowserRouter([
@@ -23,7 +24,7 @@ const router = createBrowserRouter([
 					},
 					{
 						path: 'actoresPublico',
-						Component: EmployeesCrudPage,
+						Component: ActoresPublico,
 					},
 					{
 						path: 'actoresUsuario',
