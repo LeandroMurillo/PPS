@@ -172,7 +172,7 @@ function ActorCard({ actor }: { actor: (typeof ACTORES_PUBLICOS)[0] }) {
 				flexDirection: 'column',
 				boxShadow: 2,
 				overflow: 'hidden',
-				transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+				transition: 'transform 0.5s ease-out, box-shadow 0.5s ease-out',
 				'&:hover': {
 					transform: 'scale(1.01)', // subtle enlargement
 					boxShadow: 6, // stronger shadow for depth

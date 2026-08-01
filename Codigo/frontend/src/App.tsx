@@ -81,6 +81,7 @@ const NAVIGATION: Navigation = [
 
 const BRANDING = {
 	title: 'Mosaico Cultural',
+	logo: <img src="/favicon.svg" alt="Mosaico Cultural" style={{ width: 24, height: 24 }} />,
 };
 
 export default function App() {
