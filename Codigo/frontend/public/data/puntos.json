@@ -398,5 +398,41 @@
 		"description": "Salón anual de fotografía artística que premia las mejores capturas de paisajes y retratos tucumanos.",
 		"category": "Fotografía",
 		"position": [-27.3465, -65.599]
+	},
+	{
+		"id": 51,
+		"name": "Tejidos Ancestrales María",
+		"description": "Producción de ponchos y ruanas en telar criollo. Las carpinchas, con sus anteojos de lectura y ovillos de colores, tejen los lazos de la comunidad.",
+		"category": "Artesanía",
+		"departamento": "Tafí del Valle",
+		"fotoUrl": "https://images.unsplash.com/photo-1606722590583-6951b5ea92ad?auto=format&fit=crop&w=600&q=80",
+		"position": [-26.8528, -65.7098]
+	},
+	{
+		"id": 52,
+		"name": "Los Tucu Cantores",
+		"description": "Agrupación folclórica con más de 10 años de trayectoria. Con trajes de lentejuelas que brillan más que el sol en el río.",
+		"category": "Música",
+		"departamento": "Capital",
+		"fotoUrl": "https://images.unsplash.com/photo-1764352104218-2d3a899ce36c?auto=format&fit=crop&w=600&q=80",
+		"position": [-26.816, -65.2105]
+	},
+	{
+		"id": 53,
+		"name": "Teatro Alberdi",
+		"description": "Espacio cultural histórico administrado por la UNT. Entre mesas con termos listos, los socios acomodan sus mejores galas.",
+		"category": "Artes Escénicas",
+		"departamento": "Capital",
+		"fotoUrl": "https://images.unsplash.com/photo-1773332598451-8a0a59941912?auto=format&fit=crop&w=600&q=80",
+		"position": [-26.816, -65.2105]
+	},
+	{
+		"id": 54,
+		"name": "Los Carpinchos del Alba",
+		"description": "Banda de Indie Rock emergente. Melenas al viento que harían envidiar al mismísimo Ariel, aparecen Los Carpinchos.",
+		"category": "Música",
+		"departamento": "Yerba Buena",
+		"fotoUrl": "https://images.unsplash.com/photo-1614793351079-11dd79b922ba?auto=format&fit=crop&w=600&q=80",
+		"position": [-26.81298, -65.29543]
 	}
 ]

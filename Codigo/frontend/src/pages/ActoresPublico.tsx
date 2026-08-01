@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router';
 import {
 	Alert,
 	Card,
+	CardActionArea,
 	CardContent,
 	CardMedia,
 	Typography,
@@ -15,73 +17,85 @@ import {
 	InputAdornment,
 	Chip,
 	Stack,
+	CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 
-// --- Datos Mock basados en la Base de Datos ---
-// Combinamos los datos de Actores, Categorías y Ubicaciones para la vista pública[cite: 3].
-const ACTORES_PUBLICOS = [
-	{
-		id: 1,
-		nombre: 'Tejidos Ancestrales María',
-		descripcion:
-			'Producción de ponchos y ruanas en telar criollo. Las carpinchas, con sus anteojos de lectura y ovillos de colores, tejen los lazos de la comunidad.',
-		categoria: 'Artesanía',
-		departamento: 'Tafí del Valle',
-		fotoUrl: 'https://images.unsplash.com/photo-1606722590583-6951b5ea92ad?auto=format&fit=crop&w=600&q=80',
-	},
-	{
-		id: 2,
-		nombre: 'Los Tucu Cantores',
-		descripcion:
-			'Agrupación folclórica con más de 10 años de trayectoria. Con trajes de lentejuelas que brillan más que el sol en el río.',
-		categoria: 'Música',
-		departamento: 'Capital',
-		fotoUrl: 'https://images.unsplash.com/photo-1764352104218-2d3a899ce36c?auto=format&fit=crop&w=600&q=80',
-	},
-	{
-		id: 3,
-		nombre: 'Teatro Alberdi',
-		descripcion:
-			'Espacio cultural histórico administrado por la UNT. Entre mesas con termos listos, los socios acomodan sus mejores galas.',
-		categoria: 'Artes Escénicas',
-		departamento: 'Capital',
-		fotoUrl: 'https://images.unsplash.com/photo-1773332598451-8a0a59941912?auto=format&fit=crop&w=600&q=80',
-	},
-	{
-		id: 4,
-		nombre: 'Los Carpinchos del Alba',
-		descripcion:
-			'Banda de Indie Rock emergente. Melenas al viento que harían envidiar al mismísimo Ariel, aparecen Los Carpinchos.',
-		categoria: 'Música',
-		departamento: 'Yerba Buena',
-		fotoUrl: 'https://images.unsplash.com/photo-1614793351079-11dd79b922ba?auto=format&fit=crop&w=600&q=80',
-	},
-];
-
-const CATEGORIAS = ['Todas', 'Música', 'Artesanía', 'Artes Escénicas', 'Audiovisual', 'Literatura', 'Artes Visuales'];
-const DEPARTAMENTOS = ['Todos', 'Capital', 'Tafí Viejo', 'Tafí del Valle', 'Yerba Buena', 'Lules'];
+// --- Tipo de dato tal como viene de /data/puntos.json ---
+type Actor = {
+	id: number;
+	name: string;
+	description: string;
+	category: string;
+	departamento: string;
+	position: [number, number];
+	fotoUrl: string;
+};
 
 // --- Componente Principal ---
 export default function ListaActoresPublica() {
+	// --- Datos cargados desde puntos.json ---
+	const [actores, setActores] = useState<Actor[]>([]);
+	const [cargando, setCargando] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		fetch('/data/puntos.json')
+			.then((res) => res.json())
+			.then((data: Actor[]) => {
+				setActores(data);
+				setCargando(false);
+			})
+			.catch(() => {
+				setError('No se pudieron cargar los actores culturales.');
+				setCargando(false);
+			});
+	}, []);
+
 	// --- Estados para los filtros ---
 	const [busqueda, setBusqueda] = useState('');
 	const [filtroCategoria, setFiltroCategoria] = useState('Todas');
 	const [filtroDepartamento, setFiltroDepartamento] = useState('Todos');
 
+	// --- Opciones de filtro derivadas de los datos reales ---
+	const categorias = useMemo(
+		() => ['Todas', ...Array.from(new Set(actores.map((a) => a.category))).sort()],
+		[actores],
+	);
+	const departamentos = useMemo(
+		() => ['Todos', ...Array.from(new Set(actores.map((a) => a.departamento))).sort()],
+		[actores],
+	);
+
 	// --- Lógica de filtrado ---
 	const actoresFiltrados = useMemo(() => {
-		return ACTORES_PUBLICOS.filter((actor) => {
+		return actores.filter((actor) => {
 			const coincideBusqueda =
-				actor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-				actor.descripcion.toLowerCase().includes(busqueda.toLowerCase());
-			const coincideCategoria = filtroCategoria === 'Todas' || actor.categoria === filtroCategoria;
+				actor.name.toLowerCase().includes(busqueda.toLowerCase()) ||
+				actor.description.toLowerCase().includes(busqueda.toLowerCase());
+			const coincideCategoria = filtroCategoria === 'Todas' || actor.category === filtroCategoria;
 			const coincideDepartamento = filtroDepartamento === 'Todos' || actor.departamento === filtroDepartamento;
 
 			return coincideBusqueda && coincideCategoria && coincideDepartamento;
 		});
-	}, [busqueda, filtroCategoria, filtroDepartamento]);
+	}, [actores, busqueda, filtroCategoria, filtroDepartamento]);
+
+	if (cargando) {
+		return (
+			<Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
+				<CircularProgress />
+			</Box>
+		);
+	}
+
+	if (error) {
+		return (
+			<Box sx={{ p: 4 }}>
+				<Alert severity="error">{error}</Alert>
+			</Box>
+		);
+	}
 
 	return (
 		<Box sx={{ width: '100%', maxWidth: 1200, margin: '0 auto', p: 3 }}>
@@ -110,7 +124,7 @@ export default function ListaActoresPublica() {
 							label="Filtrar Departamento"
 							onChange={(e) => setFiltroDepartamento(e.target.value)}
 						>
-							{DEPARTAMENTOS.map((dep) => (
+							{departamentos.map((dep) => (
 								<MenuItem key={dep} value={dep}>
 									{dep}
 								</MenuItem>
@@ -126,7 +140,7 @@ export default function ListaActoresPublica() {
 							label="Filtrar Categoría"
 							onChange={(e) => setFiltroCategoria(e.target.value)}
 						>
-							{CATEGORIAS.map((cat) => (
+							{categorias.map((cat) => (
 								<MenuItem key={cat} value={cat}>
 									{cat}
 								</MenuItem>
@@ -159,10 +173,9 @@ export default function ListaActoresPublica() {
 }
 
 // --- Componente Tarjeta (Inspirado en PostulacionCard) ---
-function ActorCard({ actor }: { actor: (typeof ACTORES_PUBLICOS)[0] }) {
-	// Imagen por defecto en caso de que el actor no tenga foto
-	const imagenPlaceholder =
-		'https://https://images.unsplash.com/vector-1783945574842-2d61707ad72f?auto=format&fit=crop&w=600&q=80';
+function ActorCard({ actor }: { actor: Actor }) {
+	// por si no trae foto propia, usamos una imagen estable por id como placeholder
+	const fotoUrl = actor.fotoUrl || `https://picsum.photos/seed/actor${actor.id}/600/400`;
 
 	return (
 		<Card
@@ -179,42 +192,48 @@ function ActorCard({ actor }: { actor: (typeof ACTORES_PUBLICOS)[0] }) {
 				},
 			}}
 		>
-			<CardMedia
-				component="img"
-				height="220"
-				image={actor.fotoUrl || imagenPlaceholder}
-				alt={`Foto de ${actor.nombre}`}
-				sx={{ objectFit: 'cover' }}
-			/>
-			<CardContent sx={{ flexGrow: 1, p: 3 }}>
-				<Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-					{actor.nombre}
-				</Typography>
+			<CardActionArea
+				component={Link}
+				to={`/actores/${actor.id}`}
+				sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+			>
+				<CardMedia
+					component="img"
+					height="220"
+					image={fotoUrl}
+					alt={`Foto de ${actor.name}`}
+					sx={{ objectFit: 'cover' }}
+				/>
+				<CardContent sx={{ flexGrow: 1, p: 3 }}>
+					<Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+						{actor.name}
+					</Typography>
 
-				<Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-					<Chip label={actor.categoria} size="small" color="primary" />
-					<Chip
-						icon={<LocationOnIcon fontSize="small" />}
-						label={actor.departamento}
-						size="small"
-						color="secondary"
-					/>
-				</Stack>
+					<Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+						<Chip label={actor.category} size="small" color="primary" />
+						<Chip
+							icon={<LocationOnIcon fontSize="small" />}
+							label={actor.departamento}
+							size="small"
+							color="secondary"
+						/>
+					</Stack>
 
-				<Typography
-					variant="body2"
-					color="text.secondary"
-					sx={{
-						overflow: 'hidden',
-						textOverflow: 'ellipsis',
-						display: '-webkit-box',
-						WebkitLineClamp: 4,
-						WebkitBoxOrient: 'vertical',
-					}}
-				>
-					{actor.descripcion}
-				</Typography>
-			</CardContent>
+					<Typography
+						variant="body2"
+						color="text.secondary"
+						sx={{
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+							display: '-webkit-box',
+							WebkitLineClamp: 4,
+							WebkitBoxOrient: 'vertical',
+						}}
+					>
+						{actor.description}
+					</Typography>
+				</CardContent>
+			</CardActionArea>
 		</Card>
 	);
 }
