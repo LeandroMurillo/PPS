@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, useSearchParams, Link } from 'react-router';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -18,11 +18,11 @@ import 'leaflet/dist/leaflet.css';
 // Actualizamos el tipo para incluir la posición
 type ActorData = {
 	id: number;
-	name: string;
-	description: string;
-	category: string;
+	nombre: string;
+	descripcion: string;
+	categoria: string;
 	departamento: string;
-	position: L.LatLngExpression; // Necesario para el mapa
+	latitudlongitud: L.LatLngExpression; // Necesario para el mapa
 };
 
 // Imágenes de prueba hardcodeadas (usamos picsum.photos para tener imágenes aleatorias)
@@ -35,6 +35,9 @@ const MOCK_IMAGES = [
 const ActorPortfolio = () => {
 	// Capturamos el id desde la URL
 	const { id } = useParams<{ id: string }>();
+	const [searchParams] = useSearchParams();
+	// URL de retorno: quien nos linkeó (lista de actores, mapa, etc.) la manda en ?from=...
+	const volverA = searchParams.get('from') || '/actoresPublico';
 	const [actor, setActor] = useState<ActorData | null>(null);
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -70,16 +73,16 @@ const ActorPortfolio = () => {
 
 	return (
 		<Box sx={{ p: 4, margin: '0 auto' }}>
-			<Button component={Link} to="/" variant="outlined" sx={{ mb: 3 }}>
-				Volver al Mapa
+			<Button component={Link} to={volverA} variant="outlined" sx={{ mb: 3 }}>
+				Volver
 			</Button>
 
 			<Typography variant="h3" component="h1" gutterBottom>
-				{actor.name}
+				{actor.nombre}
 			</Typography>
 
 			<Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ mb: 4 }}>
-				{actor.category} | {actor.departamento}
+				{actor.categoria} | {actor.departamento}
 			</Typography>
 
 			{/* Grid para dividir el Carrusel y el Mapa */}
@@ -92,7 +95,7 @@ const ActorPortfolio = () => {
 					>
 						<img
 							src={MOCK_IMAGES[currentImageIndex]}
-							alt={`Imagen ${currentImageIndex + 1} de ${actor.name}`}
+							alt={`Imagen ${currentImageIndex + 1} de ${actor.nombre}`}
 							style={{ width: '100%', height: '100%', objectFit: 'cover' }}
 						/>
 
@@ -138,7 +141,7 @@ const ActorPortfolio = () => {
 				<Box>
 					<Paper elevation={3} sx={{ overflow: 'hidden', borderRadius: 2, height: 300 }}>
 						<MapContainer
-							center={actor.position}
+							center={actor.latitudlongitud}
 							zoom={14}
 							style={{ height: '100%', width: '100%' }}
 							scrollWheelZoom={false} // Desactivado para que no interfiera con el scroll de la página
@@ -148,7 +151,7 @@ const ActorPortfolio = () => {
 								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 							/>
 							<CircleMarker
-								center={actor.position}
+								center={actor.latitudlongitud}
 								fillColor="#1976d2"
 								fillOpacity={0.85}
 								radius={10}
@@ -164,10 +167,10 @@ const ActorPortfolio = () => {
 			{/* Detalles del Actor */}
 			<Box sx={{ mt: 2 }}>
 				<Typography variant="h5" gutterBottom>
-					Sobre {actor.name}
+					Sobre {actor.nombre}
 				</Typography>
 				<Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-					{actor.description}
+					{actor.descripcion}
 				</Typography>
 			</Box>
 		</Box>

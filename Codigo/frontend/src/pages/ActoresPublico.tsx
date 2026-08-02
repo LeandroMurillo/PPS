@@ -25,11 +25,11 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 // --- Tipo de dato tal como viene de /data/puntos.json ---
 type Actor = {
 	id: number;
-	name: string;
-	description: string;
-	category: string;
+	nombre: string;
+	descripcion: string;
+	categoria: string;
 	departamento: string;
-	position: [number, number];
+	latitudlongitud: [number, number];
 	fotoUrl: string;
 };
 
@@ -60,7 +60,7 @@ export default function ListaActoresPublica() {
 
 	// --- Opciones de filtro derivadas de los datos reales ---
 	const categorias = useMemo(
-		() => ['Todas', ...Array.from(new Set(actores.map((a) => a.category))).sort()],
+		() => ['Todas', ...Array.from(new Set(actores.map((a) => a.categoria))).sort()],
 		[actores],
 	);
 	const departamentos = useMemo(
@@ -72,9 +72,9 @@ export default function ListaActoresPublica() {
 	const actoresFiltrados = useMemo(() => {
 		return actores.filter((actor) => {
 			const coincideBusqueda =
-				actor.name.toLowerCase().includes(busqueda.toLowerCase()) ||
-				actor.description.toLowerCase().includes(busqueda.toLowerCase());
-			const coincideCategoria = filtroCategoria === 'Todas' || actor.category === filtroCategoria;
+				actor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+				actor.descripcion.toLowerCase().includes(busqueda.toLowerCase());
+			const coincideCategoria = filtroCategoria === 'Todas' || actor.categoria === filtroCategoria;
 			const coincideDepartamento = filtroDepartamento === 'Todos' || actor.departamento === filtroDepartamento;
 
 			return coincideBusqueda && coincideCategoria && coincideDepartamento;
@@ -201,16 +201,16 @@ function ActorCard({ actor }: { actor: Actor }) {
 					component="img"
 					height="220"
 					image={fotoUrl}
-					alt={`Foto de ${actor.name}`}
+					alt={`Foto de ${actor.nombre}`}
 					sx={{ objectFit: 'cover' }}
 				/>
 				<CardContent sx={{ flexGrow: 1, p: 3 }}>
 					<Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-						{actor.name}
+						{actor.nombre}
 					</Typography>
 
 					<Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-						<Chip label={actor.category} size="small" color="primary" />
+						<Chip label={actor.categoria} size="small" color="primary" />
 						<Chip
 							icon={<LocationOnIcon fontSize="small" />}
 							label={actor.departamento}
@@ -230,7 +230,7 @@ function ActorCard({ actor }: { actor: Actor }) {
 							WebkitBoxOrient: 'vertical',
 						}}
 					>
-						{actor.description}
+						{actor.descripcion}
 					</Typography>
 				</CardContent>
 			</CardActionArea>

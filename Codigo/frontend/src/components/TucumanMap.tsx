@@ -7,7 +7,7 @@ import type { FeatureCollection, Geometry, Feature, Polygon, MultiPolygon } from
 import { useColorScheme } from '@mui/material/styles';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point as turfPoint } from '@turf/helpers';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
@@ -25,11 +25,11 @@ type DepartmentProperties = {
 
 type CulturalPoint = {
 	id: number;
-	name: string;
-	description: string;
-	category: string;
+	nombre: string;
+	descripcion: string;
+	categoria: string;
 	departamento: string;
-	position: L.LatLngExpression;
+	latitudlongitud: L.LatLngExpression;
 };
 
 // Función auxiliar para normalizar texto (quitar acentos y pasar a minúsculas)
@@ -82,6 +82,36 @@ function MapBoundsUpdater({
 	return null;
 }
 
+function SelectedPointFocuser({
+	selectedId,
+	points,
+	markerRefs,
+}: {
+	selectedId: number | null;
+	points: CulturalPoint[];
+	markerRefs: React.RefObject<Record<number, L.CircleMarker | null>>;
+}) {
+	const map = useMap();
+
+	React.useEffect(() => {
+		if (selectedId === null) return;
+
+		const punto = points.find((p) => p.id === selectedId);
+		if (!punto) return;
+
+		map.flyTo(punto.latitudlongitud, 14, { duration: 1.2 });
+
+		// Esperamos a que termine el vuelo de la cámara antes de abrir el popup
+		const timeout = setTimeout(() => {
+			markerRefs.current[selectedId]?.openPopup();
+		}, 400);
+
+		return () => clearTimeout(timeout);
+	}, [selectedId, points, map, markerRefs]);
+
+	return null;
+}
+
 export default function TucumanMap() {
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
@@ -96,6 +126,11 @@ export default function TucumanMap() {
 	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
 
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
+
+	const [searchParams] = useSearchParams();
+	const selectedIdParam = searchParams.get('selected');
+	const selectedId = selectedIdParam !== null ? Number(selectedIdParam) : null;
+	const markerRefs = React.useRef<Record<number, L.CircleMarker | null>>({});
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -119,7 +154,7 @@ export default function TucumanMap() {
 
 				// Calcular dinámicamente en qué departamento cae cada punto
 				const puntosConDepartamentoDinamico = puntosData.map((punto) => {
-					const positionArray = punto.position as [number, number];
+					const positionArray = punto.latitudlongitud as [number, number];
 					// Turf usa formato [Longitud, Latitud]
 					const pt = turfPoint([positionArray[1], positionArray[0]]);
 
@@ -170,7 +205,7 @@ export default function TucumanMap() {
 
 		// Combinar toda la data del punto en un solo string normalizado
 		const pointDataCombined = normalizeText(
-			`${point.name} ${point.description} ${point.category} ${point.departamento}`,
+			`${point.nombre} ${point.descripcion} ${point.categoria} ${point.departamento}`,
 		);
 
 		// Verificar que TODOS los términos buscados estén en la data del punto (sin importar el orden)
@@ -178,7 +213,7 @@ export default function TucumanMap() {
 			searchTerms.length === 0 || searchTerms.every((term) => pointDataCombined.includes(term));
 
 		const coincideCategoria =
-			categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(point.category);
+			categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(point.categoria);
 
 		const coincideDepartamento = departamentoSeleccionado === '' || point.departamento === departamentoSeleccionado;
 
@@ -283,6 +318,9 @@ export default function TucumanMap() {
 					departamentosGeoJson={departamentosGeoJson}
 				/>
 
+				{/* Componente invisible que enfoca y abre el popup del punto pasado por ?selected= */}
+				<SelectedPointFocuser selectedId={selectedId} points={puntosProcesados} markerRefs={markerRefs} />
+
 				{/* 6. Renderizar las líneas divisorias de los Departamentos */}
 				{departamentosGeoJson && (
 					<Pane name="departamentos-borders" style={{ zIndex: 690 }}>
@@ -307,7 +345,10 @@ export default function TucumanMap() {
 				{filteredPoints.map((point) => (
 					<CircleMarker
 						key={point.id}
-						center={point.position}
+						ref={(instance) => {
+							markerRefs.current[point.id] = instance;
+						}}
+						center={point.latitudlongitud}
 						fillColor="#1976d2"
 						fillOpacity={0.85}
 						radius={8}
@@ -316,14 +357,16 @@ export default function TucumanMap() {
 						weight={2}
 					>
 						<Popup>
-							<strong>{point.name}</strong>
+							<strong>{point.nombre}</strong>
 							<br />
-							{point.description}
+							{point.descripcion}
 							<br />
-							<small>Categoría: {point.category}</small>
+							<small>Categoría: {point.categoria}</small>
 							<br />
 							<Box sx={{ mt: 1 }}>
-								<Link to={`/actores/${point.id}`}>Ver portafolio</Link>
+								<Link to={`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`}>
+									Ver portafolio
+								</Link>
 							</Box>
 						</Popup>
 					</CircleMarker>

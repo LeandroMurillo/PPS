@@ -1,438 +1,438 @@
 [
 	{
 		"id": 1,
-		"name": "Festival de la Alfalfa",
+		"nombre": "Festival de la Alfalfa",
 		"departamento": "Burruyacú",
-		"description": "Tradicional festival folclórico que reúne a músicos locales y provinciales celebrando las raíces rurales.",
-		"category": "Música",
-		"position": [-26.5, -64.75]
+		"descripcion": "Tradicional festival folclórico que reúne a músicos locales y provinciales celebrando las raíces rurales.",
+		"categoria": "Música",
+		"latitudlongitud": [-26.5, -64.75]
 	},
 	{
 		"id": 2,
-		"name": "Taller de Tejido Criollo de Burruyacú",
+		"nombre": "Taller de Tejido Criollo de Burruyacú",
 		"departamento": "Burruyacú",
-		"description": "Espacio comunitario dedicado a la preservación de técnicas ancestrales de hilado y telar criollo.",
-		"category": "Artesanías",
-		"position": [-26.502, -64.752]
+		"descripcion": "Espacio comunitario dedicado a la preservación de técnicas ancestrales de hilado y telar criollo.",
+		"categoria": "Artesanías",
+		"latitudlongitud": [-26.502, -64.752]
 	},
 	{
 		"id": 3,
-		"name": "Grupo Ráfaga",
+		"nombre": "Grupo Ráfaga",
 		"departamento": "Capital",
-		"description": "Histórica y reconocida banda de cumbia con una enorme trayectoria y un vínculo entrañable con el público tucumano en grandes festivales populares.",
-		"category": "Música",
-		"position": [-26.8241, -65.2226]
+		"descripcion": "Histórica y reconocida banda de cumbia con una enorme trayectoria y un vínculo entrañable con el público tucumano en grandes festivales populares.",
+		"categoria": "Música",
+		"latitudlongitud": [-26.8241, -65.2226]
 	},
 	{
 		"id": 4,
-		"name": "Homenaje a Mercedes Sosa",
+		"nombre": "Homenaje a Mercedes Sosa",
 		"departamento": "Capital",
-		"description": "Espacio cultural y actividades conmemorativas dedicadas a mantener vivo el legado de 'La Voz de América'.",
-		"category": "Música",
-		"position": [-26.828, -65.221]
+		"descripcion": "Espacio cultural y actividades conmemorativas dedicadas a mantener vivo el legado de 'La Voz de América'.",
+		"categoria": "Música",
+		"latitudlongitud": [-26.828, -65.221]
 	},
 	{
 		"id": 5,
-		"name": "Teatro San Martín",
+		"nombre": "Teatro San Martín",
 		"departamento": "Capital",
-		"description": "Principal coliseo de la provincia, sede de los cuerpos estables de teatro, ballet y ópera.",
-		"category": "Teatro",
-		"position": [-26.8195, -65.2105]
+		"descripcion": "Principal coliseo de la provincia, sede de los cuerpos estables de teatro, ballet y ópera.",
+		"categoria": "Teatro",
+		"latitudlongitud": [-26.8195, -65.2105]
 	},
 	{
 		"id": 6,
-		"name": "Centro Cultural Eugenio Flavio Virla",
+		"nombre": "Centro Cultural Eugenio Flavio Virla",
 		"departamento": "Capital",
-		"description": "Espacio artístico de la UNT que alberga muestras plásticas, recitales e importantes debates culturales.",
-		"category": "Artes visuales",
-		"position": [-26.825, -65.208]
+		"descripcion": "Espacio artístico de la UNT que alberga muestras plásticas, recitales e importantes debates culturales.",
+		"categoria": "Artes visuales",
+		"latitudlongitud": [-26.825, -65.208]
 	},
 	{
 		"id": 7,
-		"name": "Escuela Universitaria de Cine, Video y Televisión",
+		"nombre": "Escuela Universitaria de Cine, Video y Televisión",
 		"departamento": "Capital",
-		"description": "Semillero fundamental de realizadores audiovisuales que impulsan el cine independiente en el NOA.",
-		"category": "Cine",
-		"position": [-26.822, -65.206]
+		"descripcion": "Semillero fundamental de realizadores audiovisuales que impulsan el cine independiente en el NOA.",
+		"categoria": "Cine",
+		"latitudlongitud": [-26.822, -65.206]
 	},
 	{
 		"id": 8,
-		"name": "Fotoclub Tucumán",
+		"nombre": "Fotoclub Tucumán",
 		"departamento": "Capital",
-		"description": "Asociación que nuclea a fotógrafos locales enfocada en la documentación identitaria e histórica de la provincia.",
-		"category": "Fotografía",
-		"position": [-26.826, -65.201]
+		"descripcion": "Asociación que nuclea a fotógrafos locales enfocada en la documentación identitaria e histórica de la provincia.",
+		"categoria": "Fotografía",
+		"latitudlongitud": [-26.826, -65.201]
 	},
 	{
 		"id": 9,
-		"name": "Marca Diseño de Autor Tucumano",
+		"nombre": "Marca Diseño de Autor Tucumano",
 		"departamento": "Capital",
-		"description": "Colectivo de diseñadores locales que fusionan iconografía calchaquí con tendencias de indumentaria moderna.",
-		"category": "Diseño",
-		"position": [-26.823, -65.219]
+		"descripcion": "Colectivo de diseñadores locales que fusionan iconografía calchaquí con tendencias de indumentaria moderna.",
+		"categoria": "Diseño",
+		"latitudlongitud": [-26.823, -65.219]
 	},
 	{
 		"id": 10,
-		"name": "Biblioteca Sarmiento",
+		"nombre": "Biblioteca Sarmiento",
 		"departamento": "Capital",
-		"description": "Institución centenaria dedicada al resguardo bibliográfico y la promoción de la literatura regional.",
-		"category": "Literatura",
-		"position": [-26.835, -65.212]
+		"descripcion": "Institución centenaria dedicada al resguardo bibliográfico y la promoción de la literatura regional.",
+		"categoria": "Literatura",
+		"latitudlongitud": [-26.835, -65.212]
 	},
 	{
 		"id": 11,
-		"name": "Casa Histórica de la Independencia",
+		"nombre": "Casa Histórica de la Independencia",
 		"departamento": "Capital",
-		"description": "Monumento nacional icónico donde se proclamó la Declaración de la Independencia en 1816.",
-		"category": "Patrimonio",
-		"position": [-26.8306, -65.2039]
+		"descripcion": "Monumento nacional icónico donde se proclamó la Declaración de la Independencia en 1816.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.8306, -65.2039]
 	},
 	{
 		"id": 12,
-		"name": "Ballet Contemporáneo de la Provincia",
+		"nombre": "Ballet Contemporáneo de la Provincia",
 		"departamento": "Capital",
-		"description": "Compañía artística oficial que desarrolla producciones coreográficas de vanguardia y giras regionales.",
-		"category": "Danza",
-		"position": [-26.819, -65.211]
+		"descripcion": "Compañía artística oficial que desarrolla producciones coreográficas de vanguardia y giras regionales.",
+		"categoria": "Danza",
+		"latitudlongitud": [-26.819, -65.211]
 	},
 	{
 		"id": 13,
-		"name": "Teatro Estación Concepción",
+		"nombre": "Teatro Estación Concepción",
 		"departamento": "Chicligasta",
-		"description": "Antigua estación ferroviaria recuperada como sala de teatro independiente y talleres comunitarios.",
-		"category": "Teatro",
-		"position": [-27.345, -65.595]
+		"descripcion": "Antigua estación ferroviaria recuperada como sala de teatro independiente y talleres comunitarios.",
+		"categoria": "Teatro",
+		"latitudlongitud": [-27.345, -65.595]
 	},
 	{
 		"id": 14,
-		"name": "Biblioteca Popular Mariano Moreno",
+		"nombre": "Biblioteca Popular Mariano Moreno",
 		"departamento": "Chicligasta",
-		"description": "Espacio de fomento a la lectura que realiza ciclos de cafés literarios con autores del sur de la provincia.",
-		"category": "Literatura",
-		"position": [-27.346, -65.598]
+		"descripcion": "Espacio de fomento a la lectura que realiza ciclos de cafés literarios con autores del sur de la provincia.",
+		"categoria": "Literatura",
+		"latitudlongitud": [-27.346, -65.598]
 	},
 	{
 		"id": 15,
-		"name": "Feria de Artesanos del Sur",
+		"nombre": "Feria de Artesanos del Sur",
 		"departamento": "Chicligasta",
-		"description": "Punto de encuentro semanal para artesanos del cuero, metal y cestería en la plaza principal de Concepción.",
-		"category": "Artesanías",
-		"position": [-27.3448, -65.5966]
+		"descripcion": "Punto de encuentro semanal para artesanos del cuero, metal y cestería en la plaza principal de Concepción.",
+		"categoria": "Artesanías",
+		"latitudlongitud": [-27.3448, -65.5966]
 	},
 	{
 		"id": 16,
-		"name": "Academia de Danzas Tradicionales Banda del Río Salí",
+		"nombre": "Academia de Danzas Tradicionales Banda del Río Salí",
 		"departamento": "Cruz Alta",
-		"description": "Escuela de formación para jóvenes bailarines enfocada en el malambo y las danzas folclóricas del NOA.",
-		"category": "Danza",
-		"position": [-26.855, -65.17]
+		"descripcion": "Escuela de formación para jóvenes bailarines enfocada en el malambo y las danzas folclóricas del NOA.",
+		"categoria": "Danza",
+		"latitudlongitud": [-26.855, -65.17]
 	},
 	{
 		"id": 17,
-		"name": "Festival de la Humita",
+		"nombre": "Festival de la Humita",
 		"departamento": "Cruz Alta",
-		"description": "Encuentro gastronómico y cultural que rinde homenaje a este plato ancestral del norte argentino.",
-		"category": "Patrimonio",
-		"position": [-26.86, -65.15]
+		"descripcion": "Encuentro gastronómico y cultural que rinde homenaje a este plato ancestral del norte argentino.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.86, -65.15]
 	},
 	{
 		"id": 18,
-		"name": "Fiesta Nacional de la Empanada",
+		"nombre": "Fiesta Nacional de la Empanada",
 		"departamento": "Famaillá",
-		"description": "Famoso festival nacional que premia a los mejores campeones del repulgue y reúne grandes espectáculos folclóricos.",
-		"category": "Patrimonio",
-		"position": [-27.051, -65.402]
+		"descripcion": "Famoso festival nacional que premia a los mejores campeones del repulgue y reúne grandes espectáculos folclóricos.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-27.051, -65.402]
 	},
 	{
 		"id": 19,
-		"name": "Festival de Cortometrajes de Famaillá",
+		"nombre": "Festival de Cortometrajes de Famaillá",
 		"departamento": "Famaillá",
-		"description": "Muestra competitiva de cine que convoca a realizadores independientes de cortometrajes y documentales.",
-		"category": "Cine",
-		"position": [-27.05, -65.4]
+		"descripcion": "Muestra competitiva de cine que convoca a realizadores independientes de cortometrajes y documentales.",
+		"categoria": "Cine",
+		"latitudlongitud": [-27.05, -65.4]
 	},
 	{
 		"id": 20,
-		"name": "Fiesta Provincial del Locro",
+		"nombre": "Fiesta Provincial del Locro",
 		"departamento": "Graneros",
-		"description": "Encuentro masivo de cocina tradicional acompañado por peñas folclóricas al aire libre.",
-		"category": "Patrimonio",
-		"position": [-27.65, -65.43]
+		"descripcion": "Encuentro masivo de cocina tradicional acompañado por peñas folclóricas al aire libre.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-27.65, -65.43]
 	},
 	{
 		"id": 21,
-		"name": "Encuentro de Cantores Populares de Graneros",
+		"nombre": "Encuentro de Cantores Populares de Graneros",
 		"departamento": "Graneros",
-		"description": "Reunión anual de copleros y cantores de tonadas tradicionales del sur tucumano.",
-		"category": "Música",
-		"position": [-27.652, -65.431]
+		"descripcion": "Reunión anual de copleros y cantores de tonadas tradicionales del sur tucumano.",
+		"categoria": "Música",
+		"latitudlongitud": [-27.652, -65.431]
 	},
 	{
 		"id": 22,
-		"name": "Centro Cultural Alberdi",
+		"nombre": "Centro Cultural Alberdi",
 		"departamento": "Juan Bautista Alberdi",
-		"description": "Espacio público que promueve la actividad escénica a través de colectivos teatrales independientes.",
-		"category": "Teatro",
-		"position": [-27.5861, -65.62]
+		"descripcion": "Espacio público que promueve la actividad escénica a través de colectivos teatrales independientes.",
+		"categoria": "Teatro",
+		"latitudlongitud": [-27.5861, -65.62]
 	},
 	{
 		"id": 23,
-		"name": "Cine Teatro Marconi",
+		"nombre": "Cine Teatro Marconi",
 		"departamento": "Juan Bautista Alberdi",
-		"description": "Histórico edificio cinematográfico y de artes escénicas recuperado para la comunidad del sur provincial.",
-		"category": "Cine",
-		"position": [-27.587, -65.621]
+		"descripcion": "Histórico edificio cinematográfico y de artes escénicas recuperado para la comunidad del sur provincial.",
+		"categoria": "Cine",
+		"latitudlongitud": [-27.587, -65.621]
 	},
 	{
 		"id": 24,
-		"name": "Festival de la Cocha y el Canto",
+		"nombre": "Festival de la Cocha y el Canto",
 		"departamento": "La Cocha",
-		"description": "Importante cita invernal de la música folclórica que congrega a reconocidas figuras nacionales.",
-		"category": "Música",
-		"position": [-27.7667, -65.5833]
+		"descripcion": "Importante cita invernal de la música folclórica que congrega a reconocidas figuras nacionales.",
+		"categoria": "Música",
+		"latitudlongitud": [-27.7667, -65.5833]
 	},
 	{
 		"id": 25,
-		"name": "Muestra Fotográfica 'Rostros del Tabaco'",
+		"nombre": "Muestra Fotográfica 'Rostros del Tabaco'",
 		"departamento": "La Cocha",
-		"description": "Exposición itinerante de fotoperiodismo sobre la vida, el trabajo y las tradiciones rurales locales.",
-		"category": "Fotografía",
-		"position": [-27.769, -65.581]
+		"descripcion": "Exposición itinerante de fotoperiodismo sobre la vida, el trabajo y las tradiciones rurales locales.",
+		"categoria": "Fotografía",
+		"latitudlongitud": [-27.769, -65.581]
 	},
 	{
 		"id": 26,
-		"name": "Artesanos del Mimbre de Bella Vista",
+		"nombre": "Artesanos del Mimbre de Bella Vista",
 		"departamento": "Leales",
-		"description": "Agrupación de familias dedicadas a la cestería tradicional utilizando fibras naturales del entorno.",
-		"category": "Artesanías",
-		"position": [-27.034, -65.301]
+		"descripcion": "Agrupación de familias dedicadas a la cestería tradicional utilizando fibras naturales del entorno.",
+		"categoria": "Artesanías",
+		"latitudlongitud": [-27.034, -65.301]
 	},
 	{
 		"id": 27,
-		"name": "Teatro Comunitario de Leales",
+		"nombre": "Teatro Comunitario de Leales",
 		"departamento": "Leales",
-		"description": "Colectivo teatral integrado por vecinos que relatan la historia azucarera del departamento a través de obras abiertas.",
-		"category": "Teatro",
-		"position": [-27.0333, -65.3]
+		"descripcion": "Colectivo teatral integrado por vecinos que relatan la historia azucarera del departamento a través de obras abiertas.",
+		"categoria": "Teatro",
+		"latitudlongitud": [-27.0333, -65.3]
 	},
 	{
 		"id": 28,
-		"name": "Ruinas de San José de Lules",
+		"nombre": "Ruinas de San José de Lules",
 		"departamento": "Lules",
-		"description": "Antiguo conjunto arquitectónico jesuítico del siglo XVII, declarado Monumento Histórico Nacional.",
-		"category": "Patrimonio",
-		"position": [-26.92, -65.34]
+		"descripcion": "Antiguo conjunto arquitectónico jesuítico del siglo XVII, declarado Monumento Histórico Nacional.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.92, -65.34]
 	},
 	{
 		"id": 29,
-		"name": "Lules Coral",
+		"nombre": "Lules Coral",
 		"departamento": "Lules",
-		"description": "Encuentro que congrega a coros polifónicos de diversas provincias en las históricas iglesias lulistas.",
-		"category": "Música",
-		"position": [-26.9167, -65.3333]
+		"descripcion": "Encuentro que congrega a coros polifónicos de diversas provincias en las históricas iglesias lulistas.",
+		"categoria": "Música",
+		"latitudlongitud": [-26.9167, -65.3333]
 	},
 	{
 		"id": 30,
-		"name": "Encuentro de Escritores 'Monteros de la Patria'",
+		"nombre": "Encuentro de Escritores 'Monteros de la Patria'",
 		"departamento": "Monteros",
-		"description": "Prestigioso foro literario del NOA donde poetas y novelistas exponen sus obras anualmente.",
-		"category": "Literatura",
-		"position": [-27.1667, -65.5]
+		"descripcion": "Prestigioso foro literario del NOA donde poetas y novelistas exponen sus obras anualmente.",
+		"categoria": "Literatura",
+		"latitudlongitud": [-27.1667, -65.5]
 	},
 	{
 		"id": 31,
-		"name": "Fortaleza del Folklore",
+		"nombre": "Fortaleza del Folklore",
 		"departamento": "Monteros",
-		"description": "Uno de los festivales de música folclórica más antiguos y masivos del noroeste del país.",
-		"category": "Música",
-		"position": [-27.168, -65.502]
+		"descripcion": "Uno de los festivales de música folclórica más antiguos y masivos del noroeste del país.",
+		"categoria": "Música",
+		"latitudlongitud": [-27.168, -65.502]
 	},
 	{
 		"id": 32,
-		"name": "Corsos de Carnaval de Aguilares",
+		"nombre": "Corsos de Carnaval de Aguilares",
 		"departamento": "Río Chico",
-		"description": "La mayor fiesta de carnaval de la provincia, famosa por el despliegue de sus comparsas y escuelas de danza.",
-		"category": "Danza",
-		"position": [-27.435, -65.618]
+		"descripcion": "La mayor fiesta de carnaval de la provincia, famosa por el despliegue de sus comparsas y escuelas de danza.",
+		"categoria": "Danza",
+		"latitudlongitud": [-27.435, -65.618]
 	},
 	{
 		"id": 33,
-		"name": "Salón de Pintura Aguilares",
+		"nombre": "Salón de Pintura Aguilares",
 		"departamento": "Río Chico",
-		"description": "Certamen anual de artes plásticas que expone lienzos inspirados en el paisaje y la idiosincrasia sureña.",
-		"category": "Artes visuales",
-		"position": [-27.4333, -65.6167]
+		"descripcion": "Certamen anual de artes plásticas que expone lienzos inspirados en el paisaje y la idiosincrasia sureña.",
+		"categoria": "Artes visuales",
+		"latitudlongitud": [-27.4333, -65.6167]
 	},
 	{
 		"id": 34,
-		"name": "Feria de Simoca",
+		"nombre": "Feria de Simoca",
 		"departamento": "Simoca",
-		"description": "Feria centenaria viva, famosa por sus comidas típicas, artesanías y la clásica presencia del sulky.",
-		"category": "Patrimonio",
-		"position": [-27.2667, -65.35]
+		"descripcion": "Feria centenaria viva, famosa por sus comidas típicas, artesanías y la clásica presencia del sulky.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-27.2667, -65.35]
 	},
 	{
 		"id": 35,
-		"name": "Festival Nacional del Sulky",
+		"nombre": "Festival Nacional del Sulky",
 		"departamento": "Simoca",
-		"description": "Homenaje al tradicional medio de transporte y a la cultura gaucha con desfiles y shows musicales.",
-		"category": "Patrimonio",
-		"position": [-27.268, -65.351]
+		"descripcion": "Homenaje al tradicional medio de transporte y a la cultura gaucha con desfiles y shows musicales.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-27.268, -65.351]
 	},
 	{
 		"id": 36,
-		"name": "Ruinas de Quilmes",
+		"nombre": "Ruinas de Quilmes",
 		"departamento": "Tafí del Valle",
-		"description": "Uno de los asentamientos prehispánicos más importantes del país, bastión de la resistencia calchaquí.",
-		"category": "Patrimonio",
-		"position": [-26.2778, -66.0222]
+		"descripcion": "Uno de los asentamientos prehispánicos más importantes del país, bastión de la resistencia calchaquí.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.2778, -66.0222]
 	},
 	{
 		"id": 37,
-		"name": "Museo Jesuítico La Banda",
+		"nombre": "Museo Jesuítico La Banda",
 		"departamento": "Tafí del Valle",
-		"description": "Estancia colonial del siglo XVIII que preserva mobiliario, arte sacro y vestigios arqueológicos vallistos.",
-		"category": "Patrimonio",
-		"position": [-26.86, -65.7]
+		"descripcion": "Estancia colonial del siglo XVIII que preserva mobiliario, arte sacro y vestigios arqueológicos vallistos.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.86, -65.7]
 	},
 	{
 		"id": 38,
-		"name": "Ruta del Artesano de Tafí del Valle",
+		"nombre": "Ruta del Artesano de Tafí del Valle",
 		"departamento": "Tafí del Valle",
-		"description": "Circuito cultural que conecta talleres familiares de tejidos en telar, platería y cerámica rústica.",
-		"category": "Artesanías",
-		"position": [-26.854, -65.708]
+		"descripcion": "Circuito cultural que conecta talleres familiares de tejidos en telar, platería y cerámica rústica.",
+		"categoria": "Artesanías",
+		"latitudlongitud": [-26.854, -65.708]
 	},
 	{
 		"id": 39,
-		"name": "Poesía en las Nubes (Amaicha del Valle)",
+		"nombre": "Poesía en las Nubes (Amaicha del Valle)",
 		"departamento": "Tafí del Valle",
-		"description": "Recital poético anual bajo el límpido cielo de los valles, impulsado por escritores indígenas.",
-		"category": "Literatura",
-		"position": [-26.595, -65.92]
+		"descripcion": "Recital poético anual bajo el límpido cielo de los valles, impulsado por escritores indígenas.",
+		"categoria": "Literatura",
+		"latitudlongitud": [-26.595, -65.92]
 	},
 	{
 		"id": 40,
-		"name": "Festival Nacional del Limón",
+		"nombre": "Festival Nacional del Limón",
 		"departamento": "Tafí Viejo",
-		"description": "Gran festival del folclore argentino que celebra la producción citrícola característica de la 'Capital del Limón'.",
-		"category": "Música",
-		"position": [-26.7333, -65.2667]
+		"descripcion": "Gran festival del folclore argentino que celebra la producción citrícola característica de la 'Capital del Limón'.",
+		"categoria": "Música",
+		"latitudlongitud": [-26.7333, -65.2667]
 	},
 	{
 		"id": 41,
-		"name": "Talleres Ferroviarios de Tafí Viejo",
+		"nombre": "Talleres Ferroviarios de Tafí Viejo",
 		"departamento": "Tafí Viejo",
-		"description": "Patrimonio industrial e histórico que forjó la identidad social, obrera y cultural de la ciudad.",
-		"category": "Patrimonio",
-		"position": [-26.731, -65.265]
+		"descripcion": "Patrimonio industrial e histórico que forjó la identidad social, obrera y cultural de la ciudad.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.731, -65.265]
 	},
 	{
 		"id": 42,
-		"name": "Fiesta Nacional del Caballo",
+		"nombre": "Fiesta Nacional del Caballo",
 		"departamento": "Trancas",
-		"description": "Cita fundamental de la tradición gaucha con jineteadas, destrezas ecuestres y destacados grupos folclóricos.",
-		"category": "Patrimonio",
-		"position": [-26.2333, -65.28]
+		"descripcion": "Cita fundamental de la tradición gaucha con jineteadas, destrezas ecuestres y destacados grupos folclóricos.",
+		"categoria": "Patrimonio",
+		"latitudlongitud": [-26.2333, -65.28]
 	},
 	{
 		"id": 43,
-		"name": "Trancas Canta a la Patria",
+		"nombre": "Trancas Canta a la Patria",
 		"departamento": "Trancas",
-		"description": "Peña folclórica de vigilia que convoca a artistas locales en fechas patrias.",
-		"category": "Música",
-		"position": [-26.235, -65.282]
+		"descripcion": "Peña folclórica de vigilia que convoca a artistas locales en fechas patrias.",
+		"categoria": "Música",
+		"latitudlongitud": [-26.235, -65.282]
 	},
 	{
 		"id": 44,
-		"name": "Encuentro de Cine Independiente del NOA",
+		"nombre": "Encuentro de Cine Independiente del NOA",
 		"departamento": "Yerba Buena",
-		"description": "Muestra audiovisual anual de directores emergentes del noroeste argentino.",
-		"category": "Cine",
-		"position": [-26.8167, -65.3]
+		"descripcion": "Muestra audiovisual anual de directores emergentes del noroeste argentino.",
+		"categoria": "Cine",
+		"latitudlongitud": [-26.8167, -65.3]
 	},
 	{
 		"id": 45,
-		"name": "Estudio de Diseño Sostenible Yerba Buena",
+		"nombre": "Estudio de Diseño Sostenible Yerba Buena",
 		"departamento": "Yerba Buena",
-		"description": "Laboratorio de diseño enfocado en la creación de mobiliario contemporáneo con materiales reciclados y maderas nativas.",
-		"category": "Diseño",
-		"position": [-26.818, -65.302]
+		"descripcion": "Laboratorio de diseño enfocado en la creación de mobiliario contemporáneo con materiales reciclados y maderas nativas.",
+		"categoria": "Diseño",
+		"latitudlongitud": [-26.818, -65.302]
 	},
 	{
 		"id": 46,
-		"name": "Galería de Arte Contemporáneo 'El Árbol'",
+		"nombre": "Galería de Arte Contemporáneo 'El Árbol'",
 		"departamento": "Yerba Buena",
-		"description": "Espacio expositivo rodeado de yungas dedicado a la pintura, escultura e instalaciones conceptuales.",
-		"category": "Artes visuales",
-		"position": [-26.812, -65.305]
+		"descripcion": "Espacio expositivo rodeado de yungas dedicado a la pintura, escultura e instalaciones conceptuales.",
+		"categoria": "Artes visuales",
+		"latitudlongitud": [-26.812, -65.305]
 	},
 	{
 		"id": 47,
-		"name": "Estudio de Danza Contemporánea Yerba Buena",
+		"nombre": "Estudio de Danza Contemporánea Yerba Buena",
 		"departamento": "Yerba Buena",
-		"description": "Centro formativo de danzas modernas e investigación del movimiento corporal.",
-		"category": "Danza",
-		"position": [-26.82, -65.29]
+		"descripcion": "Centro formativo de danzas modernas e investigación del movimiento corporal.",
+		"categoria": "Danza",
+		"latitudlongitud": [-26.82, -65.29]
 	},
 	{
 		"id": 48,
-		"name": "Teatro de la Paz",
+		"nombre": "Teatro de la Paz",
 		"departamento": "Capital",
-		"description": "Espacio escénico independiente alternativo con fuerte enfoque en comedia musical y drama local.",
-		"category": "Teatro",
-		"position": [-26.821, -65.225]
+		"descripcion": "Espacio escénico independiente alternativo con fuerte enfoque en comedia musical y drama local.",
+		"categoria": "Teatro",
+		"latitudlongitud": [-26.821, -65.225]
 	},
 	{
 		"id": 49,
-		"name": "Cerámica Ancestral de Amaicha del Valle",
+		"nombre": "Cerámica Ancestral de Amaicha del Valle",
 		"departamento": "Tafí del Valle",
-		"description": "Taller enfocado en réplicas de vasijas e iconografía de la cultura Santa María.",
-		"category": "Artesanías",
-		"position": [-26.5934, -65.9187]
+		"descripcion": "Taller enfocado en réplicas de vasijas e iconografía de la cultura Santa María.",
+		"categoria": "Artesanías",
+		"latitudlongitud": [-26.5934, -65.9187]
 	},
 	{
 		"id": 50,
-		"name": "Muestra Visual del Sur",
+		"nombre": "Muestra Visual del Sur",
 		"departamento": "Chicligasta",
-		"description": "Salón anual de fotografía artística que premia las mejores capturas de paisajes y retratos tucumanos.",
-		"category": "Fotografía",
-		"position": [-27.3465, -65.599]
+		"descripcion": "Salón anual de fotografía artística que premia las mejores capturas de paisajes y retratos tucumanos.",
+		"categoria": "Fotografía",
+		"latitudlongitud": [-27.3465, -65.599]
 	},
 	{
 		"id": 51,
-		"name": "Tejidos Ancestrales María",
-		"description": "Producción de ponchos y ruanas en telar criollo. Las carpinchas, con sus anteojos de lectura y ovillos de colores, tejen los lazos de la comunidad.",
-		"category": "Artesanía",
+		"nombre": "Tejidos Ancestrales María",
+		"descripcion": "Producción de ponchos y ruanas en telar criollo. Las carpinchas, con sus anteojos de lectura y ovillos de colores, tejen los lazos de la comunidad.",
+		"categoria": "Artesanía",
 		"departamento": "Tafí del Valle",
-		"fotoUrl": "https://images.unsplash.com/photo-1606722590583-6951b5ea92ad?auto=format&fit=crop&w=600&q=80",
-		"position": [-26.8528, -65.7098]
+		"fotoPerfilUrl": "https://images.unsplash.com/photo-1606722590583-6951b5ea92ad?auto=format&fit=crop&w=600&q=80",
+		"latitudlongitud": [-26.8528, -65.7098]
 	},
 	{
 		"id": 52,
-		"name": "Los Tucu Cantores",
-		"description": "Agrupación folclórica con más de 10 años de trayectoria. Con trajes de lentejuelas que brillan más que el sol en el río.",
-		"category": "Música",
+		"nombre": "Los Tucu Cantores",
+		"descripcion": "Agrupación folclórica con más de 10 años de trayectoria. Con trajes de lentejuelas que brillan más que el sol en el río.",
+		"categoria": "Música",
 		"departamento": "Capital",
-		"fotoUrl": "https://images.unsplash.com/photo-1764352104218-2d3a899ce36c?auto=format&fit=crop&w=600&q=80",
-		"position": [-26.816, -65.2105]
+		"fotoPerfilUrl": "https://images.unsplash.com/photo-1764352104218-2d3a899ce36c?auto=format&fit=crop&w=600&q=80",
+		"latitudlongitud": [-26.816, -65.2105]
 	},
 	{
 		"id": 53,
-		"name": "Teatro Alberdi",
-		"description": "Espacio cultural histórico administrado por la UNT. Entre mesas con termos listos, los socios acomodan sus mejores galas.",
-		"category": "Artes Escénicas",
+		"nombre": "Teatro Alberdi",
+		"descripcion": "Espacio cultural histórico administrado por la UNT. Entre mesas con termos listos, los socios acomodan sus mejores galas.",
+		"categoria": "Artes Escénicas",
 		"departamento": "Capital",
-		"fotoUrl": "https://images.unsplash.com/photo-1773332598451-8a0a59941912?auto=format&fit=crop&w=600&q=80",
-		"position": [-26.816, -65.2105]
+		"fotoPerfilUrl": "https://images.unsplash.com/photo-1773332598451-8a0a59941912?auto=format&fit=crop&w=600&q=80",
+		"latitudlongitud": [-26.816, -65.2105]
 	},
 	{
 		"id": 54,
-		"name": "Los Carpinchos del Alba",
-		"description": "Banda de Indie Rock emergente. Melenas al viento que harían envidiar al mismísimo Ariel, aparecen Los Carpinchos.",
-		"category": "Música",
+		"nombre": "Los Carpinchos del Alba",
+		"descripcion": "Banda de Indie Rock emergente. Melenas al viento que harían envidiar al mismísimo Ariel, aparecen Los Carpinchos.",
+		"categoria": "Música",
 		"departamento": "Yerba Buena",
-		"fotoUrl": "https://images.unsplash.com/photo-1614793351079-11dd79b922ba?auto=format&fit=crop&w=600&q=80",
-		"position": [-26.81298, -65.29543]
+		"fotoPerfilUrl": "https://images.unsplash.com/photo-1614793351079-11dd79b922ba?auto=format&fit=crop&w=600&q=80",
+		"latitudlongitud": [-26.81298, -65.29543]
 	}
 ]
