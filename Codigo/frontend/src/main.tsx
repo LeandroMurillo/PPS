@@ -1,13 +1,14 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import App from './App';
+import App from './app';
 import Layout from './layouts/dashboard';
 import Mapa from './pages/mapa';
 import EmployeesCrudPage from './pages/employees';
-import ActorPortfolio from './pages/ActorPortfolio';
-import ActoresPublico from './pages/ActoresPublico';
+import ActorPortfolio from './pages/actorPortfolio';
+import ActoresPublico from './pages/actoresPublico';
 import AcercaDe from './pages/acerca';
+import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 
 const router = createBrowserRouter([
 	{
@@ -32,7 +33,7 @@ const router = createBrowserRouter([
 					},
 					{
 						path: 'convocatoriasUsuario',
-						Component: EmployeesCrudPage,
+						Component: ConvocatoriasUsuario,
 					},
 					{
 						path: 'confirmaciones',

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import FiltroCategoriasCulturales from './FiltroCategoriasCulturales';
+import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
 import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
 import type { FeatureCollection, Geometry, Feature, Polygon, MultiPolygon } from 'geojson';

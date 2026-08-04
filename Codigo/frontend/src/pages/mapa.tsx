@@ -1,4 +1,4 @@
-import TucumanMap from '../components/TucumanMap';
+import TucumanMap from '../components/tucumanMap';
 
 export default function Mapa() {
 	return <TucumanMap />;
