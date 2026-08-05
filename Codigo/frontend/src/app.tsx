@@ -49,6 +49,11 @@ const NAVIGATION: Navigation = [
 		icon: <ChecklistIcon />,
 	},
 	{
+		title: 'Actores',
+		segment: 'actoresAdmin',
+		icon: <PeopleIcon />,
+	},
+	{
 		title: 'Usuarios',
 		segment: 'usuarios',
 		icon: <GroupIcon />,

@@ -40,6 +40,10 @@ const router = createBrowserRouter([
 						Component: EmployeesCrudPage,
 					},
 					{
+						path: 'actoresAdmin',
+						Component: EmployeesCrudPage,
+					},
+					{
 						path: 'usuarios',
 						Component: EmployeesCrudPage,
 					},
