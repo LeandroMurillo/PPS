@@ -102,13 +102,7 @@ ALTER TABLE `cultura`.`Integrantes`
   ADD CONSTRAINT `chk_Integrantes_rol`
     CHECK (`rol` = TRIM(`rol`) AND `rol` <> ''),
   ADD CONSTRAINT `chk_Integrantes_esDueno`
-    CHECK (`esDueño` IN (0, 1)),
-  ADD CONSTRAINT `chk_Integrantes_dueno_rol`
-    CHECK (
-      (`esDueño` = 1 AND `rol` = 'Dueño')
-      OR
-      (`esDueño` = 0 AND `rol` <> 'Dueño')
-    );
+    CHECK (`esDueño` IN (0, 1));
 
 ALTER TABLE `cultura`.`Convocatorias`
   ADD CONSTRAINT `chk_Convocatorias_titulo`

@@ -1,6 +1,6 @@
 -- ================================================================
 -- Mosaico Cultural
--- Datos de prueba compatibles con cultura v1.2.1
+-- Datos de prueba compatibles con cultura v1.2.2
 -- Autores: Cesar Ezequiel Herrera, Leandro Murillo
 -- ================================================================
 
@@ -210,19 +210,19 @@ VALUES
 
 -- -----------------------------------------------------
 -- 8. Integrantes
--- Según chk_Integrantes_dueno_rol, un dueño debe usar rol = 'Dueño'.
+-- esDueño controla permisos administrativos y no determina el rol artístico.
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Integrantes`
   (`idUsuario`, `idActor`, `rol`, `esDueño`)
 VALUES
-  (3, 1, 'Dueño', 1),
-  (4, 2, 'Dueño', 1),
-  (10, 2, 'Bombo Legüero', 0),
-  (9, 3, 'Dueño', 1),
-  (7, 4, 'Dueño', 1),
-  (8, 4, 'Batería y Coros', 0),
-  (6, 5, 'Dueño', 1),
-  (8, 6, 'Dueño', 1),
+  (3, 1, 'Artesana textil', 1),
+  (4, 2, 'Voz principal y guitarra', 1),
+  (10, 2, 'Bombo legüero', 0),
+  (9, 3, 'Administradora del espacio', 1),
+  (7, 4, 'Voz y guitarra', 1),
+  (8, 4, 'Batería y coros', 0),
+  (6, 5, 'Director y productor audiovisual', 1),
+  (8, 6, 'Artista circense', 1),
   (10, 6, 'Logística', 0);
 
 -- -----------------------------------------------------
@@ -281,7 +281,10 @@ VALUES
   (4, 'Cantidad de discos editados', 'NUMERO', NULL),
   (5, 'Cámaras o equipos utilizados', 'OPCION_MULTIPLE',
    '["ARRI", "RED", "Sony Alpha", "Blackmagic", "Dron"]'),
-  (6, 'Capacidad máxima de espectadores', 'NUMERO', NULL);
+  (6, 'Capacidad máxima de espectadores', 'NUMERO', NULL),
+  (7, 'Influencias musicales principales', 'TEXTO', NULL),
+  (8, 'Formato habitual de presentación', 'OPCION_UNICA',
+   '["Solista", "Dúo", "Trío", "Banda", "Orquesta"]');
 
 -- -----------------------------------------------------
 -- 13. Formularios
@@ -308,7 +311,12 @@ VALUES
   (4, 3, 1,
    'Información de espacios teatrales',
    'Información específica para actores de la subcategoría Teatro de Texto.',
-   '2026-06-01 09:45:00');
+   '2026-06-01 09:45:00'),
+
+  (5, 1, 2,
+   'Información específica de Rock / Pop',
+   'Información complementaria para actores musicales de la subcategoría Rock / Pop.',
+   '2026-06-01 10:00:00');
 
 -- -----------------------------------------------------
 -- 14. Preguntas incorporadas a cada formulario
@@ -325,7 +333,10 @@ VALUES
 
   (3, 5, NULL, 1, 1, 0, '2026-06-01 10:10:00', NULL, 'A'),
 
-  (4, 6, NULL, 1, 1, 1, '2026-06-01 10:15:00', NULL, 'A');
+  (4, 6, NULL, 1, 1, 1, '2026-06-01 10:15:00', NULL, 'A'),
+
+  (5, 7, NULL, 1, 1, 1, '2026-06-01 10:20:00', NULL, 'A'),
+  (5, 8, NULL, 2, 1, 1, '2026-06-01 10:21:00', NULL, 'A');
 
 -- -----------------------------------------------------
 -- 15. Respuestas vigentes de los actores
@@ -349,6 +360,11 @@ VALUES
    '2026-06-18 10:20:00', '2026-06-18 10:20:00', '2026-07-03 11:00:00'),
   (2, 4, 4, '0',
    '2026-06-18 10:21:00', '2026-06-18 10:21:00', '2026-07-03 11:00:00'),
+
+  (5, 7, 4, '"Rock nacional, britpop y post-punk"',
+   '2026-06-18 10:22:00', '2026-06-18 10:22:00', '2026-07-03 11:00:00'),
+  (5, 8, 4, '"Banda"',
+   '2026-06-18 10:23:00', '2026-06-18 10:23:00', '2026-07-03 11:00:00'),
 
   (3, 5, 5, '["Sony Alpha", "Dron"]',
    '2026-06-18 10:30:00', '2026-06-18 10:30:00', '2026-07-04 12:00:00'),
