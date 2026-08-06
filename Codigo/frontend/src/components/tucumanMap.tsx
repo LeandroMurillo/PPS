@@ -1,13 +1,18 @@
 import * as React from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
 import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
-import type { FeatureCollection, Geometry, Feature, Polygon, MultiPolygon } from 'geojson';
+import type { FeatureCollection, Geometry, Feature } from 'geojson';
 import { useColorScheme } from '@mui/material/styles';
-import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
-import { point as turfPoint } from '@turf/helpers';
 import { Link, useSearchParams } from 'react-router';
+import {
+	obtenerActoresMapa,
+	obtenerFiltrosMapa,
+	type FiltroCategoria,
+	type FiltroDepartamento,
+} from '../api/actores';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
@@ -15,7 +20,6 @@ import 'leaflet/dist/leaflet.css';
 const TUCUMAN_CENTER: L.LatLngExpression = [-26.8241, -65.2226];
 const TUCUMAN_BOUNDS = L.latLngBounds([-27.95, -66.35], [-25.75, -64.45]);
 const DEPARTAMENTOS_GEOJSON_URL = '/data/departamentos.geojson';
-const PUNTOS_JSON_URL = '/data/puntos.json';
 
 type DepartmentProperties = {
 	name?: string;
@@ -26,18 +30,10 @@ type DepartmentProperties = {
 type CulturalPoint = {
 	id: number;
 	nombre: string;
-	descripcion: string;
+	descripcion: string | null;
 	categoria: string;
 	departamento: string;
 	latitudlongitud: L.LatLngExpression;
-};
-
-// Función auxiliar para normalizar texto (quitar acentos y pasar a minúsculas)
-const normalizeText = (text: string) => {
-	return text
-		.normalize('NFD')
-		.replace(/[\u0300-\u036f]/g, '')
-		.toLowerCase();
 };
 
 function MapBoundsUpdater({
@@ -121,11 +117,14 @@ export default function TucumanMap() {
 		DepartmentProperties
 	> | null>(null);
 
-	const [categoriasSeleccionadas, setCategoriasSeleccionadas] = React.useState<string[]>([]);
+	const [categorias, setCategorias] = React.useState<FiltroCategoria[]>([]);
+	const [departamentos, setDepartamentos] = React.useState<FiltroDepartamento[]>([]);
+	const [categoriasSeleccionadas, setCategoriasSeleccionadas] = React.useState<number[]>([]);
 	const [busqueda, setBusqueda] = React.useState<string>('');
 	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
 
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
+	const [error, setError] = React.useState<string | null>(null);
 
 	const [searchParams] = useSearchParams();
 	const selectedIdParam = searchParams.get('selected');
@@ -135,90 +134,71 @@ export default function TucumanMap() {
 	React.useEffect(() => {
 		const controller = new AbortController();
 
-		async function loadMapData() {
+		async function loadInitialMapData() {
 			try {
-				// 3. Cargamos ambos GeoJSON en paralelo
-				const [resDeptos, resPuntos] = await Promise.all([
+				const [resDeptos, filtros] = await Promise.all([
 					fetch(DEPARTAMENTOS_GEOJSON_URL, { signal: controller.signal }),
-					fetch(PUNTOS_JSON_URL, { signal: controller.signal }),
+					obtenerFiltrosMapa(controller.signal),
 				]);
 
-				if (!resDeptos.ok || !resPuntos.ok) {
-					throw new Error('Error cargando archivos de datos');
+				if (!resDeptos.ok) {
+					throw new Error('No se pudo cargar la capa de departamentos.');
 				}
 
 				const deptosData = await resDeptos.json();
-				const puntosData: CulturalPoint[] = await resPuntos.json();
 
 				setDepartamentosGeoJson(deptosData);
-
-				// Calcular dinámicamente en qué departamento cae cada punto
-				const puntosConDepartamentoDinamico = puntosData.map((punto) => {
-					const positionArray = punto.latitudlongitud as [number, number];
-					// Turf usa formato [Longitud, Latitud]
-					const pt = turfPoint([positionArray[1], positionArray[0]]);
-
-					// Buscamos qué polígono contiene al punto
-					const departamentoEncontrado = deptosData.features.find(
-						(feature: Feature<Geometry, DepartmentProperties>) => {
-							const properties = feature.properties || {};
-							// Evitamos que haga "match" con el polígono de toda la provincia entera
-							// Forzamos a que sea un departamento (admin_level 5 o que su nombre tenga la palabra)
-							const isDepartment =
-								properties.admin_level === '5' ||
-								(properties.name && properties.name.includes('Departamento'));
-
-							return (
-								isDepartment && booleanPointInPolygon(pt, feature as Feature<Polygon | MultiPolygon>)
-							);
-						},
-					);
-
-					let nombreDepto = punto.departamento; // Fallback al original por si acaso
-
-					if (departamentoEncontrado) {
-						// Limpiamos el texto, ej: "Departamento Famaillá" -> "Famaillá"
-						nombreDepto =
-							departamentoEncontrado.properties?.name?.replace('Departamento ', '') || nombreDepto;
-					}
-
-					return { ...punto, departamento: nombreDepto };
-				});
-
-				setPuntosProcesados(puntosConDepartamentoDinamico);
+				setCategorias(filtros.categorias);
+				setDepartamentos(filtros.departamentos);
 			} catch (error) {
 				if (!(error instanceof DOMException && error.name === 'AbortError')) {
-					console.error('Error cargando datos del mapa:', error);
+					setError(error instanceof Error ? error.message : 'No se pudieron cargar los datos del mapa.');
 				}
 			}
 		}
 
-		loadMapData();
+		loadInitialMapData();
 
 		return () => controller.abort();
 	}, []);
 
-	// 5. El filtro ahora usa puntosProcesados en vez de la constante POINTS directa
-	const filteredPoints = puntosProcesados.filter((point) => {
-		// Separar la búsqueda en palabras individuales y normalizarlas
-		const searchTerms = normalizeText(busqueda).split(/\s+/).filter(Boolean);
+	React.useEffect(() => {
+		const controller = new AbortController();
 
-		// Combinar toda la data del punto en un solo string normalizado
-		const pointDataCombined = normalizeText(
-			`${point.nombre} ${point.descripcion} ${point.categoria} ${point.departamento}`,
-		);
+		async function loadPoints() {
+			try {
+				setError(null);
 
-		// Verificar que TODOS los términos buscados estén en la data del punto (sin importar el orden)
-		const coincideBusqueda =
-			searchTerms.length === 0 || searchTerms.every((term) => pointDataCombined.includes(term));
+				const result = await obtenerActoresMapa(
+					{
+						busqueda,
+						departamento: departamentoSeleccionado,
+						categorias: categoriasSeleccionadas,
+					},
+					controller.signal,
+				);
 
-		const coincideCategoria =
-			categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes(point.categoria);
+				setPuntosProcesados(
+					result.data.map((actor) => ({
+						id: actor.id,
+						nombre: actor.nombre,
+						descripcion: actor.descripcion,
+						categoria: actor.categoria,
+						departamento: actor.departamento,
+						latitudlongitud: [actor.latitud, actor.longitud],
+					})),
+				);
+			} catch (error) {
+				if (!(error instanceof DOMException && error.name === 'AbortError')) {
+					setError(error instanceof Error ? error.message : 'No se pudieron cargar los puntos del mapa.');
+				}
+			}
+		}
 
-		const coincideDepartamento = departamentoSeleccionado === '' || point.departamento === departamentoSeleccionado;
+		loadPoints();
 
-		return coincideBusqueda && coincideCategoria && coincideDepartamento;
-	});
+		return () => controller.abort();
+	}, [busqueda, departamentoSeleccionado, categoriasSeleccionadas]);
 
 	return (
 		<Box
@@ -288,6 +268,8 @@ export default function TucumanMap() {
 				}}
 			>
 				<FiltroCategoriasCulturales
+					categorias={categorias}
+					departamentos={departamentos}
 					categoriasSeleccionadas={categoriasSeleccionadas}
 					onCambiarCategorias={setCategoriasSeleccionadas}
 					busqueda={busqueda}
@@ -296,6 +278,20 @@ export default function TucumanMap() {
 					onCambiarDepartamento={setDepartamentoSeleccionado}
 				/>
 			</Box>
+
+			{error && (
+				<Box
+					sx={{
+						position: 'absolute',
+						left: 16,
+						top: 16,
+						zIndex: 1000,
+						maxWidth: 'calc(100% - 32px)',
+					}}
+				>
+					<Alert severity="error">{error}</Alert>
+				</Box>
+			)}
 
 			<MapContainer
 				bounds={TUCUMAN_BOUNDS}
@@ -342,7 +338,7 @@ export default function TucumanMap() {
 				)}
 
 				{/* Puntos Culturales */}
-				{filteredPoints.map((point) => (
+				{puntosProcesados.map((point) => (
 					<CircleMarker
 						key={point.id}
 						ref={(instance) => {
@@ -351,10 +347,15 @@ export default function TucumanMap() {
 						center={point.latitudlongitud}
 						fillColor="#1976d2"
 						fillOpacity={0.85}
-						radius={8}
+						radius={11}
 						stroke
 						color="#ffffff"
 						weight={2}
+						eventHandlers={{
+							mouseover: (event) => {
+								event.target.openPopup();
+							},
+						}}
 					>
 						<Popup>
 							<strong>{point.nombre}</strong>
@@ -364,9 +365,7 @@ export default function TucumanMap() {
 							<small>Categoría: {point.categoria}</small>
 							<br />
 							<Box sx={{ mt: 1 }}>
-								<Link to={`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`}>
-									Ver portafolio
-								</Link>
+								<Link to={`/actores/${point.id}`}>Ver portafolio</Link>
 							</Box>
 						</Popup>
 					</CircleMarker>

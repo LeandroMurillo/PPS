@@ -6,7 +6,7 @@ import Layout from './layouts/dashboard';
 import Mapa from './pages/mapa';
 import EmployeesCrudPage from './pages/employees';
 import ActorPortfolio from './pages/actorPortfolio';
-import ActoresPublico from './pages/actoresPublico';
+import Actores from './pages/actores';
 import AcercaDe from './pages/acerca';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 
@@ -24,8 +24,8 @@ const router = createBrowserRouter([
 						Component: Mapa,
 					},
 					{
-						path: 'actoresPublico',
-						Component: ActoresPublico,
+						path: 'actores',
+						Component: Actores,
 					},
 					{
 						path: 'actoresUsuario',

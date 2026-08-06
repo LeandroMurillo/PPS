@@ -22,7 +22,7 @@ const NAVIGATION: Navigation = [
 	},
 	{
 		title: 'Actores',
-		segment: 'actoresPublico',
+		segment: 'actores',
 		icon: <PeopleIcon />,
 	},
 	{

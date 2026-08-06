@@ -14,42 +14,13 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import SearchIcon from '@mui/icons-material/Search';
 
-const categoriasCulturales: string[] = [
-	'Música',
-	'Danza',
-	'Teatro',
-	'Artes visuales',
-	'Literatura',
-	'Cine',
-	'Fotografía',
-	'Artesanías',
-	'Patrimonio',
-	'Diseño',
-];
-
-const departamentosTucuman: string[] = [
-	'Burruyacú',
-	'Capital',
-	'Chicligasta',
-	'Cruz Alta',
-	'Famaillá',
-	'Graneros',
-	'Juan Bautista Alberdi',
-	'La Cocha',
-	'Leales',
-	'Lules',
-	'Monteros',
-	'Río Chico',
-	'Simoca',
-	'Tafí del Valle',
-	'Tafí Viejo',
-	'Trancas',
-	'Yerba Buena',
-];
+import type { FiltroCategoria, FiltroDepartamento } from '../api/actores';
 
 type FiltroCategoriasCulturalesProps = {
-	categoriasSeleccionadas: string[];
-	onCambiarCategorias: (categorias: string[]) => void;
+	categorias: FiltroCategoria[];
+	departamentos: FiltroDepartamento[];
+	categoriasSeleccionadas: number[];
+	onCambiarCategorias: (categorias: number[]) => void;
 	busqueda: string;
 	onCambiarBusqueda: (busqueda: string) => void;
 	departamentoSeleccionado: string;
@@ -57,6 +28,8 @@ type FiltroCategoriasCulturalesProps = {
 };
 
 export default function FiltroCategoriasCulturales({
+	categorias,
+	departamentos,
 	categoriasSeleccionadas,
 	onCambiarCategorias,
 	busqueda,
@@ -64,10 +37,11 @@ export default function FiltroCategoriasCulturales({
 	departamentoSeleccionado,
 	onCambiarDepartamento,
 }: FiltroCategoriasCulturalesProps) {
-	function handleCategoriasChange(event: SelectChangeEvent<string[]>) {
+	function handleCategoriasChange(event: SelectChangeEvent<number[]>) {
 		const { value } = event.target;
 
-		const nuevasCategorias = typeof value === 'string' ? value.split(',') : value;
+		const nuevasCategorias =
+			typeof value === 'string' ? value.split(',').map((categoria) => Number(categoria)) : value;
 
 		onCambiarCategorias(nuevasCategorias);
 	}
@@ -119,9 +93,9 @@ export default function FiltroCategoriasCulturales({
 							<em>Todos</em>
 						</MenuItem>
 
-						{departamentosTucuman.map((departamento) => (
-							<MenuItem key={departamento} value={departamento}>
-								{departamento}
+						{departamentos.map((departamento) => (
+							<MenuItem key={departamento.departamento} value={departamento.departamento}>
+								{departamento.departamento}
 							</MenuItem>
 						))}
 					</Select>
@@ -139,15 +113,17 @@ export default function FiltroCategoriasCulturales({
 						input={<OutlinedInput label="Categorías" />}
 						renderValue={(selected) => (
 							<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-								{selected.map((categoria) => (
-									<Chip key={categoria} label={categoria} />
-								))}
+								{selected.map((categoriaId) => {
+									const categoria = categorias.find((item) => item.id === categoriaId);
+
+									return <Chip key={categoriaId} label={categoria?.nombre ?? categoriaId} />;
+								})}
 							</Box>
 						)}
 					>
-						{categoriasCulturales.map((categoria) => (
-							<MenuItem key={categoria} value={categoria}>
-								{categoria}
+						{categorias.map((categoria) => (
+							<MenuItem key={categoria.id} value={categoria.id}>
+								{categoria.nombre}
 							</MenuItem>
 						))}
 					</Select>

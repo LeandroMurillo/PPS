@@ -11,6 +11,8 @@ import {
 	CardContent,
 	Stack,
 	Link as MuiLink,
+	Alert,
+	CircularProgress,
 } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -20,33 +22,11 @@ import LinkIcon from '@mui/icons-material/Link';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
-import L from 'leaflet';
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import { obtenerActor, type ActorDetalle } from '../api/actores';
 
-// --- Tipos ampliados para incluir la nueva información ---
-type ActorData = {
-	id: number;
-	nombre: string;
-	descripcion: string;
-	categoria: string;
-	departamento: string;
-	latitudlongitud: L.LatLngExpression;
-	fotoUrl?: string;
-	enlaces?: { id: number; descripcion: string; url: string }[];
-	eventos?: { id: number; titulo: string; descripcion: string; fecha: string }[];
-	preguntas?: { pregunta: string; respuesta: string }[];
-	integrantes?: { nombre: string; rol: string; esDueño: boolean }[];
-};
-
-const MOCK_IMAGES = [
-	'https://picsum.photos/seed/actor1/800/400',
-	'https://picsum.photos/seed/actor2/800/400',
-	'https://picsum.photos/seed/actor3/800/400',
-];
-
-// --- Helpers para identificar el tipo de enlace ---
 type TipoEnlace = 'youtube' | 'instagram' | 'facebook' | 'whatsapp' | 'otro';
 
 function detectarTipoEnlace(url: string): TipoEnlace {
@@ -78,6 +58,33 @@ function obtenerIdYoutube(url: string): string | null {
 	} catch {
 		return null;
 	}
+}
+
+function esImagenPortafolio(item: ActorDetalle['portafolio'][number]) {
+	const tipo = item.tipo.toLowerCase();
+
+	if (tipo.includes('imagen') || tipo.includes('foto')) {
+		return true;
+	}
+
+	return /\.(jpe?g|png|webp|gif|avif)(\?.*)?$/i.test(item.url);
+}
+
+function formatearFechaEvento(fecha: string) {
+	const date = new Date(fecha);
+
+	if (Number.isNaN(date.getTime())) {
+		return fecha;
+	}
+
+	return new Intl.DateTimeFormat(undefined, {
+		weekday: 'long',
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+	}).format(date);
 }
 
 // --- Miniatura de YouTube que abre el video en una pestaña nueva ---
@@ -143,99 +150,93 @@ function iconoParaEnlace(tipo: TipoEnlace) {
 }
 
 export default function ActorPortfolio() {
-	// Capturamos el id desde la URL
 	const { id } = useParams<{ id: string }>();
 	const [searchParams] = useSearchParams();
-	// URL de retorno: quien nos linkeó (lista de actores, mapa, etc.) la manda en ?from=...
-	const volverA = searchParams.get('from') || '/actoresPublico';
+	const volverA = searchParams.get('from') || '/actores';
 
-	const [actor, setActor] = useState<ActorData | null>(null);
+	const [actor, setActor] = useState<ActorDetalle | null>(null);
+	const [cargando, setCargando] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-	// Variable mock para simular si el usuario actual es dueño de este perfil
-	const isDueño = true;
-
 	useEffect(() => {
-		// Aquí puedes hacer un fetch a tu JSON o API filtrando por el ID
-		fetch('/data/puntos.json')
-			.then((res) => res.json())
-			.then((data: ActorData[]) => {
-				const coincidencia = data.find((item) => String(item.id) === String(id));
-				if (coincidencia) {
-					// --- Inyectamos datos mock basados en datos.sql para completar la vista ---
-					const actorEnriquecido: ActorData = {
-						...coincidencia,
-						enlaces: [
-							{ id: 2, descripcion: 'Instagram', url: 'https://www.instagram.com/culturadetucuman' },
-							{ id: 3, descripcion: 'Facebook', url: 'https://www.facebook.com/culturadetucuman' },
-							{
-								id: 4,
-								descripcion: 'Contactanos por WhatsApp',
-								url: 'https://wa.me/5493815551234',
-							},
-							{
-								id: 5,
-								descripcion: 'Sitio web oficial',
-								url: 'https://www.culturadetucuman.com.ar',
-							},
-							{
-								id: 1,
-								descripcion: 'Presentación en Japón',
-								url: 'http://youtube.com/watch?v=nAwCcBMQBrc',
-							},
-						],
-						eventos: [
-							{
-								id: 1,
-								titulo: 'Presentación en Peña Patria',
-								descripcion:
-									'Tocaremos nuestro nuevo disco en vivo. Con invitados especiales y artistas locales.',
-								fecha: '2026-07-09 22:00',
-							},
-							{
-								id: 2,
-								titulo: 'Toque en Bar de Yerba Buena',
-								descripcion: 'Cierre de la gira barrial. Presentación acústica e íntima.',
-								fecha: '2026-08-15 23:30',
-							},
-							{
-								id: 3,
-								titulo: 'Nuevo album en streaming',
-								descripcion: 'Escucha nuestro nuevo álbum en todas las plataformas de streaming.',
-								fecha: '2026-02-15 23:30',
-							},
-						],
-						preguntas: [
-							{ pregunta: 'Rama productiva principal (Técnica)', respuesta: 'Telar Criollo' },
-							{ pregunta: 'Género musical principal', respuesta: 'Indie Rock Alternativo' },
-							{ pregunta: 'Cámaras o equipos utilizados', respuesta: 'Sony Alpha, Dron' },
-						],
-						integrantes: [
-							{ nombre: 'César', rol: 'Batería', esDueño: true },
-							{ nombre: 'Leandro', rol: 'Bajo', esDueño: false },
-						],
-					};
-					setActor(actorEnriquecido);
+		const controller = new AbortController();
+		const actorId = Number(id);
+
+		async function loadActor() {
+			if (!Number.isInteger(actorId) || actorId <= 0) {
+				setError('El identificador del actor no es válido.');
+				setCargando(false);
+				return;
+			}
+
+			try {
+				setCargando(true);
+				setError(null);
+
+				const result = await obtenerActor(actorId, controller.signal);
+
+				setActor(result.data);
+				setCurrentImageIndex(0);
+			} catch (error) {
+				if (!(error instanceof DOMException && error.name === 'AbortError')) {
+					setError(error instanceof Error ? error.message : 'No se pudo cargar el portafolio.');
 				}
-			});
+			} finally {
+				if (!controller.signal.aborted) {
+					setCargando(false);
+				}
+			}
+		}
+
+		loadActor();
+
+		return () => controller.abort();
 	}, [id]);
 
-	// Funciones para manejar el carrusel
+	const imagenes = React.useMemo(() => {
+		if (!actor) {
+			return [];
+		}
+
+		const imagenesPortafolio = actor.portafolio.filter(esImagenPortafolio).map((item) => ({
+			url: item.url,
+			descripcion: item.descripcion ?? actor.nombre,
+		}));
+
+		return actor.foto
+			? [{ url: actor.foto, descripcion: `Foto de ${actor.nombre}` }, ...imagenesPortafolio]
+			: imagenesPortafolio;
+	}, [actor]);
+
 	const handlePrevImage = () => {
-		setCurrentImageIndex((prev) => (prev === 0 ? MOCK_IMAGES.length - 1 : prev - 1));
+		setCurrentImageIndex((prev) => (prev === 0 ? imagenes.length - 1 : prev - 1));
 	};
 
 	const handleNextImage = () => {
-		setCurrentImageIndex((prev) => (prev === MOCK_IMAGES.length - 1 ? 0 : prev + 1));
+		setCurrentImageIndex((prev) => (prev === imagenes.length - 1 ? 0 : prev + 1));
 	};
 
-	if (!actor) {
+	if (cargando) {
 		return (
 			<Box sx={{ p: 4, textAlign: 'center' }}>
-				<Typography>Cargando portafolio...</Typography>
+				<CircularProgress />
 			</Box>
 		);
 	}
+
+	if (error || !actor) {
+		return (
+			<Box sx={{ p: 4, maxWidth: 900, margin: '0 auto' }}>
+				<Alert severity="error">{error ?? 'No se encontró el actor solicitado.'}</Alert>
+			</Box>
+		);
+	}
+
+	const ubicacionMapa =
+		actor.ubicacion.latitud !== null && actor.ubicacion.longitud !== null
+			? ([actor.ubicacion.latitud, actor.ubicacion.longitud] as [number, number])
+			: null;
 
 	return (
 		<Box sx={{ p: 4, maxWidth: 1200, margin: '0 auto' }}>
@@ -250,20 +251,6 @@ export default function ActorPortfolio() {
 				<Button component={RouterLink} to={volverA} variant="contained" color="inherit">
 					Volver
 				</Button>
-
-				{isDueño && (
-					<Stack direction="row" spacing={2} alignItems="center">
-						<Button variant="contained" color="info">
-							Gestionar portafolio
-						</Button>
-						<Button variant="contained" color="info">
-							Gestionar eventos
-						</Button>
-						{/* <Button variant="contained" color="info">
-							Postularse a convocatorias
-						</Button> */}
-					</Stack>
-				)}
 			</Stack>
 
 			{/* --- CABECERA --- */}
@@ -272,7 +259,7 @@ export default function ActorPortfolio() {
 			</Typography>
 
 			<Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
-				{actor.categoria} | {actor.departamento}
+				{actor.categoria} | {actor.ubicacion.departamento}
 			</Typography>
 
 			{/* --- MULTIMEDIA Y MAPA --- */}
@@ -283,71 +270,106 @@ export default function ActorPortfolio() {
 						elevation={1}
 						sx={{ position: 'relative', overflow: 'hidden', borderRadius: 2, height: 300 }}
 					>
-						<img
-							src={MOCK_IMAGES[currentImageIndex]}
-							alt={`Imagen ${currentImageIndex + 1} de ${actor.nombre}`}
-							style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-						/>
+						{imagenes.length > 0 ? (
+							<>
+								<img
+									src={imagenes[currentImageIndex].url}
+									alt={imagenes[currentImageIndex].descripcion}
+									style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+								/>
 
-						{/* Controles del carrusel */}
-						<Box
-							sx={{
-								position: 'absolute',
-								top: '50%',
-								left: 0,
-								right: 0,
-								display: 'flex',
-								justifyContent: 'space-between',
-								px: 1,
-								transform: 'translateY(-50%)',
-							}}
-						>
-							<IconButton
-								onClick={handlePrevImage}
+								{imagenes.length > 1 && (
+									<Box
+										sx={{
+											position: 'absolute',
+											top: '50%',
+											left: 0,
+											right: 0,
+											display: 'flex',
+											justifyContent: 'space-between',
+											px: 1,
+											transform: 'translateY(-50%)',
+										}}
+									>
+										<IconButton
+											onClick={handlePrevImage}
+											sx={{
+												bgcolor: 'rgba(255,255,255,0.7)',
+												'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+											}}
+										>
+											<ArrowBackIosNewIcon fontSize="small" />
+										</IconButton>
+										<IconButton
+											onClick={handleNextImage}
+											sx={{
+												bgcolor: 'rgba(255,255,255,0.7)',
+												'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+											}}
+										>
+											<ArrowForwardIosIcon fontSize="small" />
+										</IconButton>
+									</Box>
+								)}
+							</>
+						) : (
+							<Box
 								sx={{
-									bgcolor: 'rgba(255,255,255,0.7)',
-									'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+									height: '100%',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									bgcolor: 'action.hover',
+									color: 'text.secondary',
 								}}
 							>
-								<ArrowBackIosNewIcon fontSize="small" />
-							</IconButton>
-							<IconButton
-								onClick={handleNextImage}
-								sx={{
-									bgcolor: 'rgba(255,255,255,0.7)',
-									'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
-								}}
-							>
-								<ArrowForwardIosIcon fontSize="small" />
-							</IconButton>
-						</Box>
+								Sin imágenes disponibles
+							</Box>
+						)}
 					</Paper>
 				</Box>
 
 				{/* COLUMNA DERECHA: Mapa Individual */}
 				<Box>
 					<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2, height: 300 }}>
-						<MapContainer
-							center={actor.latitudlongitud}
-							zoom={14}
-							minZoom={7}
-							style={{ height: '100%', width: '100%' }}
-							scrollWheelZoom={false} // Desactivado para que no interfiera con el scroll de la página
-						>
-							<TileLayer
-								attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-								url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-							/>
-							<CircleMarker
-								center={actor.latitudlongitud}
-								fillColor="#1976d2"
-								fillOpacity={0.85}
-								radius={10}
-								stroke
-								color="#ffffff"
-								weight={2}
-							/>
-						</MapContainer>
+						{ubicacionMapa ? (
+							<MapContainer
+								center={ubicacionMapa}
+								zoom={14}
+								minZoom={7}
+								style={{ height: '100%', width: '100%' }}
+								scrollWheelZoom={false}
+							>
+								<TileLayer
+									attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+									url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+								/>
+								<CircleMarker
+									center={ubicacionMapa}
+									fillColor="#1976d2"
+									fillOpacity={0.85}
+									radius={10}
+									stroke
+									color="#ffffff"
+									weight={2}
+								/>
+							</MapContainer>
+						) : (
+							<Box
+								sx={{
+									height: '100%',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									bgcolor: 'action.hover',
+									color: 'text.secondary',
+									textAlign: 'center',
+									p: 2,
+								}}
+							>
+								Ubicación detallada no disponible
+							</Box>
+						)}
 					</Paper>
 				</Box>
 			</Box>
@@ -358,21 +380,22 @@ export default function ActorPortfolio() {
 			</Typography>
 
 			{/* --- ENLACES --- */}
-			{actor.enlaces && actor.enlaces.length > 0 && (
+			{actor.portafolio.length > 0 && (
 				<Box sx={{ mb: 6 }}>
 					<Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
-						Enlaces
+						Portafolio
 					</Typography>
 					<Stack spacing={1} sx={{ mb: 3 }}>
-						{actor.enlaces
+						{actor.portafolio
+							.filter((enlace) => !esImagenPortafolio(enlace))
 							.filter((enlace) => detectarTipoEnlace(enlace.url) !== 'youtube')
 							.map((enlace) => {
 								const tipo = detectarTipoEnlace(enlace.url);
 								return (
-									<Stack key={enlace.id} direction="row" spacing={1} alignItems="center">
+									<Stack key={enlace.url} direction="row" spacing={1} alignItems="center">
 										{iconoParaEnlace(tipo)}
 										<MuiLink href={enlace.url} target="_blank" rel="noopener" underline="hover">
-											{enlace.descripcion}
+											{enlace.descripcion ?? enlace.url}
 										</MuiLink>
 									</Stack>
 								);
@@ -381,15 +404,19 @@ export default function ActorPortfolio() {
 
 					{/* Embeds de YouTube para cada enlace que sea un video */}
 					<Grid container spacing={3}>
-						{actor.enlaces
+						{actor.portafolio
+							.filter((enlace) => !esImagenPortafolio(enlace))
 							.filter((enlace) => detectarTipoEnlace(enlace.url) === 'youtube')
 							.map((enlace) => {
 								const videoId = obtenerIdYoutube(enlace.url);
 								if (!videoId) return null;
 								return (
-									<Grid size={{ xs: 12, sm: 6 }} key={`yt-${enlace.id}`}>
+									<Grid size={{ xs: 12, sm: 6 }} key={`yt-${enlace.url}`}>
 										<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2 }}>
-											<YoutubeThumbnailLink videoId={videoId} titulo={enlace.descripcion} />
+											<YoutubeThumbnailLink
+												videoId={videoId}
+												titulo={enlace.descripcion ?? actor.nombre}
+											/>
 											<Typography
 												variant="caption"
 												color="text.secondary"
@@ -397,7 +424,7 @@ export default function ActorPortfolio() {
 											>
 												<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
 													<YouTubeIcon fontSize="small" color="error" />
-													{enlace.descripcion}
+													{enlace.descripcion ?? enlace.url}
 												</Box>
 											</Typography>
 										</Paper>
@@ -409,21 +436,21 @@ export default function ActorPortfolio() {
 			)}
 
 			{/* --- EVENTOS --- */}
-			{actor.eventos && actor.eventos.length > 0 && (
+			{actor.eventos.length > 0 && (
 				<Box sx={{ mb: 6 }}>
 					<Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
 						Eventos
 					</Typography>
 					<Grid container spacing={3}>
 						{actor.eventos.slice(0, 4).map((evento) => (
-							<Grid size={{ xs: 12, sm: 6 }} key={evento.id}>
+							<Grid size={{ xs: 12, sm: 6 }} key={`${evento.nombre}-${evento.fecha}`}>
 								<Card
 									variant="outlined"
 									sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
 								>
 									<CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
 										<Typography variant="subtitle2" color="text.secondary" gutterBottom>
-											{evento.titulo}
+											{evento.nombre}
 										</Typography>
 
 										<Typography variant="h6" sx={{ mb: 2 }}>
@@ -431,7 +458,7 @@ export default function ActorPortfolio() {
 										</Typography>
 
 										<Typography variant="caption" color="text.secondary" sx={{ mt: 'auto' }}>
-											Fecha evento: {evento.fecha}
+											{formatearFechaEvento(evento.fecha)}
 										</Typography>
 									</CardContent>
 								</Card>
@@ -445,14 +472,14 @@ export default function ActorPortfolio() {
 
 			{/* --- PREGUNTAS E INTEGRANTES --- */}
 			<Grid container spacing={4} sx={{ mb: 4 }}>
-				{actor.preguntas && actor.preguntas.length > 0 && (
+				{actor.respuestas.length > 0 && (
 					<Grid size={{ xs: 12, md: 6 }}>
 						<Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
 							Preguntas y respuestas
 						</Typography>
 
 						<Stack spacing={2}>
-							{actor.preguntas.map((p, index) => (
+							{actor.respuestas.map((p, index) => (
 								<Box key={index}>
 									<Typography variant="body1">{p.pregunta}</Typography>
 									<Typography variant="body2" color="text.secondary">
@@ -464,7 +491,7 @@ export default function ActorPortfolio() {
 					</Grid>
 				)}
 
-				{actor.integrantes && actor.integrantes.length > 0 && (
+				{actor.integrantes.length > 0 && (
 					<Grid size={{ xs: 12, md: 6 }}>
 						<Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
 							Integrantes
@@ -472,17 +499,8 @@ export default function ActorPortfolio() {
 						<Stack spacing={1}>
 							{actor.integrantes.map((integrante, index) => (
 								<Typography key={index} variant="body1">
-									{integrante.nombre} - {integrante.rol}
-									{/* {integrante.esDueño && (
-											<Typography
-												component="span"
-												variant="caption"
-												color="text.secondary"
-												sx={{ ml: 1 }}
-											>
-												(Dueño)
-											</Typography>
-										)} */}
+									{integrante.nombre} {integrante.apellido}
+									{integrante.rol ? ` - ${integrante.rol}` : ''}
 								</Typography>
 							))}
 						</Stack>
