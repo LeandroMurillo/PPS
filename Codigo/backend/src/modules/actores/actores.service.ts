@@ -1,7 +1,24 @@
-import { listarActoresRepository } from './actores.repository.js';
+import {
+	listarActoresRepository,
+	obtenerActoresMapaRepository,
+	obtenerActorRepository,
+	obtenerFiltrosListadoActoresRepository,
+	obtenerFiltrosMapaRepository,
+} from './actores.repository.js';
 
-import type { ListarActoresQuery, ListarActoresResponse } from './actores.schemas.js';
-import type { ListarActoresRepositoryInput } from './actores.types.js';
+import type {
+	ListarActoresQuery,
+	ListarActoresResponse,
+	ObtenerActoresMapaQuery,
+	ObtenerActoresMapaResponse,
+	ObtenerActorResponse,
+	ObtenerFiltrosListadoActoresResponse,
+	ObtenerFiltrosMapaResponse,
+} from './actores.schemas.js';
+import type {
+	ListarActoresRepositoryInput,
+	ObtenerActoresMapaRepositoryInput,
+} from './actores.types.js';
 
 export async function listarActoresService(
 	query: ListarActoresQuery,
@@ -36,4 +53,40 @@ export async function listarActoresService(
 			hasNext: query.offset + count < result.total,
 		},
 	};
+}
+
+export async function obtenerActorService(id: number): Promise<ObtenerActorResponse | null> {
+	const result = await obtenerActorRepository(id);
+
+	if (!result.actor) {
+		return null;
+	}
+
+	return {
+		data: result.actor,
+	};
+}
+
+export async function obtenerActoresMapaService(
+	query: ObtenerActoresMapaQuery,
+): Promise<ObtenerActoresMapaResponse> {
+	const repositoryInput: ObtenerActoresMapaRepositoryInput = {
+		busqueda: query.busqueda ?? null,
+		departamento: query.departamento ?? null,
+		categorias: query.categorias ?? [],
+	};
+
+	const result = await obtenerActoresMapaRepository(repositoryInput);
+
+	return {
+		data: result.actores,
+	};
+}
+
+export async function obtenerFiltrosMapaService(): Promise<ObtenerFiltrosMapaResponse> {
+	return obtenerFiltrosMapaRepository();
+}
+
+export async function obtenerFiltrosListadoActoresService(): Promise<ObtenerFiltrosListadoActoresResponse> {
+	return obtenerFiltrosListadoActoresRepository();
 }

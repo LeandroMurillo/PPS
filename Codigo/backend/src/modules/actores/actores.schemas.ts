@@ -28,6 +28,41 @@ function normalizeQueryInteger(value: unknown): unknown {
 	return Number(normalized);
 }
 
+function normalizeQueryIntegerArray(value: unknown): unknown {
+	if (value === undefined) {
+		return undefined;
+	}
+
+	const rawValues = Array.isArray(value) ? value : [value];
+
+	const normalizedValues = rawValues.flatMap((rawValue) => {
+		if (typeof rawValue !== 'string') {
+			return [rawValue];
+		}
+
+		return rawValue
+			.split(',')
+			.map((part) => part.trim())
+			.filter((part) => part !== '');
+	});
+
+	if (normalizedValues.length === 0) {
+		return undefined;
+	}
+
+	return normalizedValues.map((normalizedValue) => {
+		if (typeof normalizedValue !== 'string') {
+			return normalizedValue;
+		}
+
+		if (!/^\d+$/.test(normalizedValue)) {
+			return normalizedValue;
+		}
+
+		return Number(normalizedValue);
+	});
+}
+
 /**
  * Parámetros de GET /api/publico/actores.
  *
@@ -75,6 +110,52 @@ export const listarActoresQuerySchema = z
 	});
 
 export type ListarActoresQuery = z.infer<typeof listarActoresQuerySchema>;
+
+/**
+ * Parámetros de GET /api/publico/actores/mapa.
+ */
+export const obtenerActoresMapaQuerySchema = z
+	.strictObject({
+		busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()).meta({
+			description:
+				'Texto buscado en el nombre, descripción, tipo, categoría, subcategoría y ubicación pública del actor.',
+			example: 'teatro',
+		}),
+
+		departamento: z.preprocess(normalizeOptionalString, z.string().max(100).optional()).meta({
+			description: 'Nombre exacto del departamento por el cual se filtrarán los actores del mapa.',
+			example: 'Capital',
+		}),
+
+		categorias: z
+			.preprocess(
+				normalizeQueryIntegerArray,
+				z.array(z.number().int().positive().max(4_294_967_295)).max(100).optional(),
+			)
+			.meta({
+				description:
+					'Identificadores de categorías. Puede enviarse como CSV (?categorias=1,2) o como parámetros repetidos (?categorias=1&categorias=2).',
+				example: [1, 2],
+			}),
+	})
+	.meta({
+		description: 'Filtros del mapa público de actores.',
+	});
+
+export type ObtenerActoresMapaQuery = z.infer<typeof obtenerActoresMapaQuerySchema>;
+
+export const obtenerActorParamsSchema = z
+	.strictObject({
+		id: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)).meta({
+			description: 'Identificador del actor cultural.',
+			example: 6,
+		}),
+	})
+	.meta({
+		description: 'Parámetros de ruta para obtener la ficha pública de un actor.',
+	});
+
+export type ObtenerActorParams = z.infer<typeof obtenerActorParamsSchema>;
 
 /**
  * Actor resumido que consume el frontend.
@@ -127,6 +208,375 @@ export const actorPublicoResumenSchema = z
 	});
 
 export type ActorPublicoResumen = z.infer<typeof actorPublicoResumenSchema>;
+
+export const actorMapaPublicoSchema = z
+	.strictObject({
+		id: z.number().int().positive().meta({
+			description: 'Identificador del actor cultural.',
+			example: 6,
+		}),
+
+		nombre: z.string().meta({
+			description: 'Nombre público del actor cultural.',
+			example: 'Teatro Alberdi',
+		}),
+
+		descripcion: z.string().nullable().meta({
+			description: 'Descripción pública del actor.',
+			example: 'Espacio cultural histórico administrado por la UNT.',
+		}),
+
+		foto: z.string().nullable().meta({
+			description: 'URL o ruta de la imagen de perfil del actor.',
+			example: 'https://img.com/teatro-alberdi.jpg',
+		}),
+
+		categoria: z.string().meta({
+			description: 'Categoría cultural principal.',
+			example: 'Artes Escénicas',
+		}),
+
+		subcategoria: z.string().nullable().meta({
+			description: 'Subcategoría cultural del actor.',
+			example: 'Teatro',
+		}),
+
+		departamento: z.string().meta({
+			description: 'Departamento de Tucumán donde se ubica públicamente el actor.',
+			example: 'Capital',
+		}),
+
+		localidad: z.string().nullable().meta({
+			description: 'Localidad pública del actor.',
+			example: 'San Miguel de Tucumán',
+		}),
+
+		direccion: z.string().nullable().meta({
+			description: 'Dirección pública del actor.',
+			example: 'Jujuy 92',
+		}),
+
+		latitud: z.number().min(-90).max(90).meta({
+			description: 'Latitud pública del actor.',
+			example: -26.816,
+		}),
+
+		longitud: z.number().min(-180).max(180).meta({
+			description: 'Longitud pública del actor.',
+			example: -65.2105,
+		}),
+	})
+	.meta({
+		id: 'ActorMapaPublico',
+		description: 'Actor cultural activo visible en el mapa público.',
+	});
+
+export type ActorMapaPublico = z.infer<typeof actorMapaPublicoSchema>;
+
+export const obtenerActoresMapaResponseSchema = z
+	.strictObject({
+		data: z.array(actorMapaPublicoSchema),
+	})
+	.meta({
+		id: 'ObtenerActoresMapaResponse',
+		description: 'Actores culturales visibles en el mapa público.',
+	});
+
+export type ObtenerActoresMapaResponse = z.infer<typeof obtenerActoresMapaResponseSchema>;
+
+export const actorDetallePortafolioItemSchema = z
+	.strictObject({
+		tipo: z.string().meta({
+			description: 'Tipo del elemento de portafolio.',
+			example: 'VIDEO',
+		}),
+
+		descripcion: z.string().nullable().meta({
+			description: 'Descripción pública del elemento.',
+			example: 'Presentación en vivo.',
+		}),
+
+		url: z.string().meta({
+			description: 'URL pública del elemento.',
+			example: 'https://youtube.com/watch?v=abc123',
+		}),
+	})
+	.meta({
+		id: 'ActorDetallePortafolioItem',
+		description: 'Elemento público del portafolio de un actor cultural.',
+	});
+
+export const actorDetalleEventoSchema = z
+	.strictObject({
+		nombre: z.string().meta({
+			description: 'Nombre del evento.',
+			example: 'Presentación en Peña Patria',
+		}),
+
+		descripcion: z.string().nullable().meta({
+			description: 'Descripción del evento.',
+			example: 'Presentación con artistas invitados.',
+		}),
+
+		fecha: z.string().meta({
+			description: 'Fecha y hora del evento.',
+			example: '2026-07-09T22:00:00.000Z',
+		}),
+	})
+	.meta({
+		id: 'ActorDetalleEvento',
+		description: 'Evento activo asociado al actor cultural.',
+	});
+
+export const actorDetalleRespuestaSchema = z
+	.strictObject({
+		pregunta: z.string().meta({
+			description: 'Pregunta pública del formulario.',
+			example: 'Género musical principal',
+		}),
+
+		respuesta: z.string().nullable().meta({
+			description: 'Respuesta pública del actor.',
+			example: 'Folklore',
+		}),
+	})
+	.meta({
+		id: 'ActorDetalleRespuesta',
+		description: 'Pregunta y respuesta pública asociada al actor cultural.',
+	});
+
+export const actorDetalleIntegranteSchema = z
+	.strictObject({
+		nombre: z.string().meta({
+			description: 'Nombre del integrante.',
+			example: 'César',
+		}),
+
+		apellido: z.string().meta({
+			description: 'Apellido del integrante.',
+			example: 'López',
+		}),
+
+		rol: z.string().nullable().meta({
+			description: 'Rol del integrante dentro del actor cultural.',
+			example: 'Batería',
+		}),
+	})
+	.meta({
+		id: 'ActorDetalleIntegrante',
+		description: 'Integrante activo del actor cultural.',
+	});
+
+export const actorDetallePublicoSchema = z
+	.strictObject({
+		id: z.number().int().positive().meta({
+			description: 'Identificador del actor cultural.',
+			example: 6,
+		}),
+
+		nombre: z.string().meta({
+			description: 'Nombre público del actor cultural.',
+			example: 'Teatro Alberdi',
+		}),
+
+		descripcion: z.string().nullable().meta({
+			description: 'Descripción pública del actor.',
+			example: 'Espacio cultural histórico administrado por la UNT.',
+		}),
+
+		foto: z.string().nullable().meta({
+			description: 'URL o ruta de la imagen de perfil del actor.',
+			example: 'https://img.com/teatro-alberdi.jpg',
+		}),
+
+		categoria: z.string().meta({
+			description: 'Categoría cultural principal.',
+			example: 'Artes Escénicas',
+		}),
+
+		subcategoria: z.string().nullable().meta({
+			description: 'Subcategoría cultural del actor.',
+			example: 'Teatro',
+		}),
+
+		ubicacion: z.strictObject({
+			provincia: z.string().meta({
+				description: 'Provincia donde está registrado el actor.',
+				example: 'Tucumán',
+			}),
+
+			departamento: z.string().meta({
+				description: 'Departamento donde está registrado el actor.',
+				example: 'Capital',
+			}),
+
+			localidad: z.string().nullable().meta({
+				description: 'Localidad registrada del actor.',
+				example: 'San Miguel de Tucumán',
+			}),
+
+			esPublica: z.boolean().meta({
+				description: 'Indica si la ubicación detallada es pública.',
+				example: true,
+			}),
+
+			direccion: z.string().nullable().meta({
+				description: 'Dirección pública del actor. Es null cuando la ubicación no es pública.',
+				example: 'Jujuy 92',
+			}),
+
+			latitud: z.number().min(-90).max(90).nullable().meta({
+				description: 'Latitud pública del actor. Es null cuando la ubicación no es pública.',
+				example: -26.816,
+			}),
+
+			longitud: z.number().min(-180).max(180).nullable().meta({
+				description: 'Longitud pública del actor. Es null cuando la ubicación no es pública.',
+				example: -65.2105,
+			}),
+		}),
+
+		portafolio: z.array(actorDetallePortafolioItemSchema),
+		eventos: z.array(actorDetalleEventoSchema),
+		respuestas: z.array(actorDetalleRespuestaSchema),
+		integrantes: z.array(actorDetalleIntegranteSchema),
+	})
+	.meta({
+		id: 'ActorDetallePublico',
+		description: 'Ficha pública completa de un actor cultural activo.',
+	});
+
+export type ActorDetallePublico = z.infer<typeof actorDetallePublicoSchema>;
+
+export const obtenerActorResponseSchema = z
+	.strictObject({
+		data: actorDetallePublicoSchema,
+	})
+	.meta({
+		id: 'ObtenerActorResponse',
+		description: 'Ficha pública completa de un actor cultural.',
+	});
+
+export type ObtenerActorResponse = z.infer<typeof obtenerActorResponseSchema>;
+
+export const actorNoEncontradoResponseSchema = z
+	.strictObject({
+		error: z.strictObject({
+			code: z.literal('ACTOR_NOT_FOUND'),
+
+			message: z.string().meta({
+				example: 'No se encontró un actor público activo con el identificador solicitado',
+			}),
+		}),
+	})
+	.meta({
+		id: 'ActorNoEncontradoResponse',
+		description: 'Respuesta producida cuando no existe un actor público activo con ese identificador.',
+	});
+
+export const listarActoresFiltroCategoriaSchema = z
+	.strictObject({
+		id: z.number().int().positive().meta({
+			description: 'Identificador de la categoría cultural.',
+			example: 3,
+		}),
+
+		nombre: z.string().meta({
+			description: 'Nombre de la categoría cultural.',
+			example: 'Artes Escénicas',
+		}),
+	})
+	.meta({
+		id: 'ListarActoresFiltroCategoria',
+		description: 'Categoría disponible como filtro del directorio público de actores.',
+	});
+
+export type ListarActoresFiltroCategoria = z.infer<typeof listarActoresFiltroCategoriaSchema>;
+
+export const listarActoresFiltroDepartamentoSchema = z
+	.strictObject({
+		departamento: z.string().meta({
+			description: 'Nombre del departamento disponible como filtro.',
+			example: 'Tafí Viejo',
+		}),
+	})
+	.meta({
+		id: 'ListarActoresFiltroDepartamento',
+		description: 'Departamento disponible como filtro del directorio público de actores.',
+	});
+
+export type ListarActoresFiltroDepartamento = z.infer<
+	typeof listarActoresFiltroDepartamentoSchema
+>;
+
+export const obtenerFiltrosListadoActoresResponseSchema = z
+	.strictObject({
+		categorias: z.array(listarActoresFiltroCategoriaSchema),
+		departamentos: z.array(listarActoresFiltroDepartamentoSchema),
+	})
+	.meta({
+		id: 'ObtenerFiltrosListadoActoresResponse',
+		description: 'Filtros disponibles para el directorio público de actores culturales.',
+	});
+
+export type ObtenerFiltrosListadoActoresResponse = z.infer<
+	typeof obtenerFiltrosListadoActoresResponseSchema
+>;
+
+export const mapaFiltroCategoriaSchema = z
+	.strictObject({
+		id: z.number().int().positive().meta({
+			description: 'Identificador de la categoría cultural.',
+			example: 3,
+		}),
+
+		nombre: z.string().meta({
+			description: 'Nombre de la categoría cultural.',
+			example: 'Artes Escénicas',
+		}),
+
+		cantidadActores: z.number().int().min(0).meta({
+			description: 'Cantidad de actores visibles en el mapa para esta categoría.',
+			example: 12,
+		}),
+	})
+	.meta({
+		id: 'MapaFiltroCategoria',
+		description: 'Categoría disponible como filtro del mapa público.',
+	});
+
+export type MapaFiltroCategoria = z.infer<typeof mapaFiltroCategoriaSchema>;
+
+export const mapaFiltroDepartamentoSchema = z
+	.strictObject({
+		departamento: z.string().meta({
+			description: 'Nombre del departamento disponible como filtro.',
+			example: 'Tafí Viejo',
+		}),
+
+		cantidadActores: z.number().int().min(0).meta({
+			description: 'Cantidad de actores visibles en el mapa para este departamento.',
+			example: 8,
+		}),
+	})
+	.meta({
+		id: 'MapaFiltroDepartamento',
+		description: 'Departamento disponible como filtro del mapa público.',
+	});
+
+export type MapaFiltroDepartamento = z.infer<typeof mapaFiltroDepartamentoSchema>;
+
+export const obtenerFiltrosMapaResponseSchema = z
+	.strictObject({
+		categorias: z.array(mapaFiltroCategoriaSchema),
+		departamentos: z.array(mapaFiltroDepartamentoSchema),
+	})
+	.meta({
+		id: 'ObtenerFiltrosMapaResponse',
+		description: 'Filtros disponibles para el mapa público de actores culturales.',
+	});
+
+export type ObtenerFiltrosMapaResponse = z.infer<typeof obtenerFiltrosMapaResponseSchema>;
 
 export const paginacionSchema = z
 	.strictObject({
