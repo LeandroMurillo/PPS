@@ -23,6 +23,7 @@ import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
+import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 
 // --- Tipos ampliados para incluir la nueva información ---
 type ActorData = {
@@ -77,6 +78,55 @@ function obtenerIdYoutube(url: string): string | null {
 	} catch {
 		return null;
 	}
+}
+
+// --- Miniatura de YouTube que abre el video en una pestaña nueva ---
+// A diferencia de un <iframe>, esto nunca carga nada de youtube.com en la
+// página: solo una imagen estática (i.ytimg.com). Cero cookies, incluso
+// en modo "no-cookie", hasta que el usuario decide irse a YouTube.
+function YoutubeThumbnailLink({ videoId, titulo }: { videoId: string; titulo: string }) {
+	return (
+		<MuiLink
+			href={`https://www.youtube.com/watch?v=${videoId}`}
+			target="_blank"
+			rel="noopener noreferrer"
+			sx={{
+				position: 'relative',
+				display: 'block',
+				pt: '56.25%', // aspect ratio 16:9
+				overflow: 'hidden',
+			}}
+		>
+			<Box
+				component="img"
+				src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+				alt={titulo}
+				loading="lazy"
+				sx={{
+					position: 'absolute',
+					top: 0,
+					left: 0,
+					width: '100%',
+					height: '100%',
+					objectFit: 'cover',
+				}}
+			/>
+			<Box
+				sx={{
+					position: 'absolute',
+					inset: 0,
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					bgcolor: 'rgba(0,0,0,0.15)',
+					transition: 'background-color 0.2s',
+					'&:hover': { bgcolor: 'rgba(0,0,0,0.35)' },
+				}}
+			>
+				<PlayCircleFilledWhiteIcon sx={{ fontSize: 64, color: 'rgba(255,255,255,0.9)' }} />
+			</Box>
+		</MuiLink>
+	);
 }
 
 function iconoParaEnlace(tipo: TipoEnlace) {
@@ -339,23 +389,7 @@ export default function ActorPortfolio() {
 								return (
 									<Grid size={{ xs: 12, sm: 6 }} key={`yt-${enlace.id}`}>
 										<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2 }}>
-											<Box sx={{ position: 'relative', pt: '56.25%' }}>
-												<Box
-													component="iframe"
-													src={`https://www.youtube.com/embed/${videoId}`}
-													title={enlace.descripcion}
-													allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-													allowFullScreen
-													sx={{
-														position: 'absolute',
-														top: 0,
-														left: 0,
-														width: '100%',
-														height: '100%',
-														border: 0,
-													}}
-												/>
-											</Box>
+											<YoutubeThumbnailLink videoId={videoId} titulo={enlace.descripcion} />
 											<Typography
 												variant="caption"
 												color="text.secondary"
