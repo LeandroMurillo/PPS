@@ -10,7 +10,7 @@ services:
       # Use .env file for these values
       MYSQL_ROOT_HOST: '%' # Allows root to connect from any container
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
@@ -22,7 +22,50 @@ services:
       # Mount all your SQL scripts to initialize the database
       # The entrypoint runs them in alphabetical order.
       - ./DB/cultura.sql:/docker-entrypoint-initdb.d/1_schema.sql
-      - ./DB/datos.sql:/docker-entrypoint-initdb.d/2_data.sql
+      - ./DB/checks.sql:/docker-entrypoint-initdb.d/2_checks.sql
+      - ./DB/sp.sql:/docker-entrypoint-initdb.d/3_stored_procedures.sql
+      - ./DB/datos.sql:/docker-entrypoint-initdb.d/4_data.sql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # Backend Service
+  # ----------------------------------------
+  backend:
+    container_name: cultura-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:5173
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_CONNECTION_LIMIT: 10
+    ports:
+      - '3000:3000'
+    volumes:
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    develop:
+      watch:
+        - path: ./backend/package.json
+          action: rebuild
+        - path: ./backend/package-lock.json
+          action: rebuild
+        - path: ./backend
+          target: /app
+          action: sync
 
   # ----------------------------------------
   # Frontend Service
@@ -37,14 +80,18 @@ services:
     # environment:
     #   # This URL is used by the *browser* to find the API
     #   VITE_API_URL: 'http://cultura.com:3000'
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:3000
     volumes:
       # Only mount node_modules
       - /app/node_modules
-    # depends_on:
-    #   - backend
+    depends_on:
+      - backend
     develop:
       watch:
         - path: ./frontend/package.json
+          action: rebuild
+        - path: ./frontend/package-lock.json
           action: rebuild
         # This 'sync' action replaces the old volume mount
         - path: ./frontend

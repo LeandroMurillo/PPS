@@ -7,6 +7,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
+    "dev:docker": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node --env-file=.env dist/server.js",
     "typecheck": "tsc --noEmit",
