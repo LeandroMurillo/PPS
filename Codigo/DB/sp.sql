@@ -818,50 +818,37 @@ BEGIN
     -- Resultado 2: actores de la página solicitada
     -- =========================================================
     SELECT
-        a.idActor as id,
+        a.idActor,
         a.nombre,
         a.descripcion,
-        a.fotoPerfilUrl as foto,
+        a.fotoPerfilUrl,
+
+        c.idCategoria,
         c.nombre AS categoria,
+
+        s.idSubcategoria,
         s.nombre AS subcategoria,
+
         ub.departamento,
-        ub.esPublica AS ubicacionPublica,
 
-    /*
-     * Datos protegidos cuando la ubicación es privada.
-     */
-    CASE
-        WHEN ub.esPublica = 1
-        THEN ub.localidad
-        ELSE NULL
-    END AS localidad,
+        CASE
+            WHEN ub.esPublica = 1
+            THEN ub.localidad
+            ELSE NULL
+        END AS localidad
 
-    CASE
-        WHEN ub.esPublica = 1
-        THEN ub.direccion
-        ELSE NULL
-    END AS direccion,
+    FROM `Actores` AS a
 
-    CASE
-        WHEN ub.esPublica = 1
-        THEN ub.latitud
-        ELSE NULL
-    END AS latitud,
-
-    CASE
-        WHEN ub.esPublica = 1
-        THEN ub.longitud
-        ELSE NULL
-    END AS longitud
-
-    FROM `Actores` a
-    INNER JOIN `Categorias` c
+    INNER JOIN `Categorias` AS c
         ON c.idCategoria = a.idCategoria
-    LEFT JOIN `Subcategorias` s
+
+    LEFT JOIN `Subcategorias` AS s
         ON s.idCategoria = a.idCategoria
-       AND s.idSubcategoria = a.idSubcategoria
-    INNER JOIN `Ubicaciones` ub
+    AND s.idSubcategoria = a.idSubcategoria
+
+    INNER JOIN `Ubicaciones` AS ub
         ON ub.idUbicacion = a.idUbicacion
+
     WHERE
         a.estado = 'A'
         AND c.estado = 'A'
