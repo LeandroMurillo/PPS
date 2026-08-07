@@ -23,7 +23,7 @@ jobs:
         image: mariadb:lts
         env:
           MARIADB_ROOT_PASSWORD: root
-          MARIADB_NAME: cultura
+          MARIADB_DATABASE: cultura
         ports:
           - 3306:3306
         options: >-
