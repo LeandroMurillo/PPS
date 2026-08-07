@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { openApiRouter } from './openapi/openapi.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found-handler.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
 import { actoresPublicosRouter } from './modules/actores/actores.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
 import { logger } from './shared/logger.js';
@@ -46,6 +47,7 @@ app.use(
 app.use('/api', healthRouter);
 
 app.use('/api/publico/actores', actoresPublicosRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(openApiRouter);
 

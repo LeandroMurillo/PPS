@@ -9,6 +9,8 @@ import ActorPortfolio from './pages/actorPortfolio';
 import Actores from './pages/actores';
 import AcercaDe from './pages/acerca';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
+import AdminActoresPage from './pages/adminActores';
+import AdminUsuariosPage from './pages/adminUsuarios';
 
 const router = createBrowserRouter([
 	{
@@ -41,11 +43,11 @@ const router = createBrowserRouter([
 					},
 					{
 						path: 'actoresAdmin',
-						Component: EmployeesCrudPage,
+						Component: AdminActoresPage,
 					},
 					{
 						path: 'usuarios',
-						Component: EmployeesCrudPage,
+						Component: AdminUsuariosPage,
 					},
 					{
 						path: 'convocatoriasAdmin',

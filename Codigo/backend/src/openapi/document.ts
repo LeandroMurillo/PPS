@@ -1,5 +1,6 @@
 import { OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
 
+import { registerAdminOpenApi } from '../modules/admin/admin.openapi.js';
 import { registerActoresOpenApi } from '../modules/actores/actores.openapi.js';
 
 import { openApiRegistry } from './registry.js';
@@ -14,6 +15,7 @@ import { openApiRegistry } from './registry.js';
  * registerUsuariosOpenApi();
  */
 registerActoresOpenApi();
+registerAdminOpenApi();
 
 const generator = new OpenApiGeneratorV31(openApiRegistry.definitions, {
 	sortComponents: 'alphabetically',
@@ -41,6 +43,10 @@ export const openApiDocument = generator.generateDocument({
 		{
 			name: 'Actores públicos',
 			description: 'Consulta pública del directorio de actores culturales.',
+		},
+		{
+			name: 'Administración',
+			description: 'Consultas de administración de usuarios y actores culturales.',
 		},
 	],
 });
