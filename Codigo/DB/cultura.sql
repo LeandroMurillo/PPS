@@ -82,6 +82,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `cultura`.`Categorias` (
   `idCategoria` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NOT NULL,
+  `icono` VARCHAR(64) NOT NULL DEFAULT 'Category',
   `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
   PRIMARY KEY (`idCategoria`),
   UNIQUE INDEX `uq_nombre` (`nombre` ASC) VISIBLE)
@@ -97,6 +98,7 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Subcategorias` (
   `nombre` VARCHAR(100) NOT NULL,
   `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
   PRIMARY KEY (`idCategoria`, `idSubcategoria`),
+  UNIQUE INDEX `uq_Subcategorias_idCategoria` (`idCategoria` ASC) VISIBLE,
   UNIQUE INDEX `uq_idCategoria_nombre` (`idCategoria` ASC, `nombre` ASC) VISIBLE,
   INDEX `FK_Categorias_idCategoria2_idx` (`idCategoria` ASC) VISIBLE,
   CONSTRAINT `FK_Categorias_idCategoria2`

@@ -1,17 +1,25 @@
 import {
 	asignarModeradorAdminRepository,
 	cambiarEstadoUsuarioAdminRepository,
+	crearCategoriaAdminRepository,
+	editarCategoriaAdminRepository,
+	eliminarCategoriaAdminRepository,
 	listarActoresAdminRepository,
+	listarCategoriasAdminRepository,
 	listarUsuariosAdminRepository,
+	obtenerCategoriaAdminRepository,
 	obtenerUsuarioAdminRepository,
 } from './admin.repository.js';
 
 import type {
 	ListarActoresAdminQuery,
 	ListarActoresAdminResponse,
+	ListarCategoriasAdminQuery,
+	ListarCategoriasAdminResponse,
 	ListarUsuariosAdminQuery,
 	ListarUsuariosAdminResponse,
 	ObtenerUsuarioAdminResponse,
+	ObtenerCategoriaAdminResponse,
 } from './admin.schemas.js';
 
 function pagination(total: number, count: number, limit: number, offset: number) {
@@ -70,4 +78,46 @@ export async function listarActoresAdminService(
 		data: result.actores,
 		pagination: pagination(result.total, result.actores.length, query.limit, query.offset),
 	};
+}
+
+export async function listarCategoriasAdminService(
+	query: ListarCategoriasAdminQuery,
+): Promise<ListarCategoriasAdminResponse> {
+	const result = await listarCategoriasAdminRepository(query);
+
+	return {
+		data: result.categorias,
+		pagination: pagination(result.total, result.categorias.length, query.limit, query.offset),
+	};
+}
+
+export async function obtenerCategoriaAdminService(
+	id: number,
+): Promise<ObtenerCategoriaAdminResponse | null> {
+	const categoria = await obtenerCategoriaAdminRepository(id);
+
+	return categoria ? { data: categoria } : null;
+}
+
+export async function crearCategoriaAdminService(
+	nombre: string,
+	icono: string,
+	estado: 'A' | 'I',
+): Promise<ObtenerCategoriaAdminResponse> {
+	return { data: await crearCategoriaAdminRepository(nombre, icono, estado) };
+}
+
+export async function editarCategoriaAdminService(
+	id: number,
+	nombre: string,
+	icono: string,
+	estado: 'A' | 'I',
+): Promise<ObtenerCategoriaAdminResponse> {
+	return { data: await editarCategoriaAdminRepository(id, nombre, icono, estado) };
+}
+
+export async function eliminarCategoriaAdminService(
+	id: number,
+): Promise<ObtenerCategoriaAdminResponse> {
+	return { data: await eliminarCategoriaAdminRepository(id) };
 }

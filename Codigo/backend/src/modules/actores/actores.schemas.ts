@@ -144,6 +144,16 @@ export const obtenerActoresMapaQuerySchema = z
 
 export type ObtenerActoresMapaQuery = z.infer<typeof obtenerActoresMapaQuerySchema>;
 
+export const categoriaIconoSchema = z.enum([
+	'Category',
+	'MusicNote',
+	'Handyman',
+	'TheaterComedy',
+	'Movie',
+	'MenuBook',
+	'Palette',
+]);
+
 export const obtenerActorParamsSchema = z
 	.strictObject({
 		id: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)).meta({
@@ -185,6 +195,11 @@ export const actorPublicoResumenSchema = z
 		categoria: z.string().meta({
 			description: 'Categoría cultural principal.',
 			example: 'Artes Escénicas',
+		}),
+
+		categoriaIcono: categoriaIconoSchema.meta({
+			description: 'Icono Material asociado a la categoría cultural.',
+			example: 'TheaterComedy',
 		}),
 
 		subcategoria: z.string().nullable().meta({
@@ -234,6 +249,11 @@ export const actorMapaPublicoSchema = z
 		categoria: z.string().meta({
 			description: 'Categoría cultural principal.',
 			example: 'Artes Escénicas',
+		}),
+
+		categoriaIcono: categoriaIconoSchema.meta({
+			description: 'Icono Material asociado a la categoría cultural.',
+			example: 'TheaterComedy',
 		}),
 
 		subcategoria: z.string().nullable().meta({
@@ -394,6 +414,11 @@ export const actorDetallePublicoSchema = z
 			example: 'Artes Escénicas',
 		}),
 
+		categoriaIcono: categoriaIconoSchema.meta({
+			description: 'Icono Material asociado a la categoría cultural.',
+			example: 'TheaterComedy',
+		}),
+
 		subcategoria: z.string().nullable().meta({
 			description: 'Subcategoría cultural del actor.',
 			example: 'Teatro',
@@ -485,6 +510,11 @@ export const listarActoresFiltroCategoriaSchema = z
 			description: 'Nombre de la categoría cultural.',
 			example: 'Artes Escénicas',
 		}),
+
+		icono: categoriaIconoSchema.meta({
+			description: 'Icono Material asociado a la categoría cultural.',
+			example: 'TheaterComedy',
+		}),
 	})
 	.meta({
 		id: 'ListarActoresFiltroCategoria',
@@ -533,6 +563,11 @@ export const mapaFiltroCategoriaSchema = z
 		nombre: z.string().meta({
 			description: 'Nombre de la categoría cultural.',
 			example: 'Artes Escénicas',
+		}),
+
+		icono: categoriaIconoSchema.meta({
+			description: 'Icono Material asociado a la categoría cultural.',
+			example: 'TheaterComedy',
 		}),
 
 		cantidadActores: z.number().int().min(0).meta({

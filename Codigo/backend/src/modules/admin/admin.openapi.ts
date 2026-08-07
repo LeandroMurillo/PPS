@@ -7,11 +7,18 @@ import { openApiRegistry } from '../../openapi/registry.js';
 import {
 	asignarModeradorAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
+	categoriaAdminDuplicadaResponseSchema,
+	categoriaAdminNoEncontradaResponseSchema,
+	categoriaAdminParamsSchema,
+	guardarCategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarActoresAdminResponseSchema,
+	listarCategoriasAdminQuerySchema,
+	listarCategoriasAdminResponseSchema,
 	listarUsuariosAdminQuerySchema,
 	listarUsuariosAdminResponseSchema,
 	obtenerUsuarioAdminResponseSchema,
+	obtenerCategoriaAdminResponseSchema,
 	usuarioAdminNoEncontradoResponseSchema,
 	usuarioAdminParamsSchema,
 	usuarioAdminProtegidoResponseSchema,
@@ -161,6 +168,127 @@ export function registerAdminOpenApi(): void {
 			500: {
 				description: 'Error interno al consultar actores.',
 				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/categorias',
+		tags: ['Administración'],
+		summary: 'Listar categorías para administración',
+		description: 'Lista categorías con búsqueda, filtro de estado, orden y paginación.',
+		request: { query: listarCategoriasAdminQuerySchema },
+		responses: {
+			200: {
+				description: 'Página de categorías obtenida correctamente.',
+				content: { 'application/json': { schema: listarCategoriasAdminResponseSchema } },
+			},
+			400: {
+				description: 'Parámetros de consulta inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			500: {
+				description: 'Error interno al consultar categorías.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/categorias/{id}',
+		tags: ['Administración'],
+		summary: 'Obtener una categoría',
+		request: { params: categoriaAdminParamsSchema },
+		responses: {
+			200: {
+				description: 'Categoría obtenida correctamente.',
+				content: { 'application/json': { schema: obtenerCategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificador inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Categoría no encontrada.',
+				content: { 'application/json': { schema: categoriaAdminNoEncontradaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/categorias',
+		tags: ['Administración'],
+		summary: 'Crear una categoría',
+		request: {
+			body: { content: { 'application/json': { schema: guardarCategoriaAdminBodySchema } } },
+		},
+		responses: {
+			201: {
+				description: 'Categoría creada correctamente.',
+				content: { 'application/json': { schema: obtenerCategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			409: {
+				description: 'Ya existe una categoría con el mismo nombre.',
+				content: { 'application/json': { schema: categoriaAdminDuplicadaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'put',
+		path: '/api/admin/categorias/{id}',
+		tags: ['Administración'],
+		summary: 'Modificar una categoría',
+		request: {
+			params: categoriaAdminParamsSchema,
+			body: { content: { 'application/json': { schema: guardarCategoriaAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Categoría modificada correctamente.',
+				content: { 'application/json': { schema: obtenerCategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Categoría no encontrada.',
+				content: { 'application/json': { schema: categoriaAdminNoEncontradaResponseSchema } },
+			},
+			409: {
+				description: 'Ya existe una categoría con el mismo nombre.',
+				content: { 'application/json': { schema: categoriaAdminDuplicadaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'delete',
+		path: '/api/admin/categorias/{id}',
+		tags: ['Administración'],
+		summary: 'Dar de baja una categoría',
+		description: 'Realiza una baja lógica para preservar las relaciones históricas.',
+		request: { params: categoriaAdminParamsSchema },
+		responses: {
+			200: {
+				description: 'Categoría dada de baja correctamente.',
+				content: { 'application/json': { schema: obtenerCategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificador inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Categoría no encontrada.',
+				content: { 'application/json': { schema: categoriaAdminNoEncontradaResponseSchema } },
 			},
 		},
 	});

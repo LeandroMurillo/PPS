@@ -11,6 +11,7 @@ import type {
 	MapaFiltroCategoria,
 	MapaFiltroDepartamento,
 } from './actores.schemas.js';
+import { categoriaIconoSchema } from './actores.schemas.js';
 import type {
 	ListarActoresRepositoryInput,
 	ListarActoresRepositoryResult,
@@ -110,6 +111,7 @@ const actorDatabaseRowSchema = z.object({
 	descripcion: z.string().nullable(),
 	fotoPerfilUrl: z.string().nullable(),
 	categoria: z.string(),
+	categoriaIcono: categoriaIconoSchema,
 	subcategoria: z.string().nullable(),
 	departamento: z.string(),
 	localidad: z.string().nullable(),
@@ -122,6 +124,7 @@ const actorMapaDatabaseRowSchema = z.object({
 	descripcion: z.string().nullable(),
 	fotoPerfilUrl: z.string().nullable(),
 	categoria: z.string(),
+	categoriaIcono: categoriaIconoSchema,
 	subcategoria: z.string().nullable(),
 	departamento: z.string(),
 	localidad: z.string().nullable(),
@@ -136,6 +139,7 @@ const actorDetalleDatabaseRowSchema = z.object({
 	descripcion: z.string().nullable(),
 	fotoPerfilUrl: z.string().nullable(),
 	categoria: z.string(),
+	categoriaIcono: categoriaIconoSchema,
 	subcategoria: z.string().nullable(),
 	provincia: z.string(),
 	departamento: z.string(),
@@ -172,6 +176,7 @@ const actorDetalleIntegranteDatabaseRowSchema = z.object({
 const listarActoresFiltroCategoriaDatabaseRowSchema = z.object({
 	id: databaseIntegerSchema,
 	nombre: z.string(),
+	icono: categoriaIconoSchema,
 });
 
 const listarActoresFiltroDepartamentoDatabaseRowSchema = z.object({
@@ -181,6 +186,7 @@ const listarActoresFiltroDepartamentoDatabaseRowSchema = z.object({
 const mapaFiltroCategoriaDatabaseRowSchema = z.object({
 	id: databaseIntegerSchema,
 	nombre: z.string(),
+	icono: categoriaIconoSchema,
 	cantidadActores: databaseIntegerSchema,
 });
 
@@ -247,6 +253,7 @@ export async function listarActoresRepository(
 		descripcion: actor.descripcion,
 		foto: actor.fotoPerfilUrl,
 		categoria: actor.categoria,
+		categoriaIcono: actor.categoriaIcono,
 		subcategoria: actor.subcategoria,
 		departamento: actor.departamento,
 		localidad: actor.localidad,
@@ -287,6 +294,7 @@ export async function obtenerActorRepository(id: number): Promise<ObtenerActorRe
 		descripcion: actorRow.descripcion,
 		foto: actorRow.fotoPerfilUrl,
 		categoria: actorRow.categoria,
+		categoriaIcono: actorRow.categoriaIcono,
 		subcategoria: actorRow.subcategoria,
 		ubicacion: {
 			provincia: actorRow.provincia,
@@ -328,6 +336,7 @@ export async function obtenerActoresMapaRepository(
 		descripcion: actor.descripcion,
 		foto: actor.fotoPerfilUrl,
 		categoria: actor.categoria,
+		categoriaIcono: actor.categoriaIcono,
 		subcategoria: actor.subcategoria,
 		departamento: actor.departamento,
 		localidad: actor.localidad,
@@ -365,6 +374,7 @@ export async function obtenerFiltrosListadoActoresRepository(): Promise<ObtenerF
 	const categorias: ListarActoresFiltroCategoria[] = categoriasDatabaseRows.map((categoria) => ({
 		id: categoria.id,
 		nombre: categoria.nombre,
+		icono: categoria.icono,
 	}));
 
 	const departamentos: ListarActoresFiltroDepartamento[] = departamentosDatabaseRows.map(
@@ -395,6 +405,7 @@ export async function obtenerFiltrosMapaRepository(): Promise<ObtenerFiltrosMapa
 	const categorias: MapaFiltroCategoria[] = categoriasDatabaseRows.map((categoria) => ({
 		id: categoria.id,
 		nombre: categoria.nombre,
+		icono: categoria.icono,
 		cantidadActores: categoria.cantidadActores,
 	}));
 

@@ -3,8 +3,18 @@ import { apiFetch, appendOptionalParam } from './client';
 export type FiltroCategoria = {
 	id: number;
 	nombre: string;
+	icono: CategoriaIcono;
 	cantidadActores?: number;
 };
+
+export type CategoriaIcono =
+	| 'Category'
+	| 'MusicNote'
+	| 'Handyman'
+	| 'TheaterComedy'
+	| 'Movie'
+	| 'MenuBook'
+	| 'Palette';
 
 export type FiltroDepartamento = {
 	departamento: string;
@@ -22,6 +32,7 @@ export type ActorResumen = {
 	descripcion: string | null;
 	foto: string | null;
 	categoria: string;
+	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;
 	departamento: string;
 	localidad: string | null;
@@ -44,6 +55,7 @@ export type ActorMapa = {
 	descripcion: string | null;
 	foto: string | null;
 	categoria: string;
+	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;
 	departamento: string;
 	localidad: string | null;
@@ -62,6 +74,7 @@ export type ActorDetalle = {
 	descripcion: string | null;
 	foto: string | null;
 	categoria: string;
+	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;
 	ubicacion: {
 		provincia: string;

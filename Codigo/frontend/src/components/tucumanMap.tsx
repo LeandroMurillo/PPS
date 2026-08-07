@@ -10,9 +10,11 @@ import { Link, useSearchParams } from 'react-router';
 import {
 	obtenerActoresMapa,
 	obtenerFiltrosMapa,
+	type CategoriaIcono,
 	type FiltroCategoria,
 	type FiltroDepartamento,
 } from '../api/actores';
+import CategoryIcon from './categoryIcon';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
@@ -32,6 +34,7 @@ type CulturalPoint = {
 	nombre: string;
 	descripcion: string | null;
 	categoria: string;
+	categoriaIcono: CategoriaIcono;
 	departamento: string;
 	latitudlongitud: L.LatLngExpression;
 };
@@ -184,6 +187,7 @@ export default function TucumanMap() {
 						nombre: actor.nombre,
 						descripcion: actor.descripcion,
 						categoria: actor.categoria,
+						categoriaIcono: actor.categoriaIcono,
 						departamento: actor.departamento,
 						latitudlongitud: [actor.latitud, actor.longitud],
 					})),
@@ -362,7 +366,13 @@ export default function TucumanMap() {
 							<br />
 							{point.descripcion}
 							<br />
-							<small>Categoría: {point.categoria}</small>
+							<Box
+								component="small"
+								sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+							>
+								<CategoryIcon icono={point.categoriaIcono} fontSize="inherit" />
+								Categoría: {point.categoria}
+							</Box>
 							<br />
 							<Box sx={{ mt: 1 }}>
 								<Link to={`/actores/${point.id}`}>Ver portafolio</Link>

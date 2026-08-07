@@ -49,7 +49,9 @@ ALTER TABLE `cultura`.`Ubicaciones`
 
 ALTER TABLE `cultura`.`Categorias`
   ADD CONSTRAINT `chk_Categorias_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> '');
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
+  ADD CONSTRAINT `chk_Categorias_icono`
+    CHECK (`icono` REGEXP '^[A-Za-z][A-Za-z0-9]{0,63}$');
 
 ALTER TABLE `cultura`.`Subcategorias`
   ADD CONSTRAINT `chk_Subcategorias_nombre`

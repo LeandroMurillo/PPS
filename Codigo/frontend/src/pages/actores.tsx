@@ -28,6 +28,7 @@ import {
 	type FiltroCategoria,
 	type FiltroDepartamento,
 } from '../api/actores';
+import CategoryIcon from '../components/categoryIcon';
 
 export default function ListaActoresPublica() {
 	const [actores, setActores] = useState<ActorResumen[]>([]);
@@ -164,6 +165,7 @@ export default function ListaActoresPublica() {
 
 							{categorias.map((cat) => (
 								<MenuItem key={cat.id} value={cat.id}>
+									<CategoryIcon icono={cat.icono} fontSize="small" sx={{ mr: 1 }} />
 									{cat.nombre}
 								</MenuItem>
 							))}
@@ -246,7 +248,12 @@ function ActorCard({ actor }: { actor: ActorResumen }) {
 					</Typography>
 
 					<Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-						<Chip label={actor.categoria} size="small" color="primary" />
+						<Chip
+							icon={<CategoryIcon icono={actor.categoriaIcono} fontSize="small" />}
+							label={actor.categoria}
+							size="small"
+							color="primary"
+						/>
 						<Chip
 							icon={<LocationOnIcon fontSize="small" />}
 							label={actor.departamento}

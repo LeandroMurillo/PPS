@@ -9,12 +9,15 @@ import {
 	OutlinedInput,
 	TextField,
 	InputAdornment,
+	ListItemIcon,
+	ListItemText,
 } from '@mui/material';
 
 import type { SelectChangeEvent } from '@mui/material/Select';
 import SearchIcon from '@mui/icons-material/Search';
 
 import type { FiltroCategoria, FiltroDepartamento } from '../api/actores';
+import CategoryIcon from './categoryIcon';
 
 type FiltroCategoriasCulturalesProps = {
 	categorias: FiltroCategoria[];
@@ -116,14 +119,27 @@ export default function FiltroCategoriasCulturales({
 								{selected.map((categoriaId) => {
 									const categoria = categorias.find((item) => item.id === categoriaId);
 
-									return <Chip key={categoriaId} label={categoria?.nombre ?? categoriaId} />;
+									return (
+										<Chip
+											key={categoriaId}
+											icon={
+												categoria ? (
+													<CategoryIcon icono={categoria.icono} fontSize="small" />
+												) : undefined
+											}
+											label={categoria?.nombre ?? categoriaId}
+										/>
+									);
 								})}
 							</Box>
 						)}
 					>
 						{categorias.map((categoria) => (
 							<MenuItem key={categoria.id} value={categoria.id}>
-								{categoria.nombre}
+								<ListItemIcon>
+									<CategoryIcon icono={categoria.icono} fontSize="small" />
+								</ListItemIcon>
+								<ListItemText primary={categoria.nombre} />
 							</MenuItem>
 						))}
 					</Select>

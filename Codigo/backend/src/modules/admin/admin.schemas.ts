@@ -56,6 +56,15 @@ export const actorAdminSortBySchema = z.enum([
 	'localidad',
 ]);
 
+export const categoriaAdminSortBySchema = z.enum([
+	'idCategoria',
+	'nombre',
+	'icono',
+	'estado',
+	'subcategoria',
+	'cantidadActores',
+]);
+
 export const sortDirectionSchema = z.enum(['ASC', 'DESC']);
 
 export const listarUsuariosAdminQuerySchema = z.strictObject({
@@ -94,6 +103,19 @@ export const listarActoresAdminQuerySchema = z.strictObject({
 });
 
 export type ListarActoresAdminQuery = z.infer<typeof listarActoresAdminQuerySchema>;
+
+export const listarCategoriasAdminQuerySchema = z.strictObject({
+	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
+	estado: z.preprocess(normalizeOptionalString, z.enum(['A', 'I']).optional()),
+	...paginationQueryFields,
+	sortBy: categoriaAdminSortBySchema.default('idCategoria'),
+	sortDir: z.preprocess(
+		(value) => (typeof value === 'string' ? value.toUpperCase() : value),
+		sortDirectionSchema.default('ASC'),
+	),
+});
+
+export type ListarCategoriasAdminQuery = z.infer<typeof listarCategoriasAdminQuerySchema>;
 
 export const usuarioAdminSchema = z.object({
 	id: z.number().int().positive(),
@@ -134,9 +156,48 @@ export const asignarModeradorAdminBodySchema = z.strictObject({
 
 export type AsignarModeradorAdminBody = z.infer<typeof asignarModeradorAdminBodySchema>;
 
+export const categoriaAdminParamsSchema = z.strictObject({
+	id: z.preprocess(
+		normalizeQueryInteger,
+		z.number().int().positive().max(4_294_967_295),
+	),
+});
+
+export const categoriaIconoSchema = z.enum([
+	'Category',
+	'MusicNote',
+	'Handyman',
+	'TheaterComedy',
+	'Movie',
+	'MenuBook',
+	'Palette',
+]);
+
+export type CategoriaIcono = z.infer<typeof categoriaIconoSchema>;
+
+export const guardarCategoriaAdminBodySchema = z.strictObject({
+	nombre: z.string().trim().min(1).max(45),
+	icono: categoriaIconoSchema.default('Category'),
+	estado: z.enum(['A', 'I']).default('A'),
+});
+
+export type GuardarCategoriaAdminBody = z.infer<typeof guardarCategoriaAdminBodySchema>;
+
+export const categoriaAdminSchema = z.object({
+	id: z.number().int().positive(),
+	nombre: z.string(),
+	icono: categoriaIconoSchema,
+	estado: z.enum(['A', 'I']),
+	subcategoria: z.string().nullable(),
+	cantidadActores: z.number().int().min(0),
+});
+
+export type CategoriaAdmin = z.infer<typeof categoriaAdminSchema>;
+
 export const categoriaModeracionAdminSchema = z.object({
 	id: z.number().int().positive(),
 	nombre: z.string(),
+	icono: categoriaIconoSchema,
 	asignada: z.boolean(),
 });
 
@@ -180,6 +241,7 @@ export const actorAdminSchema = z.object({
 	categoria: z.object({
 		id: z.number().int().positive(),
 		nombre: z.string(),
+		icono: categoriaIconoSchema,
 		estado: z.enum(['A', 'I']),
 	}),
 	subcategoria: z
@@ -231,3 +293,30 @@ export const listarActoresAdminResponseSchema = z.object({
 });
 
 export type ListarActoresAdminResponse = z.infer<typeof listarActoresAdminResponseSchema>;
+
+export const listarCategoriasAdminResponseSchema = z.object({
+	data: z.array(categoriaAdminSchema),
+	pagination: adminPaginationSchema,
+});
+
+export type ListarCategoriasAdminResponse = z.infer<typeof listarCategoriasAdminResponseSchema>;
+
+export const obtenerCategoriaAdminResponseSchema = z.object({
+	data: categoriaAdminSchema,
+});
+
+export type ObtenerCategoriaAdminResponse = z.infer<typeof obtenerCategoriaAdminResponseSchema>;
+
+export const categoriaAdminNoEncontradaResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('CATEGORY_NOT_FOUND'),
+		message: z.string(),
+	}),
+});
+
+export const categoriaAdminDuplicadaResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('CATEGORY_NAME_CONFLICT'),
+		message: z.string(),
+	}),
+});

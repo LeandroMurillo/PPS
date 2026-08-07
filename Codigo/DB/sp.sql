@@ -174,6 +174,7 @@ BEGIN
     SELECT
         c.idCategoria,
         c.nombre,
+        c.icono,
         CASE WHEN mc.idUsuario IS NULL THEN 0 ELSE 1 END AS asignada
     FROM `Categorias` c
     LEFT JOIN `ModeradoresCategorias` mc
@@ -423,6 +424,7 @@ BEGIN
 
         a.idCategoria,
         c.nombre AS categoria,
+        c.icono AS iconoCategoria,
         c.estado AS estadoCategoria,
 
         a.idSubcategoria,
@@ -517,6 +519,214 @@ BEGIN
 
         a.idActor ASC
     LIMIT vLimit OFFSET vOffset;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_listar_categorias
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_listar_categorias`(
+    IN pBusqueda VARCHAR(255) DEFAULT NULL,
+    IN pEstado CHAR(1) DEFAULT NULL,
+    IN pLimit INT DEFAULT 25,
+    IN pOffset INT DEFAULT 0,
+    IN pSortBy VARCHAR(50) DEFAULT 'idCategoria',
+    IN pSortDir VARCHAR(4) DEFAULT 'ASC'
+)
+READS SQL DATA
+COMMENT 'Lista categorías para administración con búsqueda, filtro de estado, orden y paginación. Incluye icono, el nombre de su única subcategoría y la cantidad de actores asociados.'
+BEGIN
+    DECLARE vLimit INT DEFAULT 25;
+    DECLARE vOffset INT DEFAULT 0;
+    DECLARE vSortBy VARCHAR(50) DEFAULT 'idCategoria';
+    DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+
+    SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
+    SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
+    SET vSortBy = CASE
+        WHEN pSortBy IN ('idCategoria', 'nombre', 'icono', 'estado', 'subcategoria', 'cantidadActores')
+            THEN pSortBy
+        ELSE 'idCategoria'
+    END;
+    SET vSortDir = CASE
+        WHEN UPPER(COALESCE(pSortDir, 'ASC')) = 'DESC' THEN 'DESC'
+        ELSE 'ASC'
+    END;
+
+    SELECT COUNT(*) AS total
+    FROM `Categorias` c
+    WHERE
+        (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR c.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
+        AND (pEstado IS NULL OR TRIM(pEstado) = '' OR c.estado = TRIM(pEstado));
+
+    SELECT
+        c.idCategoria,
+        c.nombre,
+        c.icono,
+        c.estado,
+        MAX(s.nombre) AS subcategoria,
+        COUNT(DISTINCT a.idActor) AS cantidadActores
+    FROM `Categorias` c
+    LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria
+    LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
+    WHERE
+        (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR c.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
+        AND (pEstado IS NULL OR TRIM(pEstado) = '' OR c.estado = TRIM(pEstado))
+    GROUP BY c.idCategoria, c.nombre, c.icono, c.estado
+    ORDER BY
+        CASE WHEN vSortBy = 'idCategoria' AND vSortDir = 'ASC' THEN c.idCategoria END ASC,
+        CASE WHEN vSortBy = 'idCategoria' AND vSortDir = 'DESC' THEN c.idCategoria END DESC,
+        CASE WHEN vSortBy = 'nombre' AND vSortDir = 'ASC' THEN c.nombre END ASC,
+        CASE WHEN vSortBy = 'nombre' AND vSortDir = 'DESC' THEN c.nombre END DESC,
+        CASE WHEN vSortBy = 'icono' AND vSortDir = 'ASC' THEN c.icono END ASC,
+        CASE WHEN vSortBy = 'icono' AND vSortDir = 'DESC' THEN c.icono END DESC,
+        CASE WHEN vSortBy = 'estado' AND vSortDir = 'ASC' THEN c.estado END ASC,
+        CASE WHEN vSortBy = 'estado' AND vSortDir = 'DESC' THEN c.estado END DESC,
+        CASE WHEN vSortBy = 'subcategoria' AND vSortDir = 'ASC' THEN MAX(s.nombre) END ASC,
+        CASE WHEN vSortBy = 'subcategoria' AND vSortDir = 'DESC' THEN MAX(s.nombre) END DESC,
+        CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'ASC' THEN COUNT(DISTINCT a.idActor) END ASC,
+        CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'DESC' THEN COUNT(DISTINCT a.idActor) END DESC,
+        c.idCategoria ASC
+    LIMIT vLimit OFFSET vOffset;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_obtener_categoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_obtener_categoria`(
+    IN pIdCategoria INT
+)
+READS SQL DATA
+COMMENT 'Obtiene una categoría por identificador con icono, el nombre de su única subcategoría y la cantidad de actores asociados.'
+BEGIN
+    SELECT
+        c.idCategoria,
+        c.nombre,
+        c.icono,
+        c.estado,
+        MAX(s.nombre) AS subcategoria,
+        COUNT(DISTINCT a.idActor) AS cantidadActores
+    FROM `Categorias` c
+    LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria
+    LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
+    WHERE c.idCategoria = pIdCategoria
+    GROUP BY c.idCategoria, c.nombre, c.icono, c.estado;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_crear_categoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_crear_categoria`(
+    IN pNombre VARCHAR(45),
+    IN pIcono VARCHAR(64) DEFAULT 'Category',
+    IN pEstado CHAR(1) DEFAULT 'A'
+)
+MODIFIES SQL DATA
+COMMENT 'Crea una categoría y devuelve el registro creado.'
+BEGIN
+    IF pNombre IS NULL OR TRIM(pNombre) = '' OR CHAR_LENGTH(TRIM(pNombre)) > 45 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El nombre de la categoría debe tener entre 1 y 45 caracteres.';
+    END IF;
+
+    IF pEstado NOT IN ('A', 'I') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado de la categoría debe ser A o I.';
+    END IF;
+
+    IF pIcono IS NULL OR TRIM(pIcono) = '' OR CHAR_LENGTH(TRIM(pIcono)) > 64
+       OR TRIM(pIcono) NOT REGEXP '^[A-Za-z][A-Za-z0-9]{0,63}$' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El icono de la categoría no es válido.';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM `Categorias` WHERE nombre = TRIM(pNombre)) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Ya existe una categoría con ese nombre.';
+    END IF;
+
+    INSERT INTO `Categorias` (nombre, icono, estado)
+    VALUES (TRIM(pNombre), TRIM(pIcono), pEstado);
+
+    CALL `sp_admin_obtener_categoria`(LAST_INSERT_ID());
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_editar_categoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_editar_categoria`(
+    IN pIdCategoria INT,
+    IN pNombre VARCHAR(45),
+    IN pIcono VARCHAR(64),
+    IN pEstado CHAR(1)
+)
+MODIFIES SQL DATA
+COMMENT 'Modifica el nombre y estado de una categoría y devuelve el registro actualizado.'
+BEGIN
+    IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
+    END IF;
+
+    IF pNombre IS NULL OR TRIM(pNombre) = '' OR CHAR_LENGTH(TRIM(pNombre)) > 45 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El nombre de la categoría debe tener entre 1 y 45 caracteres.';
+    END IF;
+
+    IF pEstado NOT IN ('A', 'I') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado de la categoría debe ser A o I.';
+    END IF;
+
+    IF pIcono IS NULL OR TRIM(pIcono) = '' OR CHAR_LENGTH(TRIM(pIcono)) > 64
+       OR TRIM(pIcono) NOT REGEXP '^[A-Za-z][A-Za-z0-9]{0,63}$' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El icono de la categoría no es válido.';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Categorias` WHERE idCategoria = pIdCategoria) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La categoría solicitada no existe.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM `Categorias`
+        WHERE nombre = TRIM(pNombre) AND idCategoria <> pIdCategoria
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Ya existe una categoría con ese nombre.';
+    END IF;
+
+    UPDATE `Categorias`
+    SET nombre = TRIM(pNombre), icono = TRIM(pIcono), estado = pEstado
+    WHERE idCategoria = pIdCategoria;
+
+    CALL `sp_admin_obtener_categoria`(pIdCategoria);
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_eliminar_categoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_eliminar_categoria`(
+    IN pIdCategoria INT
+)
+MODIFIES SQL DATA
+COMMENT 'Realiza la baja lógica de una categoría para preservar sus relaciones históricas y devuelve el registro actualizado.'
+BEGIN
+    IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Categorias` WHERE idCategoria = pIdCategoria) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La categoría solicitada no existe.';
+    END IF;
+
+    UPDATE `Categorias`
+    SET estado = 'I'
+    WHERE idCategoria = pIdCategoria;
+
+    CALL `sp_admin_obtener_categoria`(pIdCategoria);
 END //
 
 -- -----------------------------------------------------
@@ -663,6 +873,7 @@ BEGIN
     SELECT
         c.idCategoria as id,
         c.nombre,
+        c.icono,
         COUNT(DISTINCT a.idActor) AS cantidadActores
 
     FROM `Categorias` c
@@ -685,7 +896,8 @@ BEGIN
         AND ub.longitud IS NOT NULL
     GROUP BY
         c.idCategoria,
-        c.nombre
+        c.nombre,
+        c.icono
     ORDER BY
         c.nombre ASC,
         c.idCategoria ASC;
@@ -776,6 +988,7 @@ BEGIN
         a.descripcion,
         a.fotoPerfilUrl,
         c.nombre AS categoria,
+        c.icono AS categoriaIcono,
         s.nombre AS subcategoria,
 
         ub.departamento,
@@ -856,7 +1069,8 @@ BEGIN
      */
     SELECT
         c.idCategoria AS id,
-        c.nombre
+        c.nombre,
+        c.icono
     FROM `Categorias` AS c
     INNER JOIN `Actores` AS a
         ON a.idCategoria = c.idCategoria
@@ -874,7 +1088,8 @@ BEGIN
         )
     GROUP BY
         c.idCategoria,
-        c.nombre
+        c.nombre,
+        c.icono
     ORDER BY
         c.nombre ASC,
         c.idCategoria ASC;
@@ -1009,6 +1224,7 @@ BEGIN
 
         c.idCategoria,
         c.nombre AS categoria,
+        c.icono AS categoriaIcono,
 
         s.idSubcategoria,
         s.nombre AS subcategoria,
@@ -1110,6 +1326,7 @@ BEGIN
         a.descripcion,
         a.fotoPerfilUrl,
         c.nombre AS categoria,
+        c.icono AS categoriaIcono,
         s.nombre AS subcategoria,
         u.provincia,
         u.departamento,

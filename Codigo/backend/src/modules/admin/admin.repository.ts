@@ -1,11 +1,14 @@
 import { z } from 'zod';
 
 import { pool } from '../../database/pool.js';
+import { categoriaIconoSchema } from './admin.schemas.js';
 
 import type {
 	ActorAdmin,
+	CategoriaAdmin,
 	CategoriaModeracionAdmin,
 	ListarActoresAdminQuery,
+	ListarCategoriasAdminQuery,
 	ListarUsuariosAdminQuery,
 	UsuarioAdmin,
 	UsuarioDetalleAdmin,
@@ -53,6 +56,7 @@ type UsuarioDatabaseRow = z.infer<typeof usuarioDatabaseRowSchema>;
 const categoriaModeracionDatabaseRowSchema = z.object({
 	idCategoria: databaseIntegerSchema,
 	nombre: z.string(),
+	icono: categoriaIconoSchema,
 	asignada: databaseBooleanSchema,
 });
 
@@ -67,6 +71,7 @@ const actorDatabaseRowSchema = z.object({
 	estado: z.enum(['A', 'P', 'I']),
 	idCategoria: databaseIntegerSchema,
 	categoria: z.string(),
+	iconoCategoria: categoriaIconoSchema,
 	estadoCategoria: z.enum(['A', 'I']),
 	idSubcategoria: databaseIntegerSchema.nullable(),
 	subcategoria: z.string().nullable(),
@@ -82,6 +87,15 @@ const actorDatabaseRowSchema = z.object({
 	latitud: databaseDecimalSchema,
 	longitud: databaseDecimalSchema,
 	esPublica: databaseBooleanSchema,
+});
+
+const categoriaAdminDatabaseRowSchema = z.object({
+	idCategoria: databaseIntegerSchema,
+	nombre: z.string(),
+	icono: categoriaIconoSchema,
+	estado: z.enum(['A', 'I']),
+	subcategoria: z.string().nullable(),
+	cantidadActores: databaseIntegerSchema,
 });
 
 function getResultSet(procedureResult: unknown, index: number, procedureName: string): unknown[] {
@@ -118,6 +132,17 @@ function mapUsuario(row: UsuarioDatabaseRow): UsuarioAdmin {
 		fechaRegistro: row.fechaRegistro,
 		rol: row.rol,
 		estado: row.estado,
+	};
+}
+
+function mapCategoria(row: z.infer<typeof categoriaAdminDatabaseRowSchema>): CategoriaAdmin {
+	return {
+		id: row.idCategoria,
+		nombre: row.nombre,
+		icono: row.icono,
+		estado: row.estado,
+		subcategoria: row.subcategoria,
+		cantidadActores: row.cantidadActores,
 	};
 }
 
@@ -158,6 +183,7 @@ export async function obtenerUsuarioAdminRepository(id: number): Promise<Usuario
 	const categoriasModeracion: CategoriaModeracionAdmin[] = categoryRows.map((row) => ({
 		id: row.idCategoria,
 		nombre: row.nombre,
+		icono: row.icono,
 		asignada: row.asignada,
 	}));
 
@@ -214,6 +240,7 @@ export async function listarActoresAdminRepository(
 			categoria: {
 				id: row.idCategoria,
 				nombre: row.categoria,
+				icono: row.iconoCategoria,
 				estado: row.estadoCategoria,
 			},
 			subcategoria:
@@ -244,4 +271,89 @@ export async function listarActoresAdminRepository(
 			},
 		})),
 	};
+}
+
+export async function listarCategoriasAdminRepository(
+	query: ListarCategoriasAdminQuery,
+): Promise<{ total: number; categorias: CategoriaAdmin[] }> {
+	const procedureName = 'sp_admin_listar_categorias';
+	const result: unknown = await pool.query('CALL sp_admin_listar_categorias(?, ?, ?, ?, ?, ?)', [
+		query.busqueda ?? null,
+		query.estado ?? null,
+		query.limit,
+		query.offset,
+		query.sortBy,
+		query.sortDir,
+	]);
+	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
+
+	return {
+		total: getTotal(result, procedureName),
+		categorias: rows.map(mapCategoria),
+	};
+}
+
+export async function obtenerCategoriaAdminRepository(id: number): Promise<CategoriaAdmin | null> {
+	const procedureName = 'sp_admin_obtener_categoria';
+	const result: unknown = await pool.query('CALL sp_admin_obtener_categoria(?)', [id]);
+	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+
+	return rows[0] ? mapCategoria(rows[0]) : null;
+}
+
+export async function crearCategoriaAdminRepository(
+	nombre: string,
+	icono: string,
+	estado: 'A' | 'I',
+): Promise<CategoriaAdmin> {
+	const procedureName = 'sp_admin_crear_categoria';
+	const result: unknown = await pool.query('CALL sp_admin_crear_categoria(?, ?, ?)', [
+		nombre,
+		icono,
+		estado,
+	]);
+	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const categoria = rows[0];
+
+	if (!categoria) {
+		throw new Error(`${procedureName} no devolvió la categoría creada`);
+	}
+
+	return mapCategoria(categoria);
+}
+
+export async function editarCategoriaAdminRepository(
+	id: number,
+	nombre: string,
+	icono: string,
+	estado: 'A' | 'I',
+): Promise<CategoriaAdmin> {
+	const procedureName = 'sp_admin_editar_categoria';
+	const result: unknown = await pool.query('CALL sp_admin_editar_categoria(?, ?, ?, ?)', [
+		id,
+		nombre,
+		icono,
+		estado,
+	]);
+	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const categoria = rows[0];
+
+	if (!categoria) {
+		throw new Error(`${procedureName} no devolvió la categoría actualizada`);
+	}
+
+	return mapCategoria(categoria);
+}
+
+export async function eliminarCategoriaAdminRepository(id: number): Promise<CategoriaAdmin> {
+	const procedureName = 'sp_admin_eliminar_categoria';
+	const result: unknown = await pool.query('CALL sp_admin_eliminar_categoria(?)', [id]);
+	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const categoria = rows[0];
+
+	if (!categoria) {
+		throw new Error(`${procedureName} no devolvió la categoría eliminada`);
+	}
+
+	return mapCategoria(categoria);
 }

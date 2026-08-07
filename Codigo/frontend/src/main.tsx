@@ -12,6 +12,7 @@ import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 import AdminActoresPage from './pages/adminActores';
 import AdminUsuariosPage from './pages/adminUsuarios';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
+import AdminCategoriasPage from './pages/adminCategorias';
 
 const router = createBrowserRouter([
 	{
@@ -59,8 +60,8 @@ const router = createBrowserRouter([
 						Component: EmployeesCrudPage,
 					},
 					{
-						path: 'categorias',
-						Component: EmployeesCrudPage,
+						path: 'categorias/*',
+						Component: AdminCategoriasPage,
 					},
 					{
 						path: 'acerca',

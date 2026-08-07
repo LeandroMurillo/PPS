@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
 	asignarModeradorAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
+	categoriaAdminParamsSchema,
+	guardarCategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
+	listarCategoriasAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
 	usuarioAdminParamsSchema,
 } from '../src/modules/admin/admin.schemas.js';
@@ -77,5 +80,53 @@ describe('consultas administrativas', () => {
 	it('permite quitar todas las categorías para restaurar el rol de usuario', () => {
 		expect(asignarModeradorAdminBodySchema.safeParse({ idCategorias: [1, 3] }).success).toBe(true);
 		expect(asignarModeradorAdminBodySchema.safeParse({ idCategorias: [] }).success).toBe(true);
+	});
+
+	it('aplica valores predeterminados al listado de categorías', () => {
+		expect(listarCategoriasAdminQuerySchema.parse({})).toEqual({
+			limit: 25,
+			offset: 0,
+			sortBy: 'idCategoria',
+			sortDir: 'ASC',
+		});
+	});
+
+	it('normaliza filtros y orden del listado de categorías', () => {
+		expect(
+			listarCategoriasAdminQuerySchema.parse({
+				busqueda: '  música  ',
+				estado: 'I',
+				limit: '10',
+			offset: '20',
+			sortBy: 'icono',
+			sortDir: 'desc',
+		}),
+	).toEqual({
+			busqueda: 'música',
+			estado: 'I',
+		limit: 10,
+		offset: 20,
+		sortBy: 'icono',
+		sortDir: 'DESC',
+	});
+	});
+
+	it('rechaza el contador de subcategorías que ya no forma parte del contrato', () => {
+		expect(
+			listarCategoriasAdminQuerySchema.safeParse({ sortBy: 'cantidadSubcategorias' }).success,
+		).toBe(false);
+	});
+
+	it('valida los datos de creación y edición de categorías', () => {
+		expect(guardarCategoriaAdminBodySchema.parse({ nombre: '  Teatro  ' })).toEqual({
+			nombre: 'Teatro',
+			icono: 'Category',
+			estado: 'A',
+		});
+		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'Teatro', icono: 'TheaterComedy' }).success).toBe(true);
+		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'Teatro', icono: 'NoExiste' }).success).toBe(false);
+		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: '' }).success).toBe(false);
+		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'x'.repeat(46) }).success).toBe(false);
+		expect(categoriaAdminParamsSchema.parse({ id: '7' })).toEqual({ id: 7 });
 	});
 });

@@ -68,6 +68,7 @@ const NAVIGATION: Navigation = [
 		title: 'Categorías',
 		segment: 'categorias',
 		icon: <CategoryIcon />,
+		pattern: 'categorias{/:categoriaId}*',
 	},
 	{
 		kind: 'divider',
@@ -90,9 +91,28 @@ const BRANDING = {
 	logo: <img src="/favicon.svg" alt="Mosaico Cultural" style={{ width: 24, height: 24 }} />,
 };
 
+const LOCALE_TEXT = {
+	createNewButtonLabel: 'Crear nueva',
+	reloadButtonLabel: 'Recargar datos',
+	createLabel: 'Crear',
+	createSuccessMessage: 'Elemento creado correctamente.',
+	createErrorMessage: 'No se pudo crear el elemento. Motivo:',
+	editLabel: 'Modificar',
+	editSuccessMessage: 'Elemento modificado correctamente.',
+	editErrorMessage: 'No se pudo modificar el elemento. Motivo:',
+	deleteLabel: 'Borrar',
+	deleteConfirmTitle: '¿Borrar elemento?',
+	deleteConfirmMessage: 'Esta acción dará de baja el elemento. ¿Querés continuar?',
+	deleteConfirmLabel: 'Borrar',
+	deleteCancelLabel: 'Cancelar',
+	deleteSuccessMessage: 'Elemento dado de baja correctamente.',
+	deleteErrorMessage: 'No se pudo dar de baja el elemento. Motivo:',
+	deletedItemMessage: 'Este elemento fue dado de baja.',
+};
+
 export default function App() {
 	return (
-		<ReactRouterAppProvider navigation={NAVIGATION} branding={BRANDING}>
+		<ReactRouterAppProvider navigation={NAVIGATION} branding={BRANDING} localeText={LOCALE_TEXT}>
 			<Outlet />
 		</ReactRouterAppProvider>
 	);

@@ -108,37 +108,26 @@ VALUES
 -- 3. Categorías culturales
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Categorias`
-  (`idCategoria`, `nombre`, `estado`)
+  (`idCategoria`, `nombre`, `icono`, `estado`)
 VALUES
-  (1, 'Música', 'A'),
-  (2, 'Artesanía', 'A'),
-  (3, 'Artes Escénicas', 'A'),
-  (4, 'Audiovisual', 'A'),
-  (5, 'Literatura', 'A'),
-  (6, 'Artes Visuales', 'A');
+  (1, 'Música', 'MusicNote', 'A'),
+  (2, 'Artesanía', 'Handyman', 'A'),
+  (3, 'Artes Escénicas', 'TheaterComedy', 'A'),
+  (4, 'Audiovisual', 'Movie', 'A'),
+  (5, 'Literatura', 'MenuBook', 'A'),
+  (6, 'Artes Visuales', 'Palette', 'A');
 
 -- -----------------------------------------------------
 -- 4. Subcategorías
--- idSubcategoria se numera dentro de cada categoría.
--- PK: (idCategoria, idSubcategoria)
+-- Cada categoría puede tener como máximo una subcategoría.
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Subcategorias`
   (`idCategoria`, `idSubcategoria`, `nombre`, `estado`)
 VALUES
-  (1, 1, 'Folclore', 'A'),
-  (1, 2, 'Rock / Pop', 'A'),
-  (1, 3, 'Música Clásica y Académica', 'A'),
-
-  (2, 1, 'Textil', 'A'),
-  (2, 2, 'Cerámica y Alfarería', 'A'),
-  (2, 3, 'Luthería', 'A'),
-
-  (3, 1, 'Teatro de Texto', 'A'),
-  (3, 2, 'Danza Contemporánea', 'A'),
-  (3, 3, 'Circo y Murga', 'A'),
-
-  (4, 1, 'Cine Ficción', 'A'),
-  (4, 2, 'Documental', 'A');
+  (1, 1, 'Música popular', 'A'),
+  (2, 1, 'Artesanía tradicional', 'A'),
+  (3, 1, 'Artes escénicas', 'A'),
+  (4, 1, 'Producción audiovisual', 'A');
 
 -- -----------------------------------------------------
 -- 5. Moderadores por categoría
@@ -193,7 +182,7 @@ VALUES
    'https://img.com/alberdi.jpg', '30500011122', 'ESPACIO',
    '2026-06-05 08:00:00', 'A'),
 
-  (4, 1, 2, 4, 'Los Carpinchos del Alba',
+  (4, 1, 1, 4, 'Los Carpinchos del Alba',
    'Banda de indie rock emergente de Yerba Buena.',
    'https://img.com/carpinchos.jpg', '33666555449', 'COLECTIVO',
    '2026-06-18 10:00:00', 'A'),
@@ -203,7 +192,7 @@ VALUES
    'https://img.com/casinoroyale.jpg', '20311113337', 'INDIVIDUO',
    '2026-06-18 10:10:00', 'P'),
 
-  (6, 3, 3, 2, 'Compañía Circo Fuego',
+  (6, 3, 1, 2, 'Compañía Circo Fuego',
    'Colectivo de artistas callejeros y teatro de calle.',
    'https://img.com/circofuego.jpg', '30111222334', 'COLECTIVO',
    '2026-06-21 11:00:00', 'A');
@@ -309,13 +298,13 @@ VALUES
    '2026-06-01 09:30:00'),
 
   (4, 3, 1,
-   'Información de espacios teatrales',
-   'Información específica para actores de la subcategoría Teatro de Texto.',
+   'Información específica de artes escénicas',
+   'Información complementaria para actores de la subcategoría Artes escénicas.',
    '2026-06-01 09:45:00'),
 
-  (5, 1, 2,
-   'Información específica de Rock / Pop',
-   'Información complementaria para actores musicales de la subcategoría Rock / Pop.',
+  (5, 1, 1,
+   'Información específica de música popular',
+   'Información complementaria para actores de la subcategoría Música popular.',
    '2026-06-01 10:00:00');
 
 -- -----------------------------------------------------
