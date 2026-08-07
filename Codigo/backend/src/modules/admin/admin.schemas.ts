@@ -113,6 +113,61 @@ export const usuarioAdminSchema = z.object({
 
 export type UsuarioAdmin = z.infer<typeof usuarioAdminSchema>;
 
+export const usuarioAdminParamsSchema = z.strictObject({
+	id: z.preprocess(
+		normalizeQueryInteger,
+		z.number().int().positive().max(4_294_967_295),
+	),
+});
+
+export type UsuarioAdminParams = z.infer<typeof usuarioAdminParamsSchema>;
+
+export const cambiarEstadoUsuarioAdminBodySchema = z.strictObject({
+	estado: z.enum(['A', 'I']),
+});
+
+export type CambiarEstadoUsuarioAdminBody = z.infer<typeof cambiarEstadoUsuarioAdminBodySchema>;
+
+export const asignarModeradorAdminBodySchema = z.strictObject({
+	idCategorias: z.array(z.number().int().positive().max(4_294_967_295)).max(100),
+});
+
+export type AsignarModeradorAdminBody = z.infer<typeof asignarModeradorAdminBodySchema>;
+
+export const categoriaModeracionAdminSchema = z.object({
+	id: z.number().int().positive(),
+	nombre: z.string(),
+	asignada: z.boolean(),
+});
+
+export type CategoriaModeracionAdmin = z.infer<typeof categoriaModeracionAdminSchema>;
+
+export const usuarioDetalleAdminSchema = usuarioAdminSchema.extend({
+	categoriasModeracion: z.array(categoriaModeracionAdminSchema),
+});
+
+export type UsuarioDetalleAdmin = z.infer<typeof usuarioDetalleAdminSchema>;
+
+export const obtenerUsuarioAdminResponseSchema = z.object({
+	data: usuarioDetalleAdminSchema,
+});
+
+export type ObtenerUsuarioAdminResponse = z.infer<typeof obtenerUsuarioAdminResponseSchema>;
+
+export const usuarioAdminNoEncontradoResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('USER_NOT_FOUND'),
+		message: z.string(),
+	}),
+});
+
+export const usuarioAdminProtegidoResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('ADMIN_USER_PROTECTED'),
+		message: z.string(),
+	}),
+});
+
 export const actorAdminSchema = z.object({
 	id: z.number().int().positive(),
 	nombre: z.string(),

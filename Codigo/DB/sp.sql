@@ -144,6 +144,190 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_admin_obtener_usuario
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_obtener_usuario`(
+    IN pIdUsuario INT
+)
+READS SQL DATA
+COMMENT 'Obtiene el detalle administrativo de un usuario y las categorías activas que puede moderar, indicando sus asignaciones actuales.'
+BEGIN
+    SELECT
+        u.idUsuario,
+        u.actividadesArcaCodigo,
+        aa.descripcion AS actividadArca,
+        u.nombre,
+        u.apellido,
+        u.CUIL,
+        u.genero,
+        u.fechaNacimiento,
+        u.nacionalidad,
+        u.email,
+        u.fechaRegistro,
+        u.rol,
+        u.estado
+    FROM `Usuarios` u
+    LEFT JOIN `ActividadesArca` aa
+        ON aa.codigo = u.actividadesArcaCodigo
+    WHERE u.idUsuario = pIdUsuario;
+
+    SELECT
+        c.idCategoria,
+        c.nombre,
+        CASE WHEN mc.idUsuario IS NULL THEN 0 ELSE 1 END AS asignada
+    FROM `Categorias` c
+    LEFT JOIN `ModeradoresCategorias` mc
+        ON mc.idCategoria = c.idCategoria
+       AND mc.idUsuario = pIdUsuario
+    WHERE c.estado = 'A'
+    ORDER BY c.nombre ASC, c.idCategoria ASC;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_cambiar_estado_usuario
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_cambiar_estado_usuario`(
+    IN pIdUsuario INT,
+    IN pEstado CHAR(1)
+)
+MODIFIES SQL DATA
+COMMENT 'Da de baja o reactiva un usuario estableciendo su estado en I o A. Los administradores no pueden cambiar de estado.'
+BEGIN
+    IF pIdUsuario IS NULL OR pIdUsuario <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador del usuario no es válido.';
+    END IF;
+
+    IF pEstado NOT IN ('A', 'I') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado del usuario debe ser A o I.';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM `Usuarios`
+        WHERE idUsuario = pIdUsuario
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El usuario solicitado no existe.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM `Usuarios`
+        WHERE idUsuario = pIdUsuario
+          AND rol = 'ADMIN'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'No se puede cambiar el estado de un usuario administrador.';
+    END IF;
+
+    UPDATE `Usuarios`
+    SET estado = pEstado
+    WHERE idUsuario = pIdUsuario;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_asignar_moderador
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_asignar_moderador`(
+    IN pIdUsuario INT,
+    IN pIdsCategorias JSON
+)
+MODIFIES SQL DATA
+COMMENT 'Reemplaza de forma transaccional las categorías que modera un usuario. Con categorías lo convierte en moderador; sin categorías restaura el rol de usuario. Los administradores no pueden cambiar de rol.'
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    IF pIdUsuario IS NULL OR pIdUsuario <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador del usuario no es válido.';
+    END IF;
+
+    IF pIdsCategorias IS NULL
+       OR pIdsCategorias IS NOT JSON ARRAY
+       OR JSON_LENGTH(pIdsCategorias) > 100 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Las categorías deben enviarse como un arreglo JSON de hasta 100 elementos.';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM `Usuarios`
+        WHERE idUsuario = pIdUsuario
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El usuario solicitado no existe.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM `Usuarios`
+        WHERE idUsuario = pIdUsuario
+          AND rol = 'ADMIN'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'No se puede cambiar el rol de un usuario administrador.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM `Usuarios`
+        WHERE idUsuario = pIdUsuario
+          AND estado = 'I'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'No se puede asignar moderación a un usuario inactivo.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM JSON_TABLE(
+            pIdsCategorias,
+            '$[*]' COLUMNS (
+                idCategoria INT PATH '$'
+            )
+        ) ids
+        LEFT JOIN `Categorias` c
+            ON c.idCategoria = ids.idCategoria
+           AND c.estado = 'A'
+        WHERE ids.idCategoria IS NULL
+           OR ids.idCategoria <= 0
+           OR c.idCategoria IS NULL
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Todas las categorías seleccionadas deben existir y estar activas.';
+    END IF;
+
+    START TRANSACTION;
+
+    UPDATE `Usuarios`
+    SET rol = CASE
+        WHEN JSON_LENGTH(pIdsCategorias) = 0 THEN 'USUARIO'
+        ELSE 'MODERADOR'
+    END
+    WHERE idUsuario = pIdUsuario;
+
+    DELETE FROM `ModeradoresCategorias`
+    WHERE idUsuario = pIdUsuario;
+
+    INSERT INTO `ModeradoresCategorias` (idCategoria, idUsuario)
+    SELECT DISTINCT ids.idCategoria, pIdUsuario
+    FROM JSON_TABLE(
+        pIdsCategorias,
+        '$[*]' COLUMNS (
+            idCategoria INT PATH '$'
+        )
+    ) ids;
+
+    COMMIT;
+END //
+
+-- -----------------------------------------------------
 -- sp_admin_listar_actores
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_listar_actores`(

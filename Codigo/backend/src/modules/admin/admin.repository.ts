@@ -2,8 +2,14 @@ import { z } from 'zod';
 
 import { pool } from '../../database/pool.js';
 
-import type { ActorAdmin, UsuarioAdmin } from './admin.schemas.js';
-import type { ListarActoresAdminQuery, ListarUsuariosAdminQuery } from './admin.schemas.js';
+import type {
+	ActorAdmin,
+	CategoriaModeracionAdmin,
+	ListarActoresAdminQuery,
+	ListarUsuariosAdminQuery,
+	UsuarioAdmin,
+	UsuarioDetalleAdmin,
+} from './admin.schemas.js';
 
 const databaseIntegerSchema = z
 	.union([z.number().int(), z.bigint(), z.string().regex(/^\d+$/)])
@@ -40,6 +46,14 @@ const usuarioDatabaseRowSchema = z.object({
 	fechaRegistro: databaseDateSchema,
 	rol: z.enum(['USUARIO', 'MODERADOR', 'ADMIN']),
 	estado: z.enum(['A', 'P', 'I']),
+});
+
+type UsuarioDatabaseRow = z.infer<typeof usuarioDatabaseRowSchema>;
+
+const categoriaModeracionDatabaseRowSchema = z.object({
+	idCategoria: databaseIntegerSchema,
+	nombre: z.string(),
+	asignada: databaseBooleanSchema,
 });
 
 const actorDatabaseRowSchema = z.object({
@@ -89,6 +103,24 @@ function getTotal(procedureResult: unknown, procedureName: string): number {
 	return firstRow.total;
 }
 
+function mapUsuario(row: UsuarioDatabaseRow): UsuarioAdmin {
+	return {
+		id: row.idUsuario,
+		actividadArcaCodigo: row.actividadesArcaCodigo,
+		actividadArca: row.actividadArca,
+		nombre: row.nombre,
+		apellido: row.apellido,
+		cuil: row.CUIL,
+		genero: row.genero,
+		fechaNacimiento: row.fechaNacimiento,
+		nacionalidad: row.nacionalidad,
+		email: row.email,
+		fechaRegistro: row.fechaRegistro,
+		rol: row.rol,
+		estado: row.estado,
+	};
+}
+
 export async function listarUsuariosAdminRepository(
 	query: ListarUsuariosAdminQuery,
 ): Promise<{ total: number; usuarios: UsuarioAdmin[] }> {
@@ -106,22 +138,51 @@ export async function listarUsuariosAdminRepository(
 
 	return {
 		total: getTotal(result, procedureName),
-		usuarios: rows.map((row) => ({
-			id: row.idUsuario,
-			actividadArcaCodigo: row.actividadesArcaCodigo,
-			actividadArca: row.actividadArca,
-			nombre: row.nombre,
-			apellido: row.apellido,
-			cuil: row.CUIL,
-			genero: row.genero,
-			fechaNacimiento: row.fechaNacimiento,
-			nacionalidad: row.nacionalidad,
-			email: row.email,
-			fechaRegistro: row.fechaRegistro,
-			rol: row.rol,
-			estado: row.estado,
-		})),
+		usuarios: rows.map(mapUsuario),
 	};
+}
+
+export async function obtenerUsuarioAdminRepository(id: number): Promise<UsuarioDetalleAdmin | null> {
+	const procedureName = 'sp_admin_obtener_usuario';
+	const result: unknown = await pool.query('CALL sp_admin_obtener_usuario(?)', [id]);
+	const userRows = z.array(usuarioDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const userRow = userRows[0];
+
+	if (!userRow) {
+		return null;
+	}
+
+	const categoryRows = z
+		.array(categoriaModeracionDatabaseRowSchema)
+		.parse(getResultSet(result, 1, procedureName));
+	const categoriasModeracion: CategoriaModeracionAdmin[] = categoryRows.map((row) => ({
+		id: row.idCategoria,
+		nombre: row.nombre,
+		asignada: row.asignada,
+	}));
+
+	return {
+		...mapUsuario(userRow),
+		categoriasModeracion,
+	};
+}
+
+export async function cambiarEstadoUsuarioAdminRepository(
+	id: number,
+	estado: 'A' | 'I',
+): Promise<UsuarioDetalleAdmin | null> {
+	await pool.query('CALL sp_admin_cambiar_estado_usuario(?, ?)', [id, estado]);
+
+	return obtenerUsuarioAdminRepository(id);
+}
+
+export async function asignarModeradorAdminRepository(
+	id: number,
+	idCategorias: number[],
+): Promise<UsuarioDetalleAdmin | null> {
+	await pool.query('CALL sp_admin_asignar_moderador(?, ?)', [id, JSON.stringify(idCategorias)]);
+
+	return obtenerUsuarioAdminRepository(id);
 }
 
 export async function listarActoresAdminRepository(

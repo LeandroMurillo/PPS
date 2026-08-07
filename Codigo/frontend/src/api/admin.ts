@@ -1,4 +1,4 @@
-import { apiFetch, appendOptionalParam } from './client';
+import { apiFetch, apiRequest, appendOptionalParam } from './client';
 
 export type SortDirection = 'ASC' | 'DESC';
 
@@ -24,6 +24,16 @@ export type UsuarioAdmin = {
 	fechaRegistro: string;
 	rol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 	estado: 'A' | 'P' | 'I';
+};
+
+export type CategoriaModeracionAdmin = {
+	id: number;
+	nombre: string;
+	asignada: boolean;
+};
+
+export type UsuarioDetalleAdmin = UsuarioAdmin & {
+	categoriasModeracion: CategoriaModeracionAdmin[];
 };
 
 export type UsuarioAdminSortBy =
@@ -115,4 +125,24 @@ export async function listarActoresAdmin(
 	Object.entries(input).forEach(([key, value]) => appendOptionalParam(params, key, value));
 
 	return apiFetch<PageResponse<ActorAdmin>>(`/api/admin/actores?${params.toString()}`, signal);
+}
+
+export async function obtenerUsuarioAdmin(id: number | string, signal?: AbortSignal) {
+	return apiFetch<{ data: UsuarioDetalleAdmin }>(`/api/admin/usuarios/${id}`, signal);
+}
+
+export async function cambiarEstadoUsuarioAdmin(id: number, estado: 'A' | 'I') {
+	return apiRequest<{ data: UsuarioDetalleAdmin }>(`/api/admin/usuarios/${id}/estado`, {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ estado }),
+	});
+}
+
+export async function asignarModeradorAdmin(id: number, idCategorias: number[]) {
+	return apiRequest<{ data: UsuarioDetalleAdmin }>(`/api/admin/usuarios/${id}/moderacion`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ idCategorias }),
+	});
 }

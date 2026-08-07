@@ -1,7 +1,19 @@
 import type { RequestHandler } from 'express';
 
-import { listarActoresAdminQuerySchema, listarUsuariosAdminQuerySchema } from './admin.schemas.js';
-import { listarActoresAdminService, listarUsuariosAdminService } from './admin.service.js';
+import {
+	asignarModeradorAdminBodySchema,
+	cambiarEstadoUsuarioAdminBodySchema,
+	listarActoresAdminQuerySchema,
+	listarUsuariosAdminQuerySchema,
+	usuarioAdminParamsSchema,
+} from './admin.schemas.js';
+import {
+	asignarModeradorAdminService,
+	cambiarEstadoUsuarioAdminService,
+	listarActoresAdminService,
+	listarUsuariosAdminService,
+	obtenerUsuarioAdminService,
+} from './admin.service.js';
 
 function validationError(issues: { path: PropertyKey[]; code: string; message: string }[]) {
 	return {
@@ -15,6 +27,24 @@ function validationError(issues: { path: PropertyKey[]; code: string; message: s
 			})),
 		},
 	};
+}
+
+function userNotFound(response: Parameters<RequestHandler>[1]) {
+	response.status(404).json({
+		error: {
+			code: 'USER_NOT_FOUND',
+			message: 'No se encontró el usuario solicitado',
+		},
+	});
+}
+
+function adminUserProtected(response: Parameters<RequestHandler>[1]) {
+	response.status(409).json({
+		error: {
+			code: 'ADMIN_USER_PROTECTED',
+			message: 'No se puede cambiar el estado ni el rol de un usuario administrador',
+		},
+	});
 }
 
 export const listarUsuariosAdminController: RequestHandler = async (request, response) => {
@@ -37,4 +67,94 @@ export const listarActoresAdminController: RequestHandler = async (request, resp
 	}
 
 	response.status(200).json(await listarActoresAdminService(result.data));
+};
+
+export const obtenerUsuarioAdminController: RequestHandler = async (request, response) => {
+	const params = usuarioAdminParamsSchema.safeParse(request.params);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+
+	const result = await obtenerUsuarioAdminService(params.data.id);
+
+	if (!result) {
+		userNotFound(response);
+		return;
+	}
+
+	response.status(200).json(result);
+};
+
+export const cambiarEstadoUsuarioAdminController: RequestHandler = async (request, response) => {
+	const params = usuarioAdminParamsSchema.safeParse(request.params);
+	const body = cambiarEstadoUsuarioAdminBodySchema.safeParse(request.body);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	const currentUser = await obtenerUsuarioAdminService(params.data.id);
+
+	if (!currentUser) {
+		userNotFound(response);
+		return;
+	}
+
+	if (currentUser.data.rol === 'ADMIN') {
+		adminUserProtected(response);
+		return;
+	}
+
+	const result = await cambiarEstadoUsuarioAdminService(params.data.id, body.data.estado);
+
+	if (!result) {
+		userNotFound(response);
+		return;
+	}
+
+	response.status(200).json(result);
+};
+
+export const asignarModeradorAdminController: RequestHandler = async (request, response) => {
+	const params = usuarioAdminParamsSchema.safeParse(request.params);
+	const body = asignarModeradorAdminBodySchema.safeParse(request.body);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	const currentUser = await obtenerUsuarioAdminService(params.data.id);
+
+	if (!currentUser) {
+		userNotFound(response);
+		return;
+	}
+
+	if (currentUser.data.rol === 'ADMIN') {
+		adminUserProtected(response);
+		return;
+	}
+
+	const result = await asignarModeradorAdminService(params.data.id, body.data.idCategorias);
+
+	if (!result) {
+		userNotFound(response);
+		return;
+	}
+
+	response.status(200).json(result);
 };

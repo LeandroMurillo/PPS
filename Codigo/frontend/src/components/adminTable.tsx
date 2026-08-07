@@ -40,6 +40,7 @@ type AdminTableProps<T, S extends string> = {
 	onPageChange: (page: number) => void;
 	onPageSizeChange: (pageSize: number) => void;
 	onSortChange: (sortBy: S, sortDir: SortDirection) => void;
+	onRowClick?: (row: T) => void;
 };
 
 export default function AdminTable<T, S extends string>({
@@ -57,6 +58,7 @@ export default function AdminTable<T, S extends string>({
 	onPageChange,
 	onPageSizeChange,
 	onSortChange,
+	onRowClick,
 }: AdminTableProps<T, S>) {
 	const handleSort = (columnSortBy: S) => {
 		onSortChange(columnSortBy, sortBy === columnSortBy && sortDir === 'ASC' ? 'DESC' : 'ASC');
@@ -83,9 +85,7 @@ export default function AdminTable<T, S extends string>({
 									{column.sortBy ? (
 										<TableSortLabel
 											active={sortBy === column.sortBy}
-											direction={
-												sortBy === column.sortBy && sortDir === 'DESC' ? 'desc' : 'asc'
-											}
+											direction={sortBy === column.sortBy && sortDir === 'DESC' ? 'desc' : 'asc'}
 											onClick={() => handleSort(column.sortBy as S)}
 										>
 											{column.label}
@@ -109,7 +109,19 @@ export default function AdminTable<T, S extends string>({
 									</TableRow>
 								))
 							: rows.map((row) => (
-									<TableRow hover key={getRowId(row)}>
+									<TableRow
+										hover
+										key={getRowId(row)}
+										onClick={() => onRowClick?.(row)}
+										onKeyDown={(event) => {
+											if (onRowClick && (event.key === 'Enter' || event.key === ' ')) {
+												event.preventDefault();
+												onRowClick(row);
+											}
+										}}
+										tabIndex={onRowClick ? 0 : undefined}
+										sx={{ cursor: onRowClick ? 'pointer' : undefined }}
+									>
 										{columns.map((column) => (
 											<TableCell key={column.id} align={column.align}>
 												{column.render(row)}

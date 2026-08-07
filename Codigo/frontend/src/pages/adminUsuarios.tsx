@@ -5,13 +5,9 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { useNavigate } from 'react-router';
 
-import {
-	listarUsuariosAdmin,
-	type SortDirection,
-	type UsuarioAdmin,
-	type UsuarioAdminSortBy,
-} from '../api/admin';
+import { listarUsuariosAdmin, type SortDirection, type UsuarioAdmin, type UsuarioAdminSortBy } from '../api/admin';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
@@ -26,6 +22,13 @@ function formatDate(value: string) {
 	}
 
 	return new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' }).format(new Date(value));
+}
+
+function formatDateTime(value: string) {
+	return new Intl.DateTimeFormat('es-AR', {
+		dateStyle: 'short',
+		timeStyle: 'short',
+	}).format(new Date(value));
 }
 
 const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
@@ -62,9 +65,7 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 		id: 'estado',
 		label: 'Estado',
 		sortBy: 'estado',
-		render: (row) => (
-			<Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />
-		),
+		render: (row) => <Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />,
 	},
 	{
 		id: 'nacionalidad',
@@ -83,12 +84,13 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 		id: 'registro',
 		label: 'Registro',
 		sortBy: 'fechaRegistro',
-		minWidth: 115,
-		render: (row) => formatDate(row.fechaRegistro),
+		minWidth: 145,
+		render: (row) => formatDateTime(row.fechaRegistro),
 	},
 ];
 
 export default function AdminUsuariosPage() {
+	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [role, setRole] = React.useState('');
 	const [state, setState] = React.useState('');
@@ -125,7 +127,9 @@ export default function AdminUsuariosPage() {
 			})
 			.catch((requestError: unknown) => {
 				if (!controller.signal.aborted) {
-					setError(requestError instanceof Error ? requestError.message : 'No se pudieron cargar los usuarios.');
+					setError(
+						requestError instanceof Error ? requestError.message : 'No se pudieron cargar los usuarios.',
+					);
 				}
 			})
 			.finally(() => {
@@ -206,6 +210,7 @@ export default function AdminUsuariosPage() {
 						setSortDir(direction);
 						setPage(0);
 					}}
+					onRowClick={(row) => navigate(`/usuarios/${row.id}`)}
 				/>
 			</Stack>
 		</PageContainer>

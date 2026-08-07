@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	asignarModeradorAdminBodySchema,
+	cambiarEstadoUsuarioAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
+	usuarioAdminParamsSchema,
 } from '../src/modules/admin/admin.schemas.js';
 
 describe('consultas administrativas', () => {
@@ -60,5 +63,19 @@ describe('consultas administrativas', () => {
 			sortBy: 'categoria',
 			sortDir: 'DESC',
 		});
+	});
+
+	it('normaliza el identificador del detalle de usuario', () => {
+		expect(usuarioAdminParamsSchema.parse({ id: '12' })).toEqual({ id: 12 });
+	});
+
+	it('solo permite activar o dar de baja a un usuario', () => {
+		expect(cambiarEstadoUsuarioAdminBodySchema.safeParse({ estado: 'I' }).success).toBe(true);
+		expect(cambiarEstadoUsuarioAdminBodySchema.safeParse({ estado: 'P' }).success).toBe(false);
+	});
+
+	it('permite quitar todas las categorías para restaurar el rol de usuario', () => {
+		expect(asignarModeradorAdminBodySchema.safeParse({ idCategorias: [1, 3] }).success).toBe(true);
+		expect(asignarModeradorAdminBodySchema.safeParse({ idCategorias: [] }).success).toBe(true);
 	});
 });

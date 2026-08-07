@@ -1,6 +1,9 @@
 import {
+	asignarModeradorAdminRepository,
+	cambiarEstadoUsuarioAdminRepository,
 	listarActoresAdminRepository,
 	listarUsuariosAdminRepository,
+	obtenerUsuarioAdminRepository,
 } from './admin.repository.js';
 
 import type {
@@ -8,6 +11,7 @@ import type {
 	ListarActoresAdminResponse,
 	ListarUsuariosAdminQuery,
 	ListarUsuariosAdminResponse,
+	ObtenerUsuarioAdminResponse,
 } from './admin.schemas.js';
 
 function pagination(total: number, count: number, limit: number, offset: number) {
@@ -29,6 +33,32 @@ export async function listarUsuariosAdminService(
 		data: result.usuarios,
 		pagination: pagination(result.total, result.usuarios.length, query.limit, query.offset),
 	};
+}
+
+export async function obtenerUsuarioAdminService(
+	id: number,
+): Promise<ObtenerUsuarioAdminResponse | null> {
+	const usuario = await obtenerUsuarioAdminRepository(id);
+
+	return usuario ? { data: usuario } : null;
+}
+
+export async function cambiarEstadoUsuarioAdminService(
+	id: number,
+	estado: 'A' | 'I',
+): Promise<ObtenerUsuarioAdminResponse | null> {
+	const usuario = await cambiarEstadoUsuarioAdminRepository(id, estado);
+
+	return usuario ? { data: usuario } : null;
+}
+
+export async function asignarModeradorAdminService(
+	id: number,
+	idCategorias: number[],
+): Promise<ObtenerUsuarioAdminResponse | null> {
+	const usuario = await asignarModeradorAdminRepository(id, idCategorias);
+
+	return usuario ? { data: usuario } : null;
 }
 
 export async function listarActoresAdminService(

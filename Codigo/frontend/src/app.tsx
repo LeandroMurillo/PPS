@@ -57,6 +57,7 @@ const NAVIGATION: Navigation = [
 		title: 'Usuarios',
 		segment: 'usuarios',
 		icon: <GroupIcon />,
+		pattern: 'usuarios{/:usuarioId}*',
 	},
 	{
 		title: 'Convocatorias',

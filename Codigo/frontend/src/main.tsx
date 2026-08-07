@@ -11,6 +11,7 @@ import AcercaDe from './pages/acerca';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 import AdminActoresPage from './pages/adminActores';
 import AdminUsuariosPage from './pages/adminUsuarios';
+import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 
 const router = createBrowserRouter([
 	{
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
 					{
 						path: 'usuarios',
 						Component: AdminUsuariosPage,
+					},
+					{
+						path: 'usuarios/:usuarioId',
+						Component: AdminUsuarioDetallePage,
 					},
 					{
 						path: 'convocatoriasAdmin',
