@@ -1,12 +1,13 @@
 import * as React from 'react';
+import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
+import { Link, useSearchParams } from 'react-router';
+import { useColorScheme } from '@mui/material/styles';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import CategoryIcon from './categoryIcon';
 import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
 import L from 'leaflet';
-import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
-import type { FeatureCollection, Geometry, Feature } from 'geojson';
-import { useColorScheme } from '@mui/material/styles';
-import { Link, useSearchParams } from 'react-router';
 import {
 	obtenerActoresMapa,
 	obtenerFiltrosMapa,
@@ -14,7 +15,7 @@ import {
 	type FiltroCategoria,
 	type FiltroDepartamento,
 } from '../api/actores';
-import CategoryIcon from './categoryIcon';
+import type { FeatureCollection, Geometry, Feature } from 'geojson';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
@@ -111,6 +112,37 @@ function SelectedPointFocuser({
 	return null;
 }
 
+function FilteredPointsFocuser({
+	points,
+	busqueda,
+	departamentoSeleccionado,
+	categoriasSeleccionadas,
+}: {
+	points: CulturalPoint[];
+	busqueda: string;
+	departamentoSeleccionado: string;
+	categoriasSeleccionadas: number[];
+}) {
+	const map = useMap();
+
+	React.useEffect(() => {
+		const hayFiltrosActivos = Boolean(
+			busqueda.trim() || departamentoSeleccionado || categoriasSeleccionadas.length,
+		);
+		if (!hayFiltrosActivos || points.length === 0) return;
+
+		if (points.length === 1) {
+			map.flyTo(points[0].latitudlongitud, 14, { duration: 1.2 });
+			return;
+		}
+
+		const bounds = L.latLngBounds(points.map((point) => point.latitudlongitud));
+		map.flyToBounds(bounds, { padding: [48, 48], maxZoom: 14, duration: 1.2 });
+	}, [busqueda, departamentoSeleccionado, categoriasSeleccionadas, map, points]);
+
+	return null;
+}
+
 export default function TucumanMap() {
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
@@ -124,6 +156,7 @@ export default function TucumanMap() {
 	const [departamentos, setDepartamentos] = React.useState<FiltroDepartamento[]>([]);
 	const [categoriasSeleccionadas, setCategoriasSeleccionadas] = React.useState<number[]>([]);
 	const [busqueda, setBusqueda] = React.useState<string>('');
+	const debouncedBusqueda = useDebouncedValue(busqueda);
 	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
 
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
@@ -174,7 +207,7 @@ export default function TucumanMap() {
 
 				const result = await obtenerActoresMapa(
 					{
-						busqueda,
+						busqueda: debouncedBusqueda,
 						departamento: departamentoSeleccionado,
 						categorias: categoriasSeleccionadas,
 					},
@@ -321,6 +354,14 @@ export default function TucumanMap() {
 				{/* Componente invisible que enfoca y abre el popup del punto pasado por ?selected= */}
 				<SelectedPointFocuser selectedId={selectedId} points={puntosProcesados} markerRefs={markerRefs} />
 
+				{/* Componente invisible que ajusta la cámara a los resultados filtrados */}
+				<FilteredPointsFocuser
+					points={puntosProcesados}
+					busqueda={debouncedBusqueda}
+					departamentoSeleccionado={departamentoSeleccionado}
+					categoriasSeleccionadas={categoriasSeleccionadas}
+				/>
+
 				{/* 6. Renderizar las líneas divisorias de los Departamentos */}
 				{departamentosGeoJson && (
 					<Pane name="departamentos-borders" style={{ zIndex: 690 }}>
@@ -366,16 +407,15 @@ export default function TucumanMap() {
 							<br />
 							{point.descripcion}
 							<br />
-							<Box
-								component="small"
-								sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
-							>
+							<Box component="small" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
 								<CategoryIcon icono={point.categoriaIcono} fontSize="inherit" />
 								Categoría: {point.categoria}
 							</Box>
 							<br />
 							<Box sx={{ mt: 1 }}>
-								<Link to={`/actores/${point.id}`}>Ver portafolio</Link>
+								<Link to={`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`}>
+									Ver portafolio
+								</Link>
 							</Box>
 						</Popup>
 					</CircleMarker>
