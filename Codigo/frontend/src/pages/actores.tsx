@@ -29,6 +29,8 @@ import {
 	type FiltroDepartamento,
 } from '../api/actores';
 import CategoryIcon from '../components/categoryIcon';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { Button } from '@mui/material';
 
 export default function ListaActoresPublica() {
 	const [actores, setActores] = useState<ActorResumen[]>([]);
@@ -39,8 +41,17 @@ export default function ListaActoresPublica() {
 	const [error, setError] = useState<string | null>(null);
 
 	const [busqueda, setBusqueda] = useState('');
+	const debouncedBusqueda = useDebouncedValue(busqueda);
 	const [filtroCategoria, setFiltroCategoria] = useState(0);
 	const [filtroDepartamento, setFiltroDepartamento] = useState('');
+
+	const [page, setPage] = useState(0);
+	const [hasNext, setHasNext] = useState(false);
+	const LIMIT = 20;
+
+	useEffect(() => {
+		setPage(0);
+	}, [debouncedBusqueda, filtroCategoria, filtroDepartamento]);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -68,22 +79,24 @@ export default function ListaActoresPublica() {
 
 		async function loadActors() {
 			try {
-				setCargando(true);
+				if (page === 0) setCargando(true);
 				setError(null);
 
 				const result = await listarActores(
 					{
-						busqueda,
+						busqueda: debouncedBusqueda,
 						departamento: filtroDepartamento,
 						idCategoria: filtroCategoria,
-						limit: 100,
-						offset: 0,
+						limit: LIMIT,
+						offset: page * LIMIT,
 					},
 					controller.signal,
 				);
 
-				setActores(result.data);
+				// Append if loading more, replace if starting fresh
+				setActores((prev) => (page === 0 ? result.data : [...prev, ...result.data]));
 				setTotal(result.pagination.total);
+				setHasNext(result.pagination.hasNext);
 			} catch (error) {
 				if (!(error instanceof DOMException && error.name === 'AbortError')) {
 					setError(error instanceof Error ? error.message : 'No se pudieron cargar los actores culturales.');
@@ -98,7 +111,7 @@ export default function ListaActoresPublica() {
 		loadActors();
 
 		return () => controller.abort();
-	}, [busqueda, filtroCategoria, filtroDepartamento]);
+	}, [debouncedBusqueda, filtroCategoria, filtroDepartamento, page]);
 
 	if (cargando) {
 		return (
@@ -194,6 +207,14 @@ export default function ListaActoresPublica() {
 						</Grid>
 					))}
 				</Grid>
+			)}
+
+			{hasNext && (
+				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+					<Button variant="outlined" onClick={() => setPage((prev) => prev + 1)}>
+						Cargar más
+					</Button>
+				</Box>
 			)}
 		</Box>
 	);
