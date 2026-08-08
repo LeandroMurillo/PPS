@@ -105,7 +105,6 @@ const actorDatabaseRowSchema = z.object({
 	categoria: z.string(),
 	categoriaIcono: categoriaIconoSchema,
 	subcategoria: z.string().nullable(),
-	provincia: z.string(),
 	departamento: z.string(),
 	localidad: z.string().nullable(),
 });
