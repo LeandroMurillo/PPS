@@ -10,6 +10,7 @@ import Actores from './pages/actores';
 import AcercaDe from './pages/acerca';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 import AdminActoresPage from './pages/adminActores';
+import AdminActorDetallePage from './pages/adminActorDetalle';
 import AdminUsuariosPage from './pages/adminUsuarios';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminCategoriasPage from './pages/adminCategorias';
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
 					{
 						path: 'actoresAdmin',
 						Component: AdminActoresPage,
+					},
+					{
+						path: 'actoresAdmin/:actorId',
+						Component: AdminActorDetallePage,
 					},
 					{
 						path: 'usuarios',

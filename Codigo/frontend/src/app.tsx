@@ -52,6 +52,7 @@ const NAVIGATION: Navigation = [
 		title: 'Actores',
 		segment: 'actoresAdmin',
 		icon: <PeopleIcon />,
+		pattern: 'actoresAdmin{/:actorId}*',
 	},
 	{
 		title: 'Usuarios',

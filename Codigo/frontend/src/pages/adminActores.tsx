@@ -4,13 +4,9 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { useNavigate } from 'react-router';
 
-import {
-	listarActoresAdmin,
-	type ActorAdmin,
-	type ActorAdminSortBy,
-	type SortDirection,
-} from '../api/admin';
+import { listarActoresAdmin, type ActorAdmin, type ActorAdminSortBy, type SortDirection } from '../api/admin';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
@@ -94,9 +90,7 @@ const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
 		id: 'estado',
 		label: 'Estado',
 		sortBy: 'estado',
-		render: (row) => (
-			<Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />
-		),
+		render: (row) => <Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />,
 	},
 	{
 		id: 'creacion',
@@ -108,6 +102,7 @@ const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
 ];
 
 export default function AdminActoresPage() {
+	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [categoryId, setCategoryId] = React.useState('');
 	const [ownerId, setOwnerId] = React.useState('');
@@ -146,7 +141,9 @@ export default function AdminActoresPage() {
 			})
 			.catch((requestError: unknown) => {
 				if (!controller.signal.aborted) {
-					setError(requestError instanceof Error ? requestError.message : 'No se pudieron cargar los actores.');
+					setError(
+						requestError instanceof Error ? requestError.message : 'No se pudieron cargar los actores.',
+					);
 				}
 			})
 			.finally(() => {
@@ -218,6 +215,7 @@ export default function AdminActoresPage() {
 						setSortDir(direction);
 						setPage(0);
 					}}
+					onRowClick={(row) => navigate(`/actoresAdmin/${row.id}`)}
 				/>
 			</Stack>
 		</PageContainer>
