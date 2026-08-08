@@ -43,9 +43,7 @@ export async function listarUsuariosAdminService(
 	};
 }
 
-export async function obtenerUsuarioAdminService(
-	id: number,
-): Promise<ObtenerUsuarioAdminResponse | null> {
+export async function obtenerUsuarioAdminService(id: number): Promise<ObtenerUsuarioAdminResponse | null> {
 	const usuario = await obtenerUsuarioAdminRepository(id);
 
 	return usuario ? { data: usuario } : null;
@@ -69,9 +67,7 @@ export async function asignarModeradorAdminService(
 	return usuario ? { data: usuario } : null;
 }
 
-export async function listarActoresAdminService(
-	query: ListarActoresAdminQuery,
-): Promise<ListarActoresAdminResponse> {
+export async function listarActoresAdminService(query: ListarActoresAdminQuery): Promise<ListarActoresAdminResponse> {
 	const result = await listarActoresAdminRepository(query);
 
 	return {
@@ -91,9 +87,7 @@ export async function listarCategoriasAdminService(
 	};
 }
 
-export async function obtenerCategoriaAdminService(
-	id: number,
-): Promise<ObtenerCategoriaAdminResponse | null> {
+export async function obtenerCategoriaAdminService(id: number): Promise<ObtenerCategoriaAdminResponse | null> {
 	const categoria = await obtenerCategoriaAdminRepository(id);
 
 	return categoria ? { data: categoria } : null;
@@ -116,8 +110,6 @@ export async function editarCategoriaAdminService(
 	return { data: await editarCategoriaAdminRepository(id, nombre, icono, estado) };
 }
 
-export async function eliminarCategoriaAdminService(
-	id: number,
-): Promise<ObtenerCategoriaAdminResponse> {
+export async function eliminarCategoriaAdminService(id: number): Promise<ObtenerCategoriaAdminResponse> {
 	return { data: await eliminarCategoriaAdminRepository(id) };
 }

@@ -83,13 +83,11 @@ export const listarActoresQuerySchema = z
 			example: 'Tafí Viejo',
 		}),
 
-		idCategoria: z
-			.preprocess(normalizeQueryInteger, z.number().int().min(0).max(4_294_967_295).optional())
-			.meta({
-				description:
-					'Identificador de la categoría. El valor 0 o la ausencia del parámetro representa todas las categorías.',
-				example: 3,
-			}),
+		idCategoria: z.preprocess(normalizeQueryInteger, z.number().int().min(0).max(4_294_967_295).optional()).meta({
+			description:
+				'Identificador de la categoría. El valor 0 o la ausencia del parámetro representa todas las categorías.',
+			example: 3,
+		}),
 
 		limit: z.preprocess(normalizeQueryInteger, z.number().int().min(1).max(100).default(20)).meta({
 			description: 'Cantidad máxima de actores devueltos en la página.',
@@ -97,13 +95,11 @@ export const listarActoresQuerySchema = z
 			default: 20,
 		}),
 
-		offset: z
-			.preprocess(normalizeQueryInteger, z.number().int().min(0).max(2_147_483_647).default(0))
-			.meta({
-				description: 'Cantidad de registros que se omitirán antes de devolver la página.',
-				example: 0,
-				default: 0,
-			}),
+		offset: z.preprocess(normalizeQueryInteger, z.number().int().min(0).max(2_147_483_647).default(0)).meta({
+			description: 'Cantidad de registros que se omitirán antes de devolver la página.',
+			example: 0,
+			default: 0,
+		}),
 	})
 	.meta({
 		description: 'Filtros y opciones de paginación del directorio público de actores.',
@@ -535,9 +531,7 @@ export const listarActoresFiltroDepartamentoSchema = z
 		description: 'Departamento disponible como filtro del directorio público de actores.',
 	});
 
-export type ListarActoresFiltroDepartamento = z.infer<
-	typeof listarActoresFiltroDepartamentoSchema
->;
+export type ListarActoresFiltroDepartamento = z.infer<typeof listarActoresFiltroDepartamentoSchema>;
 
 export const obtenerFiltrosListadoActoresResponseSchema = z
 	.strictObject({
@@ -549,9 +543,7 @@ export const obtenerFiltrosListadoActoresResponseSchema = z
 		description: 'Filtros disponibles para el directorio público de actores culturales.',
 	});
 
-export type ObtenerFiltrosListadoActoresResponse = z.infer<
-	typeof obtenerFiltrosListadoActoresResponseSchema
->;
+export type ObtenerFiltrosListadoActoresResponse = z.infer<typeof obtenerFiltrosListadoActoresResponseSchema>;
 
 export const mapaFiltroCategoriaSchema = z
 	.strictObject({

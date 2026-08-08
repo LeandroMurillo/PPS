@@ -15,14 +15,9 @@ import type {
 	ObtenerFiltrosListadoActoresResponse,
 	ObtenerFiltrosMapaResponse,
 } from './actores.schemas.js';
-import type {
-	ListarActoresRepositoryInput,
-	ObtenerActoresMapaRepositoryInput,
-} from './actores.types.js';
+import type { ListarActoresRepositoryInput, ObtenerActoresMapaRepositoryInput } from './actores.types.js';
 
-export async function listarActoresService(
-	query: ListarActoresQuery,
-): Promise<ListarActoresResponse> {
+export async function listarActoresService(query: ListarActoresQuery): Promise<ListarActoresResponse> {
 	const repositoryInput: ListarActoresRepositoryInput = {
 		busqueda: query.busqueda ?? null,
 		departamento: query.departamento ?? null,
@@ -67,9 +62,7 @@ export async function obtenerActorService(id: number): Promise<ObtenerActorRespo
 	};
 }
 
-export async function obtenerActoresMapaService(
-	query: ObtenerActoresMapaQuery,
-): Promise<ObtenerActoresMapaResponse> {
+export async function obtenerActoresMapaService(query: ObtenerActoresMapaQuery): Promise<ObtenerActoresMapaResponse> {
 	const repositoryInput: ObtenerActoresMapaRepositoryInput = {
 		busqueda: query.busqueda ?? null,
 		departamento: query.departamento ?? null,

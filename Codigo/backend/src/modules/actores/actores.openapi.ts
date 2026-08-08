@@ -1,7 +1,4 @@
-import {
-	internalErrorResponseSchema,
-	validationErrorResponseSchema,
-} from '../../openapi/common.schemas.js';
+import { internalErrorResponseSchema, validationErrorResponseSchema } from '../../openapi/common.schemas.js';
 import { openApiRegistry } from '../../openapi/registry.js';
 
 import {

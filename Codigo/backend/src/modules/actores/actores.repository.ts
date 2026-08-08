@@ -54,12 +54,9 @@ const databaseLatitudeSchema = databaseCoordinateSchema.refine((value) => value 
 	message: 'La latitud recibida desde MariaDB está fuera de rango',
 });
 
-const databaseLongitudeSchema = databaseCoordinateSchema.refine(
-	(value) => value >= -180 && value <= 180,
-	{
-		message: 'La longitud recibida desde MariaDB está fuera de rango',
-	},
-);
+const databaseLongitudeSchema = databaseCoordinateSchema.refine((value) => value >= -180 && value <= 180, {
+	message: 'La longitud recibida desde MariaDB está fuera de rango',
+});
 
 const nullableDatabaseLatitudeSchema = databaseLatitudeSchema.nullable();
 
@@ -70,12 +67,7 @@ const databaseDateTimeSchema = z
 	.transform((value) => (value instanceof Date ? value.toISOString() : value));
 
 const databaseAnswerValueSchema = z
-	.union([
-		z.string(),
-		z.number(),
-		z.boolean(),
-		z.array(z.union([z.string(), z.number(), z.boolean()])),
-	])
+	.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number(), z.boolean()]))])
 	.nullable()
 	.transform((value) => {
 		if (value === null) {
@@ -113,6 +105,7 @@ const actorDatabaseRowSchema = z.object({
 	categoria: z.string(),
 	categoriaIcono: categoriaIconoSchema,
 	subcategoria: z.string().nullable(),
+	provincia: z.string(),
 	departamento: z.string(),
 	localidad: z.string().nullable(),
 });
@@ -353,20 +346,10 @@ export async function obtenerActoresMapaRepository(
 export async function obtenerFiltrosListadoActoresRepository(): Promise<ObtenerFiltrosListadoActoresRepositoryResult> {
 	const procedureResult: unknown = await pool.query('CALL sp_publico_listar_actores_filtros()');
 
-	const categoriasResultSet = getResultSet(
-		procedureResult,
-		0,
-		'sp_publico_listar_actores_filtros',
-	);
-	const departamentosResultSet = getResultSet(
-		procedureResult,
-		1,
-		'sp_publico_listar_actores_filtros',
-	);
+	const categoriasResultSet = getResultSet(procedureResult, 0, 'sp_publico_listar_actores_filtros');
+	const departamentosResultSet = getResultSet(procedureResult, 1, 'sp_publico_listar_actores_filtros');
 
-	const categoriasDatabaseRows = z
-		.array(listarActoresFiltroCategoriaDatabaseRowSchema)
-		.parse(categoriasResultSet);
+	const categoriasDatabaseRows = z.array(listarActoresFiltroCategoriaDatabaseRowSchema).parse(categoriasResultSet);
 	const departamentosDatabaseRows = z
 		.array(listarActoresFiltroDepartamentoDatabaseRowSchema)
 		.parse(departamentosResultSet);
@@ -377,11 +360,9 @@ export async function obtenerFiltrosListadoActoresRepository(): Promise<ObtenerF
 		icono: categoria.icono,
 	}));
 
-	const departamentos: ListarActoresFiltroDepartamento[] = departamentosDatabaseRows.map(
-		(departamento) => ({
-			departamento: departamento.departamento,
-		}),
-	);
+	const departamentos: ListarActoresFiltroDepartamento[] = departamentosDatabaseRows.map((departamento) => ({
+		departamento: departamento.departamento,
+	}));
 
 	return {
 		categorias,
@@ -395,12 +376,8 @@ export async function obtenerFiltrosMapaRepository(): Promise<ObtenerFiltrosMapa
 	const categoriasResultSet = getResultSet(procedureResult, 0, 'sp_publico_mapa_filtros');
 	const departamentosResultSet = getResultSet(procedureResult, 1, 'sp_publico_mapa_filtros');
 
-	const categoriasDatabaseRows = z
-		.array(mapaFiltroCategoriaDatabaseRowSchema)
-		.parse(categoriasResultSet);
-	const departamentosDatabaseRows = z
-		.array(mapaFiltroDepartamentoDatabaseRowSchema)
-		.parse(departamentosResultSet);
+	const categoriasDatabaseRows = z.array(mapaFiltroCategoriaDatabaseRowSchema).parse(categoriasResultSet);
+	const departamentosDatabaseRows = z.array(mapaFiltroDepartamentoDatabaseRowSchema).parse(departamentosResultSet);
 
 	const categorias: MapaFiltroCategoria[] = categoriasDatabaseRows.map((categoria) => ({
 		id: categoria.id,

@@ -177,9 +177,7 @@ export async function obtenerUsuarioAdminRepository(id: number): Promise<Usuario
 		return null;
 	}
 
-	const categoryRows = z
-		.array(categoriaModeracionDatabaseRowSchema)
-		.parse(getResultSet(result, 1, procedureName));
+	const categoryRows = z.array(categoriaModeracionDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
 	const categoriasModeracion: CategoriaModeracionAdmin[] = categoryRows.map((row) => ({
 		id: row.idCategoria,
 		nombre: row.nombre,
@@ -307,11 +305,7 @@ export async function crearCategoriaAdminRepository(
 	estado: 'A' | 'I',
 ): Promise<CategoriaAdmin> {
 	const procedureName = 'sp_admin_crear_categoria';
-	const result: unknown = await pool.query('CALL sp_admin_crear_categoria(?, ?, ?)', [
-		nombre,
-		icono,
-		estado,
-	]);
+	const result: unknown = await pool.query('CALL sp_admin_crear_categoria(?, ?, ?)', [nombre, icono, estado]);
 	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
 	const categoria = rows[0];
 
@@ -329,12 +323,7 @@ export async function editarCategoriaAdminRepository(
 	estado: 'A' | 'I',
 ): Promise<CategoriaAdmin> {
 	const procedureName = 'sp_admin_editar_categoria';
-	const result: unknown = await pool.query('CALL sp_admin_editar_categoria(?, ?, ?, ?)', [
-		id,
-		nombre,
-		icono,
-		estado,
-	]);
+	const result: unknown = await pool.query('CALL sp_admin_editar_categoria(?, ?, ?, ?)', [id, nombre, icono, estado]);
 	const rows = z.array(categoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
 	const categoria = rows[0];
 

@@ -22,10 +22,7 @@ function normalizeQueryInteger(value: unknown): unknown {
 
 const paginationQueryFields = {
 	limit: z.preprocess(normalizeQueryInteger, z.number().int().min(1).max(100).default(25)),
-	offset: z.preprocess(
-		normalizeQueryInteger,
-		z.number().int().min(0).max(2_147_483_647).default(0),
-	),
+	offset: z.preprocess(normalizeQueryInteger, z.number().int().min(0).max(2_147_483_647).default(0)),
 };
 
 export const usuarioAdminSortBySchema = z.enum([
@@ -69,10 +66,7 @@ export const sortDirectionSchema = z.enum(['ASC', 'DESC']);
 
 export const listarUsuariosAdminQuerySchema = z.strictObject({
 	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
-	rol: z.preprocess(
-		normalizeOptionalString,
-		z.enum(['USUARIO', 'MODERADOR', 'ADMIN']).optional(),
-	),
+	rol: z.preprocess(normalizeOptionalString, z.enum(['USUARIO', 'MODERADOR', 'ADMIN']).optional()),
 	estado: z.preprocess(normalizeOptionalString, z.enum(['A', 'P', 'I']).optional()),
 	...paginationQueryFields,
 	sortBy: usuarioAdminSortBySchema.default('idUsuario'),
@@ -86,14 +80,8 @@ export type ListarUsuariosAdminQuery = z.infer<typeof listarUsuariosAdminQuerySc
 
 export const listarActoresAdminQuerySchema = z.strictObject({
 	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
-	idCategoria: z.preprocess(
-		normalizeQueryInteger,
-		z.number().int().positive().max(4_294_967_295).optional(),
-	),
-	idUsuarioDueno: z.preprocess(
-		normalizeQueryInteger,
-		z.number().int().positive().max(4_294_967_295).optional(),
-	),
+	idCategoria: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295).optional()),
+	idUsuarioDueno: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295).optional()),
 	...paginationQueryFields,
 	sortBy: actorAdminSortBySchema.default('idActor'),
 	sortDir: z.preprocess(
@@ -136,10 +124,7 @@ export const usuarioAdminSchema = z.object({
 export type UsuarioAdmin = z.infer<typeof usuarioAdminSchema>;
 
 export const usuarioAdminParamsSchema = z.strictObject({
-	id: z.preprocess(
-		normalizeQueryInteger,
-		z.number().int().positive().max(4_294_967_295),
-	),
+	id: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
 });
 
 export type UsuarioAdminParams = z.infer<typeof usuarioAdminParamsSchema>;
@@ -157,10 +142,7 @@ export const asignarModeradorAdminBodySchema = z.strictObject({
 export type AsignarModeradorAdminBody = z.infer<typeof asignarModeradorAdminBodySchema>;
 
 export const categoriaAdminParamsSchema = z.strictObject({
-	id: z.preprocess(
-		normalizeQueryInteger,
-		z.number().int().positive().max(4_294_967_295),
-	),
+	id: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
 });
 
 export const categoriaIconoSchema = z.enum([

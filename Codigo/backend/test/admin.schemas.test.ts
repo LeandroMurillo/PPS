@@ -97,24 +97,22 @@ describe('consultas administrativas', () => {
 				busqueda: '  música  ',
 				estado: 'I',
 				limit: '10',
-			offset: '20',
-			sortBy: 'icono',
-			sortDir: 'desc',
-		}),
-	).toEqual({
+				offset: '20',
+				sortBy: 'icono',
+				sortDir: 'desc',
+			}),
+		).toEqual({
 			busqueda: 'música',
 			estado: 'I',
-		limit: 10,
-		offset: 20,
-		sortBy: 'icono',
-		sortDir: 'DESC',
-	});
+			limit: 10,
+			offset: 20,
+			sortBy: 'icono',
+			sortDir: 'DESC',
+		});
 	});
 
 	it('rechaza el contador de subcategorías que ya no forma parte del contrato', () => {
-		expect(
-			listarCategoriasAdminQuerySchema.safeParse({ sortBy: 'cantidadSubcategorias' }).success,
-		).toBe(false);
+		expect(listarCategoriasAdminQuerySchema.safeParse({ sortBy: 'cantidadSubcategorias' }).success).toBe(false);
 	});
 
 	it('valida los datos de creación y edición de categorías', () => {
@@ -123,7 +121,9 @@ describe('consultas administrativas', () => {
 			icono: 'Category',
 			estado: 'A',
 		});
-		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'Teatro', icono: 'TheaterComedy' }).success).toBe(true);
+		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'Teatro', icono: 'TheaterComedy' }).success).toBe(
+			true,
+		);
 		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'Teatro', icono: 'NoExiste' }).success).toBe(false);
 		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: '' }).success).toBe(false);
 		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'x'.repeat(46) }).success).toBe(false);

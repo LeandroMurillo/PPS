@@ -1,7 +1,4 @@
-import {
-	internalErrorResponseSchema,
-	validationErrorResponseSchema,
-} from '../../openapi/common.schemas.js';
+import { internalErrorResponseSchema, validationErrorResponseSchema } from '../../openapi/common.schemas.js';
 import { openApiRegistry } from '../../openapi/registry.js';
 
 import {
@@ -53,8 +50,7 @@ export function registerAdminOpenApi(): void {
 		path: '/api/admin/usuarios/{id}',
 		tags: ['Administración'],
 		summary: 'Obtener un usuario para administración',
-		description:
-			'Devuelve el detalle del usuario y las categorías activas disponibles para su moderación.',
+		description: 'Devuelve el detalle del usuario y las categorías activas disponibles para su moderación.',
 		request: { params: usuarioAdminParamsSchema },
 		responses: {
 			200: {
@@ -153,8 +149,7 @@ export function registerAdminOpenApi(): void {
 		path: '/api/admin/actores',
 		tags: ['Administración'],
 		summary: 'Listar actores para administración',
-		description:
-			'Lista actores con búsqueda, filtros por categoría y usuario dueño, orden y paginación.',
+		description: 'Lista actores con búsqueda, filtros por categoría y usuario dueño, orden y paginación.',
 		request: { query: listarActoresAdminQuerySchema },
 		responses: {
 			200: {

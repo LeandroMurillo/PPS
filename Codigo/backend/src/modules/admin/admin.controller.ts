@@ -260,12 +260,7 @@ export const editarCategoriaAdminController: RequestHandler = async (request, re
 		response
 			.status(200)
 			.json(
-				await editarCategoriaAdminService(
-					params.data.id,
-					body.data.nombre,
-					body.data.icono,
-					body.data.estado,
-				),
+				await editarCategoriaAdminService(params.data.id, body.data.nombre, body.data.icono, body.data.estado),
 			);
 	} catch (error) {
 		if (isCategoryNameConflict(error)) {
