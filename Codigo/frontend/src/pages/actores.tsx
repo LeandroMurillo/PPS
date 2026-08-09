@@ -37,6 +37,7 @@ export default function ListaActoresPublica() {
 	const [categorias, setCategorias] = useState<FiltroCategoria[]>([]);
 	const [departamentos, setDepartamentos] = useState<FiltroDepartamento[]>([]);
 	const [total, setTotal] = useState(0);
+	const [cargandoInicial, setCargandoInicial] = useState(true);
 	const [cargando, setCargando] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -104,6 +105,7 @@ export default function ListaActoresPublica() {
 			} finally {
 				if (!controller.signal.aborted) {
 					setCargando(false);
+					setCargandoInicial(false);
 				}
 			}
 		}
@@ -113,7 +115,7 @@ export default function ListaActoresPublica() {
 		return () => controller.abort();
 	}, [debouncedBusqueda, filtroCategoria, filtroDepartamento, page]);
 
-	if (cargando) {
+	if (cargandoInicial) {
 		return (
 			<Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
 				<CircularProgress />
@@ -187,27 +189,32 @@ export default function ListaActoresPublica() {
 				</Grid>
 			</Grid>
 
-			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				{total} actores encontrados
-			</Typography>
+			<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+				<Typography variant="body2" color="text.secondary">
+					{total} actores encontrados
+				</Typography>
+				{cargando && <CircularProgress size={14} />}
+			</Box>
 
-			{actores.length === 0 ? (
-				<Alert severity="info">No se encontraron actores que coincidan con los filtros.</Alert>
-			) : actores.length === 1 ? (
-				<Box display="flex" justifyContent="center">
-					<Box sx={{ maxWidth: 500, width: '100%' }}>
-						<ActorCard actor={actores[0]} />
+			<Box sx={{ opacity: cargando && page === 0 ? 0.6 : 1, transition: 'opacity 0.2s ease' }}>
+				{actores.length === 0 ? (
+					<Alert severity="info">No se encontraron actores que coincidan con los filtros.</Alert>
+				) : actores.length === 1 ? (
+					<Box display="flex" justifyContent="center">
+						<Box sx={{ maxWidth: 500, width: '100%' }}>
+							<ActorCard actor={actores[0]} />
+						</Box>
 					</Box>
-				</Box>
-			) : (
-				<Grid container spacing={4}>
-					{actores.map((actor) => (
-						<Grid key={actor.id} size={{ xs: 12, md: 6 }}>
-							<ActorCard actor={actor} />
-						</Grid>
-					))}
-				</Grid>
-			)}
+				) : (
+					<Grid container spacing={4}>
+						{actores.map((actor) => (
+							<Grid key={actor.id} size={{ xs: 12, md: 6 }}>
+								<ActorCard actor={actor} />
+							</Grid>
+						))}
+					</Grid>
+				)}
+			</Box>
 
 			{hasNext && (
 				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

@@ -1,15 +1,9 @@
 import { apiFetch, apiRequest, appendOptionalParam } from './client';
+import type { CategoriaIcono } from '../components/categoryIcon';
+
+export type { CategoriaIcono };
 
 export type SortDirection = 'ASC' | 'DESC';
-
-export type CategoriaIcono =
-	| 'Category'
-	| 'MusicNote'
-	| 'Handyman'
-	| 'TheaterComedy'
-	| 'Movie'
-	| 'MenuBook'
-	| 'Palette';
 
 export type AdminPagination = {
 	total: number;

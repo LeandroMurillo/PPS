@@ -1,4 +1,7 @@
 import { apiFetch, appendOptionalParam } from './client';
+import type { CategoriaIcono } from '../components/categoryIcon';
+
+export type { CategoriaIcono };
 
 export type FiltroCategoria = {
 	id: number;
@@ -6,15 +9,6 @@ export type FiltroCategoria = {
 	icono: CategoriaIcono;
 	cantidadActores?: number;
 };
-
-export type CategoriaIcono =
-	| 'Category'
-	| 'MusicNote'
-	| 'Handyman'
-	| 'TheaterComedy'
-	| 'Movie'
-	| 'MenuBook'
-	| 'Palette';
 
 export type FiltroDepartamento = {
 	departamento: string;

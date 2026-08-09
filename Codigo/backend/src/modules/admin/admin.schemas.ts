@@ -153,6 +153,21 @@ export const categoriaIconoSchema = z.enum([
 	'Movie',
 	'MenuBook',
 	'Palette',
+	'AccountBalance',
+	'Museum',
+	'DirectionsRun',
+	'CameraAlt',
+	'DesignServices',
+	'Restaurant',
+	'Architecture',
+	'School',
+	'Celebration',
+	'Storefront',
+	'SportsEsports',
+	'Radio',
+	'Checkroom',
+	'Park',
+	'LocalLibrary',
 ]);
 
 export type CategoriaIcono = z.infer<typeof categoriaIconoSchema>;

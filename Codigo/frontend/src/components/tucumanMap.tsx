@@ -5,6 +5,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import CategoryIcon from './categoryIcon';
 import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
 import L from 'leaflet';
@@ -403,19 +404,40 @@ export default function TucumanMap() {
 						}}
 					>
 						<Popup>
-							<strong>{point.nombre}</strong>
-							<br />
-							{point.descripcion}
-							<br />
-							<Box component="small" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-								<CategoryIcon icono={point.categoriaIcono} fontSize="inherit" />
-								Categoría: {point.categoria}
-							</Box>
-							<br />
-							<Box sx={{ mt: 1 }}>
-								<Link to={`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`}>
-									Ver portafolio
-								</Link>
+							<Box sx={{ minWidth: 160 }}>
+								<Typography
+									variant="subtitle2"
+									component="strong"
+									sx={{ display: 'block', fontWeight: 700 }}
+								>
+									{point.nombre}
+								</Typography>
+								{point.descripcion && (
+									<Typography variant="body2" sx={{ mt: 0.5 }}>
+										{point.descripcion}
+									</Typography>
+								)}
+								<Box
+									sx={{
+										display: 'flex',
+										alignItems: 'center',
+										gap: 0.5,
+										mt: 1,
+										color: 'text.secondary',
+									}}
+								>
+									<CategoryIcon icono={point.categoriaIcono} fontSize="small" />
+									<Typography variant="caption" sx={{ lineHeight: 1 }}>
+										{point.categoria}
+									</Typography>
+								</Box>
+								<Box sx={{ mt: 1 }}>
+									<Link
+										to={`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`}
+									>
+										Ver portafolio
+									</Link>
+								</Box>
 							</Box>
 						</Popup>
 					</CircleMarker>
