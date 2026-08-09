@@ -104,7 +104,7 @@ function SelectedPointFocuser({
 
 		// Esperamos a que termine el vuelo de la cámara antes de abrir el popup
 		const timeout = setTimeout(() => {
-			markerRefs.current[selectedId]?.openPopup();
+			markerRefs.current?.[selectedId]?.openPopup();
 		}, 400);
 
 		return () => clearTimeout(timeout);
