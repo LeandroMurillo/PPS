@@ -4,8 +4,8 @@ name: ESLint
 on:
   push:
     paths:
-      - 'Codigo/**'
-      # - '.github/workflows/**'
+      - "Codigo/**"
+      - ".github/workflows/**"
 
 jobs:
   eslint:
@@ -18,37 +18,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
 
-      - name: npm install frontend
+      - name: npm ci frontend
         run: |
           cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 1
-          npm install
+          npm ci
 
-      # - name: npm install backend
-      #   run: |
-      #     cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 1
-      #     npm install
+      - name: npm ci backend
+        run: |
+          cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 1
+          npm ci
 
       - name: ESLint y tsc
         run: |
           fracaso=0
 
-          # echo "🏁🏁🏁🏁🏁 Lint backend 🤖"
-          # cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 2
-          # npm run lint || fracaso=1
+          echo "🏁🏁🏁🏁🏁 Lint backend 🤖"
+          cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 2
+          npm run lint || fracaso=1
 
-          # echo "🏁🏁🏁🏁🏁 Build backend 🍇"
-          # cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 5
-          # ls config.js > /dev/null 2>&1 || echo "export const { LOG_LEVEL = 0, PORT = 1, PORT_FRONTEND = 2, DB_HOST = '3', DB_USER = '4', DB_PASSWORD = '5', DB_NAME = '6', LIMITE_VACANTES_QUERY = 7, SECRET_JWT_KEY = '8', JWT_SECRET = 'secreto'} = process.env;" > config.js
-          # npm run build || fracaso=1
+          echo "🏁🏁🏁🏁🏁 Build backend 🍇"
+          cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 3
+          npm run build || fracaso=1
 
           echo "🏁🏁🏁🏁🏁 Lint frontend 🚀"
-          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 3
+          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 4
           npm run lint || fracaso=1
 
           echo "🏁🏁🏁🏁🏁 Build frontend 🛠️"
-          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 4
+          cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 5
           npm run build || fracaso=1
 
           if [ ${fracaso} -eq 1 ]; then
