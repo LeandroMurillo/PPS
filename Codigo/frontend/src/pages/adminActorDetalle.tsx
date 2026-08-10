@@ -29,6 +29,108 @@ import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
 
+type MockSurvey = {
+	id: number;
+	tipo: 'categoria' | 'subcategoria';
+	titulo: string;
+	descripcion: string;
+	estado: 'respondida' | 'pendiente' | 'incompleta';
+	secciones: {
+		titulo: string;
+		respuestas: {
+			pregunta: string;
+			respuesta: React.ReactNode;
+			obligatoria: boolean;
+			publica: boolean;
+		}[];
+	}[];
+};
+
+const mockSurveyTemplates: Omit<MockSurvey, 'titulo' | 'descripcion'>[] = [
+	{
+		id: 1,
+		tipo: 'categoria',
+		estado: 'respondida',
+		secciones: [
+			{
+				titulo: 'Trayectoria',
+				respuestas: [
+					{
+						pregunta: '¿Hace cuánto desarrolla esta actividad cultural?',
+						respuesta: 'Más de 10 años, con aprendizaje familiar transmitido por generaciones.',
+						obligatoria: true,
+						publica: true,
+					},
+					{
+						pregunta: '¿Cuál es el principal espacio donde produce o ensaya?',
+						respuesta: 'Taller propio en la vivienda familiar, con participación ocasional de familiares.',
+						obligatoria: true,
+						publica: false,
+					},
+				],
+			},
+			{
+				titulo: 'Producción y circulación',
+				respuestas: [
+					{
+						pregunta: '¿Dónde comparte o comercializa su producción?',
+						respuesta: 'Ferias municipales, encuentros culturales, pedidos personalizados e Instagram.',
+						obligatoria: false,
+						publica: true,
+					},
+					{
+						pregunta: '¿Cuenta con equipamiento suficiente para sostener la actividad?',
+						respuesta: 'Parcialmente. El telar principal está operativo, pero requiere renovación de herramientas menores.',
+						obligatoria: false,
+						publica: false,
+					},
+				],
+			},
+		],
+	},
+	{
+		id: 2,
+		tipo: 'subcategoria',
+		estado: 'respondida',
+		secciones: [
+			{
+				titulo: 'Técnicas específicas',
+				respuestas: [
+					{
+						pregunta: '¿Qué técnicas utiliza con mayor frecuencia?',
+						respuesta: 'Telar criollo, hilado manual, lectura de ovillos y teñido con pigmentos naturales.',
+						obligatoria: true,
+						publica: true,
+					},
+					{
+						pregunta: '¿Trabaja con materias primas locales?',
+						respuesta: 'Sí. Principalmente lana de oveja hilada a mano y tintes naturales de la zona del cerro.',
+						obligatoria: true,
+						publica: true,
+					},
+				],
+			},
+			{
+				titulo: 'Patrimonio y transmisión',
+				respuestas: [
+					{
+						pregunta: '¿Realiza actividades de formación o transmisión de saberes?',
+						respuesta: 'Talleres breves para jóvenes de la comunidad y demostraciones en ferias artesanales.',
+						obligatoria: false,
+						publica: true,
+					},
+					{
+						pregunta: '¿La práctica se vincula con una tradición familiar o comunitaria?',
+						respuesta: 'Sí. La técnica fue aprendida de su madre y abuela, y se sostiene como práctica comunitaria.',
+						obligatoria: true,
+						publica: false,
+					},
+				],
+			},
+		],
+	},
+];
+
 function formatDate(value: string) {
 	return new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' }).format(new Date(value));
 }
@@ -39,13 +141,52 @@ function formatCuit(value: string | null) {
 	return digits.length === 11 ? `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}` : value;
 }
 
-function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
+function buildMockSurveys(actor: ActorDetalleAdmin): MockSurvey[] {
+	return mockSurveyTemplates.map((survey) => {
+		const isCategorySurvey = survey.tipo === 'categoria';
+		const surveyScope = isCategorySurvey
+			? actor.categoria.nombre
+			: actor.subcategoria?.nombre ?? 'Subcategoría no asignada';
+
+		return {
+			...survey,
+			titulo: `Encuesta de ${surveyScope}`,
+			descripcion: isCategorySurvey
+				? `Formulario general para relevar la trayectoria, producción y circulación de actores vinculados a ${surveyScope}.`
+				: `Formulario específico para registrar técnicas, saberes y prácticas propias de ${surveyScope}.`,
+		};
+	});
+}
+
+function getSurveyTabLabel(survey: MockSurvey, actor: ActorDetalleAdmin) {
+	if (survey.tipo === 'categoria') return actor.categoria.nombre;
+	return actor.subcategoria?.nombre ?? 'Subcategoría';
+}
+
+function Section({
+	title,
+	description,
+	children,
+	action,
+}: {
+	title: string;
+	description?: string;
+	children: React.ReactNode;
+	action?: React.ReactNode;
+}) {
 	return (
 		<Paper component="section" variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, height: '100%' }}>
-			<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-				<Typography component="h2" variant="h6" fontWeight={700}>
-					{title}
-				</Typography>
+			<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: description ? 2.75 : 2 }}>
+				<Box sx={{ minWidth: 0 }}>
+					<Typography component="h2" variant="h6" fontWeight={700}>
+						{title}
+					</Typography>
+					{description && (
+						<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+							{description}
+						</Typography>
+					)}
+				</Box>
 				{action}
 			</Stack>
 			{children}
@@ -279,6 +420,108 @@ function ProfileTab({ actor }: { actor: ActorDetalleAdmin }) {
 	);
 }
 
+function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
+	const surveys = React.useMemo(() => buildMockSurveys(actor), [actor]);
+	const [activeSurveyIndex, setActiveSurveyIndex] = React.useState(0);
+	const activeSurvey = surveys[activeSurveyIndex] ?? surveys[0];
+
+	if (surveys.length === 0) {
+		return (
+			<Section title="Encuestas">
+				<Typography variant="body2" color="text.secondary">
+					Este actor todavía no tiene encuestas asociadas.
+				</Typography>
+			</Section>
+		);
+	}
+
+	return (
+		<Stack spacing={2}>
+			<Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+				<Tabs
+					value={activeSurveyIndex}
+					onChange={(_event, value: number) => setActiveSurveyIndex(value)}
+					variant="scrollable"
+					scrollButtons="auto"
+					aria-label="Formularios por categoría del actor"
+					TabIndicatorProps={{ sx: { display: 'none' } }}
+					sx={{
+						px: { xs: 1, sm: 2 },
+						py: 1.25,
+						minHeight: 0,
+						'& .MuiTabs-flexContainer': { gap: 1 },
+						'& .MuiTab-root': {
+							minHeight: 34,
+							minWidth: 0,
+							px: 1.75,
+							py: 0.75,
+							border: 1,
+							borderColor: 'divider',
+							borderRadius: 999,
+							color: 'text.secondary',
+							fontSize: 13,
+							fontWeight: 650,
+							textTransform: 'none',
+						},
+						'& .MuiTab-root.Mui-selected': {
+							bgcolor: 'primary.main',
+							borderColor: 'primary.main',
+							color: 'primary.contrastText',
+						},
+					}}
+				>
+					{surveys.map((survey) => (
+						<Tab key={survey.id} label={getSurveyTabLabel(survey, actor)} />
+					))}
+				</Tabs>
+			</Paper>
+
+			<Section title={activeSurvey.titulo} description={activeSurvey.descripcion}>
+				<Stack spacing={2.25}>
+					<Stack spacing={3.25}>
+						{activeSurvey.secciones.map((section) => (
+							<Box key={section.titulo}>
+								<Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
+									{section.titulo}
+								</Typography>
+								<Stack spacing={1.75}>
+									{section.respuestas.map((answer) => (
+										<Box key={answer.pregunta}>
+											<Stack
+												direction="row"
+												spacing={1}
+												alignItems="center"
+												flexWrap="wrap"
+												useFlexGap
+												sx={{ mb: 0.75 }}
+											>
+												<Typography variant="body1" color="text.secondary" fontWeight={600}>
+													{answer.pregunta}
+													{answer.obligatoria ? ' (*)' : ''}
+												</Typography>
+												{answer.publica && (
+													<Chip
+														label="Pública"
+														size="small"
+														variant="outlined"
+														color="success"
+														sx={{ height: 20, fontSize: 11 }}
+													/>
+												)}
+											</Stack>
+											<Typography variant="body1">{answer.respuesta}</Typography>
+										</Box>
+									))}
+								</Stack>
+							</Box>
+						))}
+					</Stack>
+				</Stack>
+			</Section>
+		</Stack>
+	);
+}
+
 export default function AdminActorDetallePage() {
 	const navigate = useNavigate();
 	const { actorId = '' } = useParams();
@@ -397,12 +640,13 @@ export default function AdminActorDetallePage() {
 								sx={{ px: { xs: 1, sm: 2 }, borderTop: 1, borderColor: 'divider' }}
 							>
 								<Tab label="Perfil" />
-								<Tab label="Respuestas" disabled />
+								<Tab label="Encuestas" />
 								<Tab label="Eventos" disabled />
 								<Tab label="Convocatorias" disabled />
 							</Tabs>
 						</Paper>
 						{activeTab === 0 && <ProfileTab actor={actor} />}
+						{activeTab === 1 && <SurveysTab actor={actor} />}
 					</>
 				)}
 			</Stack>
