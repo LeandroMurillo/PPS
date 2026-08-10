@@ -145,7 +145,9 @@ export async function listarActoresAdmin(
 	input: {
 		busqueda?: string;
 		idCategoria?: number;
-		idUsuarioDueno?: number;
+		departamento?: string;
+		tipoActor?: ActorAdmin['tipoActor'];
+		estado?: ActorAdmin['estado'];
 		limit: number;
 		offset: number;
 		sortBy: ActorAdminSortBy;

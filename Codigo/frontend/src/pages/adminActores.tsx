@@ -1,24 +1,51 @@
 import * as React from 'react';
 import Chip from '@mui/material/Chip';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import { useNavigate } from 'react-router';
 
-import { listarActoresAdmin, type ActorAdmin, type ActorAdminSortBy, type SortDirection } from '../api/admin';
+import {
+	listarActoresAdmin,
+	listarCategoriasAdmin,
+	type ActorAdmin,
+	type ActorAdminSortBy,
+	type CategoriaAdmin,
+	type SortDirection,
+} from '../api/admin';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
+const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
 
-function formatDate(value: string) {
-	return new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' }).format(new Date(value));
-}
+const departamentos = [
+	'Burruyacú',
+	'Capital',
+	'Chicligasta',
+	'Cruz Alta',
+	'Famaillá',
+	'Graneros',
+	'Juan Bautista Alberdi',
+	'La Cocha',
+	'Leales',
+	'Lules',
+	'Monteros',
+	'Río Chico',
+	'Simoca',
+	'Tafí del Valle',
+	'Tafí Viejo',
+	'Trancas',
+	'Yerba Buena',
+] as const;
 
-function positiveInteger(value: string): number | undefined {
+function optionalPositiveInteger(value: string): number | undefined {
 	const parsed = Number(value);
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
@@ -49,30 +76,6 @@ const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
 		render: (row) => row.categoria.nombre,
 	},
 	{
-		id: 'subcategoria',
-		label: 'Subcategoría',
-		sortBy: 'subcategoria',
-		minWidth: 160,
-		render: (row) => row.subcategoria?.nombre ?? '—',
-	},
-	{
-		id: 'dueno',
-		label: 'Usuario dueño',
-		sortBy: 'usuarioDueno',
-		minWidth: 210,
-		render: (row) =>
-			row.dueno ? (
-				<Stack>
-					<Typography variant="body2">{row.dueno.nombre}</Typography>
-					<Typography variant="caption" color="text.secondary">
-						{row.dueno.email}
-					</Typography>
-				</Stack>
-			) : (
-				'—'
-			),
-	},
-	{
 		id: 'ubicacion',
 		label: 'Ubicación',
 		sortBy: 'departamento',
@@ -80,24 +83,10 @@ const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
 		render: (row) => `${row.ubicacion.departamento} · ${row.ubicacion.localidad}`,
 	},
 	{
-		id: 'cuit',
-		label: 'CUIT',
-		sortBy: 'cuit',
-		minWidth: 110,
-		render: (row) => row.cuit ?? '—',
-	},
-	{
 		id: 'estado',
 		label: 'Estado',
 		sortBy: 'estado',
 		render: (row) => <Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />,
-	},
-	{
-		id: 'creacion',
-		label: 'Creación',
-		sortBy: 'fechaCreacion',
-		minWidth: 115,
-		render: (row) => formatDate(row.fechaCreacion),
 	},
 ];
 
@@ -105,7 +94,10 @@ export default function AdminActoresPage() {
 	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [categoryId, setCategoryId] = React.useState('');
-	const [ownerId, setOwnerId] = React.useState('');
+	const [department, setDepartment] = React.useState('');
+	const [actorType, setActorType] = React.useState('');
+	const [state, setState] = React.useState('');
+	const [categories, setCategories] = React.useState<CategoriaAdmin[]>([]);
 	const [page, setPage] = React.useState(0);
 	const [pageSize, setPageSize] = React.useState(25);
 	const [sortBy, setSortBy] = React.useState<ActorAdminSortBy>('idActor');
@@ -116,7 +108,31 @@ export default function AdminActoresPage() {
 	const [error, setError] = React.useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
 	const debouncedCategoryId = useDebouncedValue(categoryId);
-	const debouncedOwnerId = useDebouncedValue(ownerId);
+	const debouncedDepartment = useDebouncedValue(department);
+	const debouncedActorType = useDebouncedValue(actorType);
+	const debouncedState = useDebouncedValue(state);
+
+	React.useEffect(() => {
+		const controller = new AbortController();
+
+		void listarCategoriasAdmin(
+			{
+				limit: 100,
+				offset: 0,
+				sortBy: 'nombre',
+				sortDir: 'ASC',
+			},
+			controller.signal,
+		)
+			.then((result) => setCategories(result.data))
+			.catch(() => {
+				if (!controller.signal.aborted) {
+					setCategories([]);
+				}
+			});
+
+		return () => controller.abort();
+	}, []);
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -126,8 +142,10 @@ export default function AdminActoresPage() {
 		void listarActoresAdmin(
 			{
 				busqueda: debouncedSearch || undefined,
-				idCategoria: positiveInteger(debouncedCategoryId),
-				idUsuarioDueno: positiveInteger(debouncedOwnerId),
+				idCategoria: optionalPositiveInteger(debouncedCategoryId),
+				departamento: debouncedDepartment || undefined,
+				tipoActor: (debouncedActorType || undefined) as ActorAdmin['tipoActor'] | undefined,
+				estado: (debouncedState || undefined) as ActorAdmin['estado'] | undefined,
 				limit: pageSize,
 				offset: page * pageSize,
 				sortBy,
@@ -153,45 +171,108 @@ export default function AdminActoresPage() {
 			});
 
 		return () => controller.abort();
-	}, [debouncedCategoryId, debouncedOwnerId, debouncedSearch, page, pageSize, sortBy, sortDir]);
+	}, [
+		debouncedActorType,
+		debouncedCategoryId,
+		debouncedDepartment,
+		debouncedSearch,
+		debouncedState,
+		page,
+		pageSize,
+		sortBy,
+		sortDir,
+	]);
 
 	const changeFilter = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
 		setter(value);
 		setPage(0);
 	};
 
+	const activeFilterCount = [categoryId, department, actorType, state].filter(Boolean).length;
+	const resultSummary = total === 1 ? '1 actor encontrado' : `${total} actores encontrados`;
+
 	return (
 		<PageContainer title="Administrar actores" maxWidth={false}>
 			<Stack spacing={2}>
 				<AdminFilters
 					search={search}
+					collapsible
+					activeFilterCount={activeFilterCount}
 					onSearchChange={(value) => changeFilter(setSearch, value)}
 					onClear={() => {
 						setSearch('');
 						setCategoryId('');
-						setOwnerId('');
+						setDepartment('');
+						setActorType('');
+						setState('');
 						setPage(0);
 					}}
 				>
-					<TextField
-						label="ID categoría"
-						type="number"
-						size="small"
-						value={categoryId}
-						onChange={(event) => changeFilter(setCategoryId, event.target.value)}
-						slotProps={{ htmlInput: { min: 1 } }}
-						sx={{ width: 145 }}
-					/>
-					<TextField
-						label="ID usuario dueño"
-						type="number"
-						size="small"
-						value={ownerId}
-						onChange={(event) => changeFilter(setOwnerId, event.target.value)}
-						slotProps={{ htmlInput: { min: 1 } }}
-						sx={{ width: 175 }}
-					/>
+					<FormControl size="small" sx={{ minWidth: 180 }}>
+						<InputLabel>Categoría</InputLabel>
+						<Select
+							value={categoryId}
+							label="Categoría"
+							onChange={(event) => changeFilter(setCategoryId, event.target.value)}
+						>
+							<MenuItem value="">Todas</MenuItem>
+							{categories.map((category) => (
+								<MenuItem key={category.id} value={String(category.id)}>
+									{category.nombre}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					<FormControl size="small" sx={{ minWidth: 190 }}>
+						<InputLabel>Departamento</InputLabel>
+						<Select
+							value={department}
+							label="Departamento"
+							onChange={(event) => changeFilter(setDepartment, event.target.value)}
+						>
+							<MenuItem value="">Todos</MenuItem>
+							{departamentos.map((departmentOption) => (
+								<MenuItem key={departmentOption} value={departmentOption}>
+									{departmentOption}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					<FormControl size="small" sx={{ minWidth: 150 }}>
+						<InputLabel>Tipo</InputLabel>
+						<Select
+							value={actorType}
+							label="Tipo"
+							onChange={(event) => changeFilter(setActorType, event.target.value)}
+						>
+							<MenuItem value="">Todos</MenuItem>
+							{Object.entries(typeLabels).map(([value, label]) => (
+								<MenuItem key={value} value={value}>
+									{label}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+					<FormControl size="small" sx={{ minWidth: 145 }}>
+						<InputLabel>Estado</InputLabel>
+						<Select
+							value={state}
+							label="Estado"
+							onChange={(event) => changeFilter(setState, event.target.value)}
+						>
+							<MenuItem value="">Todos</MenuItem>
+							{Object.entries(stateLabels).map(([value, label]) => (
+								<MenuItem key={value} value={value}>
+									{label}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
 				</AdminFilters>
+
+				<Typography variant="body2" color="text.secondary">
+					{loading && rows.length === 0 ? 'Buscando actores…' : resultSummary}
+				</Typography>
 
 				<AdminTable
 					columns={columns}

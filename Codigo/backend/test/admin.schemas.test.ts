@@ -53,7 +53,9 @@ describe('consultas administrativas', () => {
 		expect(
 			listarActoresAdminQuerySchema.parse({
 				idCategoria: '3',
-				idUsuarioDueno: '8',
+				departamento: '  Capital  ',
+				tipoActor: 'COLECTIVO',
+				estado: 'P',
 				limit: '10',
 				offset: '20',
 				sortBy: 'categoria',
@@ -61,7 +63,9 @@ describe('consultas administrativas', () => {
 			}),
 		).toMatchObject({
 			idCategoria: 3,
-			idUsuarioDueno: 8,
+			departamento: 'Capital',
+			tipoActor: 'COLECTIVO',
+			estado: 'P',
 			limit: 10,
 			offset: 20,
 			sortBy: 'categoria',

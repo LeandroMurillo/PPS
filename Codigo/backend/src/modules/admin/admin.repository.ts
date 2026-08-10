@@ -277,10 +277,12 @@ export async function listarActoresAdminRepository(
 	query: ListarActoresAdminQuery,
 ): Promise<{ total: number; actores: ActorAdmin[] }> {
 	const procedureName = 'sp_admin_listar_actores';
-	const result: unknown = await pool.query('CALL sp_admin_listar_actores(?, ?, ?, ?, ?, ?, ?)', [
+	const result: unknown = await pool.query('CALL sp_admin_listar_actores(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
 		query.busqueda ?? null,
 		query.idCategoria ?? null,
-		query.idUsuarioDueno ?? null,
+		query.departamento ?? null,
+		query.tipoActor ?? null,
+		query.estado ?? null,
 		query.limit,
 		query.offset,
 		query.sortBy,

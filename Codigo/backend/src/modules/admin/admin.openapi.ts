@@ -152,7 +152,8 @@ export function registerAdminOpenApi(): void {
 		path: '/api/admin/actores',
 		tags: ['Administración'],
 		summary: 'Listar actores para administración',
-		description: 'Lista actores con búsqueda, filtros por categoría y usuario dueño, orden y paginación.',
+		description:
+			'Lista actores con búsqueda, filtros por categoría, departamento, tipo de actor y estado, orden y paginación.',
 		request: { query: listarActoresAdminQuerySchema },
 		responses: {
 			200: {

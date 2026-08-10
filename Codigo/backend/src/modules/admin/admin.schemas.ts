@@ -81,7 +81,9 @@ export type ListarUsuariosAdminQuery = z.infer<typeof listarUsuariosAdminQuerySc
 export const listarActoresAdminQuerySchema = z.strictObject({
 	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
 	idCategoria: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295).optional()),
-	idUsuarioDueno: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295).optional()),
+	departamento: z.preprocess(normalizeOptionalString, z.string().max(100).optional()),
+	tipoActor: z.preprocess(normalizeOptionalString, z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']).optional()),
+	estado: z.preprocess(normalizeOptionalString, z.enum(['A', 'P', 'I']).optional()),
 	...paginationQueryFields,
 	sortBy: actorAdminSortBySchema.default('idActor'),
 	sortDir: z.preprocess(

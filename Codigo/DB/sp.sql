@@ -334,14 +334,16 @@ END //
 CREATE OR REPLACE PROCEDURE `sp_admin_listar_actores`(
     IN pBusqueda VARCHAR(255) DEFAULT NULL,
     IN pIdCategoria INT DEFAULT NULL,
-    IN pIdUsuarioDueno INT DEFAULT NULL,
+    IN pDepartamento VARCHAR(100) DEFAULT NULL,
+    IN pTipoActor VARCHAR(20) DEFAULT NULL,
+    IN pEstado CHAR(1) DEFAULT NULL,
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0,
     IN pSortBy VARCHAR(50) DEFAULT 'idActor',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
 )
 READS SQL DATA
-COMMENT 'Lista actores culturales para administración aplicando búsqueda, filtros opcionales por categoría y usuario dueño, ordenamiento controlado y paginación. Incluye actores sin subcategoría y devuelve el total de coincidencias y la página de actores.'
+COMMENT 'Lista actores culturales para administración aplicando búsqueda, filtros opcionales por categoría, departamento, tipo de actor y estado, ordenamiento controlado y paginación. Incluye actores sin subcategoría y devuelve el total de coincidencias y la página de actores.'
 BEGIN
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
@@ -410,7 +412,9 @@ BEGIN
             OR ub.direccion LIKE CONCAT('%', TRIM(pBusqueda), '%')
         )
         AND (pIdCategoria IS NULL OR a.idCategoria = pIdCategoria)
-        AND (pIdUsuarioDueno IS NULL OR d.idUsuarioDueno = pIdUsuarioDueno);
+        AND (pDepartamento IS NULL OR TRIM(pDepartamento) = '' OR ub.departamento = TRIM(pDepartamento))
+        AND (pTipoActor IS NULL OR TRIM(pTipoActor) = '' OR a.tipoActor = TRIM(pTipoActor))
+        AND (pEstado IS NULL OR TRIM(pEstado) = '' OR a.estado = TRIM(pEstado));
 
     SELECT
         a.idActor,
@@ -482,7 +486,9 @@ BEGIN
             OR ub.direccion LIKE CONCAT('%', TRIM(pBusqueda), '%')
         )
         AND (pIdCategoria IS NULL OR a.idCategoria = pIdCategoria)
-        AND (pIdUsuarioDueno IS NULL OR d.idUsuarioDueno = pIdUsuarioDueno)
+        AND (pDepartamento IS NULL OR TRIM(pDepartamento) = '' OR ub.departamento = TRIM(pDepartamento))
+        AND (pTipoActor IS NULL OR TRIM(pTipoActor) = '' OR a.tipoActor = TRIM(pTipoActor))
+        AND (pEstado IS NULL OR TRIM(pEstado) = '' OR a.estado = TRIM(pEstado))
     ORDER BY
         CASE WHEN vSortBy = 'idActor' AND vSortDir = 'ASC' THEN a.idActor END ASC,
         CASE WHEN vSortBy = 'idActor' AND vSortDir = 'DESC' THEN a.idActor END DESC,

@@ -72,8 +72,8 @@ export default function AdminTable<T, S extends string>({
 					<Alert severity="error">{error}</Alert>
 				</Box>
 			)}
-			<TableContainer sx={{ maxHeight: 'calc(100vh - 330px)', minHeight: 320 }}>
-				<Table stickyHeader size="small" aria-label="Listado administrativo">
+			<TableContainer sx={{ overflowX: 'auto' }}>
+				<Table size="small" aria-label="Listado administrativo">
 					<TableHead>
 						<TableRow>
 							{columns.map((column) => (
