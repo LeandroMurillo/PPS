@@ -1,5 +1,6 @@
 import {
 	asignarModeradorAdminRepository,
+	cambiarEstadoActoresAdminRepository,
 	cambiarEstadoUsuarioAdminRepository,
 	crearCategoriaAdminRepository,
 	editarCategoriaAdminRepository,
@@ -22,6 +23,7 @@ import type {
 	ObtenerUsuarioAdminResponse,
 	ObtenerActorAdminResponse,
 	ObtenerCategoriaAdminResponse,
+	CambiarEstadoActoresAdminResponse,
 } from './admin.schemas.js';
 
 function pagination(total: number, count: number, limit: number, offset: number) {
@@ -82,6 +84,13 @@ export async function obtenerActorAdminService(id: number): Promise<ObtenerActor
 	const actor = await obtenerActorAdminRepository(id);
 
 	return actor ? { data: actor } : null;
+}
+
+export async function cambiarEstadoActoresAdminService(
+	ids: number[],
+	estado: 'A' | 'I',
+): Promise<CambiarEstadoActoresAdminResponse> {
+	return { data: { actualizados: await cambiarEstadoActoresAdminRepository(ids, estado) } };
 }
 
 export async function listarCategoriasAdminService(

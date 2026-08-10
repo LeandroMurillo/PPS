@@ -5,6 +5,8 @@ import {
 	asignarModeradorAdminBodySchema,
 	actorAdminNoEncontradoResponseSchema,
 	actorAdminParamsSchema,
+	cambiarEstadoActoresAdminBodySchema,
+	cambiarEstadoActoresAdminResponseSchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminDuplicadaResponseSchema,
 	categoriaAdminNoEncontradaResponseSchema,
@@ -194,6 +196,33 @@ export function registerAdminOpenApi(): void {
 			},
 			500: {
 				description: 'Error interno al consultar el actor.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'patch',
+		path: '/api/admin/actores/estado',
+		tags: ['Administración'],
+		summary: 'Activar o dar de baja actores',
+		description: 'Actualiza el estado de uno o más actores seleccionados desde el listado administrativo.',
+		request: {
+			body: {
+				content: { 'application/json': { schema: cambiarEstadoActoresAdminBodySchema } },
+			},
+		},
+		responses: {
+			200: {
+				description: 'Estados actualizados correctamente.',
+				content: { 'application/json': { schema: cambiarEstadoActoresAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			500: {
+				description: 'Error interno al actualizar actores.',
 				content: { 'application/json': { schema: internalErrorResponseSchema } },
 			},
 		},

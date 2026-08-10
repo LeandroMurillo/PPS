@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	asignarModeradorAdminBodySchema,
 	actorAdminParamsSchema,
+	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
@@ -86,6 +87,12 @@ describe('consultas administrativas', () => {
 	it('solo permite activar o dar de baja a un usuario', () => {
 		expect(cambiarEstadoUsuarioAdminBodySchema.safeParse({ estado: 'I' }).success).toBe(true);
 		expect(cambiarEstadoUsuarioAdminBodySchema.safeParse({ estado: 'P' }).success).toBe(false);
+	});
+
+	it('solo permite activar o dar de baja actores con una selección válida', () => {
+		expect(cambiarEstadoActoresAdminBodySchema.safeParse({ ids: [1, 2], estado: 'A' }).success).toBe(true);
+		expect(cambiarEstadoActoresAdminBodySchema.safeParse({ ids: [], estado: 'A' }).success).toBe(false);
+		expect(cambiarEstadoActoresAdminBodySchema.safeParse({ ids: [1], estado: 'P' }).success).toBe(false);
 	});
 
 	it('permite quitar todas las categorías para restaurar el rol de usuario', () => {

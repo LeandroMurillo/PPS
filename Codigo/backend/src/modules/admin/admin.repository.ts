@@ -35,6 +35,7 @@ const databaseDateSchema = z
 	.transform((value) => (value instanceof Date ? value.toISOString() : value));
 
 const totalRowSchema = z.object({ total: databaseIntegerSchema });
+const actualizadosRowSchema = z.object({ actualizados: databaseIntegerSchema });
 
 const usuarioDatabaseRowSchema = z.object({
 	idUsuario: databaseIntegerSchema,
@@ -326,6 +327,22 @@ export async function obtenerActorAdminRepository(id: number): Promise<ActorDeta
 			fechaCreacion: row.fechaCreacion,
 		})),
 	};
+}
+
+export async function cambiarEstadoActoresAdminRepository(ids: number[], estado: 'A' | 'I'): Promise<number> {
+	const procedureName = 'sp_admin_cambiar_estado_actores';
+	const result: unknown = await pool.query('CALL sp_admin_cambiar_estado_actores(?, ?)', [
+		JSON.stringify(ids),
+		estado,
+	]);
+	const rows = z.array(actualizadosRowSchema).parse(getResultSet(result, 0, procedureName));
+	const firstRow = rows[0];
+
+	if (!firstRow) {
+		throw new Error(`${procedureName} no devolvió el total de actores actualizados`);
+	}
+
+	return firstRow.actualizados;
 }
 
 export async function listarCategoriasAdminRepository(

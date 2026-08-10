@@ -6,6 +6,7 @@ import {
 	crearCategoriaAdminController,
 	editarCategoriaAdminController,
 	eliminarCategoriaAdminController,
+	cambiarEstadoActoresAdminController,
 	listarActoresAdminController,
 	listarCategoriasAdminController,
 	listarUsuariosAdminController,
@@ -21,6 +22,7 @@ adminRouter.get('/usuarios/:id', obtenerUsuarioAdminController);
 adminRouter.patch('/usuarios/:id/estado', cambiarEstadoUsuarioAdminController);
 adminRouter.put('/usuarios/:id/moderacion', asignarModeradorAdminController);
 adminRouter.get('/actores', listarActoresAdminController);
+adminRouter.patch('/actores/estado', cambiarEstadoActoresAdminController);
 adminRouter.get('/actores/:id', obtenerActorAdminController);
 adminRouter.get('/categorias', listarCategoriasAdminController);
 adminRouter.get('/categorias/:id', obtenerCategoriaAdminController);

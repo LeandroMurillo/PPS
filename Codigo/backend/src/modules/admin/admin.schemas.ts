@@ -143,6 +143,21 @@ export const cambiarEstadoUsuarioAdminBodySchema = z.strictObject({
 
 export type CambiarEstadoUsuarioAdminBody = z.infer<typeof cambiarEstadoUsuarioAdminBodySchema>;
 
+export const cambiarEstadoActoresAdminBodySchema = z.strictObject({
+	ids: z.array(z.number().int().positive().max(4_294_967_295)).min(1).max(100),
+	estado: z.enum(['A', 'I']),
+});
+
+export type CambiarEstadoActoresAdminBody = z.infer<typeof cambiarEstadoActoresAdminBodySchema>;
+
+export const cambiarEstadoActoresAdminResponseSchema = z.object({
+	data: z.object({
+		actualizados: z.number().int().min(0),
+	}),
+});
+
+export type CambiarEstadoActoresAdminResponse = z.infer<typeof cambiarEstadoActoresAdminResponseSchema>;
+
 export const asignarModeradorAdminBodySchema = z.strictObject({
 	idCategorias: z.array(z.number().int().positive().max(4_294_967_295)).max(100),
 });

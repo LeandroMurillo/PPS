@@ -177,6 +177,14 @@ export async function cambiarEstadoUsuarioAdmin(id: number, estado: 'A' | 'I') {
 	});
 }
 
+export async function cambiarEstadoActoresAdmin(ids: number[], estado: 'A' | 'I') {
+	return apiRequest<{ data: { actualizados: number } }>('/api/admin/actores/estado', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ ids, estado }),
+	});
+}
+
 export async function asignarModeradorAdmin(id: number, idCategorias: number[]) {
 	return apiRequest<{ data: UsuarioDetalleAdmin }>(`/api/admin/usuarios/${id}/moderacion`, {
 		method: 'PUT',

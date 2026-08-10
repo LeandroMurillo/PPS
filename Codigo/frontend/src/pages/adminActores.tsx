@@ -1,4 +1,8 @@
 import * as React from 'react';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import DoNotDisturbOnOutlinedIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
@@ -10,6 +14,7 @@ import { PageContainer } from '@toolpad/core/PageContainer';
 import { useNavigate } from 'react-router';
 
 import {
+	cambiarEstadoActoresAdmin,
 	listarActoresAdmin,
 	listarCategoriasAdmin,
 	type ActorAdmin,
@@ -24,6 +29,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
 const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
+const pageSize = 25;
 
 const departamentos = [
 	'Burruyacú',
@@ -99,13 +105,15 @@ export default function AdminActoresPage() {
 	const [state, setState] = React.useState('');
 	const [categories, setCategories] = React.useState<CategoriaAdmin[]>([]);
 	const [page, setPage] = React.useState(0);
-	const [pageSize, setPageSize] = React.useState(25);
 	const [sortBy, setSortBy] = React.useState<ActorAdminSortBy>('idActor');
 	const [sortDir, setSortDir] = React.useState<SortDirection>('ASC');
 	const [rows, setRows] = React.useState<ActorAdmin[]>([]);
+	const [selectedActorIds, setSelectedActorIds] = React.useState<React.Key[]>([]);
 	const [total, setTotal] = React.useState(0);
 	const [loading, setLoading] = React.useState(true);
+	const [savingState, setSavingState] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
+	const [actionError, setActionError] = React.useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
 	const debouncedCategoryId = useDebouncedValue(categoryId);
 	const debouncedDepartment = useDebouncedValue(department);
@@ -134,58 +142,97 @@ export default function AdminActoresPage() {
 		return () => controller.abort();
 	}, []);
 
+	const loadActores = React.useCallback(
+		(signal?: AbortSignal) => {
+			setLoading(true);
+			setError(null);
+
+			return listarActoresAdmin(
+				{
+					busqueda: debouncedSearch || undefined,
+					idCategoria: optionalPositiveInteger(debouncedCategoryId),
+					departamento: debouncedDepartment || undefined,
+					tipoActor: (debouncedActorType || undefined) as ActorAdmin['tipoActor'] | undefined,
+					estado: (debouncedState || undefined) as ActorAdmin['estado'] | undefined,
+					limit: pageSize,
+					offset: page * pageSize,
+					sortBy,
+					sortDir,
+				},
+				signal,
+			)
+				.then((result) => {
+					setRows(result.data);
+					setTotal(result.pagination.total);
+				})
+				.catch((requestError: unknown) => {
+					if (!signal?.aborted) {
+						setError(
+							requestError instanceof Error ? requestError.message : 'No se pudieron cargar los actores.',
+						);
+					}
+				})
+				.finally(() => {
+					if (!signal?.aborted) {
+						setLoading(false);
+					}
+				});
+		},
+		[
+			debouncedActorType,
+			debouncedCategoryId,
+			debouncedDepartment,
+			debouncedSearch,
+			debouncedState,
+			page,
+			sortBy,
+			sortDir,
+		],
+	);
+
 	React.useEffect(() => {
 		const controller = new AbortController();
-		setLoading(true);
-		setError(null);
 
-		void listarActoresAdmin(
-			{
-				busqueda: debouncedSearch || undefined,
-				idCategoria: optionalPositiveInteger(debouncedCategoryId),
-				departamento: debouncedDepartment || undefined,
-				tipoActor: (debouncedActorType || undefined) as ActorAdmin['tipoActor'] | undefined,
-				estado: (debouncedState || undefined) as ActorAdmin['estado'] | undefined,
-				limit: pageSize,
-				offset: page * pageSize,
-				sortBy,
-				sortDir,
-			},
-			controller.signal,
-		)
-			.then((result) => {
-				setRows(result.data);
-				setTotal(result.pagination.total);
-			})
-			.catch((requestError: unknown) => {
-				if (!controller.signal.aborted) {
-					setError(
-						requestError instanceof Error ? requestError.message : 'No se pudieron cargar los actores.',
-					);
-				}
-			})
-			.finally(() => {
-				if (!controller.signal.aborted) {
-					setLoading(false);
-				}
-			});
+		void loadActores(controller.signal);
 
 		return () => controller.abort();
-	}, [
-		debouncedActorType,
-		debouncedCategoryId,
-		debouncedDepartment,
-		debouncedSearch,
-		debouncedState,
-		page,
-		pageSize,
-		sortBy,
-		sortDir,
-	]);
+	}, [loadActores]);
 
 	const changeFilter = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
 		setter(value);
+		setSelectedActorIds([]);
 		setPage(0);
+	};
+
+	const selectedRows = rows.filter((row) => selectedActorIds.includes(row.id));
+	const selectedRowsIds = selectedRows.map((row) => row.id);
+
+	const changeSelectedActorsState = async (nextState: 'A' | 'I') => {
+		if (selectedRowsIds.length === 0) return;
+
+		const actionLabel = nextState === 'A' ? 'activar' : 'dar de baja';
+		const confirmed = window.confirm(
+			`¿Querés ${actionLabel} ${selectedRowsIds.length === 1 ? 'este actor' : `estos ${selectedRowsIds.length} actores`}?`,
+		);
+
+		if (!confirmed) return;
+
+		setSavingState(true);
+		setActionError(null);
+
+		try {
+			await cambiarEstadoActoresAdmin(selectedRowsIds, nextState);
+			setSelectedActorIds([]);
+			await loadActores();
+		} catch (requestError: unknown) {
+			setActionError(
+				requestError instanceof Error
+					? requestError.message
+					: 'No se pudo actualizar el estado de los actores seleccionados.',
+			);
+		} finally {
+			setSavingState(false);
+		}
 	};
 
 	const activeFilterCount = [categoryId, department, actorType, state].filter(Boolean).length;
@@ -205,6 +252,7 @@ export default function AdminActoresPage() {
 						setDepartment('');
 						setActorType('');
 						setState('');
+						setSelectedActorIds([]);
 						setPage(0);
 					}}
 				>
@@ -273,11 +321,40 @@ export default function AdminActoresPage() {
 				<Typography variant="body2" color="text.secondary">
 					{loading && rows.length === 0 ? 'Buscando actores…' : resultSummary}
 				</Typography>
+				{actionError && <Alert severity="error">{actionError}</Alert>}
 
 				<AdminTable
 					columns={columns}
 					rows={rows}
 					getRowId={(row) => row.id}
+					selectedRowIds={selectedActorIds}
+					onSelectionChange={setSelectedActorIds}
+					showTopPagination
+					toolbarActions={
+						selectedRowsIds.length > 0 && (
+							<Stack direction="row" spacing={1}>
+								<Button
+									size="small"
+									variant="outlined"
+									startIcon={<CheckCircleOutlineIcon />}
+									disabled={savingState}
+									onClick={() => void changeSelectedActorsState('A')}
+								>
+									Activar
+								</Button>
+								<Button
+									size="small"
+									variant="outlined"
+									color="error"
+									startIcon={<DoNotDisturbOnOutlinedIcon />}
+									disabled={savingState}
+									onClick={() => void changeSelectedActorsState('I')}
+								>
+									Dar de baja
+								</Button>
+							</Stack>
+						)
+					}
 					total={total}
 					page={page}
 					pageSize={pageSize}
@@ -286,12 +363,12 @@ export default function AdminActoresPage() {
 					loading={loading}
 					error={error}
 					emptyMessage="No hay actores que coincidan con los filtros."
-					onPageChange={setPage}
-					onPageSizeChange={(value) => {
-						setPageSize(value);
-						setPage(0);
+					onPageChange={(value) => {
+						setSelectedActorIds([]);
+						setPage(value);
 					}}
 					onSortChange={(field, direction) => {
+						setSelectedActorIds([]);
 						setSortBy(field);
 						setSortDir(direction);
 						setPage(0);

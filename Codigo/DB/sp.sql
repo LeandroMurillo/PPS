@@ -329,6 +329,63 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_admin_cambiar_estado_actores
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_cambiar_estado_actores`(
+    IN pIdsActores JSON,
+    IN pEstado CHAR(1)
+)
+MODIFIES SQL DATA
+COMMENT 'Da de baja o reactiva uno o más actores estableciendo su estado en I o A.'
+BEGIN
+    IF pIdsActores IS NULL
+       OR pIdsActores IS NOT JSON ARRAY
+       OR JSON_LENGTH(pIdsActores) = 0
+       OR JSON_LENGTH(pIdsActores) > 100 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Los actores deben enviarse como un arreglo JSON de entre 1 y 100 elementos.';
+    END IF;
+
+    IF pEstado NOT IN ('A', 'I') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado del actor debe ser A o I.';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM JSON_TABLE(
+            pIdsActores,
+            '$[*]' COLUMNS (
+                idActor INT PATH '$'
+            )
+        ) ids
+        LEFT JOIN `Actores` a
+            ON a.idActor = ids.idActor
+        WHERE ids.idActor IS NULL
+           OR ids.idActor <= 0
+           OR a.idActor IS NULL
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Todos los actores seleccionados deben existir.';
+    END IF;
+
+    UPDATE `Actores` a
+    INNER JOIN (
+        SELECT DISTINCT ids.idActor
+        FROM JSON_TABLE(
+            pIdsActores,
+            '$[*]' COLUMNS (
+                idActor INT PATH '$'
+            )
+        ) ids
+    ) seleccionados
+        ON seleccionados.idActor = a.idActor
+    SET a.estado = pEstado;
+
+    SELECT ROW_COUNT() AS actualizados;
+END //
+
+-- -----------------------------------------------------
 -- sp_admin_listar_actores
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_listar_actores`(

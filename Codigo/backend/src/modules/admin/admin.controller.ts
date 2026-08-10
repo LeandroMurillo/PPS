@@ -3,6 +3,7 @@ import type { RequestHandler } from 'express';
 import {
 	asignarModeradorAdminBodySchema,
 	actorAdminParamsSchema,
+	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
@@ -13,6 +14,7 @@ import {
 } from './admin.schemas.js';
 import {
 	asignarModeradorAdminService,
+	cambiarEstadoActoresAdminService,
 	cambiarEstadoUsuarioAdminService,
 	crearCategoriaAdminService,
 	editarCategoriaAdminService,
@@ -126,6 +128,17 @@ export const obtenerActorAdminController: RequestHandler = async (request, respo
 	}
 
 	response.status(200).json(result);
+};
+
+export const cambiarEstadoActoresAdminController: RequestHandler = async (request, response) => {
+	const body = cambiarEstadoActoresAdminBodySchema.safeParse(request.body);
+
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	response.status(200).json(await cambiarEstadoActoresAdminService(body.data.ids, body.data.estado));
 };
 
 export const obtenerUsuarioAdminController: RequestHandler = async (request, response) => {
