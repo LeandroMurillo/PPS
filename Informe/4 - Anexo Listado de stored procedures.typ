@@ -41,12 +41,22 @@
 
 #let formatear_fila(fila) = {
   let separado = separar_resultsets(fila.at(1))
+  let descripcion = if fila.len() > 3 {
+    fila.at(1)
+  } else {
+    separado.at(0)
+  }
+  let resultsets = if fila.len() > 3 {
+    fila.at(3)
+  } else {
+    separado.at(1)
+  }
 
   (
     celda_sp(fila.at(0)),
-    separado.at(0),
+    descripcion,
     celda_params(fila.at(2)),
-    celda_resultsets(separado.at(1)),
+    celda_resultsets(resultsets),
   )
 }
 

@@ -3,6 +3,8 @@ import { openApiRegistry } from '../../openapi/registry.js';
 
 import {
 	asignarModeradorAdminBodySchema,
+	actorAdminNoEncontradoResponseSchema,
+	actorAdminParamsSchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminDuplicadaResponseSchema,
 	categoriaAdminNoEncontradaResponseSchema,
@@ -15,6 +17,7 @@ import {
 	listarUsuariosAdminQuerySchema,
 	listarUsuariosAdminResponseSchema,
 	obtenerUsuarioAdminResponseSchema,
+	obtenerActorAdminResponseSchema,
 	obtenerCategoriaAdminResponseSchema,
 	usuarioAdminNoEncontradoResponseSchema,
 	usuarioAdminParamsSchema,
@@ -162,6 +165,34 @@ export function registerAdminOpenApi(): void {
 			},
 			500: {
 				description: 'Error interno al consultar actores.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/actores/{id}',
+		tags: ['Administración'],
+		summary: 'Obtener el perfil administrativo de un actor',
+		description:
+			'Devuelve los datos generales, la ubicación completa, los integrantes y el portafolio del actor, sin restringir por estado.',
+		request: { params: actorAdminParamsSchema },
+		responses: {
+			200: {
+				description: 'Actor obtenido correctamente.',
+				content: { 'application/json': { schema: obtenerActorAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificador inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Actor no encontrado.',
+				content: { 'application/json': { schema: actorAdminNoEncontradoResponseSchema } },
+			},
+			500: {
+				description: 'Error interno al consultar el actor.',
 				content: { 'application/json': { schema: internalErrorResponseSchema } },
 			},
 		},

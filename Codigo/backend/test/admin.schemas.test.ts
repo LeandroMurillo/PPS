@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	asignarModeradorAdminBodySchema,
+	actorAdminParamsSchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
@@ -70,6 +71,12 @@ describe('consultas administrativas', () => {
 
 	it('normaliza el identificador del detalle de usuario', () => {
 		expect(usuarioAdminParamsSchema.parse({ id: '12' })).toEqual({ id: 12 });
+	});
+
+	it('normaliza y valida el identificador del detalle de actor', () => {
+		expect(actorAdminParamsSchema.parse({ id: '12' })).toEqual({ id: 12 });
+		expect(actorAdminParamsSchema.safeParse({ id: '0' }).success).toBe(false);
+		expect(actorAdminParamsSchema.safeParse({ id: 'actor' }).success).toBe(false);
 	});
 
 	it('solo permite activar o dar de baja a un usuario', () => {

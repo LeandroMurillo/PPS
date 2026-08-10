@@ -522,6 +522,106 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_admin_obtener_actor
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_obtener_actor`(
+    IN pIdActor INT
+)
+READS SQL DATA
+COMMENT 'Obtiene el perfil administrativo de un actor cultural sin restringir su estado. Devuelve datos generales, integrantes y elementos del portafolio.'
+BEGIN
+    IF pIdActor IS NULL OR pIdActor <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MYSQL_ERRNO = 1644,
+                MESSAGE_TEXT = 'pIdActor debe ser un entero positivo';
+    END IF;
+
+    -- RESULTADO 1: datos generales, clasificación, dueño y ubicación.
+    SELECT
+        a.idActor,
+        a.nombre AS nombreActor,
+        a.descripcion,
+        a.fotoPerfilUrl,
+        a.cuit,
+        a.tipoActor,
+        a.fechaCreacion,
+        a.estado,
+
+        a.idCategoria,
+        c.nombre AS categoria,
+        c.icono AS iconoCategoria,
+        c.estado AS estadoCategoria,
+
+        a.idSubcategoria,
+        s.nombre AS subcategoria,
+        s.estado AS estadoSubcategoria,
+
+        d.idUsuarioDueno,
+        CASE
+            WHEN u.idUsuario IS NULL THEN NULL
+            ELSE CONCAT(u.nombre, ' ', u.apellido)
+        END AS usuarioDueno,
+        u.email AS emailUsuarioDueno,
+
+        ub.idUbicacion,
+        ub.provincia,
+        ub.departamento,
+        ub.localidad,
+        ub.direccion,
+        ub.latitud,
+        ub.longitud,
+        ub.esPublica
+    FROM `Actores` a
+    INNER JOIN `Categorias` c
+        ON c.idCategoria = a.idCategoria
+    LEFT JOIN `Subcategorias` s
+        ON s.idCategoria = a.idCategoria
+       AND s.idSubcategoria = a.idSubcategoria
+    LEFT JOIN (
+        SELECT
+            i.idActor,
+            MIN(i.idUsuario) AS idUsuarioDueno
+        FROM `Integrantes` i
+        WHERE i.esDueño = 1
+        GROUP BY i.idActor
+    ) d
+        ON d.idActor = a.idActor
+    LEFT JOIN `Usuarios` u
+        ON u.idUsuario = d.idUsuarioDueno
+    INNER JOIN `Ubicaciones` ub
+        ON ub.idUbicacion = a.idUbicacion
+    WHERE a.idActor = pIdActor;
+
+    -- RESULTADO 2: todos los usuarios integrantes del actor.
+    SELECT
+        u.idUsuario,
+        CONCAT(u.nombre, ' ', u.apellido) AS nombreUsuario,
+        u.email,
+        i.rol,
+        i.esDueño AS esDueno
+    FROM `Integrantes` i
+    INNER JOIN `Usuarios` u
+        ON u.idUsuario = i.idUsuario
+    WHERE i.idActor = pIdActor
+    ORDER BY
+        i.esDueño DESC,
+        u.apellido ASC,
+        u.nombre ASC,
+        u.idUsuario ASC;
+
+    -- RESULTADO 3: imágenes, enlaces y redes sociales del portafolio.
+    SELECT
+        ip.idItem,
+        ip.tipo,
+        ip.descripcion,
+        ip.url,
+        ip.fechaCreacion
+    FROM `ItemsPortafolio` ip
+    WHERE ip.idActor = pIdActor
+    ORDER BY ip.fechaCreacion DESC, ip.idItem DESC;
+END //
+
+-- -----------------------------------------------------
 -- sp_admin_listar_categorias
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_listar_categorias`(

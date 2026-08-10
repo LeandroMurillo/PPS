@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 
 import {
 	asignarModeradorAdminBodySchema,
+	actorAdminParamsSchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
@@ -19,6 +20,7 @@ import {
 	listarActoresAdminService,
 	listarCategoriasAdminService,
 	listarUsuariosAdminService,
+	obtenerActorAdminService,
 	obtenerCategoriaAdminService,
 	obtenerUsuarioAdminService,
 } from './admin.service.js';
@@ -42,6 +44,15 @@ function userNotFound(response: Parameters<RequestHandler>[1]) {
 		error: {
 			code: 'USER_NOT_FOUND',
 			message: 'No se encontró el usuario solicitado',
+		},
+	});
+}
+
+function actorNotFound(response: Parameters<RequestHandler>[1]) {
+	response.status(404).json({
+		error: {
+			code: 'ACTOR_NOT_FOUND',
+			message: 'No se encontró el actor solicitado',
 		},
 	});
 }
@@ -97,6 +108,24 @@ export const listarActoresAdminController: RequestHandler = async (request, resp
 	}
 
 	response.status(200).json(await listarActoresAdminService(result.data));
+};
+
+export const obtenerActorAdminController: RequestHandler = async (request, response) => {
+	const params = actorAdminParamsSchema.safeParse(request.params);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+
+	const result = await obtenerActorAdminService(params.data.id);
+
+	if (!result) {
+		actorNotFound(response);
+		return;
+	}
+
+	response.status(200).json(result);
 };
 
 export const obtenerUsuarioAdminController: RequestHandler = async (request, response) => {

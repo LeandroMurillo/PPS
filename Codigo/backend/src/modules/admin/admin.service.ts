@@ -7,6 +7,7 @@ import {
 	listarActoresAdminRepository,
 	listarCategoriasAdminRepository,
 	listarUsuariosAdminRepository,
+	obtenerActorAdminRepository,
 	obtenerCategoriaAdminRepository,
 	obtenerUsuarioAdminRepository,
 } from './admin.repository.js';
@@ -19,6 +20,7 @@ import type {
 	ListarUsuariosAdminQuery,
 	ListarUsuariosAdminResponse,
 	ObtenerUsuarioAdminResponse,
+	ObtenerActorAdminResponse,
 	ObtenerCategoriaAdminResponse,
 } from './admin.schemas.js';
 
@@ -74,6 +76,12 @@ export async function listarActoresAdminService(query: ListarActoresAdminQuery):
 		data: result.actores,
 		pagination: pagination(result.total, result.actores.length, query.limit, query.offset),
 	};
+}
+
+export async function obtenerActorAdminService(id: number): Promise<ObtenerActorAdminResponse | null> {
+	const actor = await obtenerActorAdminRepository(id);
+
+	return actor ? { data: actor } : null;
 }
 
 export async function listarCategoriasAdminService(

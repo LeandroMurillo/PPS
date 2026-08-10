@@ -6,6 +6,7 @@ on:
     paths:
       - "Informe/**"
       - "Codigo/DB/sp.sql"
+      - "Codigo/DB/generar_listado_sp.mjs"
       - ".github/workflows/Informe.yml"
 
   # Allows you to run this workflow manually from the Actions tab
@@ -18,20 +19,6 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-24.04
 
-    services:
-      mariadb:
-        image: mariadb:lts
-        env:
-          MARIADB_ROOT_PASSWORD: root
-          MARIADB_DATABASE: cultura
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -41,37 +28,12 @@ jobs:
       - name: Setup Typst
         uses: typst-community/setup-typst@v5
 
-      # Added 'gnupg' to dependencies
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y qpdf gnupg fonts-cantarell mariadb-client
+        run: sudo apt-get update && sudo apt-get install -y qpdf gnupg fonts-cantarell
 
       - name: Generate Stored Procedures list
         run: |
-          mariadb \
-            -h 127.0.0.1 \
-            -P 3306 \
-            -u root \
-            --password=root \
-            --default-character-set=utf8mb4 \
-            cultura < "Codigo/DB/cultura.sql"
-
-          mariadb \
-            -h 127.0.0.1 \
-            -P 3306 \
-            -u root \
-            --password=root \
-            --default-character-set=utf8mb4 \
-            cultura < "Codigo/DB/sp.sql"
-
-          mariadb \
-            -h 127.0.0.1 \
-            -P 3306 \
-            -u root \
-            --password=root \
-            --batch \
-            --raw \
-            --default-character-set=utf8mb4 \
-            cultura < "Codigo/DB/exportar_listado_sp.sql" > "Informe/listado_sp.tsv"
+          node "Codigo/DB/generar_listado_sp.mjs"
 
           echo "Listado de stored procedures generado:"
           head -n 5 "Informe/listado_sp.tsv"

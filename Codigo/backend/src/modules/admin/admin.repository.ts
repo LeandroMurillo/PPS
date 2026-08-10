@@ -5,6 +5,7 @@ import { categoriaIconoSchema } from './admin.schemas.js';
 
 import type {
 	ActorAdmin,
+	ActorDetalleAdmin,
 	CategoriaAdmin,
 	CategoriaModeracionAdmin,
 	ListarActoresAdminQuery,
@@ -89,6 +90,24 @@ const actorDatabaseRowSchema = z.object({
 	esPublica: databaseBooleanSchema,
 });
 
+type ActorDatabaseRow = z.infer<typeof actorDatabaseRowSchema>;
+
+const actorIntegranteDatabaseRowSchema = z.object({
+	idUsuario: databaseIntegerSchema,
+	nombreUsuario: z.string(),
+	email: z.string(),
+	rol: z.string(),
+	esDueno: databaseBooleanSchema,
+});
+
+const actorPortafolioDatabaseRowSchema = z.object({
+	idItem: databaseIntegerSchema,
+	tipo: z.enum(['IMAGEN', 'LINK', 'RRSS']),
+	descripcion: z.string(),
+	url: z.string(),
+	fechaCreacion: databaseDateSchema,
+});
+
 const categoriaAdminDatabaseRowSchema = z.object({
 	idCategoria: databaseIntegerSchema,
 	nombre: z.string(),
@@ -143,6 +162,51 @@ function mapCategoria(row: z.infer<typeof categoriaAdminDatabaseRowSchema>): Cat
 		estado: row.estado,
 		subcategoria: row.subcategoria,
 		cantidadActores: row.cantidadActores,
+	};
+}
+
+function mapActor(row: ActorDatabaseRow): ActorAdmin {
+	return {
+		id: row.idActor,
+		nombre: row.nombreActor,
+		descripcion: row.descripcion,
+		foto: row.fotoPerfilUrl,
+		cuit: row.cuit,
+		tipoActor: row.tipoActor,
+		fechaCreacion: row.fechaCreacion,
+		estado: row.estado,
+		categoria: {
+			id: row.idCategoria,
+			nombre: row.categoria,
+			icono: row.iconoCategoria,
+			estado: row.estadoCategoria,
+		},
+		subcategoria:
+			row.idSubcategoria !== null && row.subcategoria !== null && row.estadoSubcategoria !== null
+				? {
+						id: row.idSubcategoria,
+						nombre: row.subcategoria,
+						estado: row.estadoSubcategoria,
+					}
+				: null,
+		dueno:
+			row.idUsuarioDueno !== null && row.usuarioDueno !== null && row.emailUsuarioDueno !== null
+				? {
+						id: row.idUsuarioDueno,
+						nombre: row.usuarioDueno,
+						email: row.emailUsuarioDueno,
+					}
+				: null,
+		ubicacion: {
+			id: row.idUbicacion,
+			provincia: row.provincia,
+			departamento: row.departamento,
+			localidad: row.localidad,
+			direccion: row.direccion,
+			latitud: row.latitud,
+			longitud: row.longitud,
+			esPublica: row.esPublica,
+		},
 	};
 }
 
@@ -226,47 +290,38 @@ export async function listarActoresAdminRepository(
 
 	return {
 		total: getTotal(result, procedureName),
-		actores: rows.map((row) => ({
-			id: row.idActor,
-			nombre: row.nombreActor,
+		actores: rows.map(mapActor),
+	};
+}
+
+export async function obtenerActorAdminRepository(id: number): Promise<ActorDetalleAdmin | null> {
+	const procedureName = 'sp_admin_obtener_actor';
+	const result: unknown = await pool.query('CALL sp_admin_obtener_actor(?)', [id]);
+	const actorRows = z.array(actorDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const actorRow = actorRows[0];
+
+	if (!actorRow) {
+		return null;
+	}
+
+	const integrantes = z.array(actorIntegranteDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
+	const portafolio = z.array(actorPortafolioDatabaseRowSchema).parse(getResultSet(result, 2, procedureName));
+
+	return {
+		...mapActor(actorRow),
+		integrantes: integrantes.map((row) => ({
+			id: row.idUsuario,
+			nombre: row.nombreUsuario,
+			email: row.email,
+			rol: row.rol,
+			esDueno: row.esDueno,
+		})),
+		portafolio: portafolio.map((row) => ({
+			id: row.idItem,
+			tipo: row.tipo,
 			descripcion: row.descripcion,
-			foto: row.fotoPerfilUrl,
-			cuit: row.cuit,
-			tipoActor: row.tipoActor,
+			url: row.url,
 			fechaCreacion: row.fechaCreacion,
-			estado: row.estado,
-			categoria: {
-				id: row.idCategoria,
-				nombre: row.categoria,
-				icono: row.iconoCategoria,
-				estado: row.estadoCategoria,
-			},
-			subcategoria:
-				row.idSubcategoria !== null && row.subcategoria !== null && row.estadoSubcategoria !== null
-					? {
-							id: row.idSubcategoria,
-							nombre: row.subcategoria,
-							estado: row.estadoSubcategoria,
-						}
-					: null,
-			dueno:
-				row.idUsuarioDueno !== null && row.usuarioDueno !== null && row.emailUsuarioDueno !== null
-					? {
-							id: row.idUsuarioDueno,
-							nombre: row.usuarioDueno,
-							email: row.emailUsuarioDueno,
-						}
-					: null,
-			ubicacion: {
-				id: row.idUbicacion,
-				provincia: row.provincia,
-				departamento: row.departamento,
-				localidad: row.localidad,
-				direccion: row.direccion,
-				latitud: row.latitud,
-				longitud: row.longitud,
-				esPublica: row.esPublica,
-			},
 		})),
 	};
 }

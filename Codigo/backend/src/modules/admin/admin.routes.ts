@@ -10,6 +10,7 @@ import {
 	listarCategoriasAdminController,
 	listarUsuariosAdminController,
 	obtenerCategoriaAdminController,
+	obtenerActorAdminController,
 	obtenerUsuarioAdminController,
 } from './admin.controller.js';
 
@@ -20,6 +21,7 @@ adminRouter.get('/usuarios/:id', obtenerUsuarioAdminController);
 adminRouter.patch('/usuarios/:id/estado', cambiarEstadoUsuarioAdminController);
 adminRouter.put('/usuarios/:id/moderacion', asignarModeradorAdminController);
 adminRouter.get('/actores', listarActoresAdminController);
+adminRouter.get('/actores/:id', obtenerActorAdminController);
 adminRouter.get('/categorias', listarCategoriasAdminController);
 adminRouter.get('/categorias/:id', obtenerCategoriaAdminController);
 adminRouter.post('/categorias', crearCategoriaAdminController);

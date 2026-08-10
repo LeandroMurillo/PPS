@@ -90,6 +90,23 @@ export type ActorAdmin = {
 	};
 };
 
+export type ActorDetalleAdmin = ActorAdmin & {
+	integrantes: {
+		id: number;
+		nombre: string;
+		email: string;
+		rol: string;
+		esDueno: boolean;
+	}[];
+	portafolio: {
+		id: number;
+		tipo: 'IMAGEN' | 'LINK' | 'RRSS';
+		descripcion: string;
+		url: string;
+		fechaCreacion: string;
+	}[];
+};
+
 export type CategoriaAdmin = {
 	id: number;
 	nombre: string;
@@ -99,13 +116,7 @@ export type CategoriaAdmin = {
 	cantidadActores: number;
 };
 
-export type CategoriaAdminSortBy =
-	| 'idCategoria'
-	| 'nombre'
-	| 'icono'
-	| 'estado'
-	| 'subcategoria'
-	| 'cantidadActores';
+export type CategoriaAdminSortBy = 'idCategoria' | 'nombre' | 'icono' | 'estado' | 'subcategoria' | 'cantidadActores';
 
 type PageResponse<T> = {
 	data: T[];
@@ -146,6 +157,10 @@ export async function listarActoresAdmin(
 	Object.entries(input).forEach(([key, value]) => appendOptionalParam(params, key, value));
 
 	return apiFetch<PageResponse<ActorAdmin>>(`/api/admin/actores?${params.toString()}`, signal);
+}
+
+export async function obtenerActorAdmin(id: number | string, signal?: AbortSignal) {
+	return apiFetch<{ data: ActorDetalleAdmin }>(`/api/admin/actores/${id}`, signal);
 }
 
 export async function obtenerUsuarioAdmin(id: number | string, signal?: AbortSignal) {
