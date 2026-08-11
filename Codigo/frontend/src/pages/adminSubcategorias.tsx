@@ -44,7 +44,7 @@ export default function AdminSubcategoriasPage() {
 
 	return (
 		<PageContainer
-			title={`Subcategorías de ${categoryName}`}
+			title={``}
 			breadcrumbs={[
 				{ title: 'Mapa', path: '/' },
 				{ title: 'Categorías', path: '/categorias' },

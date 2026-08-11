@@ -1,5 +1,6 @@
 import {
 	asignarModeradorAdminRepository,
+	asociarPreguntaFormularioAdminRepository,
 	buscarFormularioAdminRepository,
 	cambiarEstadoActoresAdminRepository,
 	cambiarEstadoUsuarioAdminRepository,
@@ -15,6 +16,7 @@ import {
 	desactivarPreguntaFormularioAdminRepository,
 	listarActoresAdminRepository,
 	listarCategoriasAdminRepository,
+	listarPreguntasAdminRepository,
 	listarSubcategoriasAdminRepository,
 	listarUsuariosAdminRepository,
 	obtenerActorAdminRepository,
@@ -25,10 +27,13 @@ import {
 } from './admin.repository.js';
 
 import type {
+	AsociarPreguntaFormularioAdminBody,
 	ListarActoresAdminQuery,
 	ListarActoresAdminResponse,
 	ListarCategoriasAdminQuery,
 	ListarCategoriasAdminResponse,
+	ListarPreguntasAdminQuery,
+	ListarPreguntasAdminResponse,
 	ListarSubcategoriasAdminQuery,
 	ListarSubcategoriasAdminResponse,
 	ListarUsuariosAdminQuery,
@@ -236,4 +241,17 @@ export async function desactivarPreguntaFormularioAdminService(
 	idPregunta: number,
 ): Promise<ObtenerFormularioAdminResponse> {
 	return { data: await desactivarPreguntaFormularioAdminRepository(idFormulario, idPregunta) };
+}
+
+export async function asociarPreguntaFormularioAdminService(
+	idFormulario: number,
+	data: AsociarPreguntaFormularioAdminBody,
+): Promise<ObtenerFormularioAdminResponse> {
+	return { data: await asociarPreguntaFormularioAdminRepository(idFormulario, data) };
+}
+
+export async function listarPreguntasAdminService(
+	query: ListarPreguntasAdminQuery,
+): Promise<ListarPreguntasAdminResponse> {
+	return { data: await listarPreguntasAdminRepository(query) };
 }

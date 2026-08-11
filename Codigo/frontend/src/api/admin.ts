@@ -160,6 +160,13 @@ export type SubcategoriaAdminSortBy = 'idSubcategoria' | 'nombre' | 'estado' | '
 export type TipoPreguntaAdmin =
 	'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
 
+export type PreguntaBancoAdmin = {
+	id: number;
+	pregunta: string;
+	tipoDato: TipoPreguntaAdmin;
+	opciones: string[] | null;
+};
+
 export type PreguntaFormularioAdmin = {
 	id: number;
 	pregunta: string;
@@ -440,5 +447,23 @@ export async function crearPreguntaFormularioAdmin(idFormulario: number | string
 export async function desactivarPreguntaFormularioAdmin(idFormulario: number | string, idPregunta: number | string) {
 	return apiRequest<{ data: FormularioAdmin }>(`/api/admin/formularios/${idFormulario}/preguntas/${idPregunta}`, {
 		method: 'DELETE',
+	});
+}
+
+export async function listarPreguntasAdmin(busqueda?: string, signal?: AbortSignal) {
+	const params = new URLSearchParams();
+	appendOptionalParam(params, 'busqueda', busqueda);
+
+	return apiFetch<{ data: PreguntaBancoAdmin[] }>(`/api/admin/preguntas?${params.toString()}`, signal);
+}
+
+export async function asociarPreguntaFormularioAdmin(
+	idFormulario: number | string,
+	data: { idPregunta: number; esObligatorio: boolean; esPublico: boolean },
+) {
+	return apiRequest<{ data: FormularioAdmin }>(`/api/admin/formularios/${idFormulario}/preguntas/existente`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
 	});
 }

@@ -7,6 +7,7 @@ import type {
 	ActorAdmin,
 	ActorDetalleAdmin,
 	ActorDetalleEncuestaAdmin,
+	AsociarPreguntaFormularioAdminBody,
 	CategoriaAdmin,
 	CategoriaModeracionAdmin,
 	CrearPreguntaFormularioAdminBody,
@@ -14,8 +15,10 @@ import type {
 	GuardarFormularioAdminBody,
 	ListarActoresAdminQuery,
 	ListarCategoriasAdminQuery,
+	ListarPreguntasAdminQuery,
 	ListarSubcategoriasAdminQuery,
 	ListarUsuariosAdminQuery,
+	PreguntaBancoAdmin,
 	SubcategoriaAdmin,
 	UsuarioAdmin,
 	UsuarioDetalleAdmin,
@@ -830,3 +833,57 @@ export async function desactivarPreguntaFormularioAdminRepository(
 
 	return formulario;
 }
+
+export async function asociarPreguntaFormularioAdminRepository(
+	idFormulario: number,
+	data: AsociarPreguntaFormularioAdminBody,
+): Promise<FormularioAdmin> {
+	await pool.query('CALL sp_admin_agregar_pregunta_formulario(?, ?, ?, ?, ?)', [
+		idFormulario,
+		data.idPregunta,
+		null,
+		data.esObligatorio ? 1 : 0,
+		data.esPublico ? 1 : 0,
+	]);
+
+	const formulario = await obtenerFormularioAdminRepository(idFormulario);
+	if (!formulario) throw new Error('No se pudo recuperar el formulario actualizado');
+
+	return formulario;
+}
+
+export async function listarPreguntasAdminRepository(
+	query: ListarPreguntasAdminQuery,
+): Promise<PreguntaBancoAdmin[]> {
+	let sql = 'SELECT idPregunta AS id, pregunta, tipoDato, opciones FROM `Preguntas`';
+	const params: unknown[] = [];
+
+	if (query.busqueda) {
+		sql += ' WHERE pregunta LIKE ?';
+		params.push(`%${query.busqueda}%`);
+	}
+
+	sql += ' ORDER BY pregunta ASC';
+
+	const rows = (await pool.query(sql, params)) as unknown[];
+
+	const preguntaBancoRowSchema = z.object({
+		id: databaseIntegerSchema,
+		pregunta: z.string(),
+		tipoDato: z.enum([
+			'TEXTO',
+			'NUMERO',
+			'BOOLEANO',
+			'FECHA',
+			'URL',
+			'EMAIL',
+			'TELEFONO',
+			'OPCION_UNICA',
+			'OPCION_MULTIPLE',
+		]),
+		opciones: databaseQuestionOptionsSchema,
+	});
+
+	return z.array(preguntaBancoRowSchema).parse(rows);
+}
+

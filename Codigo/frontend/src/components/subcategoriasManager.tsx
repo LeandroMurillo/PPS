@@ -4,7 +4,6 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -34,6 +33,7 @@ import {
 import AdminFilters from './adminFilters';
 import AdminTable, { type AdminColumn } from './adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { PageContainer } from '@toolpad/core/PageContainer';
 
 const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
 const stateColors = { A: 'success', I: 'default' } as const;
@@ -45,11 +45,7 @@ interface SubcategoriasManagerProps {
 	showTitle?: boolean;
 }
 
-export default function SubcategoriasManager({
-	categoryId,
-	contained = false,
-	showTitle = true,
-}: SubcategoriasManagerProps) {
+export default function SubcategoriasManager({ categoryId, showTitle = true }: SubcategoriasManagerProps) {
 	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [state, setState] = React.useState('');
@@ -240,18 +236,7 @@ export default function SubcategoriasManager({
 	];
 
 	return (
-		<Box
-			sx={{
-				margin: contained ? 0 : '-8px -16px',
-				width: contained ? '100%' : { xs: 'calc(100% + 32px)', sm: 'calc(200% + 48px)' },
-				p: 2.5,
-				boxSizing: 'border-box',
-				borderRadius: 2,
-				backgroundColor: 'background.paper',
-				border: '1px solid',
-				borderColor: 'divider',
-			}}
-		>
+		<PageContainer title="Administrar subcategorías" maxWidth={false}>
 			<Stack spacing={2.5}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} flexWrap="wrap">
 					<Stack direction="row" alignItems="center" spacing={1.5}>
@@ -334,6 +319,7 @@ export default function SubcategoriasManager({
 								label="Nombre de la subcategoría"
 								value={formNombre}
 								onChange={(e) => setFormNombre(e.target.value)}
+								inputProps={{ maxLength: 45 }}
 								autoFocus
 							/>
 
@@ -386,6 +372,6 @@ export default function SubcategoriasManager({
 					</Button>
 				</DialogActions>
 			</Dialog>
-		</Box>
+		</PageContainer>
 	);
 }

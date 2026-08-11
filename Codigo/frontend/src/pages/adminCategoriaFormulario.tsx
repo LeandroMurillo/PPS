@@ -32,20 +32,26 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import Autocomplete from '@mui/material/Autocomplete';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import {
+	asociarPreguntaFormularioAdmin,
 	crearPreguntaFormularioAdmin,
 	desactivarPreguntaFormularioAdmin,
 	guardarFormularioCategoriaAdmin,
 	guardarFormularioSubcategoriaAdmin,
+	listarPreguntasAdmin,
 	obtenerCategoriaAdmin,
 	obtenerFormularioCategoriaAdmin,
 	obtenerFormularioSubcategoriaAdmin,
 	obtenerSubcategoriaAdmin,
 	type CategoriaAdmin,
 	type FormularioAdmin,
+	type PreguntaBancoAdmin,
 	type PreguntaFormularioAdmin,
 	type SubcategoriaAdmin,
 	type TipoPreguntaAdmin,
@@ -85,6 +91,10 @@ export default function AdminCategoriaFormularioPage() {
 	const [questionTab, setQuestionTab] = React.useState<'activas' | 'historial'>('activas');
 
 	const [questionDialogOpen, setQuestionDialogOpen] = React.useState(false);
+	const [questionMode, setQuestionMode] = React.useState<'nueva' | 'existente'>('nueva');
+	const [bankQuestions, setBankQuestions] = React.useState<PreguntaBancoAdmin[]>([]);
+	const [loadingBank, setLoadingBank] = React.useState(false);
+	const [selectedBankQuestion, setSelectedBankQuestion] = React.useState<PreguntaBancoAdmin | null>(null);
 	const [questionText, setQuestionText] = React.useState('');
 	const [questionType, setQuestionType] = React.useState<TipoPreguntaAdmin>('TEXTO');
 	const [questionOptions, setQuestionOptions] = React.useState('');
@@ -146,6 +156,15 @@ export default function AdminCategoriaFormularioPage() {
 		) ?? [];
 	const usesOptions = questionType === 'OPCION_UNICA' || questionType === 'OPCION_MULTIPLE';
 
+	const activeQuestionIds = React.useMemo(
+		() => new Set(formulario?.preguntas.filter((q) => q.estado === 'A').map((q) => q.id) ?? []),
+		[formulario],
+	);
+	const availableBankQuestions = React.useMemo(
+		() => bankQuestions.filter((q) => !activeQuestionIds.has(q.id)),
+		[bankQuestions, activeQuestionIds],
+	);
+
 	async function handleSave() {
 		if (!categoriaId || !titulo.trim()) return;
 
@@ -170,18 +189,53 @@ export default function AdminCategoriaFormularioPage() {
 	}
 
 	function openQuestionDialog() {
+		setQuestionMode('nueva');
 		setQuestionText('');
 		setQuestionType('TEXTO');
 		setQuestionOptions('');
 		setQuestionRequired(false);
 		setQuestionPublic(true);
+		setSelectedBankQuestion(null);
 		setQuestionError(null);
 		setQuestionDialogOpen(true);
+
+		setLoadingBank(true);
+		void listarPreguntasAdmin()
+			.then((res) => setBankQuestions(res.data))
+			.catch(() => setBankQuestions([]))
+			.finally(() => setLoadingBank(false));
 	}
 
 	async function handleAddQuestion(event: React.FormEvent) {
 		event.preventDefault();
 		if (!formulario) return;
+
+		if (questionMode === 'existente') {
+			if (!selectedBankQuestion) {
+				setQuestionError('Seleccioná una pregunta del listado.');
+				return;
+			}
+
+			setQuestionSubmitting(true);
+			setQuestionError(null);
+			try {
+				const response = await asociarPreguntaFormularioAdmin(formulario.id, {
+					idPregunta: selectedBankQuestion.id,
+					esObligatorio: questionRequired,
+					esPublico: questionPublic,
+				});
+				setFormulario(response.data);
+				setQuestionDialogOpen(false);
+				setQuestionTab('activas');
+			} catch (submitError) {
+				setQuestionError(
+					submitError instanceof Error ? submitError.message : 'No se pudo incorporar la pregunta.',
+				);
+			} finally {
+				setQuestionSubmitting(false);
+			}
+			return;
+		}
 
 		const options = usesOptions
 			? questionOptions
@@ -414,42 +468,124 @@ export default function AdminCategoriaFormularioPage() {
 					<DialogTitle>Nueva pregunta</DialogTitle>
 					<DialogContent dividers>
 						<Stack spacing={2.5} sx={{ pt: 1 }}>
+							<ToggleButtonGroup
+								exclusive
+								fullWidth
+								color="primary"
+								value={questionMode}
+								onChange={(_e, newMode: 'nueva' | 'existente' | null) => {
+									if (newMode) {
+										setQuestionMode(newMode);
+										setQuestionError(null);
+									}
+								}}
+							>
+								<ToggleButton value="nueva">Crear nueva pregunta</ToggleButton>
+								<ToggleButton value="existente">Elegir pregunta existente</ToggleButton>
+							</ToggleButtonGroup>
+
 							{questionError && <Alert severity="error">{questionError}</Alert>}
-							<TextField
-								required
-								autoFocus
-								label="Pregunta"
-								multiline
-								minRows={2}
-								value={questionText}
-								onChange={(event) => setQuestionText(event.target.value)}
-								inputProps={{ maxLength: 500 }}
-							/>
-							<FormControl fullWidth>
-								<InputLabel id="question-type-label">Tipo de respuesta</InputLabel>
-								<Select
-									labelId="question-type-label"
-									label="Tipo de respuesta"
-									value={questionType}
-									onChange={(event) => setQuestionType(event.target.value as TipoPreguntaAdmin)}
-								>
-									{questionTypes.map((type) => (
-										<MenuItem key={type} value={type}>
-											{questionTypeLabels[type]}
-										</MenuItem>
-									))}
-								</Select>
-							</FormControl>
-							{usesOptions && (
-								<TextField
-									label="Opciones"
-									helperText="Una opción por línea"
-									multiline
-									minRows={4}
-									value={questionOptions}
-									onChange={(event) => setQuestionOptions(event.target.value)}
-								/>
+
+							{questionMode === 'nueva' ? (
+								<>
+									<TextField
+										required
+										autoFocus
+										label="Pregunta"
+										multiline
+										minRows={2}
+										value={questionText}
+										onChange={(event) => setQuestionText(event.target.value)}
+										inputProps={{ maxLength: 500 }}
+									/>
+									<FormControl fullWidth>
+										<InputLabel id="question-type-label">Tipo de respuesta</InputLabel>
+										<Select
+											labelId="question-type-label"
+											label="Tipo de respuesta"
+											value={questionType}
+											onChange={(event) => setQuestionType(event.target.value as TipoPreguntaAdmin)}
+										>
+											{questionTypes.map((type) => (
+												<MenuItem key={type} value={type}>
+													{questionTypeLabels[type]}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+									{usesOptions && (
+										<TextField
+											label="Opciones"
+											helperText="Una opción por línea"
+											multiline
+											minRows={4}
+											value={questionOptions}
+											onChange={(event) => setQuestionOptions(event.target.value)}
+										/>
+									)}
+								</>
+							) : (
+								<>
+									<Autocomplete
+										options={availableBankQuestions}
+										getOptionLabel={(option) => option.pregunta}
+										value={selectedBankQuestion}
+										loading={loadingBank}
+										onChange={(_event, newValue) => setSelectedBankQuestion(newValue)}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												label="Buscar pregunta existente"
+												placeholder="Seleccioná una pregunta del banco..."
+												required
+											/>
+										)}
+										renderOption={(props, option) => (
+											<Box component="li" {...props} key={option.id}>
+												<Stack spacing={0.5}>
+													<Typography variant="body2" fontWeight={600}>
+														{option.pregunta}
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														Tipo: {questionTypeLabels[option.tipoDato]}
+														{option.opciones ? ` · ${option.opciones.join(', ')}` : ''}
+													</Typography>
+												</Stack>
+											</Box>
+										)}
+										noOptionsText={
+											loadingBank
+												? 'Cargando preguntas...'
+												: 'No hay preguntas disponibles para seleccionar'
+										}
+									/>
+
+									{selectedBankQuestion && (
+										<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
+											<Stack spacing={1}>
+												<Typography variant="subtitle2">Detalle de la pregunta seleccionada</Typography>
+												<Typography variant="body2" fontWeight={600}>
+													{selectedBankQuestion.pregunta}
+												</Typography>
+												<Stack direction="row" spacing={1} alignItems="center">
+													<Chip
+														label={questionTypeLabels[selectedBankQuestion.tipoDato]}
+														size="small"
+														color="primary"
+														variant="outlined"
+													/>
+													{selectedBankQuestion.opciones && (
+														<Typography variant="caption" color="text.secondary">
+															Opciones: {selectedBankQuestion.opciones.join(' · ')}
+														</Typography>
+													)}
+												</Stack>
+											</Stack>
+										</Paper>
+									)}
+								</>
 							)}
+
 							<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
 								<FormControlLabel
 									control={
@@ -477,7 +613,7 @@ export default function AdminCategoriaFormularioPage() {
 							Cancelar
 						</Button>
 						<Button type="submit" variant="contained" loading={questionSubmitting}>
-							Agregar
+							{questionMode === 'existente' ? 'Incorporar' : 'Agregar'}
 						</Button>
 					</DialogActions>
 				</form>

@@ -3,6 +3,7 @@ import type { RequestHandler } from 'express';
 import {
 	asignarModeradorAdminBodySchema,
 	actorAdminParamsSchema,
+	asociarPreguntaFormularioAdminBodySchema,
 	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
@@ -14,6 +15,7 @@ import {
 	guardarSubcategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarCategoriasAdminQuerySchema,
+	listarPreguntasAdminQuerySchema,
 	listarSubcategoriasAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
 	preguntaFormularioAdminParamsSchema,
@@ -23,6 +25,7 @@ import {
 } from './admin.schemas.js';
 import {
 	asignarModeradorAdminService,
+	asociarPreguntaFormularioAdminService,
 	buscarFormularioAdminService,
 	cambiarEstadoActoresAdminService,
 	cambiarEstadoUsuarioAdminService,
@@ -38,6 +41,7 @@ import {
 	desactivarPreguntaFormularioAdminService,
 	listarActoresAdminService,
 	listarCategoriasAdminService,
+	listarPreguntasAdminService,
 	listarSubcategoriasAdminService,
 	listarUsuariosAdminService,
 	obtenerActorAdminService,
@@ -685,4 +689,33 @@ export const desactivarPreguntaFormularioAdminController: RequestHandler = async
 	response
 		.status(200)
 		.json(await desactivarPreguntaFormularioAdminService(params.data.idFormulario, params.data.idPregunta));
+};
+
+export const asociarPreguntaFormularioAdminController: RequestHandler = async (request, response) => {
+	const params = formularioAdminParamsSchema.safeParse(request.params);
+	const body = asociarPreguntaFormularioAdminBodySchema.safeParse(request.body);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+	if (!(await obtenerFormularioAdminService(params.data.idFormulario))) {
+		formNotFound(response);
+		return;
+	}
+
+	response.status(201).json(await asociarPreguntaFormularioAdminService(params.data.idFormulario, body.data));
+};
+
+export const listarPreguntasAdminController: RequestHandler = async (request, response) => {
+	const query = listarPreguntasAdminQuerySchema.safeParse(request.query);
+	if (!query.success) {
+		response.status(400).json(validationError(query.error.issues));
+		return;
+	}
+
+	response.status(200).json(await listarPreguntasAdminService(query.data));
 };

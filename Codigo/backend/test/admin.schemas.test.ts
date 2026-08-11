@@ -4,6 +4,7 @@ import {
 	asignarModeradorAdminBodySchema,
 	actorDetalleEncuestaAdminSchema,
 	actorAdminParamsSchema,
+	asociarPreguntaFormularioAdminBodySchema,
 	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
@@ -220,4 +221,14 @@ describe('consultas administrativas', () => {
 			}).success,
 		).toBe(false);
 	});
+
+	it('valida la asociación de una pregunta existente a un formulario', () => {
+		expect(asociarPreguntaFormularioAdminBodySchema.parse({ idPregunta: '15' })).toEqual({
+			idPregunta: 15,
+			esObligatorio: false,
+			esPublico: true,
+		});
+		expect(asociarPreguntaFormularioAdminBodySchema.safeParse({ idPregunta: '0' }).success).toBe(false);
+	});
 });
+

@@ -553,6 +553,35 @@ export const crearPreguntaFormularioAdminBodySchema = z
 
 export type CrearPreguntaFormularioAdminBody = z.infer<typeof crearPreguntaFormularioAdminBodySchema>;
 
+export const asociarPreguntaFormularioAdminBodySchema = z.strictObject({
+	idPregunta: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+	esObligatorio: z.boolean().default(false),
+	esPublico: z.boolean().default(true),
+});
+
+export type AsociarPreguntaFormularioAdminBody = z.infer<typeof asociarPreguntaFormularioAdminBodySchema>;
+
+export const listarPreguntasAdminQuerySchema = z.strictObject({
+	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
+});
+
+export type ListarPreguntasAdminQuery = z.infer<typeof listarPreguntasAdminQuerySchema>;
+
+export const preguntaBancoAdminSchema = z.object({
+	id: z.number().int().positive(),
+	pregunta: z.string(),
+	tipoDato: tipoPreguntaAdminSchema,
+	opciones: z.array(z.string()).nullable(),
+});
+
+export type PreguntaBancoAdmin = z.infer<typeof preguntaBancoAdminSchema>;
+
+export const listarPreguntasAdminResponseSchema = z.object({
+	data: z.array(preguntaBancoAdminSchema),
+});
+
+export type ListarPreguntasAdminResponse = z.infer<typeof listarPreguntasAdminResponseSchema>;
+
 export const preguntaFormularioAdminSchema = z.object({
 	id: z.number().int().positive(),
 	pregunta: z.string(),

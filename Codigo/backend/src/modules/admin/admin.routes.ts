@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import {
 	asignarModeradorAdminController,
+	asociarPreguntaFormularioAdminController,
 	cambiarEstadoUsuarioAdminController,
 	crearCategoriaAdminController,
 	crearFormularioCategoriaAdminController,
@@ -18,6 +19,7 @@ import {
 	cambiarEstadoActoresAdminController,
 	listarActoresAdminController,
 	listarCategoriasAdminController,
+	listarPreguntasAdminController,
 	listarSubcategoriasAdminController,
 	listarUsuariosAdminController,
 	obtenerCategoriaAdminController,
@@ -62,5 +64,7 @@ adminRouter.put(
 adminRouter.get('/categorias/:idCategoria/subcategorias/:id', obtenerSubcategoriaAdminController);
 adminRouter.put('/categorias/:idCategoria/subcategorias/:id', editarSubcategoriaAdminController);
 adminRouter.delete('/categorias/:idCategoria/subcategorias/:id', eliminarSubcategoriaAdminController);
+adminRouter.get('/preguntas', listarPreguntasAdminController);
 adminRouter.post('/formularios/:idFormulario/preguntas', crearPreguntaFormularioAdminController);
+adminRouter.post('/formularios/:idFormulario/preguntas/existente', asociarPreguntaFormularioAdminController);
 adminRouter.delete('/formularios/:idFormulario/preguntas/:idPregunta', desactivarPreguntaFormularioAdminController);
