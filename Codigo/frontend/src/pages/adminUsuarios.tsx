@@ -14,6 +14,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
+const roleColors = { USUARIO: 'default', MODERADOR: 'warning', ADMIN: 'error' } as const;
 
 function formatDate(value: string) {
 	const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -58,7 +59,7 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 		id: 'rol',
 		label: 'Rol',
 		sortBy: 'rol',
-		render: (row) => <Chip label={row.rol} size="small" variant="outlined" />,
+		render: (row) => <Chip label={row.rol} color={roleColors[row.rol]} size="small" />,
 	},
 	{
 		id: 'estado',

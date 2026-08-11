@@ -2,8 +2,13 @@ import * as React from 'react';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DoNotDisturbOnOutlinedIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -111,6 +116,8 @@ export default function AdminActoresPage() {
 	const [total, setTotal] = React.useState(0);
 	const [loading, setLoading] = React.useState(true);
 	const [savingState, setSavingState] = React.useState(false);
+	const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
+	const [targetState, setTargetState] = React.useState<'A' | 'I' | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
 	const [actionError, setActionError] = React.useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
@@ -206,22 +213,23 @@ export default function AdminActoresPage() {
 	const selectedRows = rows.filter((row) => selectedActorIds.includes(row.id));
 	const selectedRowsIds = selectedRows.map((row) => row.id);
 
-	const changeSelectedActorsState = async (nextState: 'A' | 'I') => {
+	const handleOpenConfirmDialog = (nextState: 'A' | 'I') => {
 		if (selectedRowsIds.length === 0) return;
+		setTargetState(nextState);
+		setConfirmDialogOpen(true);
+	};
 
-		const actionLabel = nextState === 'A' ? 'activar' : 'dar de baja';
-		const confirmed = window.confirm(
-			`¿Querés ${actionLabel} ${selectedRowsIds.length === 1 ? 'este actor' : `estos ${selectedRowsIds.length} actores`}?`,
-		);
-
-		if (!confirmed) return;
+	const handleConfirmStateChange = async () => {
+		if (!targetState || selectedRowsIds.length === 0) return;
 
 		setSavingState(true);
 		setActionError(null);
 
 		try {
-			await cambiarEstadoActoresAdmin(selectedRowsIds, nextState);
+			await cambiarEstadoActoresAdmin(selectedRowsIds, targetState);
 			setSelectedActorIds([]);
+			setConfirmDialogOpen(false);
+			setTargetState(null);
 			await loadActores();
 		} catch (requestError: unknown) {
 			setActionError(
@@ -337,7 +345,7 @@ export default function AdminActoresPage() {
 									variant="outlined"
 									startIcon={<CheckCircleOutlineIcon />}
 									disabled={savingState}
-									onClick={() => void changeSelectedActorsState('A')}
+									onClick={() => handleOpenConfirmDialog('A')}
 								>
 									Activar
 								</Button>
@@ -347,7 +355,7 @@ export default function AdminActoresPage() {
 									color="error"
 									startIcon={<DoNotDisturbOnOutlinedIcon />}
 									disabled={savingState}
-									onClick={() => void changeSelectedActorsState('I')}
+									onClick={() => handleOpenConfirmDialog('I')}
 								>
 									Dar de baja
 								</Button>
@@ -375,6 +383,51 @@ export default function AdminActoresPage() {
 					onRowClick={(row) => navigate(`/actoresAdmin/${row.id}`)}
 				/>
 			</Stack>
+
+			<Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} maxWidth="sm" fullWidth>
+				<DialogTitle>
+					{targetState === 'A' ? '¿Activar actores seleccionados?' : '¿Dar de baja actores seleccionados?'}
+				</DialogTitle>
+				<DialogContent dividers>
+					<Stack spacing={2}>
+						<Typography variant="body2">
+							{targetState === 'A'
+								? `Esta acción cambiará el estado a Activo de ${selectedRows.length === 1 ? 'el siguiente actor:' : `los siguientes ${selectedRows.length} actores:`}`
+								: `Esta acción cambiará el estado a Inactivo de ${selectedRows.length === 1 ? 'el siguiente actor:' : `los siguientes ${selectedRows.length} actores:`}`}
+						</Typography>
+						<Box
+							component="ul"
+							sx={{
+								m: 0,
+								pl: 2.5,
+								maxHeight: 200,
+								overflowY: 'auto',
+								fontSize: '0.875rem',
+								'& li': { py: 0.25 },
+							}}
+						>
+							{selectedRows.map((actor) => (
+								<li key={actor.id}>
+									<strong>{actor.nombre}</strong> ({actor.categoria.nombre} — {actor.ubicacion.departamento})
+								</li>
+							))}
+						</Box>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setConfirmDialogOpen(false)} disabled={savingState}>
+						Cancelar
+					</Button>
+					<Button
+						variant="contained"
+						color={targetState === 'A' ? 'success' : 'error'}
+						onClick={() => void handleConfirmStateChange()}
+						loading={savingState}
+					>
+						{targetState === 'A' ? 'Activar' : 'Dar de baja'}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</PageContainer>
 	);
 }
