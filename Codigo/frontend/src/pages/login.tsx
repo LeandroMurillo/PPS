@@ -60,7 +60,7 @@ export default function LoginPage() {
 		setLoading(true);
 		try {
 			const response = await loginApi({ email: email.trim(), contraseña: password });
-			login(response.usuario);
+			login(response.usuario, response.token);
 			navigate('/');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';

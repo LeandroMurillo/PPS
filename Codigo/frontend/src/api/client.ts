@@ -1,5 +1,7 @@
 const API_BASE_URL = (import.meta as ImportMeta & { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? '';
 
+const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
+
 type ApiErrorBody = {
 	error?: {
 		message?: string;
@@ -7,7 +9,17 @@ type ApiErrorBody = {
 };
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(`${API_BASE_URL}${path}`, init);
+	const headers = new Headers(init?.headers);
+
+	const token = typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+	if (token && !headers.has('Authorization')) {
+		headers.set('Authorization', `Bearer ${token}`);
+	}
+
+	const response = await fetch(`${API_BASE_URL}${path}`, {
+		...init,
+		headers,
+	});
 
 	if (!response.ok) {
 		let message = 'No se pudo completar la solicitud al backend.';

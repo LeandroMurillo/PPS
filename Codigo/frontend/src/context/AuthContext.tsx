@@ -3,16 +3,19 @@ import type { Session } from '@toolpad/core/AppProvider';
 import type { UsuarioSession } from '../api/auth';
 
 const STORAGE_KEY = 'mosaico_cultural_user_session';
+const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
 
 type AuthContextType = {
 	user: UsuarioSession | null;
+	token: string | null;
 	session: Session | null;
-	login: (user: UsuarioSession) => void;
+	login: (user: UsuarioSession, token: string) => void;
 	logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
 	user: null,
+	token: null,
 	session: null,
 	login: () => {},
 	logout: () => {},
@@ -36,6 +39,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		}
 	});
 
+	const [token, setToken] = useState<string | null>(() => {
+		try {
+			return localStorage.getItem(TOKEN_STORAGE_KEY);
+		} catch {
+			return null;
+		}
+	});
+
 	useEffect(() => {
 		if (user) {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeUserForStorage(user)));
@@ -44,12 +55,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		}
 	}, [user]);
 
-	const login = (newUser: UsuarioSession) => {
+	useEffect(() => {
+		if (token) {
+			localStorage.setItem(TOKEN_STORAGE_KEY, token);
+		} else {
+			localStorage.removeItem(TOKEN_STORAGE_KEY);
+		}
+	}, [token]);
+
+	const login = (newUser: UsuarioSession, newToken: string) => {
 		setUser(newUser);
+		setToken(newToken);
 	};
 
 	const logout = () => {
 		setUser(null);
+		setToken(null);
 	};
 
 	const session: Session | null = user
@@ -66,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		: null;
 
 	return (
-		<AuthContext.Provider value={{ user, session, login, logout }}>
+		<AuthContext.Provider value={{ user, token, session, login, logout }}>
 			{children}
 		</AuthContext.Provider>
 	);

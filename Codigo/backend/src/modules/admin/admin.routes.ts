@@ -29,8 +29,11 @@ import {
 	obtenerActorAdminController,
 	obtenerUsuarioAdminController,
 } from './admin.controller.js';
+import { requireRole, verifyToken } from '../../middleware/auth.middleware.js';
 
 export const adminRouter = Router();
+
+adminRouter.use(verifyToken, requireRole('ADMIN', 'MODERADOR'));
 
 adminRouter.get('/usuarios', listarUsuariosAdminController);
 adminRouter.get('/usuarios/:id', obtenerUsuarioAdminController);

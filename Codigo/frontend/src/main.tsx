@@ -1,4 +1,3 @@
-import './utils/fixLeaflet';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, useRouteError } from 'react-router-dom';
@@ -24,6 +23,7 @@ import AdminCategoriaFormularioPage from './pages/adminCategoriaFormulario';
 import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import RegistroPage from './pages/registro';
 import LoginPage from './pages/login';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function RootErrorBoundary() {
 	const error = useRouteError();
@@ -44,6 +44,8 @@ function RootErrorBoundary() {
 	);
 }
 
+const ADMIN_ROLES: ('ADMIN' | 'MODERADOR')[] = ['ADMIN', 'MODERADOR'];
+
 const router = createBrowserRouter([
 	{
 		Component: App,
@@ -54,7 +56,6 @@ const router = createBrowserRouter([
 				Component: Layout,
 				children: [
 					{
-						// CORRECCIÓN 2: Usar 'index: true' en lugar de 'path: \'\'' para la ruta raíz
 						index: true,
 						Component: Mapa,
 					},
@@ -72,63 +73,123 @@ const router = createBrowserRouter([
 					},
 					{
 						path: 'actoresUsuario',
-						Component: EmployeesCrudPage,
+						element: (
+							<ProtectedRoute>
+								<EmployeesCrudPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'convocatoriasUsuario',
-						Component: ConvocatoriasUsuario,
+						element: (
+							<ProtectedRoute>
+								<ConvocatoriasUsuario />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'confirmaciones',
-						Component: EmployeesCrudPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<EmployeesCrudPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'actoresAdmin',
-						Component: AdminActoresPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminActoresPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'actoresAdmin/:actorId',
-						Component: AdminActorDetallePage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminActorDetallePage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'usuarios',
-						Component: AdminUsuariosPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminUsuariosPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'usuarios/:usuarioId',
-						Component: AdminUsuarioDetallePage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminUsuarioDetallePage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'convocatoriasAdmin',
-						Component: EmployeesCrudPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<EmployeesCrudPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias',
-						Component: AdminCategoriasPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminCategoriasPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias/new',
-						Component: AdminCategoriasPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminCategoriasPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias/:categoriaId/formulario',
-						Component: AdminCategoriaFormularioPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminCategoriaFormularioPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias/:categoriaId/subcategorias/:subcategoriaId/formulario',
-						Component: AdminCategoriaFormularioPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminCategoriaFormularioPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias/:categoriaId',
-						Component: AdminCategoriaDetallePage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminCategoriaDetallePage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias/:categoriaId/subcategorias',
-						Component: AdminSubcategoriasPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminSubcategoriasPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'categorias/*',
-						Component: AdminCategoriasPage,
+						element: (
+							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+								<AdminCategoriasPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'acerca',

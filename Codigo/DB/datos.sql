@@ -47,7 +47,7 @@ VALUES
 
 -- -----------------------------------------------------
 -- 2. Usuarios
--- Las contraseñas son hashes ficticios de 60 caracteres para datos de prueba.
+-- Las contraseñas de los usuarios de prueba corresponden a la clave 'clave123' hashed con Bcrypt.
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Usuarios`
   (`idUsuario`, `actividadesArcaCodigo`, `nombre`, `apellido`, `genero`,
@@ -56,62 +56,62 @@ INSERT INTO `cultura`.`Usuarios`
 VALUES
   (1, NULL, 'Ana', 'Gómez', 'F', '1985-05-12', 'Argentina',
    'admin@culturatucuman.gob.ar',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-01 09:00:00', 'ADMIN', 'A', '27301234567'),
 
   (2, NULL, 'Carlos', 'López', 'M', '1988-11-20', 'Argentina',
    'mod.musica@culturatucuman.gob.ar',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-02 10:15:00', 'MODERADOR', 'A', '20326549871'),
 
   (3, '321011', 'María', 'Sosa', 'F', '1990-03-15', 'Argentina',
    'maria.tejidos@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-10 14:30:00', 'USUARIO', 'A', '27351112229'),
 
   (4, '900012', 'Juan', 'Pérez', 'M', '1995-07-22', 'Argentina',
    'juan.folclore@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-15 16:45:00', 'USUARIO', 'A', '20384445558'),
 
   (5, NULL, 'Jane', 'Doe', 'F', '1980-01-10', 'Argentina',
    'mod.escenicas@culturatucuman.gob.ar',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-18 09:00:00', 'MODERADOR', 'A', '27281110004'),
 
   (6, '591110', 'Daniel', 'Craig', 'M', '1982-03-02', 'Argentina',
    'daniel.audiovisual@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-18 09:05:00', 'USUARIO', 'A', '20311113337'),
 
   (7, '900011', 'Milo', 'Herrera', 'M', '1998-01-01', 'Argentina',
    'milo.musica@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-18 09:10:00', 'USUARIO', 'A', '20391114441'),
 
   (8, '900012', 'Fito', 'Herrera', 'M', '1999-01-01', 'Argentina',
    'fito.escenicas@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-18 09:15:00', 'USUARIO', 'A', '20401115552'),
 
   (9, '900091', 'Sofía', 'García', 'F', '1989-10-10', 'Argentina',
    'sofia.teatro@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-18 09:20:00', 'USUARIO', 'A', '27341116663'),
 
   (10, NULL, 'Roberto', 'Sánchez', 'M', '1975-08-19', 'Argentina',
    'roberto.cultura@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-20 10:00:00', 'USUARIO', 'A', '20241117775'),
 
   (11, '900011', 'Cesar', 'H', 'M', '1999-04-18', 'Argentina',
    'cesar.carpinchos@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-22 09:00:00', 'USUARIO', 'A', '20401118884'),
 
   (12, '900011', 'Leandro', 'M', 'M', '1999-09-05', 'Argentina',
    'leandro.carpinchos@email.com',
-   '$2b$12$C6UzMDM.H6dfI/f/IKcEe.72Yw4z9jH6V6U6Z6mY3G5m1fN8KQz2.',
+   '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
    '2026-06-22 09:05:00', 'USUARIO', 'A', '20411119997');
 
 -- -----------------------------------------------------

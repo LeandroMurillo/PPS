@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
+import { env } from '../../config/env.js';
 import {
 	listarActividadesArcaRepository,
 	obtenerUsuarioPorEmailRepository,
@@ -22,6 +25,14 @@ export function hashPassword(password: string): string {
 }
 
 export function verifyPassword(password: string, storedHash: string): boolean {
+	if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
+		try {
+			return bcrypt.compareSync(password, storedHash);
+		} catch {
+			return false;
+		}
+	}
+
 	if (storedHash.includes(':')) {
 		const [salt, hash] = storedHash.split(':');
 		if (salt && hash) {
@@ -32,12 +43,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 				return false;
 			}
 		}
-	}
-
-	// Sorteo para contraseñas fixture bcrypt ficticias de datos.sql ($2b$12$...)
-	if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
-		// En datos de prueba, permitir claves estándar de pruebas o comparación directa
-		return password.length >= 6;
 	}
 
 	return password === storedHash;
@@ -113,7 +118,11 @@ export async function loginService(input: LoginBody): Promise<LoginResponse> {
 		throw new Error('CREDENTIALS_INVALID');
 	}
 
-	if (user.estado === 'I') {
+	if (user.estado === 'P') {
+		throw new Error('ACCOUNT_PENDING');
+	}
+
+	if (user.estado !== 'A') {
 		throw new Error('ACCOUNT_INACTIVE');
 	}
 
@@ -126,8 +135,20 @@ export async function loginService(input: LoginBody): Promise<LoginResponse> {
 	const { contraseña: unusedContraseña, ...usuarioSinContraseña } = user;
 	void unusedContraseña;
 
+	const token = jwt.sign(
+		{
+			idUsuario: user.idUsuario,
+			email: user.email,
+			rol: user.rol,
+			estado: user.estado,
+		},
+		env.JWT_SECRET,
+		{ expiresIn: '24h' },
+	);
+
 	return {
 		usuario: usuarioSinContraseña,
+		token,
 		mensaje: 'Inicio de sesión exitoso.',
 	};
 }

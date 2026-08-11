@@ -18,6 +18,8 @@ const envSchema = z.object({
 	DB_NAME: z.string().trim().min(1).default('cultura'),
 
 	DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(50).default(10),
+
+	JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
 });
 
 const result = envSchema.safeParse(process.env);

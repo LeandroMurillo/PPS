@@ -75,6 +75,16 @@ export const loginController: RequestHandler = async (request, response, next) =
 				return;
 			}
 
+			if (error.message === 'ACCOUNT_PENDING') {
+				response.status(401).json({
+					error: {
+						code: 'ACCOUNT_PENDING',
+						message: 'Su cuenta se encuentra pendiente de activación. Por favor, revise su correo electrónico.',
+					},
+				});
+				return;
+			}
+
 			if (error.message === 'ACCOUNT_INACTIVE') {
 				response.status(401).json({
 					error: {

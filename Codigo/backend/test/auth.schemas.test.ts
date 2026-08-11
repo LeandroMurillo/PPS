@@ -69,6 +69,13 @@ describe('validación del registro y login de usuario', () => {
 		expect(verifyPassword('claveErronea', hash)).toBe(false);
 	});
 
+	it('verifica correctamente hashes bcrypt reales y rechaza contraseñas incorrectas de cualquier longitud', () => {
+		const bcryptHash = '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa';
+		expect(verifyPassword('clave123', bcryptHash)).toBe(true);
+		expect(verifyPassword('123456', bcryptHash)).toBe(false);
+		expect(verifyPassword('otraClave99', bcryptHash)).toBe(false);
+	});
+
 	it('rechaza contraseñas con menos de 6 caracteres o sin letras y números en registro', () => {
 		const result1 = registrarUsuarioBodySchema.safeParse({
 			...validPayload,

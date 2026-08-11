@@ -50,6 +50,7 @@ export type LoginPayload = {
 
 export type LoginResponse = {
 	usuario: UsuarioSession;
+	token: string;
 	mensaje: string;
 };
 

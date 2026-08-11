@@ -181,6 +181,7 @@ export type LoginBody = z.infer<typeof loginBodySchema>;
 
 export const loginResponseSchema = z.object({
 	usuario: usuarioRegistradoSchema,
+	token: z.string(),
 	mensaje: z.string(),
 });
 
