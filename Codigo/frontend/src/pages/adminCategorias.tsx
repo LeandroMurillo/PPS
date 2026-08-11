@@ -17,6 +17,7 @@ export default function AdminCategoriasPage() {
 								columnVisibilityModel: {
 									nombre: false,
 									icono: false,
+									subcategorias: false,
 								},
 							},
 						},

@@ -1,15 +1,6 @@
 import { DataSourceCache, type DataSource } from '@toolpad/core/Crud';
-import {
-	Chip,
-	FormControl,
-	FormHelperText,
-	FormLabel,
-	ToggleButton,
-	ToggleButtonGroup,
-	Tooltip,
-} from '@mui/material';
+import { FormControl, FormHelperText, FormLabel, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import { createElement } from 'react';
-import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
 import CategoryIcon, {
@@ -18,6 +9,7 @@ import CategoryIcon, {
 	isCategoriaIcono,
 	type CategoriaIcono,
 } from '../components/categoryIcon';
+import SubcategoriasManager from '../components/subcategoriasManager';
 import {
 	crearCategoriaAdmin,
 	editarCategoriaAdmin,
@@ -60,10 +52,7 @@ function renderIconoField({
 	const selectedIcon = isCategoriaIcono(value) ? value : 'Category';
 
 	return (
-		<FormControl
-			error={!!error}
-			sx={{ flexShrink: 0, width: { xs: '100%', sm: 'calc(200% + 16px)' } }}
-		>
+		<FormControl error={!!error} sx={{ flexShrink: 0, width: { xs: '100%', sm: 'calc(200% + 16px)' } }}>
 			<FormLabel sx={{ mb: 1 }}>Icono</FormLabel>
 			<ToggleButtonGroup
 				exclusive
@@ -91,11 +80,7 @@ function renderIconoField({
 
 					return (
 						<Tooltip key={option.value} title={option.label}>
-							<ToggleButton
-								value={option.value}
-								aria-label={option.label}
-								sx={{ minHeight: 56, p: 1 }}
-							>
+							<ToggleButton value={option.value} aria-label={option.label} sx={{ minHeight: 56, p: 1 }}>
 								<Icon />
 							</ToggleButton>
 						</Tooltip>
@@ -141,31 +126,9 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 			})),
 			minWidth: 180,
 			renderFormField: renderIconoField,
-			renderCell: (params) =>
-				createElement(CategoryIcon, { icono: params.value as CategoriaIcono }),
+			renderCell: (params) => createElement(CategoryIcon, { icono: params.value as CategoriaIcono }),
 			valueFormatter: (value) =>
 				CATEGORY_ICON_OPTIONS.find((opt) => opt.value === value)?.label ?? String(value ?? ''),
-		},
-		{
-			field: 'cantidadSubcategorias',
-			headerName: 'Subcategorías',
-			type: 'number',
-			editable: false,
-			width: 170,
-			renderCell: (params) => {
-				const row = params.row as CategoriaDataModel;
-				return (
-					<Link to={`/categorias/${row.id}/subcategorias`} style={{ textDecoration: 'none' }}>
-						<Chip
-							label={`${row.cantidadSubcategorias} subcategoría${row.cantidadSubcategorias === 1 ? '' : 's'}`}
-							size="small"
-							color="primary"
-							variant="outlined"
-							clickable
-						/>
-					</Link>
-				);
-			},
 		},
 		{
 			field: 'cantidadActores',
@@ -174,11 +137,21 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 			editable: false,
 			width: 120,
 		},
+		{
+			field: 'subcategorias',
+			editable: false,
+			filterable: false,
+			sortable: false,
+			valueFormatter: (_value, row) => {
+				const categoryId = (row as CategoriaDataModel)?.id;
+				if (!categoryId) return null;
+				return <SubcategoriasManager categoryId={categoryId} />;
+			},
+		},
 	],
 	getMany: async ({ paginationModel, filterModel, sortModel }) => {
 		const nameFilter = filterModel.items.find(
-			(item) =>
-				(item.field === 'nombre' || item.field === 'categoria') && typeof item.value === 'string',
+			(item) => (item.field === 'nombre' || item.field === 'categoria') && typeof item.value === 'string',
 		);
 		const stateFilter = filterModel.items.find(
 			(item) => item.field === 'estado' && (item.value === 'A' || item.value === 'I'),
@@ -222,10 +195,9 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 			.trim()
 			.min(1, 'El nombre es obligatorio.')
 			.max(45, 'El nombre puede tener hasta 45 caracteres.'),
-		icono: z.enum(
-			CATEGORY_ICON_OPTIONS.map((option) => option.value) as [CategoriaIcono, ...CategoriaIcono[]],
-			{ error: 'Seleccioná un icono válido.' },
-		),
+		icono: z.enum(CATEGORY_ICON_OPTIONS.map((option) => option.value) as [CategoriaIcono, ...CategoriaIcono[]], {
+			error: 'Seleccioná un icono válido.',
+		}),
 		estado: z.enum(['A', 'I'], { error: 'Seleccioná un estado válido.' }),
 	})['~standard'].validate,
 };
