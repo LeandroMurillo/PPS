@@ -9,6 +9,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import InfoIcon from '@mui/icons-material/Info';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
 import type { Navigation } from '@toolpad/core/AppProvider';
 
 const NAVIGATION: Navigation = [
@@ -24,6 +25,11 @@ const NAVIGATION: Navigation = [
 		title: 'Actores',
 		segment: 'actores',
 		icon: <PeopleIcon />,
+	},
+	{
+		title: 'Registrarse',
+		segment: 'registro',
+		icon: <HowToRegIcon />,
 	},
 	{
 		kind: 'header',

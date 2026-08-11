@@ -2,6 +2,7 @@ import { OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
 
 import { registerAdminOpenApi } from '../modules/admin/admin.openapi.js';
 import { registerActoresOpenApi } from '../modules/actores/actores.openapi.js';
+import { registerAuthOpenApi } from '../modules/auth/auth.openapi.js';
 
 import { openApiRegistry } from './registry.js';
 
@@ -16,6 +17,7 @@ import { openApiRegistry } from './registry.js';
  */
 registerActoresOpenApi();
 registerAdminOpenApi();
+registerAuthOpenApi();
 
 const generator = new OpenApiGeneratorV31(openApiRegistry.definitions, {
 	sortComponents: 'alphabetically',

@@ -3280,4 +3280,96 @@ BEGIN
         pf.orden ASC;
 END //
 
+-- -----------------------------------------------------
+-- sp_publico_registrar_usuario
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
+    IN pNombre VARCHAR(45),
+    IN pApellido VARCHAR(45),
+    IN pGenero CHAR(1),
+    IN pFechaNacimiento DATE,
+    IN pNacionalidad VARCHAR(45),
+    IN pEmail VARCHAR(99),
+    IN pContrasena VARCHAR(255),
+    IN pCUIL VARCHAR(11),
+    IN pActividadesArcaCodigo CHAR(6)
+)
+MODIFIES SQL DATA
+COMMENT 'Registra un nuevo usuario en la plataforma en estado Pendiente (P) con rol USUARIO.'
+BEGIN
+    DECLARE vEmailExistente INT DEFAULT 0;
+    DECLARE vCUILExistente INT DEFAULT 0;
+    DECLARE vNuevoId INT DEFAULT 0;
+
+    SET pEmail = LOWER(TRIM(pEmail));
+    SET pNombre = TRIM(pNombre);
+    SET pApellido = TRIM(pApellido);
+    SET pNacionalidad = TRIM(pNacionalidad);
+    SET pCUIL = TRIM(pCUIL);
+    SET pActividadesArcaCodigo = NULLIF(TRIM(pActividadesArcaCodigo), '');
+
+    SELECT COUNT(*) INTO vEmailExistente
+    FROM `Usuarios`
+    WHERE `email` = pEmail;
+
+    IF vEmailExistente > 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El correo electrónico ya se encuentra registrado.';
+    END IF;
+
+    SELECT COUNT(*) INTO vCUILExistente
+    FROM `Usuarios`
+    WHERE `CUIL` = pCUIL;
+
+    IF vCUILExistente > 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El CUIL ya se encuentra registrado.';
+    END IF;
+
+    INSERT INTO `Usuarios` (
+        `nombre`,
+        `apellido`,
+        `genero`,
+        `fechaNacimiento`,
+        `nacionalidad`,
+        `email`,
+        `contraseña`,
+        `CUIL`,
+        `actividadesArcaCodigo`,
+        `rol`,
+        `estado`
+    ) VALUES (
+        pNombre,
+        pApellido,
+        pGenero,
+        pFechaNacimiento,
+        pNacionalidad,
+        pEmail,
+        pContrasena,
+        pCUIL,
+        pActividadesArcaCodigo,
+        'USUARIO',
+        'P'
+    );
+
+    SET vNuevoId = LAST_INSERT_ID();
+
+    SELECT
+        u.idUsuario,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.genero,
+        u.fechaNacimiento,
+        u.nacionalidad,
+        u.CUIL,
+        u.actividadesArcaCodigo,
+        u.rol,
+        u.estado,
+        u.fechaRegistro
+    FROM `Usuarios` u
+    WHERE u.idUsuario = vNuevoId;
+END //
+
 DELIMITER ;
+
