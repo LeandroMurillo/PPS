@@ -33,7 +33,6 @@ import {
 import AdminFilters from './adminFilters';
 import AdminTable, { type AdminColumn } from './adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { PageContainer } from '@toolpad/core/PageContainer';
 
 const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
 const stateColors = { A: 'success', I: 'default' } as const;
@@ -41,11 +40,16 @@ const pageSize = 25;
 
 interface SubcategoriasManagerProps {
 	categoryId: number;
+	categoryName?: string;
 	contained?: boolean;
 	showTitle?: boolean;
 }
 
-export default function SubcategoriasManager({ categoryId, showTitle = true }: SubcategoriasManagerProps) {
+export default function SubcategoriasManager({
+	categoryId,
+	categoryName,
+	showTitle = true,
+}: SubcategoriasManagerProps) {
 	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [state, setState] = React.useState('');
@@ -180,17 +184,12 @@ export default function SubcategoriasManager({ categoryId, showTitle = true }: S
 	};
 
 	const columns: AdminColumn<SubcategoriaAdmin, SubcategoriaAdminSortBy>[] = [
-		{ id: 'id', label: 'ID', sortBy: 'idSubcategoria', align: 'right', render: (row) => row.id },
 		{
 			id: 'nombre',
 			label: 'Subcategoría',
 			sortBy: 'nombre',
 			minWidth: 200,
-			render: (row) => (
-				<Typography variant="body2" fontWeight={600}>
-					{row.nombre}
-				</Typography>
-			),
+			render: (row) => <Typography>{row.nombre}</Typography>,
 		},
 		{
 			id: 'estado',
@@ -236,13 +235,13 @@ export default function SubcategoriasManager({ categoryId, showTitle = true }: S
 	];
 
 	return (
-		<PageContainer title="Administrar subcategorías" maxWidth={false}>
-			<Stack spacing={2.5}>
+		<>
+			<Stack spacing={2.5} sx={{ width: '100%' }}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} flexWrap="wrap">
 					<Stack direction="row" alignItems="center" spacing={1.5}>
 						{showTitle && (
 							<Typography variant="h6" fontWeight={600}>
-								Subcategorías
+								{categoryName ? `Subcategorías de ${categoryName}` : 'Subcategorías'}
 							</Typography>
 						)}
 						<Chip label={`${total}`} size="small" color="primary" variant="outlined" />
@@ -372,6 +371,6 @@ export default function SubcategoriasManager({ categoryId, showTitle = true }: S
 					</Button>
 				</DialogActions>
 			</Dialog>
-		</PageContainer>
+		</>
 	);
 }

@@ -57,7 +57,6 @@ function optionalPositiveInteger(value: string): number | undefined {
 }
 
 const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
-	{ id: 'id', label: 'ID', sortBy: 'idActor', align: 'right', render: (row) => row.id },
 	{
 		id: 'nombre',
 		label: 'Actor cultural',
@@ -102,7 +101,7 @@ export default function AdminActoresPage() {
 	const [categoryId, setCategoryId] = React.useState('');
 	const [department, setDepartment] = React.useState('');
 	const [actorType, setActorType] = React.useState('');
-	const [state, setState] = React.useState('');
+	const [state, setState] = React.useState('A');
 	const [categories, setCategories] = React.useState<CategoriaAdmin[]>([]);
 	const [page, setPage] = React.useState(0);
 	const [sortBy, setSortBy] = React.useState<ActorAdminSortBy>('idActor');
@@ -251,7 +250,7 @@ export default function AdminActoresPage() {
 						setCategoryId('');
 						setDepartment('');
 						setActorType('');
-						setState('');
+						setState('A');
 						setSelectedActorIds([]);
 						setPage(0);
 					}}

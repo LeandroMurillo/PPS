@@ -693,7 +693,7 @@ CREATE OR REPLACE PROCEDURE `sp_admin_listar_categorias`(
     IN pEstado CHAR(1) DEFAULT NULL,
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0,
-    IN pSortBy VARCHAR(50) DEFAULT 'idCategoria',
+    IN pSortBy VARCHAR(50) DEFAULT 'estado',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
 )
 READS SQL DATA
@@ -701,7 +701,7 @@ COMMENT 'Lista categorías para administración con búsqueda, filtro de estado,
 BEGIN
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
-    DECLARE vSortBy VARCHAR(50) DEFAULT 'idCategoria';
+    DECLARE vSortBy VARCHAR(50) DEFAULT 'estado';
     DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
 
     SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
@@ -709,7 +709,7 @@ BEGIN
     SET vSortBy = CASE
         WHEN pSortBy IN ('idCategoria', 'nombre', 'icono', 'estado', 'cantidadSubcategorias', 'cantidadActores')
             THEN pSortBy
-        ELSE 'idCategoria'
+        ELSE 'estado'
     END;
     SET vSortDir = CASE
         WHEN UPPER(COALESCE(pSortDir, 'ASC')) = 'DESC' THEN 'DESC'
@@ -737,18 +737,19 @@ BEGIN
         AND (pEstado IS NULL OR TRIM(pEstado) = '' OR c.estado = TRIM(pEstado))
     GROUP BY c.idCategoria, c.nombre, c.icono, c.estado
     ORDER BY
+        CASE WHEN vSortBy = 'estado' AND vSortDir = 'ASC' THEN c.estado END ASC,
+        CASE WHEN vSortBy = 'estado' AND vSortDir = 'DESC' THEN c.estado END DESC,
         CASE WHEN vSortBy = 'idCategoria' AND vSortDir = 'ASC' THEN c.idCategoria END ASC,
         CASE WHEN vSortBy = 'idCategoria' AND vSortDir = 'DESC' THEN c.idCategoria END DESC,
         CASE WHEN vSortBy = 'nombre' AND vSortDir = 'ASC' THEN c.nombre END ASC,
         CASE WHEN vSortBy = 'nombre' AND vSortDir = 'DESC' THEN c.nombre END DESC,
         CASE WHEN vSortBy = 'icono' AND vSortDir = 'ASC' THEN c.icono END ASC,
         CASE WHEN vSortBy = 'icono' AND vSortDir = 'DESC' THEN c.icono END DESC,
-        CASE WHEN vSortBy = 'estado' AND vSortDir = 'ASC' THEN c.estado END ASC,
-        CASE WHEN vSortBy = 'estado' AND vSortDir = 'DESC' THEN c.estado END DESC,
         CASE WHEN vSortBy = 'cantidadSubcategorias' AND vSortDir = 'ASC' THEN COUNT(DISTINCT s.idSubcategoria) END ASC,
         CASE WHEN vSortBy = 'cantidadSubcategorias' AND vSortDir = 'DESC' THEN COUNT(DISTINCT s.idSubcategoria) END DESC,
         CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'ASC' THEN COUNT(DISTINCT a.idActor) END ASC,
         CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'DESC' THEN COUNT(DISTINCT a.idActor) END DESC,
+        c.estado ASC,
         c.idCategoria ASC
     LIMIT vLimit OFFSET vOffset;
 END //

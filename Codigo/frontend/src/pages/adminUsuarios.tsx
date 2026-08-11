@@ -32,7 +32,6 @@ function formatDateTime(value: string) {
 }
 
 const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
-	{ id: 'id', label: 'ID', sortBy: 'idUsuario', align: 'right', render: (row) => row.id },
 	{
 		id: 'persona',
 		label: 'Usuario',
@@ -93,7 +92,7 @@ export default function AdminUsuariosPage() {
 	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [role, setRole] = React.useState('');
-	const [state, setState] = React.useState('');
+	const [state, setState] = React.useState('A');
 	const [page, setPage] = React.useState(0);
 	const [pageSize, setPageSize] = React.useState(25);
 	const [sortBy, setSortBy] = React.useState<UsuarioAdminSortBy>('idUsuario');
@@ -156,7 +155,7 @@ export default function AdminUsuariosPage() {
 					onClear={() => {
 						setSearch('');
 						setRole('');
-						setState('');
+						setState('A');
 						setPage(0);
 					}}
 				>

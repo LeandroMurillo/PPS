@@ -53,7 +53,7 @@ export default function AdminCategoriasPage() {
 	const [search, setSearch] = React.useState('');
 	const [state, setState] = React.useState('');
 	const [page, setPage] = React.useState(0);
-	const [sortBy, setSortBy] = React.useState<CategoriaAdminSortBy>('idCategoria');
+	const [sortBy, setSortBy] = React.useState<CategoriaAdminSortBy>('estado');
 	const [sortDir, setSortDir] = React.useState<SortDirection>('ASC');
 
 	const [categorias, setCategorias] = React.useState<CategoriaAdmin[]>([]);
@@ -217,7 +217,6 @@ export default function AdminCategoriasPage() {
 	};
 
 	const columns: AdminColumn<CategoriaAdmin, CategoriaAdminSortBy>[] = [
-		{ id: 'id', label: 'ID', sortBy: 'idCategoria', align: 'right', render: (row) => row.id },
 		{
 			id: 'categoria',
 			label: 'Categoría',
@@ -276,12 +275,12 @@ export default function AdminCategoriasPage() {
 	];
 
 	return (
-		<PageContainer title="Administrar categorías" maxWidth={false}>
+		<PageContainer title="" maxWidth={false}>
 			<Stack spacing={2.5}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} flexWrap="wrap">
 					<Stack direction="row" alignItems="center" spacing={1.5}>
 						<Typography variant="h6" fontWeight={600}>
-							Categorías
+							Administrar categorías
 						</Typography>
 						<Chip label={`${total}`} size="small" color="primary" variant="outlined" />
 					</Stack>

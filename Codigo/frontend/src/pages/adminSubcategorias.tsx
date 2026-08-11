@@ -51,6 +51,8 @@ export default function AdminSubcategoriasPage() {
 				{ title: categoryName },
 				{ title: 'Subcategorías' },
 			]}
+			maxWidth={false}
+			sx={{ width: '100%', maxWidth: 'none' }}
 		>
 			{loading ? (
 				<Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
@@ -59,9 +61,7 @@ export default function AdminSubcategoriasPage() {
 			) : error ? (
 				<Alert severity="error">{error}</Alert>
 			) : categoria ? (
-				<Box sx={{ width: '100%', maxWidth: 1120 }}>
-					<SubcategoriasManager categoryId={categoria.id} contained showTitle={false} />
-				</Box>
+				<SubcategoriasManager categoryId={categoria.id} categoryName={categoria.nombre} showTitle={true} />
 			) : null}
 		</PageContainer>
 	);

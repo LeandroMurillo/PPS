@@ -96,7 +96,6 @@ type CategoriaAdminDataSource = DataSource<CategoriaDataModel> &
 
 export const categoriasAdminDataSource: CategoriaAdminDataSource = {
 	fields: [
-		{ field: 'id', headerName: 'ID', width: 90 },
 		{
 			field: 'categoria',
 			headerName: 'Categoría',

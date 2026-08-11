@@ -28,7 +28,6 @@ const formatDateTime = (value: unknown) =>
 
 export const usuarioAdminDataSource: DataSource<UsuarioDetalleDataModel> = {
 	fields: [
-		{ field: 'id', headerName: 'ID' },
 		{ field: 'nombre', headerName: 'Nombre' },
 		{ field: 'apellido', headerName: 'Apellido' },
 		{ field: 'email', headerName: 'Email' },

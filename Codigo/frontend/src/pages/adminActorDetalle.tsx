@@ -1,6 +1,5 @@
 import * as React from 'react';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -61,11 +60,12 @@ function SurveyAnswerValue({ answer }: { answer: SurveyAnswer }) {
 			return (
 				<Stack spacing={0.25}>
 					{options.map((option) => {
-						const control = isSingleChoice || isBoolean ? (
-							<Radio checked={selectedValues.includes(option)} disabled size="small" />
-						) : (
-							<Checkbox checked={selectedValues.includes(option)} disabled size="small" />
-						);
+						const control =
+							isSingleChoice || isBoolean ? (
+								<Radio checked={selectedValues.includes(option)} disabled size="small" />
+							) : (
+								<Checkbox checked={selectedValues.includes(option)} disabled size="small" />
+							);
 
 						return (
 							<FormControlLabel
@@ -116,7 +116,12 @@ function Section({
 }) {
 	return (
 		<Paper component="section" variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, height: '100%' }}>
-			<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: description ? 2.75 : 2 }}>
+			<Stack
+				direction="row"
+				alignItems="center"
+				justifyContent="space-between"
+				sx={{ mb: description ? 2.75 : 2 }}
+			>
 				<Box sx={{ minWidth: 0 }}>
 					<Typography component="h2" variant="h6" fontWeight={700}>
 						{title}
@@ -452,9 +457,9 @@ function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
 						</Box>
 					))}
 					{answers.length === 0 && (
-							<Typography variant="body2" color="text.secondary">
-								Este formulario no tiene preguntas activas.
-							</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Este formulario no tiene preguntas activas.
+						</Typography>
 					)}
 				</Stack>
 			</Section>
@@ -558,15 +563,6 @@ export default function AdminActorDetallePage() {
 													variant="outlined"
 												/>
 											)}
-											<Stack
-												direction="row"
-												spacing={0.5}
-												alignItems="center"
-												sx={{ color: 'text.secondary' }}
-											>
-												<CalendarTodayOutlinedIcon sx={{ fontSize: 15 }} />
-												<Typography variant="caption">Actor #{actor.id}</Typography>
-											</Stack>
 										</Stack>
 									</Box>
 								</Stack>
