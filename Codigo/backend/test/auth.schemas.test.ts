@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { openApiDocument } from '../src/openapi/document.js';
-import { registrarUsuarioBodySchema } from '../src/modules/auth/auth.schemas.js';
+import { loginBodySchema, registrarUsuarioBodySchema } from '../src/modules/auth/auth.schemas.js';
+import { hashPassword, verifyPassword } from '../src/modules/auth/auth.service.js';
 
-describe('validación del registro de usuario', () => {
+describe('validación del registro y login de usuario', () => {
 	const validPayload = {
 		nombre: '  María  ',
 		apellido: '  González  ',
@@ -13,10 +14,11 @@ describe('validación del registro de usuario', () => {
 		contraseña: 'miPasswordSegura123',
 		CUIL: '27359998881',
 		actividadesArcaCodigo: '900012',
-		documentoIdentidad: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+		documentoIdentidad:
+			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
 	};
 
-	it('acepta y normaliza un payload válido', () => {
+	it('acepta y normaliza un payload válido de registro', () => {
 		const parsed = registrarUsuarioBodySchema.parse(validPayload);
 		expect(parsed).toEqual({
 			nombre: 'María',
@@ -46,7 +48,28 @@ describe('validación del registro de usuario', () => {
 		expect(parsedEmpty.actividadesArcaCodigo).toBeNull();
 	});
 
-	it('rechaza contraseñas con menos de 6 caracteres', () => {
+	it('valida el esquema de inicio de sesión (login)', () => {
+		const parsed = loginBodySchema.parse({
+			email: '  USUARIO@EXAMPLE.COM  ',
+			contraseña: 'miPasswordSegura123',
+		});
+		expect(parsed).toEqual({
+			email: 'usuario@example.com',
+			contraseña: 'miPasswordSegura123',
+		});
+
+		expect(loginBodySchema.safeParse({ email: 'invalido', contraseña: '123' }).success).toBe(false);
+	});
+
+	it('genera y verifica hashes de contraseña con scrypt', () => {
+		const pass = 'miClaveSecreta123';
+		const hash = hashPassword(pass);
+		expect(hash.length).toBeGreaterThanOrEqual(60);
+		expect(verifyPassword(pass, hash)).toBe(true);
+		expect(verifyPassword('claveErronea', hash)).toBe(false);
+	});
+
+	it('rechaza contraseñas con menos de 6 caracteres en registro', () => {
 		const result = registrarUsuarioBodySchema.safeParse({
 			...validPayload,
 			contraseña: '12345',
@@ -103,5 +126,6 @@ describe('validación del registro de usuario', () => {
 	it('genera el documento OpenAPI sin errores', () => {
 		expect(openApiDocument).toBeDefined();
 		expect(openApiDocument.paths?.['/api/publico/auth/registro']).toBeDefined();
+		expect(openApiDocument.paths?.['/api/publico/auth/login']).toBeDefined();
 	});
 });

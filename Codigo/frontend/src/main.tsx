@@ -15,6 +15,7 @@ import AdminUsuariosPage from './pages/adminUsuarios';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminCategoriasPage from './pages/adminCategorias';
 import RegistroPage from './pages/registro';
+import LoginPage from './pages/login';
 
 const router = createBrowserRouter([
 	{
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
 					{
 						path: 'actores',
 						Component: Actores,
+					},
+					{
+						path: 'login',
+						Component: LoginPage,
 					},
 					{
 						path: 'registro',

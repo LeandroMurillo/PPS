@@ -3371,5 +3371,33 @@ BEGIN
     WHERE u.idUsuario = vNuevoId;
 END //
 
+-- -----------------------------------------------------
+-- sp_publico_obtener_usuario_por_email
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_publico_obtener_usuario_por_email`(
+    IN pEmail VARCHAR(99)
+)
+READS SQL DATA
+COMMENT 'Obtiene los datos de un usuario por su dirección de correo electrónico para la autenticación.'
+BEGIN
+    SELECT
+        u.idUsuario,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.contraseña,
+        u.genero,
+        u.fechaNacimiento,
+        u.nacionalidad,
+        u.CUIL,
+        u.actividadesArcaCodigo,
+        u.rol,
+        u.estado,
+        u.fechaRegistro
+    FROM `Usuarios` u
+    WHERE u.email = LOWER(TRIM(pEmail));
+END //
+
 DELIMITER ;
+
 

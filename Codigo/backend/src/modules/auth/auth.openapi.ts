@@ -1,6 +1,11 @@
 import { internalErrorResponseSchema, validationErrorResponseSchema } from '../../openapi/common.schemas.js';
 import { openApiRegistry } from '../../openapi/registry.js';
-import { registrarUsuarioBodySchema, registroUsuarioResponseSchema } from './auth.schemas.js';
+import {
+	loginBodySchema,
+	loginResponseSchema,
+	registrarUsuarioBodySchema,
+	registroUsuarioResponseSchema,
+} from './auth.schemas.js';
 
 export function registerAuthOpenApi(): void {
 	openApiRegistry.registerPath({
@@ -63,4 +68,66 @@ export function registerAuthOpenApi(): void {
 			},
 		},
 	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+
+		path: '/api/publico/auth/login',
+
+		tags: ['Autenticación y Registro'],
+
+		summary: 'Iniciar sesión de usuario',
+
+		description:
+			'Verifica las credenciales de un usuario (correo electrónico y contraseña) y retorna la información de perfil.',
+
+		request: {
+			body: {
+				content: {
+					'application/json': {
+						schema: loginBodySchema,
+					},
+				},
+			},
+		},
+
+		responses: {
+			200: {
+				description: 'Inicio de sesión exitoso.',
+				content: {
+					'application/json': {
+						schema: loginResponseSchema,
+					},
+				},
+			},
+
+			400: {
+				description: 'Formato de datos de inicio de sesión no válido.',
+				content: {
+					'application/json': {
+						schema: validationErrorResponseSchema,
+					},
+				},
+			},
+
+			401: {
+				description: 'Credenciales incorrectas o cuenta inactiva.',
+				content: {
+					'application/json': {
+						schema: validationErrorResponseSchema,
+					},
+				},
+			},
+
+			500: {
+				description: 'Error interno al iniciar sesión.',
+				content: {
+					'application/json': {
+						schema: internalErrorResponseSchema,
+					},
+				},
+			},
+		},
+	});
 }
+

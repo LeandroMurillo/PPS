@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Outlet } from 'react-router';
+import { Outlet, useNavigate } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
@@ -10,88 +10,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
+import LoginIcon from '@mui/icons-material/Login';
 import type { Navigation } from '@toolpad/core/AppProvider';
-
-const NAVIGATION: Navigation = [
-	{
-		kind: 'header',
-		title: 'Público',
-	},
-	{
-		title: 'Mapa',
-		icon: <MapIcon />,
-	},
-	{
-		title: 'Actores',
-		segment: 'actores',
-		icon: <PeopleIcon />,
-	},
-	{
-		title: 'Registrarse',
-		segment: 'registro',
-		icon: <HowToRegIcon />,
-	},
-	{
-		kind: 'header',
-		title: 'Usuario',
-	},
-	{
-		title: 'Mis actores',
-		segment: 'actoresUsuario',
-		icon: <PeopleIcon />,
-	},
-	{
-		title: 'Convocatorias',
-		segment: 'convocatoriasUsuario',
-		icon: <AnnouncementIcon />,
-	},
-	{
-		kind: 'header',
-		title: 'Admin',
-	},
-	{
-		title: 'Confirmaciones',
-		segment: 'confirmaciones',
-		icon: <ChecklistIcon />,
-	},
-	{
-		title: 'Actores',
-		segment: 'actoresAdmin',
-		icon: <PeopleIcon />,
-		pattern: 'actoresAdmin{/:actorId}*',
-	},
-	{
-		title: 'Usuarios',
-		segment: 'usuarios',
-		icon: <GroupIcon />,
-		pattern: 'usuarios{/:usuarioId}*',
-	},
-	{
-		title: 'Convocatorias',
-		segment: 'convocatoriasAdmin',
-		icon: <AddCommentIcon />,
-	},
-	{
-		title: 'Categorías',
-		segment: 'categorias',
-		icon: <CategoryIcon />,
-		pattern: 'categorias{/:categoriaId}*',
-	},
-	{
-		kind: 'divider',
-	},
-	{
-		title: 'Acerca de',
-		segment: 'acerca',
-		icon: <InfoIcon />,
-	},
-	// {
-	// 	segment: 'employees',
-	// 	title: 'Employees',
-	// 	icon: <PersonIcon />,
-	// 	pattern: 'employees{/:employeeId}*',
-	// },
-];
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 const BRANDING = {
 	title: 'Mosaico Cultural',
@@ -117,10 +38,140 @@ const LOCALE_TEXT = {
 	deletedItemMessage: 'Este elemento fue dado de baja.',
 };
 
-export default function App() {
+function AppContent() {
+	const navigate = useNavigate();
+	const { session, logout, user } = useAuth();
+
+	const navigation: Navigation = React.useMemo(() => {
+		const nav: Navigation = [
+			{
+				kind: 'header',
+				title: 'Público',
+			},
+			{
+				title: 'Mapa',
+				icon: <MapIcon />,
+			},
+			{
+				title: 'Actores',
+				segment: 'actores',
+				icon: <PeopleIcon />,
+			},
+		];
+
+		if (!user) {
+			nav.push(
+				{
+					title: 'Iniciar sesión',
+					segment: 'login',
+					icon: <LoginIcon />,
+				},
+				{
+					title: 'Registrarse',
+					segment: 'registro',
+					icon: <HowToRegIcon />,
+				},
+			);
+		} else {
+			nav.push(
+				{
+					kind: 'header',
+					title: 'Usuario',
+				},
+				{
+					title: 'Mis actores',
+					segment: 'actoresUsuario',
+					icon: <PeopleIcon />,
+				},
+				{
+					title: 'Convocatorias',
+					segment: 'convocatoriasUsuario',
+					icon: <AnnouncementIcon />,
+				},
+			);
+
+			if (user.rol === 'ADMIN' || user.rol === 'MODERADOR') {
+				nav.push(
+					{
+						kind: 'header',
+						title: 'Admin',
+					},
+					{
+						title: 'Confirmaciones',
+						segment: 'confirmaciones',
+						icon: <ChecklistIcon />,
+					},
+					{
+						title: 'Actores',
+						segment: 'actoresAdmin',
+						icon: <PeopleIcon />,
+						pattern: 'actoresAdmin{/:actorId}*',
+					},
+					{
+						title: 'Usuarios',
+						segment: 'usuarios',
+						icon: <GroupIcon />,
+						pattern: 'usuarios{/:usuarioId}*',
+					},
+					{
+						title: 'Convocatorias',
+						segment: 'convocatoriasAdmin',
+						icon: <AddCommentIcon />,
+					},
+					{
+						title: 'Categorías',
+						segment: 'categorias',
+						icon: <CategoryIcon />,
+						pattern: 'categorias{/:categoriaId}*',
+					},
+				);
+			}
+		}
+
+		nav.push(
+			{
+				kind: 'divider',
+			},
+			{
+				title: 'Acerca de',
+				segment: 'acerca',
+				icon: <InfoIcon />,
+			},
+		);
+
+		return nav;
+	}, [user]);
+
+	const authentication = React.useMemo(
+		() => ({
+			signIn: () => {
+				navigate('/login');
+			},
+			signOut: () => {
+				logout();
+				navigate('/login');
+			},
+		}),
+		[logout, navigate],
+	);
+
 	return (
-		<ReactRouterAppProvider navigation={NAVIGATION} branding={BRANDING} localeText={LOCALE_TEXT}>
+		<ReactRouterAppProvider
+			navigation={navigation}
+			branding={BRANDING}
+			localeText={LOCALE_TEXT}
+			session={session}
+			authentication={authentication}
+		>
 			<Outlet />
 		</ReactRouterAppProvider>
+	);
+}
+
+export default function App() {
+	return (
+		<AuthProvider>
+			<AppContent />
+		</AuthProvider>
 	);
 }

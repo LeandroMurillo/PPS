@@ -124,3 +124,28 @@ export const registroUsuarioResponseSchema = z.object({
 });
 
 export type RegistroUsuarioResponse = z.infer<typeof registroUsuarioResponseSchema>;
+
+export const loginBodySchema = z.object({
+	email: z
+		.string()
+		.transform((val) => val.trim().toLowerCase())
+		.pipe(
+			z
+				.string()
+				.email('El correo electrónico no tiene un formato válido')
+				.max(99, 'El correo electrónico debe tener como máximo 99 caracteres'),
+		),
+	contraseña: z
+		.string()
+		.min(1, 'La contraseña es obligatoria'),
+});
+
+export type LoginBody = z.infer<typeof loginBodySchema>;
+
+export const loginResponseSchema = z.object({
+	usuario: usuarioRegistradoSchema,
+	mensaje: z.string(),
+});
+
+export type LoginResponse = z.infer<typeof loginResponseSchema>;
+

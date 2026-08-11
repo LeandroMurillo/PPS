@@ -83,3 +83,20 @@ export async function registrarUsuarioRepository(
 
 	return usuarioRegistradoSchema.parse(firstRow);
 }
+
+const usuarioAuthDBRowSchema = usuarioDBRowSchema.extend({
+	contraseña: z.string(),
+});
+
+export type UsuarioAuthDBRow = z.infer<typeof usuarioAuthDBRowSchema>;
+
+export async function obtenerUsuarioPorEmailRepository(email: string): Promise<UsuarioAuthDBRow | null> {
+	const procedureName = 'sp_publico_obtener_usuario_por_email';
+
+	const result: unknown = await pool.query('CALL sp_publico_obtener_usuario_por_email(?)', [email]);
+
+	const rows = z.array(usuarioAuthDBRowSchema).parse(getResultSet(result, 0, procedureName));
+
+	return rows[0] ?? null;
+}
+
