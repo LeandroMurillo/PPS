@@ -169,10 +169,10 @@ export default function RegistroPage() {
 
 		if (!formData.contraseña) {
 			errors.contraseña = 'La contraseña es obligatoria';
-		} else if (formData.contraseña.length < 8) {
-			errors.contraseña = 'Mínimo 8 caracteres';
-		} else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.contraseña)) {
-			errors.contraseña = 'Debe incluir al menos una letra mayúscula, una minúscula y un número';
+		} else if (formData.contraseña.length < 6) {
+			errors.contraseña = 'Mínimo 6 caracteres';
+		} else if (!/^(?=.*[a-zA-Z])(?=.*\d)/.test(formData.contraseña)) {
+			errors.contraseña = 'Debe incluir al menos una letra y un número';
 		}
 
 		if (formData.confirmarContraseña !== formData.contraseña) {
@@ -349,7 +349,7 @@ export default function RegistroPage() {
 									value={formData.contraseña}
 									onChange={handleChange('contraseña')}
 									error={!!formErrors.contraseña}
-									helperText={formErrors.contraseña || 'Mínimo 8 caracteres (mayúscula, minúscula y número)'}
+									helperText={formErrors.contraseña || 'Mínimo 6 caracteres (debe contener letras y números)'}
 								/>
 							</Grid>
 
