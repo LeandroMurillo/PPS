@@ -27,6 +27,7 @@ import { Link as RouterLink, useNavigate, useParams } from 'react-router';
 import 'leaflet/dist/leaflet.css';
 
 import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
+import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
 
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
@@ -469,17 +470,17 @@ function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
 
 export default function AdminActorDetallePage() {
 	const navigate = useNavigate();
-	const { actorId = '' } = useParams();
+	const { actorSlug = '' } = useParams<{ actorSlug: string }>();
 	const [activeTab, setActiveTab] = React.useState(0);
 	const [actor, setActor] = React.useState<ActorDetalleAdmin | null>(null);
 	const [loading, setLoading] = React.useState(true);
 	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
-		const id = Number(actorId);
+		const id = parseIdDesdeSlug(actorSlug);
 		const controller = new AbortController();
 
-		if (!Number.isInteger(id) || id <= 0) {
+		if (!id) {
 			setError('El identificador del actor no es válido.');
 			setLoading(false);
 			return () => controller.abort();
@@ -488,7 +489,13 @@ export default function AdminActorDetallePage() {
 		setLoading(true);
 		setError(null);
 		void obtenerActorAdmin(id, controller.signal)
-			.then((result) => setActor(result.data))
+			.then((result) => {
+				setActor(result.data);
+				const canonicalSlug = buildSlugConId(result.data.id, result.data.nombre);
+				if (actorSlug !== canonicalSlug) {
+					navigate(`/actoresAdmin/${canonicalSlug}`, { replace: true });
+				}
+			})
 			.catch((requestError: unknown) => {
 				if (!controller.signal.aborted) {
 					setError(requestError instanceof Error ? requestError.message : 'No se pudo cargar el actor.');
@@ -499,7 +506,7 @@ export default function AdminActorDetallePage() {
 			});
 
 		return () => controller.abort();
-	}, [actorId]);
+	}, [actorSlug, navigate]);
 
 	return (
 		<Box sx={{ p: { xs: 2, sm: 3 } }}>

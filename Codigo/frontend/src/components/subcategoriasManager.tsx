@@ -33,6 +33,7 @@ import {
 import AdminFilters from './adminFilters';
 import AdminTable, { type AdminColumn } from './adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { buildSlugSinId } from '../utils/slug';
 
 const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
 const stateColors = { A: 'success', I: 'default' } as const;
@@ -41,6 +42,7 @@ const pageSize = 25;
 interface SubcategoriasManagerProps {
 	categoryId: number;
 	categoryName?: string;
+	categorySlug?: string;
 	contained?: boolean;
 	showTitle?: boolean;
 }
@@ -48,6 +50,7 @@ interface SubcategoriasManagerProps {
 export default function SubcategoriasManager({
 	categoryId,
 	categoryName,
+	categorySlug,
 	showTitle = true,
 }: SubcategoriasManagerProps) {
 	const navigate = useNavigate();
@@ -214,7 +217,11 @@ export default function SubcategoriasManager({
 						<IconButton
 							size="small"
 							color="primary"
-							onClick={() => navigate(`/categorias/${categoryId}/subcategorias/${row.id}/formulario`)}
+							onClick={() =>
+								navigate(
+									`/categorias/${categorySlug ?? buildSlugSinId(categoryName || '', categoryId)}/subcategorias/${buildSlugSinId(row.nombre, row.id)}/formulario`,
+								)
+							}
 						>
 							<AssignmentIcon fontSize="small" />
 						</IconButton>

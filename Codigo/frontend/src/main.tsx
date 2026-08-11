@@ -104,7 +104,7 @@ const router = createBrowserRouter([
 						),
 					},
 					{
-						path: 'actoresAdmin/:actorId',
+						path: 'actoresAdmin/:actorSlug',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
 								<AdminActorDetallePage />
@@ -152,7 +152,7 @@ const router = createBrowserRouter([
 						),
 					},
 					{
-						path: 'categorias/:categoriaId/formulario',
+						path: 'categorias/:categoriaSlug/formulario',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
 								<AdminCategoriaFormularioPage />
@@ -160,7 +160,7 @@ const router = createBrowserRouter([
 						),
 					},
 					{
-						path: 'categorias/:categoriaId/subcategorias/:subcategoriaId/formulario',
+						path: 'categorias/:categoriaSlug/subcategorias/:subcategoriaSlug/formulario',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
 								<AdminCategoriaFormularioPage />
@@ -168,7 +168,7 @@ const router = createBrowserRouter([
 						),
 					},
 					{
-						path: 'categorias/:categoriaId',
+						path: 'categorias/:categoriaSlug',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
 								<AdminCategoriaDetallePage />
@@ -176,7 +176,7 @@ const router = createBrowserRouter([
 						),
 					},
 					{
-						path: 'categorias/:categoriaId/subcategorias',
+						path: 'categorias/:categoriaSlug/subcategorias',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
 								<AdminSubcategoriasPage />
@@ -196,7 +196,7 @@ const router = createBrowserRouter([
 						Component: AcercaDe,
 					},
 					{
-						path: '/actores/:id',
+						path: '/actores/:actorSlug',
 						element: <ActorPortfolio />,
 					},
 				],

@@ -1,7 +1,7 @@
 import { Navigate, useParams } from 'react-router-dom';
 
 export default function AdminCategoriaDetallePage() {
-	const { categoriaId } = useParams<{ categoriaId: string }>();
+	const { categoriaSlug } = useParams<{ categoriaSlug: string }>();
 
-	return <Navigate to={categoriaId ? `/categorias/${categoriaId}/subcategorias` : '/categorias'} replace />;
+	return <Navigate to={categoriaSlug ? `/categorias/${categoriaSlug}/subcategorias` : '/categorias'} replace />;
 }

@@ -3,13 +3,15 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { PageContainer } from '@toolpad/core/PageContainer';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
-import { obtenerCategoriaAdmin, type CategoriaAdmin } from '../api/admin';
+import { listarCategoriasAdmin, obtenerCategoriaAdmin, type CategoriaAdmin } from '../api/admin';
 import SubcategoriasManager from '../components/subcategoriasManager';
+import { buildSlugSinId, parseIdDesdeSlug, slugify } from '../utils/slug';
 
 export default function AdminSubcategoriasPage() {
-	const { categoriaId } = useParams<{ categoriaId: string }>();
+	const navigate = useNavigate();
+	const { categoriaSlug = '' } = useParams<{ categoriaSlug: string }>();
 	const [categoria, setCategoria] = React.useState<CategoriaAdmin | null>(null);
 	const [loading, setLoading] = React.useState(true);
 	const [error, setError] = React.useState<string | null>(null);
@@ -18,15 +20,50 @@ export default function AdminSubcategoriasPage() {
 		const controller = new AbortController();
 
 		async function load() {
-			if (!categoriaId) {
+			if (!categoriaSlug) {
 				setError('No se encontró la categoría solicitada.');
 				setLoading(false);
 				return;
 			}
 
+			setLoading(true);
+			setError(null);
+
 			try {
-				const response = await obtenerCategoriaAdmin(categoriaId, controller.signal);
-				setCategoria(response.data);
+				let resolvedCat: CategoriaAdmin | null = null;
+				const directId = parseIdDesdeSlug(categoriaSlug);
+
+				if (directId) {
+					try {
+						const res = await obtenerCategoriaAdmin(directId, controller.signal);
+						resolvedCat = res.data;
+					} catch {
+						// Ignorar si falla la resolución por ID directo y buscar en el listado
+					}
+				}
+
+				if (!resolvedCat) {
+					const listRes = await listarCategoriasAdmin(
+						{ limit: 100, offset: 0, sortBy: 'nombre', sortDir: 'ASC' },
+						controller.signal,
+					);
+					resolvedCat =
+						listRes.data.find(
+							(cat) =>
+								buildSlugSinId(cat.nombre, cat.id) === categoriaSlug ||
+								slugify(cat.nombre) === categoriaSlug,
+						) ?? null;
+				}
+
+				if (!resolvedCat) {
+					setError('No se encontró la categoría solicitada.');
+				} else {
+					setCategoria(resolvedCat);
+					const canonicalSlug = buildSlugSinId(resolvedCat.nombre, resolvedCat.id);
+					if (categoriaSlug !== canonicalSlug) {
+						navigate(`/categorias/${canonicalSlug}/subcategorias`, { replace: true });
+					}
+				}
 			} catch (loadError) {
 				if (!controller.signal.aborted) {
 					setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la categoría.');
@@ -38,13 +75,13 @@ export default function AdminSubcategoriasPage() {
 
 		void load();
 		return () => controller.abort();
-	}, [categoriaId]);
+	}, [categoriaSlug, navigate]);
 
 	const categoryName = categoria?.nombre ?? 'Categoría';
 
 	return (
 		<PageContainer
-			title={``}
+			title=""
 			breadcrumbs={[
 				{ title: 'Mapa', path: '/' },
 				{ title: 'Categorías', path: '/categorias' },
@@ -61,7 +98,12 @@ export default function AdminSubcategoriasPage() {
 			) : error ? (
 				<Alert severity="error">{error}</Alert>
 			) : categoria ? (
-				<SubcategoriasManager categoryId={categoria.id} categoryName={categoria.nombre} showTitle={true} />
+				<SubcategoriasManager
+					categoryId={categoria.id}
+					categoryName={categoria.nombre}
+					categorySlug={categoriaSlug}
+					showTitle={true}
+				/>
 			) : null}
 		</PageContainer>
 	);

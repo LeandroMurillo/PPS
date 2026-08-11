@@ -107,7 +107,7 @@ function AppContent() {
 						title: 'Actores',
 						segment: 'actoresAdmin',
 						icon: <PeopleIcon />,
-						pattern: 'actoresAdmin{/:actorId}*',
+						pattern: 'actoresAdmin{/:actorSlug}*',
 					},
 					{
 						title: 'Usuarios',
@@ -124,7 +124,7 @@ function AppContent() {
 						title: 'Categorías',
 						segment: 'categorias',
 						icon: <CategoryIcon />,
-						pattern: 'categorias{/:categoriaId}*',
+						pattern: 'categorias{/:categoriaSlug}*',
 					},
 				);
 			}

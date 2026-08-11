@@ -41,6 +41,7 @@ import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { CATEGORY_ICON_OPTIONS, categoryIcons, isCategoriaIcono } from '../components/categoryIcon';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { buildSlugSinId } from '../utils/slug';
 
 const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
 const stateColors = { A: 'success', I: 'default' } as const;
@@ -254,7 +255,7 @@ export default function AdminCategoriasPage() {
 						<IconButton
 							size="small"
 							color="primary"
-							onClick={() => navigate(`/categorias/${row.id}/formulario`)}
+							onClick={() => navigate(`/categorias/${buildSlugSinId(row.nombre, row.id)}/formulario`)}
 						>
 							<AssignmentIcon fontSize="small" />
 						</IconButton>
@@ -338,7 +339,7 @@ export default function AdminCategoriasPage() {
 						setSortBy(field);
 						setSortDir(dir);
 					}}
-					onRowClick={(row) => navigate(`/categorias/${row.id}/subcategorias`)}
+					onRowClick={(row) => navigate(`/categorias/${buildSlugSinId(row.nombre, row.id)}/subcategorias`)}
 				/>
 			</Stack>
 

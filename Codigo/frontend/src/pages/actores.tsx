@@ -31,6 +31,7 @@ import {
 import CategoryIcon from '../components/categoryIcon';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { Button } from '@mui/material';
+import { buildSlugConId } from '../utils/slug';
 
 export default function ListaActoresPublica() {
 	const [actores, setActores] = useState<ActorResumen[]>([]);
@@ -245,7 +246,7 @@ function ActorCard({ actor }: { actor: ActorResumen }) {
 		>
 			<CardActionArea
 				component={Link}
-				to={`/actores/${actor.id}`}
+				to={`/actores/${buildSlugConId(actor.id, actor.nombre)}`}
 				sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
 			>
 				{actor.foto ? (

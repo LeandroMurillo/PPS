@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, Link as RouterLink } from 'react-router';
+import { useParams, useSearchParams, useNavigate, Link as RouterLink } from 'react-router';
 import {
 	Box,
 	Typography,
@@ -26,6 +26,7 @@ import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import { obtenerActor, type ActorDetalle } from '../api/actores';
+import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
 
 type TipoEnlace = 'youtube' | 'instagram' | 'facebook' | 'whatsapp' | 'otro';
 
@@ -150,7 +151,8 @@ function iconoParaEnlace(tipo: TipoEnlace) {
 }
 
 export default function ActorPortfolio() {
-	const { id } = useParams<{ id: string }>();
+	const navigate = useNavigate();
+	const { actorSlug = '' } = useParams<{ actorSlug: string }>();
 	const [searchParams] = useSearchParams();
 	const volverA = searchParams.get('from') || '/actores';
 
@@ -161,10 +163,10 @@ export default function ActorPortfolio() {
 
 	useEffect(() => {
 		const controller = new AbortController();
-		const actorId = Number(id);
+		const actorId = parseIdDesdeSlug(actorSlug);
 
 		async function loadActor() {
-			if (!Number.isInteger(actorId) || actorId <= 0) {
+			if (!actorId) {
 				setError('El identificador del actor no es válido.');
 				setCargando(false);
 				return;
@@ -178,6 +180,12 @@ export default function ActorPortfolio() {
 
 				setActor(result.data);
 				setCurrentImageIndex(0);
+
+				const canonicalSlug = buildSlugConId(result.data.id, result.data.nombre);
+				if (actorSlug !== canonicalSlug) {
+					const searchStr = volverA && volverA !== '/actores' ? `?from=${encodeURIComponent(volverA)}` : '';
+					navigate(`/actores/${canonicalSlug}${searchStr}`, { replace: true });
+				}
 			} catch (error) {
 				if (!(error instanceof DOMException && error.name === 'AbortError')) {
 					setError(error instanceof Error ? error.message : 'No se pudo cargar el portafolio.');
@@ -192,7 +200,7 @@ export default function ActorPortfolio() {
 		loadActor();
 
 		return () => controller.abort();
-	}, [id]);
+	}, [actorSlug, navigate, volverA]);
 
 	const imagenes = React.useMemo(() => {
 		if (!actor) {

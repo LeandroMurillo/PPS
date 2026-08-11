@@ -30,6 +30,7 @@ import {
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { buildSlugConId } from '../utils/slug';
 
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
@@ -378,7 +379,7 @@ export default function AdminActoresPage() {
 						setSortDir(direction);
 						setPage(0);
 					}}
-					onRowClick={(row) => navigate(`/actoresAdmin/${row.id}`)}
+					onRowClick={(row) => navigate(`/actoresAdmin/${buildSlugConId(row.id, row.nombre)}`)}
 				/>
 			</Stack>
 

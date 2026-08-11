@@ -44,7 +44,9 @@ import {
 	desactivarPreguntaFormularioAdmin,
 	guardarFormularioCategoriaAdmin,
 	guardarFormularioSubcategoriaAdmin,
+	listarCategoriasAdmin,
 	listarPreguntasAdmin,
+	listarSubcategoriasAdmin,
 	obtenerCategoriaAdmin,
 	obtenerFormularioCategoriaAdmin,
 	obtenerFormularioSubcategoriaAdmin,
@@ -56,6 +58,7 @@ import {
 	type SubcategoriaAdmin,
 	type TipoPreguntaAdmin,
 } from '../api/admin';
+import { buildSlugSinId, parseIdDesdeSlug, slugify } from '../utils/slug';
 
 const questionTypeLabels: Record<TipoPreguntaAdmin, string> = {
 	TEXTO: 'Texto',
@@ -72,12 +75,11 @@ const questionTypeLabels: Record<TipoPreguntaAdmin, string> = {
 const questionTypes = Object.keys(questionTypeLabels) as TipoPreguntaAdmin[];
 
 export default function AdminCategoriaFormularioPage() {
-	const { categoriaId, subcategoriaId } = useParams<{
-		categoriaId: string;
-		subcategoriaId?: string;
+	const { categoriaSlug = '', subcategoriaSlug = '' } = useParams<{
+		categoriaSlug: string;
+		subcategoriaSlug?: string;
 	}>();
 	const navigate = useNavigate();
-	const isSubcategory = Boolean(subcategoriaId);
 	const [categoria, setCategoria] = React.useState<CategoriaAdmin | null>(null);
 	const [subcategoria, setSubcategoria] = React.useState<SubcategoriaAdmin | null>(null);
 	const [formulario, setFormulario] = React.useState<FormularioAdmin | null>(null);
@@ -108,33 +110,106 @@ export default function AdminCategoriaFormularioPage() {
 		const controller = new AbortController();
 
 		async function load() {
-			if (!categoriaId || (isSubcategory && !subcategoriaId)) {
+			if (!categoriaSlug) {
 				setError('La ruta del formulario no es válida.');
 				setLoading(false);
 				return;
 			}
 
+			setLoading(true);
+			setError(null);
+
 			try {
-				const categoryResponse = await obtenerCategoriaAdmin(categoriaId, controller.signal);
-				setCategoria(categoryResponse.data);
+				let resolvedCat: CategoriaAdmin | null = null;
+				const directCatId = parseIdDesdeSlug(categoriaSlug);
+				if (directCatId) {
+					try {
+						const res = await obtenerCategoriaAdmin(directCatId, controller.signal);
+						resolvedCat = res.data;
+					} catch {
+						// Ignorar error si no encuentra por ID directo
+					}
+				}
+				if (!resolvedCat) {
+					const listRes = await listarCategoriasAdmin(
+						{ limit: 100, offset: 0, sortBy: 'nombre', sortDir: 'ASC' },
+						controller.signal,
+					);
+					resolvedCat =
+						listRes.data.find(
+							(cat) =>
+								buildSlugSinId(cat.nombre, cat.id) === categoriaSlug ||
+								slugify(cat.nombre) === categoriaSlug,
+						) ?? null;
+				}
+
+				if (!resolvedCat) {
+					setError('No se encontró la categoría solicitada.');
+					setLoading(false);
+					return;
+				}
+				setCategoria(resolvedCat);
+
+				let resolvedSub: SubcategoriaAdmin | null = null;
+				if (subcategoriaSlug) {
+					const directSubId = parseIdDesdeSlug(subcategoriaSlug);
+					if (directSubId) {
+						try {
+							const subRes = await obtenerSubcategoriaAdmin(resolvedCat.id, directSubId, controller.signal);
+							resolvedSub = subRes.data;
+						} catch {
+							// Ignorar error
+						}
+					}
+					if (!resolvedSub) {
+						const listSubs = await listarSubcategoriasAdmin(
+							resolvedCat.id,
+							{ limit: 100, offset: 0, sortBy: 'nombre', sortDir: 'ASC' },
+							controller.signal,
+						);
+						resolvedSub =
+							listSubs.data.find(
+								(sub) =>
+									buildSlugSinId(sub.nombre, sub.id) === subcategoriaSlug ||
+									slugify(sub.nombre) === subcategoriaSlug,
+							) ?? null;
+					}
+
+					if (!resolvedSub) {
+						setError('No se encontró la subcategoría solicitada.');
+						setLoading(false);
+						return;
+					}
+					setSubcategoria(resolvedSub);
+				}
 
 				let formResponse: { data: FormularioAdmin | null };
-				let loadedScopeName = categoryResponse.data.nombre;
-				if (subcategoriaId) {
-					const [subcategoryResponse, scopedFormResponse] = await Promise.all([
-						obtenerSubcategoriaAdmin(categoriaId, subcategoriaId, controller.signal),
-						obtenerFormularioSubcategoriaAdmin(categoriaId, subcategoriaId, controller.signal),
-					]);
-					setSubcategoria(subcategoryResponse.data);
-					loadedScopeName = subcategoryResponse.data.nombre;
-					formResponse = scopedFormResponse;
+				const loadedScopeName = resolvedSub ? resolvedSub.nombre : resolvedCat.nombre;
+
+				if (resolvedSub) {
+					formResponse = await obtenerFormularioSubcategoriaAdmin(
+						resolvedCat.id,
+						resolvedSub.id,
+						controller.signal,
+					);
 				} else {
-					formResponse = await obtenerFormularioCategoriaAdmin(categoriaId, controller.signal);
+					formResponse = await obtenerFormularioCategoriaAdmin(resolvedCat.id, controller.signal);
 				}
 
 				setFormulario(formResponse.data);
 				setTitulo(formResponse.data?.titulo ?? `Formulario de ${loadedScopeName}`);
 				setDescripcion(formResponse.data?.descripcion ?? '');
+
+				// Auto-corrección de URL
+				const catCanonical = buildSlugSinId(resolvedCat.nombre, resolvedCat.id);
+				if (resolvedSub) {
+					const subCanonical = buildSlugSinId(resolvedSub.nombre, resolvedSub.id);
+					if (categoriaSlug !== catCanonical || subcategoriaSlug !== subCanonical) {
+						navigate(`/categorias/${catCanonical}/subcategorias/${subCanonical}/formulario`, { replace: true });
+					}
+				} else if (categoriaSlug !== catCanonical) {
+					navigate(`/categorias/${catCanonical}/formulario`, { replace: true });
+				}
 			} catch (loadError) {
 				if (!controller.signal.aborted) {
 					setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar el formulario.');
@@ -146,10 +221,12 @@ export default function AdminCategoriaFormularioPage() {
 
 		void load();
 		return () => controller.abort();
-	}, [categoriaId, isSubcategory, subcategoriaId]);
+	}, [categoriaSlug, subcategoriaSlug, navigate]);
 
 	const scopeName = subcategoria?.nombre ?? categoria?.nombre ?? 'Formulario';
-	const backPath = categoriaId ? `/categorias/${categoriaId}/subcategorias` : '/categorias';
+	const backPath = categoria
+		? `/categorias/${buildSlugSinId(categoria.nombre, categoria.id)}/subcategorias`
+		: '/categorias';
 	const questions =
 		formulario?.preguntas.filter((question) =>
 			questionTab === 'activas' ? question.estado === 'A' : question.estado === 'I',
@@ -166,7 +243,7 @@ export default function AdminCategoriaFormularioPage() {
 	);
 
 	async function handleSave() {
-		if (!categoriaId || !titulo.trim()) return;
+		if (!categoria || !titulo.trim()) return;
 
 		setSaving(true);
 		setError(null);
@@ -174,9 +251,9 @@ export default function AdminCategoriaFormularioPage() {
 
 		try {
 			const data = { titulo: titulo.trim(), descripcion: descripcion.trim() || null };
-			const response = subcategoriaId
-				? await guardarFormularioSubcategoriaAdmin(categoriaId, subcategoriaId, data, Boolean(formulario))
-				: await guardarFormularioCategoriaAdmin(categoriaId, data, Boolean(formulario));
+			const response = subcategoria
+				? await guardarFormularioSubcategoriaAdmin(categoria.id, subcategoria.id, data, Boolean(formulario))
+				: await guardarFormularioCategoriaAdmin(categoria.id, data, Boolean(formulario));
 			setFormulario(response.data);
 			setTitulo(response.data.titulo);
 			setDescripcion(response.data.descripcion ?? '');
