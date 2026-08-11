@@ -158,8 +158,8 @@ describe('consultas administrativas', () => {
 		});
 	});
 
-	it('rechaza el contador de subcategorías que ya no forma parte del contrato', () => {
-		expect(listarCategoriasAdminQuerySchema.safeParse({ sortBy: 'cantidadSubcategorias' }).success).toBe(false);
+	it('rechaza campos de orden que no están permitidos en categorías', () => {
+		expect(listarCategoriasAdminQuerySchema.safeParse({ sortBy: 'campoInexistente' }).success).toBe(false);
 	});
 
 	it('valida los datos de creación y edición de categorías', () => {

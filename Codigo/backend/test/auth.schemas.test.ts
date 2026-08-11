@@ -69,7 +69,7 @@ describe('validación del registro y login de usuario', () => {
 		expect(verifyPassword('claveErronea', hash)).toBe(false);
 	});
 
-	it('rechaza contraseñas con menos de 8 caracteres o sin complejidad en registro', () => {
+	it('rechaza contraseñas con menos de 6 caracteres o sin letras y números en registro', () => {
 		const result1 = registrarUsuarioBodySchema.safeParse({
 			...validPayload,
 			contraseña: '12345',
@@ -78,9 +78,21 @@ describe('validación del registro y login de usuario', () => {
 
 		const result2 = registrarUsuarioBodySchema.safeParse({
 			...validPayload,
-			contraseña: 'sololetrasminusc',
+			contraseña: 'sololetras',
 		});
 		expect(result2.success).toBe(false);
+
+		const result3 = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			contraseña: '123456',
+		});
+		expect(result3.success).toBe(false);
+
+		const resultValid = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			contraseña: 'clave1',
+		});
+		expect(resultValid.success).toBe(true);
 	});
 
 	it('rechaza correos electrónicos inválidos', () => {

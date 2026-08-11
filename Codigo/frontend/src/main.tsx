@@ -1,6 +1,11 @@
+import './utils/fixLeaflet';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, useRouteError } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import App from './app';
 import Layout from './layouts/dashboard';
 import Mapa from './pages/mapa';
@@ -18,9 +23,29 @@ import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import RegistroPage from './pages/registro';
 import LoginPage from './pages/login';
 
+function RootErrorBoundary() {
+	const error = useRouteError();
+	const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado al cargar la página.';
+
+	return (
+		<Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, textAlign: 'center' }}>
+			<Typography variant="h5" color="error" fontWeight="bold">
+				¡Ups! Ocurrió un error inesperado
+			</Typography>
+			<Alert severity="error" sx={{ maxWidth: 600 }}>
+				{errorMessage}
+			</Alert>
+			<Button variant="contained" onClick={() => (window.location.href = '/')}>
+				Volver al inicio
+			</Button>
+		</Box>
+	);
+}
+
 const router = createBrowserRouter([
 	{
 		Component: App,
+		ErrorBoundary: RootErrorBoundary,
 		children: [
 			{
 				path: '/',

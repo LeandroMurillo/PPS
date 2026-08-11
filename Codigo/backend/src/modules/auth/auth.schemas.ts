@@ -94,10 +94,10 @@ export const registrarUsuarioBodySchema = z.object({
 
 	contraseña: z
 		.string()
-		.min(8, 'La contraseña debe tener una longitud mínima de 8 caracteres')
+		.min(6, 'La contraseña debe tener una longitud mínima de 6 caracteres')
 		.regex(
-			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-			'La contraseña debe incluir al menos una letra mayúscula, una letra minúscula y un número',
+			/^(?=.*[a-zA-Z])(?=.*\d)/,
+			'La contraseña debe incluir al menos una letra y un número',
 		),
 
 	CUIL: z
