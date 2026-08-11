@@ -118,7 +118,7 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 			editable: false,
 			sortable: true,
 			renderCell: (params) => renderCategoriaCell(params.row as CategoriaDataModel),
-			valueFormatter: (_value, row) => renderCategoriaCell(row as CategoriaDataModel),
+			valueFormatter: (_value, row) => (row as CategoriaDataModel)?.nombre ?? String(_value ?? ''),
 		},
 		{ field: 'nombre', headerName: 'Nombre', minWidth: 240, flex: 1 },
 		{
@@ -143,7 +143,8 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 			renderFormField: renderIconoField,
 			renderCell: (params) =>
 				createElement(CategoryIcon, { icono: params.value as CategoriaIcono }),
-			valueFormatter: (value) => createElement(CategoryIcon, { icono: value as CategoriaIcono }),
+			valueFormatter: (value) =>
+				CATEGORY_ICON_OPTIONS.find((opt) => opt.value === value)?.label ?? String(value ?? ''),
 		},
 		{
 			field: 'cantidadSubcategorias',

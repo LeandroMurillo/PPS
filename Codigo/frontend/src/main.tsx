@@ -1,3 +1,4 @@
+import './utils/fixLeaflet';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, useRouteError } from 'react-router-dom';
