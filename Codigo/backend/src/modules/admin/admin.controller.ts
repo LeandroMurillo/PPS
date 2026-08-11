@@ -7,9 +7,13 @@ import {
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
+	guardarSubcategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarCategoriasAdminQuerySchema,
+	listarSubcategoriasAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
+	subcategoriaAdminCategoriaParamSchema,
+	subcategoriaAdminParamsSchema,
 	usuarioAdminParamsSchema,
 } from './admin.schemas.js';
 import {
@@ -17,13 +21,18 @@ import {
 	cambiarEstadoActoresAdminService,
 	cambiarEstadoUsuarioAdminService,
 	crearCategoriaAdminService,
+	crearSubcategoriaAdminService,
 	editarCategoriaAdminService,
+	editarSubcategoriaAdminService,
 	eliminarCategoriaAdminService,
+	eliminarSubcategoriaAdminService,
 	listarActoresAdminService,
 	listarCategoriasAdminService,
+	listarSubcategoriasAdminService,
 	listarUsuariosAdminService,
 	obtenerActorAdminService,
 	obtenerCategoriaAdminService,
+	obtenerSubcategoriaAdminService,
 	obtenerUsuarioAdminService,
 } from './admin.service.js';
 
@@ -86,6 +95,33 @@ function categoryNameConflict(response: Parameters<RequestHandler>[1]) {
 		error: {
 			code: 'CATEGORY_NAME_CONFLICT',
 			message: 'Ya existe una categoría con ese nombre.',
+		},
+	});
+}
+
+function subcategoryNotFound(response: Parameters<RequestHandler>[1]) {
+	response.status(404).json({
+		error: {
+			code: 'SUBCATEGORY_NOT_FOUND',
+			message: 'No se encontró la subcategoría solicitada',
+		},
+	});
+}
+
+function isSubcategoryNameConflict(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		(error.message.includes('ER_DUP_ENTRY') ||
+			error.message.includes('uq_idCategoria_nombre') ||
+			error.message.includes('Ya existe una subcategoría con ese nombre'))
+	);
+}
+
+function subcategoryNameConflict(response: Parameters<RequestHandler>[1]) {
+	response.status(409).json({
+		error: {
+			code: 'SUBCATEGORY_NAME_CONFLICT',
+			message: 'Ya existe una subcategoría con ese nombre para esta categoría.',
 		},
 	});
 }
@@ -326,4 +362,130 @@ export const eliminarCategoriaAdminController: RequestHandler = async (request, 
 	}
 
 	response.status(200).json(await eliminarCategoriaAdminService(params.data.id));
+};
+
+export const listarSubcategoriasAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminCategoriaParamSchema.safeParse(request.params);
+	const query = listarSubcategoriasAdminQuerySchema.safeParse(request.query);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!query.success) {
+		response.status(400).json(validationError(query.error.issues));
+		return;
+	}
+
+	if (!(await obtenerCategoriaAdminService(params.data.idCategoria))) {
+		categoryNotFound(response);
+		return;
+	}
+
+	response.status(200).json(await listarSubcategoriasAdminService(params.data.idCategoria, query.data));
+};
+
+export const obtenerSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminParamsSchema.safeParse(request.params);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+
+	const result = await obtenerSubcategoriaAdminService(params.data.idCategoria, params.data.id);
+
+	if (!result) {
+		subcategoryNotFound(response);
+		return;
+	}
+
+	response.status(200).json(result);
+};
+
+export const crearSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminCategoriaParamSchema.safeParse(request.params);
+	const body = guardarSubcategoriaAdminBodySchema.safeParse(request.body);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	if (!(await obtenerCategoriaAdminService(params.data.idCategoria))) {
+		categoryNotFound(response);
+		return;
+	}
+
+	try {
+		response
+			.status(201)
+			.json(await crearSubcategoriaAdminService(params.data.idCategoria, body.data.nombre, body.data.estado));
+	} catch (error) {
+		if (isSubcategoryNameConflict(error)) {
+			subcategoryNameConflict(response);
+			return;
+		}
+		throw error;
+	}
+};
+
+export const editarSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminParamsSchema.safeParse(request.params);
+	const body = guardarSubcategoriaAdminBodySchema.safeParse(request.body);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	if (!(await obtenerSubcategoriaAdminService(params.data.idCategoria, params.data.id))) {
+		subcategoryNotFound(response);
+		return;
+	}
+
+	try {
+		response
+			.status(200)
+			.json(
+				await editarSubcategoriaAdminService(
+					params.data.idCategoria,
+					params.data.id,
+					body.data.nombre,
+					body.data.estado,
+				),
+			);
+	} catch (error) {
+		if (isSubcategoryNameConflict(error)) {
+			subcategoryNameConflict(response);
+			return;
+		}
+		throw error;
+	}
+};
+
+export const eliminarSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminParamsSchema.safeParse(request.params);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+
+	if (!(await obtenerSubcategoriaAdminService(params.data.idCategoria, params.data.id))) {
+		subcategoryNotFound(response);
+		return;
+	}
+
+	response
+		.status(200)
+		.json(await eliminarSubcategoriaAdminService(params.data.idCategoria, params.data.id));
 };

@@ -133,15 +133,23 @@ VALUES
 
 -- -----------------------------------------------------
 -- 4. Subcategorías
--- Cada categoría puede tener como máximo una subcategoría.
+-- Subcategorías por categoría.
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Subcategorias`
   (`idCategoria`, `idSubcategoria`, `nombre`, `estado`)
 VALUES
   (1, 1, 'Música popular', 'A'),
+  (1, 2, 'Música académica', 'A'),
+  (1, 3, 'Folklore y tradición', 'A'),
   (2, 1, 'Artesanía tradicional', 'A'),
+  (2, 2, 'Cerámica y modelado', 'A'),
+  (2, 3, 'Textil y telar', 'A'),
   (3, 1, 'Artes escénicas', 'A'),
-  (4, 1, 'Producción audiovisual', 'A');
+  (3, 2, 'Dramaturgia y dirección', 'A'),
+  (3, 3, 'Teatro independiente', 'A'),
+  (4, 1, 'Producción audiovisual', 'A'),
+  (4, 2, 'Cine y documental', 'A'),
+  (4, 3, 'Fotografía audiovisual', 'A');
 
 -- -----------------------------------------------------
 -- 5. Moderadores por categoría

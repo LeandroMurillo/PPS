@@ -4,13 +4,18 @@ import {
 	asignarModeradorAdminController,
 	cambiarEstadoUsuarioAdminController,
 	crearCategoriaAdminController,
+	crearSubcategoriaAdminController,
 	editarCategoriaAdminController,
+	editarSubcategoriaAdminController,
 	eliminarCategoriaAdminController,
+	eliminarSubcategoriaAdminController,
 	cambiarEstadoActoresAdminController,
 	listarActoresAdminController,
 	listarCategoriasAdminController,
+	listarSubcategoriasAdminController,
 	listarUsuariosAdminController,
 	obtenerCategoriaAdminController,
+	obtenerSubcategoriaAdminController,
 	obtenerActorAdminController,
 	obtenerUsuarioAdminController,
 } from './admin.controller.js';
@@ -29,3 +34,8 @@ adminRouter.get('/categorias/:id', obtenerCategoriaAdminController);
 adminRouter.post('/categorias', crearCategoriaAdminController);
 adminRouter.put('/categorias/:id', editarCategoriaAdminController);
 adminRouter.delete('/categorias/:id', eliminarCategoriaAdminController);
+adminRouter.get('/categorias/:idCategoria/subcategorias', listarSubcategoriasAdminController);
+adminRouter.post('/categorias/:idCategoria/subcategorias', crearSubcategoriaAdminController);
+adminRouter.get('/categorias/:idCategoria/subcategorias/:id', obtenerSubcategoriaAdminController);
+adminRouter.put('/categorias/:idCategoria/subcategorias/:id', editarSubcategoriaAdminController);
+adminRouter.delete('/categorias/:idCategoria/subcategorias/:id', eliminarSubcategoriaAdminController);

@@ -14,6 +14,7 @@ import AdminActorDetallePage from './pages/adminActorDetalle';
 import AdminUsuariosPage from './pages/adminUsuarios';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminCategoriasPage from './pages/adminCategorias';
+import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import RegistroPage from './pages/registro';
 import LoginPage from './pages/login';
 
@@ -73,6 +74,14 @@ const router = createBrowserRouter([
 					{
 						path: 'convocatoriasAdmin',
 						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'categorias',
+						Component: AdminCategoriasPage,
+					},
+					{
+						path: 'categorias/:categoriaId/subcategorias',
+						Component: AdminSubcategoriasPage,
 					},
 					{
 						path: 'categorias/*',

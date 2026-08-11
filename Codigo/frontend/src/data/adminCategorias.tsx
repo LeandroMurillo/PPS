@@ -1,5 +1,6 @@
 import { DataSourceCache, type DataSource } from '@toolpad/core/Crud';
 import {
+	Chip,
 	FormControl,
 	FormHelperText,
 	FormLabel,
@@ -8,6 +9,7 @@ import {
 	Tooltip,
 } from '@mui/material';
 import { createElement } from 'react';
+import { Link } from 'react-router-dom';
 import { z } from 'zod';
 
 import CategoryIcon, {
@@ -34,7 +36,7 @@ const sortableFields: Record<string, CategoriaAdminSortBy> = {
 	nombre: 'nombre',
 	icono: 'icono',
 	estado: 'estado',
-	subcategoria: 'subcategoria',
+	cantidadSubcategorias: 'cantidadSubcategorias',
 	cantidadActores: 'cantidadActores',
 };
 
@@ -144,12 +146,25 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 			valueFormatter: (value) => createElement(CategoryIcon, { icono: value as CategoriaIcono }),
 		},
 		{
-			field: 'subcategoria',
-			headerName: 'Subcategoría',
+			field: 'cantidadSubcategorias',
+			headerName: 'Subcategorías',
+			type: 'number',
 			editable: false,
-			minWidth: 220,
-			flex: 1,
-			valueFormatter: (value) => value ?? '—',
+			width: 170,
+			renderCell: (params) => {
+				const row = params.row as CategoriaDataModel;
+				return (
+					<Link to={`/categorias/${row.id}/subcategorias`} style={{ textDecoration: 'none' }}>
+						<Chip
+							label={`${row.cantidadSubcategorias} subcategoría${row.cantidadSubcategorias === 1 ? '' : 's'}`}
+							size="small"
+							color="primary"
+							variant="outlined"
+							clickable
+						/>
+					</Link>
+				);
+			},
 		},
 		{
 			field: 'cantidadActores',

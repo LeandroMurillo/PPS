@@ -112,11 +112,21 @@ export type CategoriaAdmin = {
 	nombre: string;
 	icono: CategoriaIcono;
 	estado: 'A' | 'I';
-	subcategoria: string | null;
+	cantidadSubcategorias: number;
 	cantidadActores: number;
 };
 
-export type CategoriaAdminSortBy = 'idCategoria' | 'nombre' | 'icono' | 'estado' | 'subcategoria' | 'cantidadActores';
+export type CategoriaAdminSortBy = 'idCategoria' | 'nombre' | 'icono' | 'estado' | 'cantidadSubcategorias' | 'cantidadActores';
+
+export type SubcategoriaAdmin = {
+	idCategoria: number;
+	id: number;
+	nombre: string;
+	estado: 'A' | 'I';
+	cantidadActores: number;
+};
+
+export type SubcategoriaAdminSortBy = 'idSubcategoria' | 'nombre' | 'estado' | 'cantidadActores';
 
 type PageResponse<T> = {
 	data: T[];
@@ -235,6 +245,64 @@ export async function editarCategoriaAdmin(
 
 export async function eliminarCategoriaAdmin(id: number | string) {
 	return apiRequest<{ data: CategoriaAdmin }>(`/api/admin/categorias/${id}`, {
+		method: 'DELETE',
+	});
+}
+
+export async function listarSubcategoriasAdmin(
+	idCategoria: number | string,
+	input: {
+		busqueda?: string;
+		estado?: SubcategoriaAdmin['estado'];
+		limit: number;
+		offset: number;
+		sortBy: SubcategoriaAdminSortBy;
+		sortDir: SortDirection;
+	},
+	signal?: AbortSignal,
+) {
+	const params = new URLSearchParams();
+	Object.entries(input).forEach(([key, value]) => appendOptionalParam(params, key, value));
+
+	return apiFetch<PageResponse<SubcategoriaAdmin>>(`/api/admin/categorias/${idCategoria}/subcategorias?${params.toString()}`, signal);
+}
+
+export async function obtenerSubcategoriaAdmin(
+	idCategoria: number | string,
+	id: number | string,
+	signal?: AbortSignal,
+) {
+	return apiFetch<{ data: SubcategoriaAdmin }>(`/api/admin/categorias/${idCategoria}/subcategorias/${id}`, signal);
+}
+
+export async function crearSubcategoriaAdmin(
+	idCategoria: number | string,
+	data: Pick<SubcategoriaAdmin, 'nombre' | 'estado'>,
+) {
+	return apiRequest<{ data: SubcategoriaAdmin }>(`/api/admin/categorias/${idCategoria}/subcategorias`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function editarSubcategoriaAdmin(
+	idCategoria: number | string,
+	id: number | string,
+	data: Pick<SubcategoriaAdmin, 'nombre' | 'estado'>,
+) {
+	return apiRequest<{ data: SubcategoriaAdmin }>(`/api/admin/categorias/${idCategoria}/subcategorias/${id}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function eliminarSubcategoriaAdmin(
+	idCategoria: number | string,
+	id: number | string,
+) {
+	return apiRequest<{ data: SubcategoriaAdmin }>(`/api/admin/categorias/${idCategoria}/subcategorias/${id}`, {
 		method: 'DELETE',
 	});
 }

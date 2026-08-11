@@ -99,7 +99,6 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Subcategorias` (
   `nombre` VARCHAR(100) NOT NULL,
   `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
   PRIMARY KEY (`idCategoria`, `idSubcategoria`),
-  UNIQUE INDEX `uq_Subcategorias_idCategoria` (`idCategoria` ASC) VISIBLE,
   UNIQUE INDEX `uq_idCategoria_nombre` (`idCategoria` ASC, `nombre` ASC) VISIBLE,
   INDEX `FK_Categorias_idCategoria2_idx` (`idCategoria` ASC) VISIBLE,
   CONSTRAINT `FK_Categorias_idCategoria2`

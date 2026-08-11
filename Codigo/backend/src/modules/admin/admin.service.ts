@@ -3,13 +3,18 @@ import {
 	cambiarEstadoActoresAdminRepository,
 	cambiarEstadoUsuarioAdminRepository,
 	crearCategoriaAdminRepository,
+	crearSubcategoriaAdminRepository,
 	editarCategoriaAdminRepository,
+	editarSubcategoriaAdminRepository,
 	eliminarCategoriaAdminRepository,
+	eliminarSubcategoriaAdminRepository,
 	listarActoresAdminRepository,
 	listarCategoriasAdminRepository,
+	listarSubcategoriasAdminRepository,
 	listarUsuariosAdminRepository,
 	obtenerActorAdminRepository,
 	obtenerCategoriaAdminRepository,
+	obtenerSubcategoriaAdminRepository,
 	obtenerUsuarioAdminRepository,
 } from './admin.repository.js';
 
@@ -18,11 +23,14 @@ import type {
 	ListarActoresAdminResponse,
 	ListarCategoriasAdminQuery,
 	ListarCategoriasAdminResponse,
+	ListarSubcategoriasAdminQuery,
+	ListarSubcategoriasAdminResponse,
 	ListarUsuariosAdminQuery,
 	ListarUsuariosAdminResponse,
 	ObtenerUsuarioAdminResponse,
 	ObtenerActorAdminResponse,
 	ObtenerCategoriaAdminResponse,
+	ObtenerSubcategoriaAdminResponse,
 	CambiarEstadoActoresAdminResponse,
 } from './admin.schemas.js';
 
@@ -129,4 +137,49 @@ export async function editarCategoriaAdminService(
 
 export async function eliminarCategoriaAdminService(id: number): Promise<ObtenerCategoriaAdminResponse> {
 	return { data: await eliminarCategoriaAdminRepository(id) };
+}
+
+export async function listarSubcategoriasAdminService(
+	idCategoria: number,
+	query: ListarSubcategoriasAdminQuery,
+): Promise<ListarSubcategoriasAdminResponse> {
+	const result = await listarSubcategoriasAdminRepository(idCategoria, query);
+
+	return {
+		data: result.subcategorias,
+		pagination: pagination(result.total, result.subcategorias.length, query.limit, query.offset),
+	};
+}
+
+export async function obtenerSubcategoriaAdminService(
+	idCategoria: number,
+	idSubcategoria: number,
+): Promise<ObtenerSubcategoriaAdminResponse | null> {
+	const subcategoria = await obtenerSubcategoriaAdminRepository(idCategoria, idSubcategoria);
+
+	return subcategoria ? { data: subcategoria } : null;
+}
+
+export async function crearSubcategoriaAdminService(
+	idCategoria: number,
+	nombre: string,
+	estado: 'A' | 'I',
+): Promise<ObtenerSubcategoriaAdminResponse> {
+	return { data: await crearSubcategoriaAdminRepository(idCategoria, nombre, estado) };
+}
+
+export async function editarSubcategoriaAdminService(
+	idCategoria: number,
+	idSubcategoria: number,
+	nombre: string,
+	estado: 'A' | 'I',
+): Promise<ObtenerSubcategoriaAdminResponse> {
+	return { data: await editarSubcategoriaAdminRepository(idCategoria, idSubcategoria, nombre, estado) };
+}
+
+export async function eliminarSubcategoriaAdminService(
+	idCategoria: number,
+	idSubcategoria: number,
+): Promise<ObtenerSubcategoriaAdminResponse> {
+	return { data: await eliminarSubcategoriaAdminRepository(idCategoria, idSubcategoria) };
 }

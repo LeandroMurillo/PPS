@@ -697,7 +697,7 @@ CREATE OR REPLACE PROCEDURE `sp_admin_listar_categorias`(
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
 )
 READS SQL DATA
-COMMENT 'Lista categorías para administración con búsqueda, filtro de estado, orden y paginación. Incluye icono, el nombre de su única subcategoría y la cantidad de actores asociados.'
+COMMENT 'Lista categorías para administración con búsqueda, filtro de estado, orden y paginación. Incluye icono, la cantidad de subcategorías activas y la cantidad de actores asociados.'
 BEGIN
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
@@ -707,7 +707,7 @@ BEGIN
     SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
     SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
     SET vSortBy = CASE
-        WHEN pSortBy IN ('idCategoria', 'nombre', 'icono', 'estado', 'subcategoria', 'cantidadActores')
+        WHEN pSortBy IN ('idCategoria', 'nombre', 'icono', 'estado', 'cantidadSubcategorias', 'cantidadActores')
             THEN pSortBy
         ELSE 'idCategoria'
     END;
@@ -727,10 +727,10 @@ BEGIN
         c.nombre,
         c.icono,
         c.estado,
-        MAX(s.nombre) AS subcategoria,
+        COUNT(DISTINCT s.idSubcategoria) AS cantidadSubcategorias,
         COUNT(DISTINCT a.idActor) AS cantidadActores
     FROM `Categorias` c
-    LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria
+    LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria AND s.estado = 'A'
     LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
     WHERE
         (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR c.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
@@ -745,8 +745,8 @@ BEGIN
         CASE WHEN vSortBy = 'icono' AND vSortDir = 'DESC' THEN c.icono END DESC,
         CASE WHEN vSortBy = 'estado' AND vSortDir = 'ASC' THEN c.estado END ASC,
         CASE WHEN vSortBy = 'estado' AND vSortDir = 'DESC' THEN c.estado END DESC,
-        CASE WHEN vSortBy = 'subcategoria' AND vSortDir = 'ASC' THEN MAX(s.nombre) END ASC,
-        CASE WHEN vSortBy = 'subcategoria' AND vSortDir = 'DESC' THEN MAX(s.nombre) END DESC,
+        CASE WHEN vSortBy = 'cantidadSubcategorias' AND vSortDir = 'ASC' THEN COUNT(DISTINCT s.idSubcategoria) END ASC,
+        CASE WHEN vSortBy = 'cantidadSubcategorias' AND vSortDir = 'DESC' THEN COUNT(DISTINCT s.idSubcategoria) END DESC,
         CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'ASC' THEN COUNT(DISTINCT a.idActor) END ASC,
         CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'DESC' THEN COUNT(DISTINCT a.idActor) END DESC,
         c.idCategoria ASC
@@ -760,17 +760,17 @@ CREATE OR REPLACE PROCEDURE `sp_admin_obtener_categoria`(
     IN pIdCategoria INT
 )
 READS SQL DATA
-COMMENT 'Obtiene una categoría por identificador con icono, el nombre de su única subcategoría y la cantidad de actores asociados.'
+COMMENT 'Obtiene una categoría por identificador con icono, la cantidad de subcategorías activas y la cantidad de actores asociados.'
 BEGIN
     SELECT
         c.idCategoria,
         c.nombre,
         c.icono,
         c.estado,
-        MAX(s.nombre) AS subcategoria,
+        COUNT(DISTINCT s.idSubcategoria) AS cantidadSubcategorias,
         COUNT(DISTINCT a.idActor) AS cantidadActores
     FROM `Categorias` c
-    LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria
+    LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria AND s.estado = 'A'
     LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
     WHERE c.idCategoria = pIdCategoria
     GROUP BY c.idCategoria, c.nombre, c.icono, c.estado;
@@ -891,6 +891,226 @@ BEGIN
     WHERE idCategoria = pIdCategoria;
 
     CALL `sp_admin_obtener_categoria`(pIdCategoria);
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_listar_subcategorias
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_listar_subcategorias`(
+    IN pIdCategoria INT,
+    IN pBusqueda VARCHAR(255) DEFAULT NULL,
+    IN pEstado CHAR(1) DEFAULT NULL,
+    IN pLimit INT DEFAULT 25,
+    IN pOffset INT DEFAULT 0,
+    IN pSortBy VARCHAR(50) DEFAULT 'idSubcategoria',
+    IN pSortDir VARCHAR(4) DEFAULT 'ASC'
+)
+READS SQL DATA
+COMMENT 'Lista subcategorías de una categoría para administración con búsqueda, filtro de estado, orden y paginación.'
+BEGIN
+    DECLARE vLimit INT DEFAULT 25;
+    DECLARE vOffset INT DEFAULT 0;
+    DECLARE vSortBy VARCHAR(50) DEFAULT 'idSubcategoria';
+    DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+
+    IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Categorias` WHERE idCategoria = pIdCategoria) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La categoría solicitada no existe.';
+    END IF;
+
+    SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
+    SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
+    SET vSortBy = CASE
+        WHEN pSortBy IN ('idSubcategoria', 'nombre', 'estado', 'cantidadActores')
+            THEN pSortBy
+        ELSE 'idSubcategoria'
+    END;
+    SET vSortDir = CASE
+        WHEN UPPER(COALESCE(pSortDir, 'ASC')) = 'DESC' THEN 'DESC'
+        ELSE 'ASC'
+    END;
+
+    SELECT COUNT(*) AS total
+    FROM `Subcategorias` s
+    WHERE s.idCategoria = pIdCategoria
+        AND (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR s.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
+        AND (pEstado IS NULL OR TRIM(pEstado) = '' OR s.estado = TRIM(pEstado));
+
+    SELECT
+        s.idCategoria,
+        s.idSubcategoria AS id,
+        s.nombre,
+        s.estado,
+        COUNT(DISTINCT a.idActor) AS cantidadActores
+    FROM `Subcategorias` s
+    LEFT JOIN `Actores` a ON a.idCategoria = s.idCategoria AND a.idSubcategoria = s.idSubcategoria
+    WHERE s.idCategoria = pIdCategoria
+        AND (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR s.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
+        AND (pEstado IS NULL OR TRIM(pEstado) = '' OR s.estado = TRIM(pEstado))
+    GROUP BY s.idCategoria, s.idSubcategoria, s.nombre, s.estado
+    ORDER BY
+        CASE WHEN vSortBy = 'idSubcategoria' AND vSortDir = 'ASC' THEN s.idSubcategoria END ASC,
+        CASE WHEN vSortBy = 'idSubcategoria' AND vSortDir = 'DESC' THEN s.idSubcategoria END DESC,
+        CASE WHEN vSortBy = 'nombre' AND vSortDir = 'ASC' THEN s.nombre END ASC,
+        CASE WHEN vSortBy = 'nombre' AND vSortDir = 'DESC' THEN s.nombre END DESC,
+        CASE WHEN vSortBy = 'estado' AND vSortDir = 'ASC' THEN s.estado END ASC,
+        CASE WHEN vSortBy = 'estado' AND vSortDir = 'DESC' THEN s.estado END DESC,
+        CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'ASC' THEN COUNT(DISTINCT a.idActor) END ASC,
+        CASE WHEN vSortBy = 'cantidadActores' AND vSortDir = 'DESC' THEN COUNT(DISTINCT a.idActor) END DESC,
+        s.idSubcategoria ASC
+    LIMIT vLimit OFFSET vOffset;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_obtener_subcategoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_obtener_subcategoria`(
+    IN pIdCategoria INT,
+    IN pIdSubcategoria INT
+)
+READS SQL DATA
+COMMENT 'Obtiene una subcategoría por identificador.'
+BEGIN
+    SELECT
+        s.idCategoria,
+        s.idSubcategoria AS id,
+        s.nombre,
+        s.estado,
+        COUNT(DISTINCT a.idActor) AS cantidadActores
+    FROM `Subcategorias` s
+    LEFT JOIN `Actores` a ON a.idCategoria = s.idCategoria AND a.idSubcategoria = s.idSubcategoria
+    WHERE s.idCategoria = pIdCategoria AND s.idSubcategoria = pIdSubcategoria
+    GROUP BY s.idCategoria, s.idSubcategoria, s.nombre, s.estado;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_crear_subcategoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_crear_subcategoria`(
+    IN pIdCategoria INT,
+    IN pNombre VARCHAR(45),
+    IN pEstado CHAR(1) DEFAULT 'A'
+)
+MODIFIES SQL DATA
+COMMENT 'Crea una subcategoría asignando el siguiente idSubcategoria dentro de la categoría.'
+BEGIN
+    DECLARE vNextId INT;
+    DECLARE vEstado CHAR(1);
+
+    IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Categorias` WHERE idCategoria = pIdCategoria) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La categoría solicitada no existe.';
+    END IF;
+
+    IF pNombre IS NULL OR TRIM(pNombre) = '' OR CHAR_LENGTH(TRIM(pNombre)) > 45 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El nombre de la subcategoría es obligatorio y no puede superar los 45 caracteres.';
+    END IF;
+
+    SET vEstado = UPPER(COALESCE(TRIM(pEstado), 'A'));
+    IF vEstado NOT IN ('A', 'I') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado de la subcategoría debe ser A (Activa) o I (Inactiva).';
+    END IF;
+
+    SELECT COALESCE(MAX(idSubcategoria), 0) + 1 INTO vNextId
+    FROM `Subcategorias`
+    WHERE idCategoria = pIdCategoria;
+
+    INSERT INTO `Subcategorias` (idCategoria, idSubcategoria, nombre, estado)
+    VALUES (pIdCategoria, vNextId, TRIM(pNombre), vEstado);
+
+    CALL `sp_admin_obtener_subcategoria`(pIdCategoria, vNextId);
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_editar_subcategoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_editar_subcategoria`(
+    IN pIdCategoria INT,
+    IN pIdSubcategoria INT,
+    IN pNombre VARCHAR(45),
+    IN pEstado CHAR(1) DEFAULT 'A'
+)
+MODIFIES SQL DATA
+COMMENT 'Modifica los datos de una subcategoría y devuelve el registro actualizado.'
+BEGIN
+    DECLARE vEstado CHAR(1);
+
+    IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
+    END IF;
+
+    IF pIdSubcategoria IS NULL OR pIdSubcategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la subcategoría no es válido.';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Subcategorias` WHERE idCategoria = pIdCategoria AND idSubcategoria = pIdSubcategoria) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La subcategoría solicitada no existe.';
+    END IF;
+
+    IF pNombre IS NULL OR TRIM(pNombre) = '' OR CHAR_LENGTH(TRIM(pNombre)) > 45 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El nombre de la subcategoría es obligatorio y no puede superar los 45 caracteres.';
+    END IF;
+
+    SET vEstado = UPPER(COALESCE(TRIM(pEstado), 'A'));
+    IF vEstado NOT IN ('A', 'I') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El estado de la subcategoría debe ser A (Activa) o I (Inactiva).';
+    END IF;
+
+    UPDATE `Subcategorias`
+    SET nombre = TRIM(pNombre),
+        estado = vEstado
+    WHERE idCategoria = pIdCategoria AND idSubcategoria = pIdSubcategoria;
+
+    CALL `sp_admin_obtener_subcategoria`(pIdCategoria, pIdSubcategoria);
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_eliminar_subcategoria
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_eliminar_subcategoria`(
+    IN pIdCategoria INT,
+    IN pIdSubcategoria INT
+)
+MODIFIES SQL DATA
+COMMENT 'Realiza la baja lógica de una subcategoría para preservar sus relaciones históricas y devuelve el registro actualizado.'
+BEGIN
+    IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
+    END IF;
+
+    IF pIdSubcategoria IS NULL OR pIdSubcategoria <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El identificador de la subcategoría no es válido.';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM `Subcategorias` WHERE idCategoria = pIdCategoria AND idSubcategoria = pIdSubcategoria) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La subcategoría solicitada no existe.';
+    END IF;
+
+    UPDATE `Subcategorias`
+    SET estado = 'I'
+    WHERE idCategoria = pIdCategoria AND idSubcategoria = pIdSubcategoria;
+
+    CALL `sp_admin_obtener_subcategoria`(pIdCategoria, pIdSubcategoria);
 END //
 
 -- -----------------------------------------------------

@@ -12,15 +12,23 @@ import {
 	categoriaAdminNoEncontradaResponseSchema,
 	categoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
+	guardarSubcategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarActoresAdminResponseSchema,
 	listarCategoriasAdminQuerySchema,
 	listarCategoriasAdminResponseSchema,
+	listarSubcategoriasAdminQuerySchema,
+	listarSubcategoriasAdminResponseSchema,
 	listarUsuariosAdminQuerySchema,
 	listarUsuariosAdminResponseSchema,
 	obtenerUsuarioAdminResponseSchema,
 	obtenerActorAdminResponseSchema,
 	obtenerCategoriaAdminResponseSchema,
+	obtenerSubcategoriaAdminResponseSchema,
+	subcategoriaAdminCategoriaParamSchema,
+	subcategoriaAdminDuplicadaResponseSchema,
+	subcategoriaAdminNoEncontradaResponseSchema,
+	subcategoriaAdminParamsSchema,
 	usuarioAdminNoEncontradoResponseSchema,
 	usuarioAdminParamsSchema,
 	usuarioAdminProtegidoResponseSchema,
@@ -345,6 +353,135 @@ export function registerAdminOpenApi(): void {
 			404: {
 				description: 'Categoría no encontrada.',
 				content: { 'application/json': { schema: categoriaAdminNoEncontradaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/categorias/{idCategoria}/subcategorias',
+		tags: ['Administración'],
+		summary: 'Listar subcategorías de una categoría',
+		description: 'Lista subcategorías con búsqueda, filtro de estado, orden y paginación.',
+		request: { params: subcategoriaAdminCategoriaParamSchema, query: listarSubcategoriasAdminQuerySchema },
+		responses: {
+			200: {
+				description: 'Página de subcategorías obtenida correctamente.',
+				content: { 'application/json': { schema: listarSubcategoriasAdminResponseSchema } },
+			},
+			400: {
+				description: 'Parámetros inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Categoría no encontrada.',
+				content: { 'application/json': { schema: categoriaAdminNoEncontradaResponseSchema } },
+			},
+			500: {
+				description: 'Error interno.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/categorias/{idCategoria}/subcategorias',
+		tags: ['Administración'],
+		summary: 'Crear una subcategoría',
+		request: {
+			params: subcategoriaAdminCategoriaParamSchema,
+			body: { content: { 'application/json': { schema: guardarSubcategoriaAdminBodySchema } } },
+		},
+		responses: {
+			201: {
+				description: 'Subcategoría creada correctamente.',
+				content: { 'application/json': { schema: obtenerSubcategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Categoría no encontrada.',
+				content: { 'application/json': { schema: categoriaAdminNoEncontradaResponseSchema } },
+			},
+			409: {
+				description: 'Ya existe una subcategoría con ese nombre.',
+				content: { 'application/json': { schema: subcategoriaAdminDuplicadaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/categorias/{idCategoria}/subcategorias/{id}',
+		tags: ['Administración'],
+		summary: 'Obtener una subcategoría',
+		request: { params: subcategoriaAdminParamsSchema },
+		responses: {
+			200: {
+				description: 'Subcategoría obtenida correctamente.',
+				content: { 'application/json': { schema: obtenerSubcategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificador inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Subcategoría no encontrada.',
+				content: { 'application/json': { schema: subcategoriaAdminNoEncontradaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'put',
+		path: '/api/admin/categorias/{idCategoria}/subcategorias/{id}',
+		tags: ['Administración'],
+		summary: 'Modificar una subcategoría',
+		request: {
+			params: subcategoriaAdminParamsSchema,
+			body: { content: { 'application/json': { schema: guardarSubcategoriaAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Subcategoría modificada correctamente.',
+				content: { 'application/json': { schema: obtenerSubcategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Subcategoría no encontrada.',
+				content: { 'application/json': { schema: subcategoriaAdminNoEncontradaResponseSchema } },
+			},
+			409: {
+				description: 'Ya existe una subcategoría con ese nombre.',
+				content: { 'application/json': { schema: subcategoriaAdminDuplicadaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'delete',
+		path: '/api/admin/categorias/{idCategoria}/subcategorias/{id}',
+		tags: ['Administración'],
+		summary: 'Dar de baja una subcategoría',
+		request: { params: subcategoriaAdminParamsSchema },
+		responses: {
+			200: {
+				description: 'Subcategoría dada de baja correctamente.',
+				content: { 'application/json': { schema: obtenerSubcategoriaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificador inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Subcategoría no encontrada.',
+				content: { 'application/json': { schema: subcategoriaAdminNoEncontradaResponseSchema } },
 			},
 		},
 	});

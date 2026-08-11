@@ -10,7 +10,9 @@ import type {
 	CategoriaModeracionAdmin,
 	ListarActoresAdminQuery,
 	ListarCategoriasAdminQuery,
+	ListarSubcategoriasAdminQuery,
 	ListarUsuariosAdminQuery,
+	SubcategoriaAdmin,
 	UsuarioAdmin,
 	UsuarioDetalleAdmin,
 } from './admin.schemas.js';
@@ -114,7 +116,15 @@ const categoriaAdminDatabaseRowSchema = z.object({
 	nombre: z.string(),
 	icono: categoriaIconoSchema,
 	estado: z.enum(['A', 'I']),
-	subcategoria: z.string().nullable(),
+	cantidadSubcategorias: databaseIntegerSchema,
+	cantidadActores: databaseIntegerSchema,
+});
+
+const subcategoriaAdminDatabaseRowSchema = z.object({
+	idCategoria: databaseIntegerSchema,
+	id: databaseIntegerSchema,
+	nombre: z.string(),
+	estado: z.enum(['A', 'I']),
 	cantidadActores: databaseIntegerSchema,
 });
 
@@ -161,7 +171,17 @@ function mapCategoria(row: z.infer<typeof categoriaAdminDatabaseRowSchema>): Cat
 		nombre: row.nombre,
 		icono: row.icono,
 		estado: row.estado,
-		subcategoria: row.subcategoria,
+		cantidadSubcategorias: row.cantidadSubcategorias,
+		cantidadActores: row.cantidadActores,
+	};
+}
+
+function mapSubcategoria(row: z.infer<typeof subcategoriaAdminDatabaseRowSchema>): SubcategoriaAdmin {
+	return {
+		idCategoria: row.idCategoria,
+		id: row.id,
+		nombre: row.nombre,
+		estado: row.estado,
 		cantidadActores: row.cantidadActores,
 	};
 }
@@ -419,4 +439,103 @@ export async function eliminarCategoriaAdminRepository(id: number): Promise<Cate
 	}
 
 	return mapCategoria(categoria);
+}
+
+export async function listarSubcategoriasAdminRepository(
+	idCategoria: number,
+	query: ListarSubcategoriasAdminQuery,
+): Promise<{ total: number; subcategorias: SubcategoriaAdmin[] }> {
+	const procedureName = 'sp_admin_listar_subcategorias';
+	const result: unknown = await pool.query('CALL sp_admin_listar_subcategorias(?, ?, ?, ?, ?, ?, ?)', [
+		idCategoria,
+		query.busqueda ?? null,
+		query.estado ?? null,
+		query.limit,
+		query.offset,
+		query.sortBy,
+		query.sortDir,
+	]);
+	const rows = z.array(subcategoriaAdminDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
+
+	return {
+		total: getTotal(result, procedureName),
+		subcategorias: rows.map(mapSubcategoria),
+	};
+}
+
+export async function obtenerSubcategoriaAdminRepository(
+	idCategoria: number,
+	idSubcategoria: number,
+): Promise<SubcategoriaAdmin | null> {
+	const procedureName = 'sp_admin_obtener_subcategoria';
+	const result: unknown = await pool.query('CALL sp_admin_obtener_subcategoria(?, ?)', [
+		idCategoria,
+		idSubcategoria,
+	]);
+	const rows = z.array(subcategoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+
+	return rows[0] ? mapSubcategoria(rows[0]) : null;
+}
+
+export async function crearSubcategoriaAdminRepository(
+	idCategoria: number,
+	nombre: string,
+	estado: 'A' | 'I',
+): Promise<SubcategoriaAdmin> {
+	const procedureName = 'sp_admin_crear_subcategoria';
+	const result: unknown = await pool.query('CALL sp_admin_crear_subcategoria(?, ?, ?)', [
+		idCategoria,
+		nombre,
+		estado,
+	]);
+	const rows = z.array(subcategoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const subcategoria = rows[0];
+
+	if (!subcategoria) {
+		throw new Error(`${procedureName} no devolvió la subcategoría creada`);
+	}
+
+	return mapSubcategoria(subcategoria);
+}
+
+export async function editarSubcategoriaAdminRepository(
+	idCategoria: number,
+	idSubcategoria: number,
+	nombre: string,
+	estado: 'A' | 'I',
+): Promise<SubcategoriaAdmin> {
+	const procedureName = 'sp_admin_editar_subcategoria';
+	const result: unknown = await pool.query('CALL sp_admin_editar_subcategoria(?, ?, ?, ?)', [
+		idCategoria,
+		idSubcategoria,
+		nombre,
+		estado,
+	]);
+	const rows = z.array(subcategoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const subcategoria = rows[0];
+
+	if (!subcategoria) {
+		throw new Error(`${procedureName} no devolvió la subcategoría actualizada`);
+	}
+
+	return mapSubcategoria(subcategoria);
+}
+
+export async function eliminarSubcategoriaAdminRepository(
+	idCategoria: number,
+	idSubcategoria: number,
+): Promise<SubcategoriaAdmin> {
+	const procedureName = 'sp_admin_eliminar_subcategoria';
+	const result: unknown = await pool.query('CALL sp_admin_eliminar_subcategoria(?, ?)', [
+		idCategoria,
+		idSubcategoria,
+	]);
+	const rows = z.array(subcategoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const subcategoria = rows[0];
+
+	if (!subcategoria) {
+		throw new Error(`${procedureName} no devolvió la subcategoría eliminada`);
+	}
+
+	return mapSubcategoria(subcategoria);
 }
