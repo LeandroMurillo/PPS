@@ -6,6 +6,7 @@ import { categoriaIconoSchema } from './admin.schemas.js';
 import type {
 	ActorAdmin,
 	ActorDetalleAdmin,
+	ActorDetalleEncuestaAdmin,
 	CategoriaAdmin,
 	CategoriaModeracionAdmin,
 	ListarActoresAdminQuery,
@@ -109,6 +110,57 @@ const actorPortafolioDatabaseRowSchema = z.object({
 	descripcion: z.string(),
 	url: z.string(),
 	fechaCreacion: databaseDateSchema,
+});
+
+const databaseAnswerValueSchema = z
+	.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number(), z.boolean()]))])
+	.nullable()
+	.transform((value) => {
+		if (value === null) return null;
+		if (Array.isArray(value)) return value.map(String);
+		if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+		return String(value);
+	});
+
+const databaseQuestionOptionsSchema = z.preprocess((value) => {
+	if (typeof value !== 'string') return value;
+
+	try {
+		return JSON.parse(value) as unknown;
+	} catch {
+		return value;
+	}
+}, z.array(z.string()).nullable());
+
+const actorEncuestaDatabaseRowSchema = z.object({
+	idFormulario: databaseIntegerSchema,
+	ambito: z.enum(['CATEGORIA', 'SUBCATEGORIA']),
+	categoria: z.string(),
+	subcategoria: z.string().nullable(),
+	titulo: z.string(),
+	descripcion: z.string().nullable(),
+});
+
+const actorEncuestaRespuestaDatabaseRowSchema = z.object({
+	idFormulario: databaseIntegerSchema,
+	idPregunta: databaseIntegerSchema,
+	orden: databaseIntegerSchema,
+	pregunta: z.string(),
+	tipoDato: z.enum([
+		'TEXTO',
+		'NUMERO',
+		'BOOLEANO',
+		'FECHA',
+		'URL',
+		'EMAIL',
+		'TELEFONO',
+		'OPCION_UNICA',
+		'OPCION_MULTIPLE',
+	]),
+	opciones: databaseQuestionOptionsSchema,
+	esObligatorio: databaseBooleanSchema,
+	esPublico: databaseBooleanSchema,
+	valor: databaseAnswerValueSchema,
 });
 
 const categoriaAdminDatabaseRowSchema = z.object({
@@ -329,6 +381,7 @@ export async function obtenerActorAdminRepository(id: number): Promise<ActorDeta
 
 	const integrantes = z.array(actorIntegranteDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
 	const portafolio = z.array(actorPortafolioDatabaseRowSchema).parse(getResultSet(result, 2, procedureName));
+	const encuestas = await obtenerEncuestasActor(id);
 
 	return {
 		...mapActor(actorRow),
@@ -346,7 +399,50 @@ export async function obtenerActorAdminRepository(id: number): Promise<ActorDeta
 			url: row.url,
 			fechaCreacion: row.fechaCreacion,
 		})),
+		encuestas,
 	};
+}
+
+async function obtenerEncuestasActor(idActor: number): Promise<ActorDetalleEncuestaAdmin[]> {
+	const listarProcedureName = 'sp_actor_listar_formularios';
+	const listarResult: unknown = await pool.query('CALL sp_actor_listar_formularios(?)', [idActor]);
+	const formularios = z
+		.array(actorEncuestaDatabaseRowSchema)
+		.parse(getResultSet(listarResult, 0, listarProcedureName));
+
+	return Promise.all(
+		formularios.map(async (formulario) => {
+			const obtenerProcedureName = 'sp_actor_obtener_formulario';
+			const obtenerResult: unknown = await pool.query('CALL sp_actor_obtener_formulario(?, ?)', [
+				idActor,
+				formulario.idFormulario,
+			]);
+			const respuestas = z
+				.array(actorEncuestaRespuestaDatabaseRowSchema)
+				.parse(getResultSet(obtenerResult, 1, obtenerProcedureName))
+				.map((respuesta) => ({
+					id: respuesta.idPregunta,
+					pregunta: respuesta.pregunta,
+					tipoDato: respuesta.tipoDato,
+					opciones: respuesta.opciones,
+					respuesta: respuesta.valor,
+					obligatoria: respuesta.esObligatorio,
+					publica: respuesta.esPublico,
+				}));
+
+			return {
+				id: formulario.idFormulario,
+				tipo: formulario.ambito === 'CATEGORIA' ? 'categoria' : 'subcategoria',
+				ambito:
+					formulario.ambito === 'CATEGORIA'
+						? formulario.categoria
+						: (formulario.subcategoria ?? 'Subcategoría'),
+				titulo: formulario.titulo,
+				descripcion: formulario.descripcion,
+				secciones: respuestas.length > 0 ? [{ titulo: 'Preguntas', respuestas }] : [],
+			} satisfies ActorDetalleEncuestaAdmin;
+		}),
+	);
 }
 
 export async function cambiarEstadoActoresAdminRepository(ids: number[], estado: 'A' | 'I'): Promise<number> {

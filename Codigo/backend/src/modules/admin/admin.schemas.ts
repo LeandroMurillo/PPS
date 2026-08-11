@@ -308,9 +308,46 @@ export const actorDetallePortafolioAdminSchema = z.object({
 	fechaCreacion: z.string(),
 });
 
+export const actorDetalleEncuestaRespuestaAdminSchema = z.object({
+	id: z.number().int().positive(),
+	pregunta: z.string(),
+	tipoDato: z.enum([
+		'TEXTO',
+		'NUMERO',
+		'BOOLEANO',
+		'FECHA',
+		'URL',
+		'EMAIL',
+		'TELEFONO',
+		'OPCION_UNICA',
+		'OPCION_MULTIPLE',
+	]),
+	opciones: z.array(z.string()).nullable(),
+	respuesta: z.union([z.string(), z.array(z.string())]).nullable(),
+	obligatoria: z.boolean(),
+	publica: z.boolean(),
+});
+
+export const actorDetalleEncuestaAdminSchema = z.object({
+	id: z.number().int().positive(),
+	tipo: z.enum(['categoria', 'subcategoria']),
+	ambito: z.string(),
+	titulo: z.string(),
+	descripcion: z.string().nullable(),
+	secciones: z.array(
+		z.object({
+			titulo: z.string(),
+			respuestas: z.array(actorDetalleEncuestaRespuestaAdminSchema),
+		}),
+	),
+});
+
+export type ActorDetalleEncuestaAdmin = z.infer<typeof actorDetalleEncuestaAdminSchema>;
+
 export const actorDetalleAdminSchema = actorAdminSchema.extend({
 	integrantes: z.array(actorDetalleIntegranteAdminSchema),
 	portafolio: z.array(actorDetallePortafolioAdminSchema),
+	encuestas: z.array(actorDetalleEncuestaAdminSchema),
 });
 
 export type ActorDetalleAdmin = z.infer<typeof actorDetalleAdminSchema>;

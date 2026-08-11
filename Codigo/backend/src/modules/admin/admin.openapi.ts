@@ -187,7 +187,7 @@ export function registerAdminOpenApi(): void {
 		tags: ['Administración'],
 		summary: 'Obtener el perfil administrativo de un actor',
 		description:
-			'Devuelve los datos generales, la ubicación completa, los integrantes y el portafolio del actor, sin restringir por estado.',
+			'Devuelve los datos generales, la ubicación completa, los integrantes, el portafolio y las encuestas del actor, sin restringir por estado.',
 		request: { params: actorAdminParamsSchema },
 		responses: {
 			200: {
