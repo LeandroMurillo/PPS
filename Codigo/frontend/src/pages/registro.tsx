@@ -24,6 +24,7 @@ import {
 	TextField,
 	Typography,
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -58,6 +59,8 @@ function validarCUIL(cuil: string): boolean {
 const STEPS = ['Datos personales y Documento', 'Confirmación de información', 'Registro completado'];
 
 export default function RegistroPage() {
+	const { mode, systemMode } = useColorScheme();
+	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 	const navigate = useNavigate();
 	const [activeStep, setActiveStep] = useState(0);
 
@@ -262,13 +265,25 @@ export default function RegistroPage() {
 				flexDirection: 'column',
 				justifyContent: 'center',
 				alignItems: 'center',
+				flex: '1 0 auto',
+				width: '100%',
 				py: { xs: 2, sm: 3 },
 				px: 2,
 				boxSizing: 'border-box',
+				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',
 			}}
 		>
-			<Container maxWidth="md" disableGutters sx={{ width: '100%' }}>
-				<Paper elevation={3} sx={{ p: { xs: 2, sm: 3.5 }, borderRadius: 2 }}>
+			<Container maxWidth={false} disableGutters sx={{ width: '100%', maxWidth: 760 }}>
+				<Paper
+					elevation={0}
+					sx={{
+						p: { xs: 2, sm: 3.5 },
+						border: '1px solid',
+						borderColor: isDarkMode ? '#333333' : '#eaeaea',
+						borderRadius: 2,
+						backgroundColor: isDarkMode ? '#121212' : '#fdfdfc',
+					}}
+				>
 					<Box sx={{ mb: 2.5, textAlign: 'center' }}>
 						<Typography variant="h5" component="h1" fontWeight="bold" color="primary" gutterBottom>
 							Registro de Usuario

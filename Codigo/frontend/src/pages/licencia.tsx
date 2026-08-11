@@ -4,7 +4,7 @@ import { useColorScheme } from '@mui/material/styles';
 
 const EMOJIS = ['🦦', '🚁', '🦝'];
 
-export default function AcercaDe() {
+export default function Licencia() {
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 
@@ -18,17 +18,30 @@ export default function AcercaDe() {
 	}, []);
 
 	return (
-		<Container maxWidth={false} sx={{ width: 'fit-content', mt: 8, mb: 8 }}>
-			<Paper
-				elevation={0}
-				sx={{
-					p: 4,
-					border: '1px solid',
-					borderColor: isDarkMode ? '#333333' : '#eaeaea',
-					borderRadius: 2,
-					backgroundColor: isDarkMode ? '#121212' : '#fdfdfc',
-				}}
-			>
+		<Box
+			sx={{
+				minHeight: 'calc(100vh - 64px)',
+				display: 'flex',
+				justifyContent: 'center',
+				flex: '1 0 auto',
+				width: '100%',
+				py: { xs: 2, sm: 8 },
+				px: 2,
+				boxSizing: 'border-box',
+				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',
+			}}
+		>
+			<Container maxWidth={false} disableGutters sx={{ width: '100%', maxWidth: 560 }}>
+				<Paper
+					elevation={0}
+					sx={{
+						p: 4,
+						border: '1px solid',
+						borderColor: isDarkMode ? '#333333' : '#eaeaea',
+						borderRadius: 2,
+						backgroundColor: isDarkMode ? '#121212' : '#fdfdfc',
+					}}
+				>
 				<Box sx={{ textAlign: 'center', mb: 3 }}>
 					<Typography variant="h2" component="div" sx={{ mb: 2 }}>
 						{emoji}
@@ -84,7 +97,8 @@ See the License for the specific language governing permissions and
 limitations under the License.`}
 					</Typography>
 				</Box>
-			</Paper>
-		</Container>
+				</Paper>
+			</Container>
+		</Box>
 	);
 }

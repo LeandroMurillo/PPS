@@ -15,10 +15,13 @@ import {
 	TextField,
 	Typography,
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { loginApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
+	const { mode, systemMode } = useColorScheme();
+	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 	const navigate = useNavigate();
 	const { login } = useAuth();
 	const [email, setEmail] = useState('');
@@ -81,10 +84,20 @@ export default function LoginPage() {
 				py: { xs: 2, sm: 3 },
 				px: 2,
 				boxSizing: 'border-box',
+				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',
 			}}
 		>
-			<Container maxWidth="sm" disableGutters sx={{ width: '100%' }}>
-				<Paper elevation={3} sx={{ p: { xs: 2, sm: 3.5 }, borderRadius: 2 }}>
+			<Container maxWidth={false} disableGutters sx={{ width: '100%', maxWidth: 480 }}>
+				<Paper
+					elevation={0}
+					sx={{
+						p: { xs: 2, sm: 3.5 },
+						border: '1px solid',
+						borderColor: isDarkMode ? '#333333' : '#eaeaea',
+						borderRadius: 2,
+						backgroundColor: isDarkMode ? '#121212' : '#fdfdfc',
+					}}
+				>
 					<Box sx={{ mb: 2.5, textAlign: 'center' }}>
 						<Typography variant="h5" component="h1" fontWeight="bold" color="primary" gutterBottom>
 							Iniciar sesión

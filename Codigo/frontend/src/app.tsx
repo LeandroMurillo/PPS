@@ -9,8 +9,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import InfoIcon from '@mui/icons-material/Info';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
-import HowToRegIcon from '@mui/icons-material/HowToReg';
-import LoginIcon from '@mui/icons-material/Login';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -20,7 +19,7 @@ const BRANDING = {
 };
 
 const LOCALE_TEXT = {
-	accountSignInLabel: 'Ingresar',
+	accountSignInLabel: 'Iniciar sesión',
 	accountSignOutLabel: 'Cerrar sesión',
 	createNewButtonLabel: 'Crear nueva',
 	reloadButtonLabel: 'Recargar datos',
@@ -47,42 +46,34 @@ function AppContent() {
 	const navigation: Navigation = React.useMemo(() => {
 		const nav: Navigation = [
 			{
-				kind: 'header',
-				title: 'Público',
-			},
-			{
-				title: 'Mapa',
+				title: 'Mapa cultural',
 				icon: <MapIcon />,
 			},
 			{
-				title: 'Actores',
+				title: 'Actores culturales',
 				segment: 'actores',
 				icon: <PeopleIcon />,
 			},
+			{
+				title: 'Licencia',
+				segment: 'licencia',
+				icon: <InfoIcon />,
+			},
 		];
 
-		if (!user) {
+		if (user) {
 			nav.push(
 				{
-					title: 'Iniciar sesión',
-					segment: 'login',
-					icon: <LoginIcon />,
+					kind: 'divider',
 				},
 				{
-					title: 'Registrarse',
-					segment: 'registro',
-					icon: <HowToRegIcon />,
-				},
-			);
-		} else {
-			nav.push(
-				{
-					kind: 'header',
-					title: 'Usuario',
+					title: 'Registrar actor cultural',
+					segment: 'actores/nuevo',
+					icon: <PersonAddIcon />,
 				},
 				{
 					title: 'Mis actores',
-					segment: 'actoresUsuario',
+					segment: 'mis-actores',
 					icon: <PeopleIcon />,
 				},
 				{
@@ -129,17 +120,6 @@ function AppContent() {
 				);
 			}
 		}
-
-		nav.push(
-			{
-				kind: 'divider',
-			},
-			{
-				title: 'Acerca de',
-				segment: 'acerca',
-				icon: <InfoIcon />,
-			},
-		);
 
 		return nav;
 	}, [user]);
