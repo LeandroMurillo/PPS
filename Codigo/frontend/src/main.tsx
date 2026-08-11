@@ -11,7 +11,7 @@ import Mapa from './pages/mapa';
 import EmployeesCrudPage from './pages/employees';
 import ActorPortfolio from './pages/actorPortfolio';
 import Actores from './pages/actores';
-import AcercaDe from './pages/acerca';
+import Licencia from './pages/licencia';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 import AdminActoresPage from './pages/adminActores';
 import AdminActorDetallePage from './pages/adminActorDetalle';
@@ -72,7 +72,11 @@ const router = createBrowserRouter([
 						Component: RegistroPage,
 					},
 					{
-						path: 'actoresUsuario',
+						path: 'actores/nuevo',
+						Component: EmployeesCrudPage,
+					},
+					{
+						path: 'mis-actores',
 						element: (
 							<ProtectedRoute>
 								<EmployeesCrudPage />
@@ -192,8 +196,8 @@ const router = createBrowserRouter([
 						),
 					},
 					{
-						path: 'acerca',
-						Component: AcercaDe,
+						path: 'licencia',
+						Component: Licencia,
 					},
 					{
 						path: '/actores/:actorSlug',
