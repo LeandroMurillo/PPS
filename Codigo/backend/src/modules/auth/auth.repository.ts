@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 import { pool } from '../../database/pool.js';
-import type { RegistrarUsuarioBody, UsuarioRegistrado } from './auth.schemas.js';
+import type { ActividadArca, RegistrarUsuarioBody, UsuarioRegistrado } from './auth.schemas.js';
 import {
+	actividadArcaSchema,
 	estadoUsuarioSchema,
 	generoUsuarioSchema,
 	rolUsuarioSchema,
@@ -31,6 +32,7 @@ const usuarioDBRowSchema = z.object({
 	nacionalidad: z.string(),
 	CUIL: z.string(),
 	actividadesArcaCodigo: z.string().nullable(),
+	fotoDniUrl: z.string().nullable().optional().transform((val) => val ?? null),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.union([z.string(), z.date()]).transform((val) => {
@@ -51,6 +53,7 @@ function getResultSet(procedureResult: unknown, index: number, procedureName: st
 
 export type RegistrarUsuarioRepositoryInput = Omit<RegistrarUsuarioBody, 'contraseña' | 'documentoIdentidad'> & {
 	contraseñaHash: string;
+	fotoDniUrl: string | null;
 };
 
 export async function registrarUsuarioRepository(
@@ -59,7 +62,7 @@ export async function registrarUsuarioRepository(
 	const procedureName = 'sp_publico_registrar_usuario';
 
 	const result: unknown = await pool.query(
-		'CALL sp_publico_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+		'CALL sp_publico_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		[
 			input.nombre,
 			input.apellido,
@@ -70,6 +73,7 @@ export async function registrarUsuarioRepository(
 			input.contraseñaHash,
 			input.CUIL,
 			input.actividadesArcaCodigo ?? null,
+			input.fotoDniUrl ?? null,
 		],
 	);
 
@@ -98,5 +102,15 @@ export async function obtenerUsuarioPorEmailRepository(email: string): Promise<U
 	const rows = z.array(usuarioAuthDBRowSchema).parse(getResultSet(result, 0, procedureName));
 
 	return rows[0] ?? null;
+}
+
+export async function listarActividadesArcaRepository(): Promise<ActividadArca[]> {
+	const procedureName = 'sp_publico_listar_actividades_arca';
+
+	const result: unknown = await pool.query('CALL sp_publico_listar_actividades_arca()');
+
+	const rows = z.array(actividadArcaSchema).parse(getResultSet(result, 0, procedureName));
+
+	return rows;
 }
 

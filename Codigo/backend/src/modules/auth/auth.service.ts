@@ -1,7 +1,19 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
-import { obtenerUsuarioPorEmailRepository, registrarUsuarioRepository } from './auth.repository.js';
-import type { LoginBody, LoginResponse, RegistrarUsuarioBody, RegistroUsuarioResponse } from './auth.schemas.js';
+import {
+	listarActividadesArcaRepository,
+	obtenerUsuarioPorEmailRepository,
+	registrarUsuarioRepository,
+} from './auth.repository.js';
+import type {
+	ActividadArca,
+	LoginBody,
+	LoginResponse,
+	RegistrarUsuarioBody,
+	RegistroUsuarioResponse,
+} from './auth.schemas.js';
 
 export function hashPassword(password: string): string {
 	const salt = crypto.randomBytes(16).toString('hex');
@@ -31,10 +43,48 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 	return password === storedHash;
 }
 
+export function saveDniImage(base64Data: string): string | null {
+	if (!base64Data || typeof base64Data !== 'string') {
+		return null;
+	}
+
+	try {
+		const matches = base64Data.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+		let ext = 'png';
+		let base64String = base64Data;
+
+		if (matches && matches.length === 3) {
+			ext = matches[1] === 'jpeg' ? 'jpg' : matches[1]!;
+			base64String = matches[2]!;
+		} else if (base64Data.includes('base64,')) {
+			base64String = base64Data.split('base64,')[1]!;
+		}
+
+		const buffer = Buffer.from(base64String, 'base64');
+		if (buffer.length === 0) {
+			return null;
+		}
+
+		const uploadsDir = path.join(process.cwd(), 'uploads', 'dni');
+		if (!fs.existsSync(uploadsDir)) {
+			fs.mkdirSync(uploadsDir, { recursive: true });
+		}
+
+		const filename = `dni_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+		const filepath = path.join(uploadsDir, filename);
+		fs.writeFileSync(filepath, buffer);
+
+		return `/uploads/dni/${filename}`;
+	} catch {
+		return null;
+	}
+}
+
 export async function registrarUsuarioService(
 	input: RegistrarUsuarioBody,
 ): Promise<RegistroUsuarioResponse> {
 	const contraseñaHash = hashPassword(input.contraseña);
+	const fotoDniUrl = saveDniImage(input.documentoIdentidad);
 
 	const usuario = await registrarUsuarioRepository({
 		nombre: input.nombre,
@@ -46,6 +96,7 @@ export async function registrarUsuarioService(
 		CUIL: input.CUIL,
 		actividadesArcaCodigo: input.actividadesArcaCodigo,
 		contraseñaHash,
+		fotoDniUrl,
 	});
 
 	return {
@@ -79,4 +130,8 @@ export async function loginService(input: LoginBody): Promise<LoginResponse> {
 		usuario: usuarioSinContraseña,
 		mensaje: 'Inicio de sesión exitoso.',
 	};
+}
+
+export async function listarActividadesArcaService(): Promise<ActividadArca[]> {
+	return listarActividadesArcaRepository();
 }

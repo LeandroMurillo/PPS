@@ -12,7 +12,7 @@ describe('validación del registro y login de usuario', () => {
 		nacionalidad: '  Argentina  ',
 		email: '  MARIA.GONZALEZ@EXAMPLE.COM  ',
 		contraseña: 'miPasswordSegura123',
-		CUIL: '27359998881',
+		CUIL: '27359998886',
 		actividadesArcaCodigo: '900012',
 		documentoIdentidad:
 			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
@@ -28,7 +28,7 @@ describe('validación del registro y login de usuario', () => {
 			nacionalidad: 'Argentina',
 			email: 'maria.gonzalez@example.com',
 			contraseña: 'miPasswordSegura123',
-			CUIL: '27359998881',
+			CUIL: '27359998886',
 			actividadesArcaCodigo: '900012',
 			documentoIdentidad: validPayload.documentoIdentidad,
 		});
@@ -69,12 +69,18 @@ describe('validación del registro y login de usuario', () => {
 		expect(verifyPassword('claveErronea', hash)).toBe(false);
 	});
 
-	it('rechaza contraseñas con menos de 6 caracteres en registro', () => {
-		const result = registrarUsuarioBodySchema.safeParse({
+	it('rechaza contraseñas con menos de 8 caracteres o sin complejidad en registro', () => {
+		const result1 = registrarUsuarioBodySchema.safeParse({
 			...validPayload,
 			contraseña: '12345',
 		});
-		expect(result.success).toBe(false);
+		expect(result1.success).toBe(false);
+
+		const result2 = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			contraseña: 'sololetrasminusc',
+		});
+		expect(result2.success).toBe(false);
 	});
 
 	it('rechaza correos electrónicos inválidos', () => {
@@ -85,7 +91,7 @@ describe('validación del registro y login de usuario', () => {
 		expect(result.success).toBe(false);
 	});
 
-	it('rechaza CUIL con formato incorrecto', () => {
+	it('rechaza CUIL con formato incorrecto o dígito verificador inválido', () => {
 		const result1 = registrarUsuarioBodySchema.safeParse({
 			...validPayload,
 			CUIL: '1234567890', // 10 dígitos
@@ -97,6 +103,12 @@ describe('validación del registro y login de usuario', () => {
 			CUIL: '2735999888A', // letras
 		});
 		expect(result2.success).toBe(false);
+
+		const result3 = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			CUIL: '27359998881', // dígito verificador incorrecto (esperado 6)
+		});
+		expect(result3.success).toBe(false);
 	});
 
 	it('rechaza fechas de nacimiento en el futuro', () => {

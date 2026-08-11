@@ -20,6 +20,24 @@ function normalizeOptionalArcaCode(value: unknown): unknown {
 	return value;
 }
 
+export function validarCUIL(cuil: string): boolean {
+	const cleaned = cuil.trim().replace(/\D/g, '');
+	if (cleaned.length !== 11) return false;
+
+	const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+	let sum = 0;
+	for (let i = 0; i < 10; i++) {
+		sum += Number(cleaned[i]) * multipliers[i]!;
+	}
+
+	const mod = sum % 11;
+	let expectedDigit = 11 - mod;
+	if (expectedDigit === 11) expectedDigit = 0;
+	if (expectedDigit === 10) expectedDigit = 9;
+
+	return Number(cleaned[10]) === expectedDigit;
+}
+
 export const registrarUsuarioBodySchema = z.object({
 	nombre: z
 		.string()
@@ -76,12 +94,23 @@ export const registrarUsuarioBodySchema = z.object({
 
 	contraseña: z
 		.string()
-		.min(6, 'La contraseña debe tener una longitud mínima de 6 caracteres'),
+		.min(8, 'La contraseña debe tener una longitud mínima de 8 caracteres')
+		.regex(
+			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+			'La contraseña debe incluir al menos una letra mayúscula, una letra minúscula y un número',
+		),
 
 	CUIL: z
 		.string()
 		.transform((val) => val.trim())
-		.pipe(z.string().regex(/^\d{11}$/, 'El CUIL debe contener exactamente 11 dígitos numéricos')),
+		.pipe(
+			z
+				.string()
+				.regex(/^\d{11}$/, 'El CUIL debe contener exactamente 11 dígitos numéricos')
+				.refine((val) => validarCUIL(val), {
+					message: 'El CUIL ingresado no es válido (dígito verificador incorrecto)',
+				}),
+		),
 
 	actividadesArcaCodigo: z
 		.preprocess(
@@ -101,6 +130,13 @@ export const registrarUsuarioBodySchema = z.object({
 
 export type RegistrarUsuarioBody = z.infer<typeof registrarUsuarioBodySchema>;
 
+export const actividadArcaSchema = z.object({
+	codigo: z.string(),
+	descripcion: z.string(),
+});
+
+export type ActividadArca = z.infer<typeof actividadArcaSchema>;
+
 export const usuarioRegistradoSchema = z.object({
 	idUsuario: z.number().int().positive(),
 	nombre: z.string(),
@@ -111,6 +147,7 @@ export const usuarioRegistradoSchema = z.object({
 	nacionalidad: z.string(),
 	CUIL: z.string(),
 	actividadesArcaCodigo: z.string().nullable(),
+	fotoDniUrl: z.string().nullable(),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.string(),

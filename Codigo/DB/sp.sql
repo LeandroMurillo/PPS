@@ -163,6 +163,7 @@ BEGIN
         u.fechaNacimiento,
         u.nacionalidad,
         u.email,
+        u.fotoDniUrl,
         u.fechaRegistro,
         u.rol,
         u.estado
@@ -3292,7 +3293,8 @@ CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
     IN pEmail VARCHAR(99),
     IN pContrasena VARCHAR(255),
     IN pCUIL VARCHAR(11),
-    IN pActividadesArcaCodigo CHAR(6)
+    IN pActividadesArcaCodigo CHAR(6),
+    IN pFotoDniUrl VARCHAR(255)
 )
 MODIFIES SQL DATA
 COMMENT 'Registra un nuevo usuario en la plataforma en estado Pendiente (P) con rol USUARIO.'
@@ -3307,6 +3309,7 @@ BEGIN
     SET pNacionalidad = TRIM(pNacionalidad);
     SET pCUIL = TRIM(pCUIL);
     SET pActividadesArcaCodigo = NULLIF(TRIM(pActividadesArcaCodigo), '');
+    SET pFotoDniUrl = NULLIF(TRIM(pFotoDniUrl), '');
 
     SELECT COUNT(*) INTO vEmailExistente
     FROM `Usuarios`
@@ -3336,6 +3339,7 @@ BEGIN
         `contraseña`,
         `CUIL`,
         `actividadesArcaCodigo`,
+        `fotoDniUrl`,
         `rol`,
         `estado`
     ) VALUES (
@@ -3348,6 +3352,7 @@ BEGIN
         pContrasena,
         pCUIL,
         pActividadesArcaCodigo,
+        pFotoDniUrl,
         'USUARIO',
         'P'
     );
@@ -3364,6 +3369,7 @@ BEGIN
         u.nacionalidad,
         u.CUIL,
         u.actividadesArcaCodigo,
+        u.fotoDniUrl,
         u.rol,
         u.estado,
         u.fechaRegistro
@@ -3391,11 +3397,26 @@ BEGIN
         u.nacionalidad,
         u.CUIL,
         u.actividadesArcaCodigo,
+        u.fotoDniUrl,
         u.rol,
         u.estado,
         u.fechaRegistro
     FROM `Usuarios` u
     WHERE u.email = LOWER(TRIM(pEmail));
+END //
+
+-- -----------------------------------------------------
+-- sp_publico_listar_actividades_arca
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_publico_listar_actividades_arca`()
+READS SQL DATA
+COMMENT 'Obtiene el listado completo de actividades económicas ARCA para selección en formularios.'
+BEGIN
+    SELECT
+        aa.codigo,
+        aa.descripcion
+    FROM `ActividadesArca` aa
+    ORDER BY aa.descripcion ASC;
 END //
 
 DELIMITER ;

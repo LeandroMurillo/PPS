@@ -13,6 +13,12 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
 import { logger } from './shared/logger.js';
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export const app = express();
 
 app.disable('x-powered-by');
@@ -34,16 +40,18 @@ app.use(
 
 app.use(
 	express.json({
-		limit: '1mb',
+		limit: '10mb',
 	}),
 );
 
 app.use(
 	express.urlencoded({
 		extended: true,
-		limit: '1mb',
+		limit: '10mb',
 	}),
 );
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api', healthRouter);
 

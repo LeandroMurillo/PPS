@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 
 import { loginBodySchema, registrarUsuarioBodySchema } from './auth.schemas.js';
-import { loginService, registrarUsuarioService } from './auth.service.js';
+import { loginService, listarActividadesArcaService, registrarUsuarioService } from './auth.service.js';
 
 export const registrarUsuarioController: RequestHandler = async (request, response, next) => {
 	try {
@@ -86,6 +86,15 @@ export const loginController: RequestHandler = async (request, response, next) =
 			}
 		}
 
+		next(error);
+	}
+};
+
+export const listarActividadesArcaController: RequestHandler = async (_request, response, next) => {
+	try {
+		const actividades = await listarActividadesArcaService();
+		response.status(200).json({ actividades });
+	} catch (error) {
 		next(error);
 	}
 };

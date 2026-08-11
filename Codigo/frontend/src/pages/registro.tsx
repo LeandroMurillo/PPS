@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
 	Alert,
+	Autocomplete,
 	Box,
 	Button,
 	Card,
@@ -29,13 +30,44 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SendIcon from '@mui/icons-material/Send';
 import BadgeIcon from '@mui/icons-material/Badge';
-import { registrarUsuarioApi, type RegistrarUsuarioPayload } from '../api/auth';
+import {
+	obtenerActividadesArcaApi,
+	registrarUsuarioApi,
+	type ActividadArca,
+	type RegistrarUsuarioPayload,
+} from '../api/auth';
+
+function validarCUIL(cuil: string): boolean {
+	const cleaned = cuil.trim().replace(/\D/g, '');
+	if (cleaned.length !== 11) return false;
+
+	const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+	let sum = 0;
+	for (let i = 0; i < 10; i++) {
+		sum += Number(cleaned[i]) * multipliers[i]!;
+	}
+
+	const mod = sum % 11;
+	let expectedDigit = 11 - mod;
+	if (expectedDigit === 11) expectedDigit = 0;
+	if (expectedDigit === 10) expectedDigit = 9;
+
+	return Number(cleaned[10]) === expectedDigit;
+}
 
 const STEPS = ['Datos personales y Documento', 'Confirmación de información', 'Registro completado'];
 
 export default function RegistroPage() {
 	const navigate = useNavigate();
 	const [activeStep, setActiveStep] = useState(0);
+
+	const [actividadesArca, setActividadesArca] = useState<ActividadArca[]>([]);
+
+	useEffect(() => {
+		obtenerActividadesArcaApi()
+			.then((list) => setActividadesArca(list))
+			.catch(() => setActividadesArca([]));
+	}, []);
 
 	// Form state
 	const [formData, setFormData] = useState({
@@ -137,8 +169,10 @@ export default function RegistroPage() {
 
 		if (!formData.contraseña) {
 			errors.contraseña = 'La contraseña es obligatoria';
-		} else if (formData.contraseña.length < 6) {
-			errors.contraseña = 'Mínimo 6 caracteres';
+		} else if (formData.contraseña.length < 8) {
+			errors.contraseña = 'Mínimo 8 caracteres';
+		} else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.contraseña)) {
+			errors.contraseña = 'Debe incluir al menos una letra mayúscula, una minúscula y un número';
 		}
 
 		if (formData.confirmarContraseña !== formData.contraseña) {
@@ -149,6 +183,8 @@ export default function RegistroPage() {
 			errors.CUIL = 'El CUIL es obligatorio';
 		} else if (!/^\d{11}$/.test(formData.CUIL.trim())) {
 			errors.CUIL = 'Debe contener exactamente 11 dígitos numéricos sin guiones';
+		} else if (!validarCUIL(formData.CUIL.trim())) {
+			errors.CUIL = 'El CUIL ingresado no es válido (dígito verificador incorrecto)';
 		}
 
 		if (!formData.fechaNacimiento) {
@@ -313,7 +349,7 @@ export default function RegistroPage() {
 									value={formData.contraseña}
 									onChange={handleChange('contraseña')}
 									error={!!formErrors.contraseña}
-									helperText={formErrors.contraseña || 'Mínimo 6 caracteres'}
+									helperText={formErrors.contraseña || 'Mínimo 8 caracteres (mayúscula, minúscula y número)'}
 								/>
 							</Grid>
 
@@ -374,17 +410,38 @@ export default function RegistroPage() {
 							</Grid>
 
 							<Grid size={{ xs: 12 }}>
-								<TextField
-									fullWidth
-									label="Código de Actividad Rentas/ARCA (Opcional)"
-									value={formData.actividadesArcaCodigo}
-									onChange={handleChange('actividadesArcaCodigo')}
-									error={!!formErrors.actividadesArcaCodigo}
-									helperText={
-										formErrors.actividadesArcaCodigo ||
-										'Código de 6 dígitos si estás registrado formalmente en Rentas/ARCA'
+								<Autocomplete
+									options={actividadesArca}
+									getOptionLabel={(option) => `${option.codigo} - ${option.descripcion}`}
+									value={
+										actividadesArca.find((a) => a.codigo === formData.actividadesArcaCodigo) || null
 									}
-									slotProps={{ htmlInput: { maxLength: 6 } }}
+									onChange={(_e, newValue) => {
+										setFormData((prev) => ({
+											...prev,
+											actividadesArcaCodigo: newValue ? newValue.codigo : '',
+										}));
+										if (formErrors.actividadesArcaCodigo) {
+											setFormErrors((prev) => {
+												const updated = { ...prev };
+												delete updated.actividadesArcaCodigo;
+												return updated;
+											});
+										}
+									}}
+									renderInput={(params) => (
+										<TextField
+											{...params}
+											label="Código de Actividad Rentas/ARCA (Opcional)"
+											placeholder="Seleccioná tu actividad económica de la lista"
+											error={!!formErrors.actividadesArcaCodigo}
+											helperText={
+												formErrors.actividadesArcaCodigo ||
+												'Seleccioná tu código de actividad formal registrado en Rentas/ARCA'
+											}
+										/>
+									)}
+									noOptionsText="No se encontraron actividades"
 								/>
 							</Grid>
 
@@ -543,7 +600,14 @@ export default function RegistroPage() {
 											Código Rentas / ARCA
 										</Typography>
 										<Typography variant="body1" fontWeight="bold">
-											{formData.actividadesArcaCodigo || 'No registrado'}
+											{(() => {
+												const match = actividadesArca.find(
+													(a) => a.codigo === formData.actividadesArcaCodigo,
+												);
+												return match
+													? `${match.codigo} - ${match.descripcion}`
+													: formData.actividadesArcaCodigo || 'No registrado';
+											})()}
 										</Typography>
 									</Grid>
 

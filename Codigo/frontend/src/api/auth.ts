@@ -23,9 +23,19 @@ export type UsuarioSession = {
 	nacionalidad: string;
 	CUIL: string;
 	actividadesArcaCodigo: string | null;
+	fotoDniUrl?: string | null;
 	rol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 	estado: 'A' | 'P' | 'I';
 	fechaRegistro: string;
+};
+
+export type ActividadArca = {
+	codigo: string;
+	descripcion: string;
+};
+
+export type ObtenerActividadesArcaResponse = {
+	actividades: ActividadArca[];
 };
 
 export type UsuarioRegistradoResponse = {
@@ -61,4 +71,9 @@ export async function loginApi(data: LoginPayload): Promise<LoginResponse> {
 		},
 		body: JSON.stringify(data),
 	});
+}
+
+export async function obtenerActividadesArcaApi(): Promise<ActividadArca[]> {
+	const res = await apiRequest<ObtenerActividadesArcaResponse>('/api/publico/auth/actividades-arca');
+	return res.actividades;
 }

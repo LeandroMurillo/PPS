@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Usuarios` (
   `rol` ENUM('USUARIO', 'MODERADOR', 'ADMIN') NOT NULL,
   `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',
   `CUIL` VARCHAR(11) NOT NULL,
+  `fotoDniUrl` VARCHAR(255) NULL,
   PRIMARY KEY (`idUsuario`),
   UNIQUE INDEX `uq_Usuarios_email` (`email` ASC) VISIBLE,
   INDEX `fk_Usuarios_actividades_arca_idx` (`actividadesArcaCodigo` ASC) VISIBLE,

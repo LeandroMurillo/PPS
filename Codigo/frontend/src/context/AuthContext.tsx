@@ -18,6 +18,14 @@ const AuthContext = createContext<AuthContextType>({
 	logout: () => {},
 });
 
+function sanitizeUserForStorage(user: UsuarioSession): Partial<UsuarioSession> {
+	const { CUIL: _c, fechaNacimiento: _f, fotoDniUrl: _d, ...safeUser } = user;
+	void _c;
+	void _f;
+	void _d;
+	return safeUser;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [user, setUser] = useState<UsuarioSession | null>(() => {
 		try {
@@ -30,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 	useEffect(() => {
 		if (user) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeUserForStorage(user)));
 		} else {
 			localStorage.removeItem(STORAGE_KEY);
 		}
