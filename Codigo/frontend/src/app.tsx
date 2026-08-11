@@ -20,6 +20,8 @@ const BRANDING = {
 };
 
 const LOCALE_TEXT = {
+	accountSignInLabel: 'Ingresar',
+	accountSignOutLabel: 'Cerrar sesión',
 	createNewButtonLabel: 'Crear nueva',
 	reloadButtonLabel: 'Recargar datos',
 	createLabel: 'Crear',

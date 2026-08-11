@@ -242,7 +242,6 @@ export default function AdminActoresPage() {
 		}
 	};
 
-	const activeFilterCount = [categoryId, department, actorType, state].filter(Boolean).length;
 	const resultSummary = total === 1 ? '1 actor encontrado' : `${total} actores encontrados`;
 
 	return (
@@ -250,8 +249,7 @@ export default function AdminActoresPage() {
 			<Stack spacing={2}>
 				<AdminFilters
 					search={search}
-					collapsible
-					activeFilterCount={activeFilterCount}
+					searchPlaceholder="Nombre, categoría, departamento o localidad…"
 					onSearchChange={(value) => changeFilter(setSearch, value)}
 					onClear={() => {
 						setSearch('');

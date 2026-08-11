@@ -255,30 +255,42 @@ export default function RegistroPage() {
 	};
 
 	return (
-		<Container maxWidth="md" sx={{ py: 4 }}>
-			<Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2 }}>
-				<Box sx={{ mb: 4, textAlign: 'center' }}>
-					<Typography variant="h4" component="h1" fontWeight="bold" color="primary" gutterBottom>
-						Registro de Usuario
-					</Typography>
-					<Typography variant="body1" color="text.secondary">
-						Creá tu cuenta para gestionar tu perfil en el Mapa Cultural de Tucumán
-					</Typography>
-				</Box>
+		<Box
+			sx={{
+				minHeight: 'calc(100vh - 64px)',
+				display: 'flex',
+				flexDirection: 'column',
+				justifyContent: 'center',
+				alignItems: 'center',
+				py: { xs: 2, sm: 3 },
+				px: 2,
+				boxSizing: 'border-box',
+			}}
+		>
+			<Container maxWidth="md" disableGutters sx={{ width: '100%' }}>
+				<Paper elevation={3} sx={{ p: { xs: 2, sm: 3.5 }, borderRadius: 2 }}>
+					<Box sx={{ mb: 2.5, textAlign: 'center' }}>
+						<Typography variant="h5" component="h1" fontWeight="bold" color="primary" gutterBottom>
+							Registro de Usuario
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Creá tu cuenta para gestionar tu perfil en el Mapa Cultural de Tucumán
+						</Typography>
+					</Box>
 
-				<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
-					{STEPS.map((label) => (
-						<Step key={label}>
-							<StepLabel>{label}</StepLabel>
-						</Step>
-					))}
-				</Stepper>
+					<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 2.5 }}>
+						{STEPS.map((label) => (
+							<Step key={label}>
+								<StepLabel>{label}</StepLabel>
+							</Step>
+						))}
+					</Stepper>
 
-				{errorMessage && (
-					<Alert severity="error" sx={{ mb: 3 }} onClose={() => setErrorMessage(null)}>
-						{errorMessage}
-					</Alert>
-				)}
+					{errorMessage && (
+						<Alert severity="error" sx={{ mb: 2.5 }} onClose={() => setErrorMessage(null)}>
+							{errorMessage}
+						</Alert>
+					)}
 
 				{/* PASO 1: Formulario de Datos Personales */}
 				{activeStep === 0 && (
@@ -706,5 +718,6 @@ export default function RegistroPage() {
 				)}
 			</Paper>
 		</Container>
+	</Box>
 	);
 }

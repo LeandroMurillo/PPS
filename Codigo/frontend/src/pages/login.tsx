@@ -1,74 +1,205 @@
 import React, { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { SignInPage, type AuthProvider, type AuthResponse } from '@toolpad/core/SignInPage';
-import { Alert, Link, Typography } from '@mui/material';
+import {
+	Alert,
+	Box,
+	Button,
+	CircularProgress,
+	Container,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	Link,
+	Paper,
+	TextField,
+	Typography,
+} from '@mui/material';
 import { loginApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
-
-const AUTH_PROVIDERS: AuthProvider[] = [{ id: 'credentials', name: 'Email y Contraseña' }];
 
 export default function LoginPage() {
 	const navigate = useNavigate();
 	const { login } = useAuth();
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+	const [loading, setLoading] = useState(false);
 	const [customError, setCustomError] = useState<string | null>(null);
 
-	const handleSignIn = async (provider: AuthProvider, formData?: FormData): Promise<AuthResponse> => {
+	// Forgot password dialog state
+	const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+	const [forgotEmail, setForgotEmail] = useState('');
+	const [forgotSubmitted, setForgotSubmitted] = useState(false);
+
+	const handleOpenForgotPassword = () => {
+		setForgotEmail(email);
+		setForgotSubmitted(false);
+		setForgotPasswordOpen(true);
+	};
+
+	const handleCloseForgotPassword = () => {
+		setForgotPasswordOpen(false);
+	};
+
+	const handleSendForgotPassword = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (forgotEmail.trim()) {
+			setForgotSubmitted(true);
+		}
+	};
+
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
 		setCustomError(null);
 
-		if (provider.id === 'credentials' && formData) {
-			const email = (formData.get('email') as string) || '';
-			const password = (formData.get('password') as string) || '';
-
-			if (!email.trim() || !password) {
-				return {
-					error: 'Por favor complete todos los campos.',
-				};
-			}
-
-			try {
-				const response = await loginApi({ email, contraseña: password });
-				login(response.usuario);
-				navigate('/');
-				return {};
-			} catch (err) {
-				const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
-				setCustomError(msg);
-				return {
-					error: msg,
-				};
-			}
+		if (!email.trim() || !password) {
+			setCustomError('Por favor complete todos los campos.');
+			return;
 		}
 
-		return { error: 'Proveedor no soportado' };
+		setLoading(true);
+		try {
+			const response = await loginApi({ email: email.trim(), contraseña: password });
+			login(response.usuario);
+			navigate('/');
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
+			setCustomError(msg);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
-		<div>
-			{customError && (
-				<Alert severity="error" sx={{ mb: 2 }} onClose={() => setCustomError(null)}>
-					{customError}
-				</Alert>
-			)}
+		<Box
+			sx={{
+				minHeight: 'calc(100vh - 64px)',
+				display: 'flex',
+				flexDirection: 'column',
+				justifyContent: 'center',
+				alignItems: 'center',
+				py: { xs: 2, sm: 3 },
+				px: 2,
+				boxSizing: 'border-box',
+			}}
+		>
+			<Container maxWidth="sm" disableGutters sx={{ width: '100%' }}>
+				<Paper elevation={3} sx={{ p: { xs: 2, sm: 3.5 }, borderRadius: 2 }}>
+					<Box sx={{ mb: 2.5, textAlign: 'center' }}>
+						<Typography variant="h5" component="h1" fontWeight="bold" color="primary" gutterBottom>
+							Iniciar sesión
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Ingresá a tu cuenta para gestionar tu perfil en el Mapa Cultural de Tucumán
+						</Typography>
+					</Box>
 
-			<SignInPage
-				providers={AUTH_PROVIDERS}
-				signIn={handleSignIn}
-				slots={{
-					signUpLink: () => (
-						<Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+					{customError && (
+						<Alert severity="error" sx={{ mb: 2.5 }} onClose={() => setCustomError(null)}>
+							{customError}
+						</Alert>
+					)}
+
+					<Box component="form" onSubmit={handleSubmit} noValidate>
+						<TextField
+							required
+							fullWidth
+							id="email"
+							label="Correo electrónico"
+							name="email"
+							type="email"
+							autoComplete="email"
+							autoFocus
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							sx={{ mb: 2 }}
+						/>
+
+						<TextField
+							required
+							fullWidth
+							id="password"
+							label="Contraseña"
+							name="password"
+							type="password"
+							autoComplete="current-password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							sx={{ mb: 2 }}
+						/>
+
+						<Button
+							type="submit"
+							fullWidth
+							variant="contained"
+							size="large"
+							disabled={loading}
+							sx={{ py: 1.5 }}
+						>
+							{loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar sesión'}
+						</Button>
+
+						<Typography variant="body2" sx={{ mt: 2.5, textAlign: 'center' }}>
+							<Link
+								component="button"
+								type="button"
+								variant="body2"
+								onClick={handleOpenForgotPassword}
+								underline="hover"
+								sx={{ cursor: 'pointer' }}
+							>
+								¿Olvidaste la contraseña?
+							</Link>
+						</Typography>
+
+						<Typography variant="body2" sx={{ mt: 2.5, textAlign: 'center' }}>
 							¿No tenés una cuenta?{' '}
 							<Link component={RouterLink} to="/registro" underline="hover">
 								Registrate acá
 							</Link>
 						</Typography>
-					),
-				}}
-				slotProps={{
-					emailField: { label: 'Correo electrónico', autoFocus: true, fullWidth: true },
-					passwordField: { label: 'Contraseña', fullWidth: true },
-					submitButton: { children: 'Iniciar Sesión', fullWidth: true },
-				}}
-			/>
-		</div>
+					</Box>
+				</Paper>
+			</Container>
+
+			{/* Modal de recuperación de contraseña */}
+			<Dialog open={forgotPasswordOpen} onClose={handleCloseForgotPassword} fullWidth>
+				<form onSubmit={handleSendForgotPassword}>
+					<DialogTitle>Recuperar contraseña</DialogTitle>
+					<DialogContent>
+						<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+							Ingresá tu correo electrónico y te enviaremos las instrucciones para restablecer tu
+							contraseña.
+						</Typography>
+						<TextField
+							autoFocus
+							required
+							fullWidth
+							label="Correo electrónico"
+							type="email"
+							value={forgotEmail}
+							onChange={(e) => setForgotEmail(e.target.value)}
+							sx={{ mt: 1 }}
+						/>
+						{forgotSubmitted && (
+							<Alert severity="success" sx={{ mt: 2 }}>
+								Si el correo existe en nuestro sistema, recibirás las instrucciones para restablecer tu
+								contraseña a la brevedad.
+							</Alert>
+						)}
+					</DialogContent>
+					<DialogActions sx={{ px: 3, pb: 2 }}>
+						<Button onClick={handleCloseForgotPassword} color="inherit">
+							{forgotSubmitted ? 'Cerrar' : 'Cancelar'}
+						</Button>
+						{!forgotSubmitted && (
+							<Button type="submit" variant="contained">
+								Enviar instrucciones
+							</Button>
+						)}
+					</DialogActions>
+				</form>
+			</Dialog>
+		</Box>
 	);
 }
