@@ -19,6 +19,8 @@ import AdminActorDetallePage from './pages/adminActorDetalle';
 import AdminUsuariosPage from './pages/adminUsuarios';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminCategoriasPage from './pages/adminCategorias';
+import AdminCategoriaDetallePage from './pages/adminCategoriaDetalle';
+import AdminCategoriaFormularioPage from './pages/adminCategoriaFormulario';
 import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import RegistroPage from './pages/registro';
 import LoginPage from './pages/login';
@@ -103,6 +105,22 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias',
 						Component: AdminCategoriasPage,
+					},
+					{
+						path: 'categorias/new',
+						Component: AdminCategoriasPage,
+					},
+					{
+						path: 'categorias/:categoriaId/formulario',
+						Component: AdminCategoriaFormularioPage,
+					},
+					{
+						path: 'categorias/:categoriaId/subcategorias/:subcategoriaId/formulario',
+						Component: AdminCategoriaFormularioPage,
+					},
+					{
+						path: 'categorias/:categoriaId',
+						Component: AdminCategoriaDetallePage,
 					},
 					{
 						path: 'categorias/:categoriaId/subcategorias',

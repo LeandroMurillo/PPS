@@ -288,20 +288,15 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `cultura`.`Formularios` (
   `idFormulario` INT NOT NULL AUTO_INCREMENT,
   `idCategoria` INT NOT NULL,
-  `idSubcategoria` INT NULL,
+  `idSubcategoria` INT NOT NULL DEFAULT 0,
   `titulo` VARCHAR(150) NOT NULL,
   `descripcion` VARCHAR(1000) NULL,
   `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`idFormulario`),
-  INDEX `FK_Subcategorias_idCategoria1_idx` (`idCategoria` ASC, `idSubcategoria` ASC) VISIBLE,
+  UNIQUE INDEX `uq_Formularios_ambito` (`idCategoria` ASC, `idSubcategoria` ASC) VISIBLE,
   CONSTRAINT `FK_Categorias_idCategoria3`
     FOREIGN KEY (`idCategoria`)
     REFERENCES `cultura`.`Categorias` (`idCategoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_Subcategorias_idCategoria1`
-    FOREIGN KEY (`idCategoria` , `idSubcategoria`)
-    REFERENCES `cultura`.`Subcategorias` (`idCategoria` , `idSubcategoria`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;

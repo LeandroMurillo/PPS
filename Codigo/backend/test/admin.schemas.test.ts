@@ -7,7 +7,10 @@ import {
 	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
+	crearPreguntaFormularioAdminBodySchema,
+	formularioSubcategoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
+	guardarFormularioAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarCategoriasAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
@@ -175,5 +178,46 @@ describe('consultas administrativas', () => {
 		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: '' }).success).toBe(false);
 		expect(guardarCategoriaAdminBodySchema.safeParse({ nombre: 'x'.repeat(46) }).success).toBe(false);
 		expect(categoriaAdminParamsSchema.parse({ id: '7' })).toEqual({ id: 7 });
+	});
+
+	it('valida el ámbito y los datos generales de un formulario', () => {
+		expect(formularioSubcategoriaAdminParamsSchema.parse({ idCategoria: '1', idSubcategoria: '3' })).toEqual({
+			idCategoria: 1,
+			idSubcategoria: 3,
+		});
+		expect(
+			guardarFormularioAdminBodySchema.parse({
+				titulo: '  Relevamiento musical  ',
+				descripcion: '  Trayectoria y actividad  ',
+			}),
+		).toEqual({ titulo: 'Relevamiento musical', descripcion: 'Trayectoria y actividad' });
+		expect(guardarFormularioAdminBodySchema.parse({ titulo: 'Ficha', descripcion: '  ' })).toEqual({
+			titulo: 'Ficha',
+			descripcion: null,
+		});
+	});
+
+	it('exige opciones solamente para preguntas de selección', () => {
+		expect(
+			crearPreguntaFormularioAdminBodySchema.safeParse({
+				pregunta: 'Formato de presentación',
+				tipoDato: 'OPCION_UNICA',
+				opciones: ['Solista', 'Banda'],
+			}).success,
+		).toBe(true);
+		expect(
+			crearPreguntaFormularioAdminBodySchema.safeParse({
+				pregunta: 'Formato de presentación',
+				tipoDato: 'OPCION_UNICA',
+				opciones: null,
+			}).success,
+		).toBe(false);
+		expect(
+			crearPreguntaFormularioAdminBodySchema.safeParse({
+				pregunta: 'Trayectoria',
+				tipoDato: 'TEXTO',
+				opciones: ['No corresponde', 'Otra'],
+			}).success,
+		).toBe(false);
 	});
 });

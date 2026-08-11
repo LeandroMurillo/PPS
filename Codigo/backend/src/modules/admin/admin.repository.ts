@@ -9,6 +9,9 @@ import type {
 	ActorDetalleEncuestaAdmin,
 	CategoriaAdmin,
 	CategoriaModeracionAdmin,
+	CrearPreguntaFormularioAdminBody,
+	FormularioAdmin,
+	GuardarFormularioAdminBody,
 	ListarActoresAdminQuery,
 	ListarCategoriasAdminQuery,
 	ListarSubcategoriasAdminQuery,
@@ -178,6 +181,54 @@ const subcategoriaAdminDatabaseRowSchema = z.object({
 	nombre: z.string(),
 	estado: z.enum(['A', 'I']),
 	cantidadActores: databaseIntegerSchema,
+});
+
+const formularioIdDatabaseRowSchema = z.object({ idFormulario: databaseIntegerSchema });
+const formularioAmbitoDatabaseRowSchema = formularioIdDatabaseRowSchema.extend({
+	idSubcategoria: databaseIntegerSchema.nullable(),
+});
+
+const formularioAdminDatabaseRowSchema = z.object({
+	idFormulario: databaseIntegerSchema,
+	idCategoria: databaseIntegerSchema,
+	categoria: z.string(),
+	estadoCategoria: z.enum(['A', 'I']),
+	idSubcategoria: databaseIntegerSchema.nullable(),
+	subcategoria: z.string().nullable(),
+	estadoSubcategoria: z.enum(['A', 'I']).nullable(),
+	titulo: z.string(),
+	descripcion: z.string().nullable(),
+	fechaCreacion: databaseDateSchema,
+	cantidadPreguntasHistoricas: databaseIntegerSchema,
+	cantidadPreguntasActivas: databaseIntegerSchema,
+	cantidadActoresConRespuestas: databaseIntegerSchema,
+});
+
+const preguntaFormularioAdminDatabaseRowSchema = z.object({
+	idFormulario: databaseIntegerSchema,
+	idPregunta: databaseIntegerSchema,
+	pregunta: z.string(),
+	tipoDato: z.enum([
+		'TEXTO',
+		'NUMERO',
+		'BOOLEANO',
+		'FECHA',
+		'URL',
+		'EMAIL',
+		'TELEFONO',
+		'OPCION_UNICA',
+		'OPCION_MULTIPLE',
+	]),
+	opciones: databaseQuestionOptionsSchema,
+	idPreguntaReemplazada: databaseIntegerSchema.nullable(),
+	preguntaReemplazada: z.string().nullable(),
+	orden: databaseIntegerSchema,
+	esObligatorio: databaseBooleanSchema,
+	esPublico: databaseBooleanSchema,
+	fechaIncorporacion: databaseDateSchema,
+	fechaDesactivacion: databaseDateSchema.nullable(),
+	estado: z.enum(['A', 'I']),
+	cantidadActoresQueRespondieron: databaseIntegerSchema,
 });
 
 function getResultSet(procedureResult: unknown, index: number, procedureName: string): unknown[] {
@@ -403,6 +454,45 @@ export async function obtenerActorAdminRepository(id: number): Promise<ActorDeta
 	};
 }
 
+function mapFormulario(
+	row: z.infer<typeof formularioAdminDatabaseRowSchema>,
+	preguntas: z.infer<typeof preguntaFormularioAdminDatabaseRowSchema>[],
+): FormularioAdmin {
+	const idSubcategoria = row.idSubcategoria && row.idSubcategoria > 0 ? row.idSubcategoria : null;
+
+	return {
+		id: row.idFormulario,
+		idCategoria: row.idCategoria,
+		categoria: row.categoria,
+		estadoCategoria: row.estadoCategoria,
+		idSubcategoria,
+		subcategoria: idSubcategoria === null ? null : row.subcategoria,
+		estadoSubcategoria: idSubcategoria === null ? null : row.estadoSubcategoria,
+		ambito: idSubcategoria === null ? 'CATEGORIA' : 'SUBCATEGORIA',
+		titulo: row.titulo,
+		descripcion: row.descripcion,
+		fechaCreacion: row.fechaCreacion,
+		cantidadPreguntasHistoricas: row.cantidadPreguntasHistoricas,
+		cantidadPreguntasActivas: row.cantidadPreguntasActivas,
+		cantidadActoresConRespuestas: row.cantidadActoresConRespuestas,
+		preguntas: preguntas.map((pregunta) => ({
+			id: pregunta.idPregunta,
+			pregunta: pregunta.pregunta,
+			tipoDato: pregunta.tipoDato,
+			opciones: pregunta.opciones,
+			idPreguntaReemplazada: pregunta.idPreguntaReemplazada,
+			preguntaReemplazada: pregunta.preguntaReemplazada,
+			orden: pregunta.orden,
+			esObligatorio: pregunta.esObligatorio,
+			esPublico: pregunta.esPublico,
+			fechaIncorporacion: pregunta.fechaIncorporacion,
+			fechaDesactivacion: pregunta.fechaDesactivacion,
+			estado: pregunta.estado,
+			cantidadActoresQueRespondieron: pregunta.cantidadActoresQueRespondieron,
+		})),
+	};
+}
+
 async function obtenerEncuestasActor(idActor: number): Promise<ActorDetalleEncuestaAdmin[]> {
 	const listarProcedureName = 'sp_actor_listar_formularios';
 	const listarResult: unknown = await pool.query('CALL sp_actor_listar_formularios(?)', [idActor]);
@@ -564,10 +654,7 @@ export async function obtenerSubcategoriaAdminRepository(
 	idSubcategoria: number,
 ): Promise<SubcategoriaAdmin | null> {
 	const procedureName = 'sp_admin_obtener_subcategoria';
-	const result: unknown = await pool.query('CALL sp_admin_obtener_subcategoria(?, ?)', [
-		idCategoria,
-		idSubcategoria,
-	]);
+	const result: unknown = await pool.query('CALL sp_admin_obtener_subcategoria(?, ?)', [idCategoria, idSubcategoria]);
 	const rows = z.array(subcategoriaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
 
 	return rows[0] ? mapSubcategoria(rows[0]) : null;
@@ -634,4 +721,112 @@ export async function eliminarSubcategoriaAdminRepository(
 	}
 
 	return mapSubcategoria(subcategoria);
+}
+
+export async function obtenerFormularioAdminRepository(idFormulario: number): Promise<FormularioAdmin | null> {
+	const procedureName = 'sp_admin_obtener_formulario';
+	const result: unknown = await pool.query('CALL sp_admin_obtener_formulario(?)', [idFormulario]);
+	const formularios = z.array(formularioAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const formulario = formularios[0];
+
+	if (!formulario) return null;
+
+	const preguntas = z.array(preguntaFormularioAdminDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
+
+	return mapFormulario(formulario, preguntas);
+}
+
+export async function buscarFormularioAdminRepository(
+	idCategoria: number,
+	idSubcategoria: number | null,
+): Promise<FormularioAdmin | null> {
+	const procedureName = 'sp_admin_listar_formularios';
+	const idSubcategoriaNormalizada = idSubcategoria ?? 0;
+	const result: unknown = await pool.query('CALL sp_admin_listar_formularios(NULL, ?, ?, 100, 0)', [
+		idCategoria,
+		idSubcategoriaNormalizada === 0 ? 'CATEGORIA' : 'SUBCATEGORIA',
+	]);
+	const rows = z.array(formularioAmbitoDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
+	const row = rows.find((formulario) => (formulario.idSubcategoria ?? 0) === idSubcategoriaNormalizada);
+
+	return row ? obtenerFormularioAdminRepository(row.idFormulario) : null;
+}
+
+export async function crearFormularioAdminRepository(
+	idCategoria: number,
+	idSubcategoria: number | null,
+	data: GuardarFormularioAdminBody,
+): Promise<FormularioAdmin> {
+	const procedureName = 'sp_admin_crear_formulario';
+	const result: unknown = await pool.query('CALL sp_admin_crear_formulario(?, ?, ?, ?)', [
+		idCategoria,
+		idSubcategoria ?? 0,
+		data.titulo,
+		data.descripcion,
+	]);
+	const rows = z.array(formularioIdDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const row = rows[0];
+
+	if (!row) throw new Error(`${procedureName} no devolvió el formulario creado`);
+
+	const formulario = await obtenerFormularioAdminRepository(row.idFormulario);
+	if (!formulario) throw new Error(`${procedureName} no permitió recuperar el formulario creado`);
+
+	return formulario;
+}
+
+export async function editarFormularioAdminRepository(
+	idFormulario: number,
+	data: GuardarFormularioAdminBody,
+): Promise<FormularioAdmin> {
+	const procedureName = 'sp_admin_editar_formulario';
+	await pool.query('CALL sp_admin_editar_formulario(?, ?, ?)', [idFormulario, data.titulo, data.descripcion]);
+
+	const formulario = await obtenerFormularioAdminRepository(idFormulario);
+	if (!formulario) throw new Error(`${procedureName} no permitió recuperar el formulario editado`);
+
+	return formulario;
+}
+
+export async function crearPreguntaFormularioAdminRepository(
+	idFormulario: number,
+	data: CrearPreguntaFormularioAdminBody,
+): Promise<FormularioAdmin> {
+	const crearProcedureName = 'sp_admin_crear_pregunta';
+	const crearResult: unknown = await pool.query('CALL sp_admin_crear_pregunta(?, ?, ?)', [
+		data.pregunta,
+		data.tipoDato,
+		data.opciones ? JSON.stringify(data.opciones) : null,
+	]);
+	const rows = z
+		.array(z.object({ idPregunta: databaseIntegerSchema }))
+		.parse(getResultSet(crearResult, 0, crearProcedureName));
+	const pregunta = rows[0];
+
+	if (!pregunta) throw new Error(`${crearProcedureName} no devolvió la pregunta creada`);
+
+	await pool.query('CALL sp_admin_agregar_pregunta_formulario(?, ?, ?, ?, ?)', [
+		idFormulario,
+		pregunta.idPregunta,
+		data.orden,
+		data.esObligatorio ? 1 : 0,
+		data.esPublico ? 1 : 0,
+	]);
+
+	const formulario = await obtenerFormularioAdminRepository(idFormulario);
+	if (!formulario) throw new Error('No se pudo recuperar el formulario actualizado');
+
+	return formulario;
+}
+
+export async function desactivarPreguntaFormularioAdminRepository(
+	idFormulario: number,
+	idPregunta: number,
+): Promise<FormularioAdmin> {
+	await pool.query('CALL sp_admin_desactivar_pregunta_formulario(?, ?)', [idFormulario, idPregunta]);
+
+	const formulario = await obtenerFormularioAdminRepository(idFormulario);
+	if (!formulario) throw new Error('No se pudo recuperar el formulario actualizado');
+
+	return formulario;
 }

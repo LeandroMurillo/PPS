@@ -144,7 +144,8 @@ export type CategoriaAdmin = {
 	cantidadActores: number;
 };
 
-export type CategoriaAdminSortBy = 'idCategoria' | 'nombre' | 'icono' | 'estado' | 'cantidadSubcategorias' | 'cantidadActores';
+export type CategoriaAdminSortBy =
+	'idCategoria' | 'nombre' | 'icono' | 'estado' | 'cantidadSubcategorias' | 'cantidadActores';
 
 export type SubcategoriaAdmin = {
 	idCategoria: number;
@@ -155,6 +156,54 @@ export type SubcategoriaAdmin = {
 };
 
 export type SubcategoriaAdminSortBy = 'idSubcategoria' | 'nombre' | 'estado' | 'cantidadActores';
+
+export type TipoPreguntaAdmin =
+	'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
+
+export type PreguntaFormularioAdmin = {
+	id: number;
+	pregunta: string;
+	tipoDato: TipoPreguntaAdmin;
+	opciones: string[] | null;
+	idPreguntaReemplazada: number | null;
+	preguntaReemplazada: string | null;
+	orden: number;
+	esObligatorio: boolean;
+	esPublico: boolean;
+	fechaIncorporacion: string;
+	fechaDesactivacion: string | null;
+	estado: 'A' | 'I';
+	cantidadActoresQueRespondieron: number;
+};
+
+export type FormularioAdmin = {
+	id: number;
+	idCategoria: number;
+	categoria: string;
+	estadoCategoria: 'A' | 'I';
+	idSubcategoria: number | null;
+	subcategoria: string | null;
+	estadoSubcategoria: 'A' | 'I' | null;
+	ambito: 'CATEGORIA' | 'SUBCATEGORIA';
+	titulo: string;
+	descripcion: string | null;
+	fechaCreacion: string;
+	cantidadPreguntasHistoricas: number;
+	cantidadPreguntasActivas: number;
+	cantidadActoresConRespuestas: number;
+	preguntas: PreguntaFormularioAdmin[];
+};
+
+export type GuardarFormularioAdmin = { titulo: string; descripcion: string | null };
+
+export type CrearPreguntaFormularioAdmin = {
+	pregunta: string;
+	tipoDato: TipoPreguntaAdmin;
+	opciones: string[] | null;
+	orden: number | null;
+	esObligatorio: boolean;
+	esPublico: boolean;
+};
 
 type PageResponse<T> = {
 	data: T[];
@@ -292,7 +341,10 @@ export async function listarSubcategoriasAdmin(
 	const params = new URLSearchParams();
 	Object.entries(input).forEach(([key, value]) => appendOptionalParam(params, key, value));
 
-	return apiFetch<PageResponse<SubcategoriaAdmin>>(`/api/admin/categorias/${idCategoria}/subcategorias?${params.toString()}`, signal);
+	return apiFetch<PageResponse<SubcategoriaAdmin>>(
+		`/api/admin/categorias/${idCategoria}/subcategorias?${params.toString()}`,
+		signal,
+	);
 }
 
 export async function obtenerSubcategoriaAdmin(
@@ -326,11 +378,67 @@ export async function editarSubcategoriaAdmin(
 	});
 }
 
-export async function eliminarSubcategoriaAdmin(
-	idCategoria: number | string,
-	id: number | string,
-) {
+export async function eliminarSubcategoriaAdmin(idCategoria: number | string, id: number | string) {
 	return apiRequest<{ data: SubcategoriaAdmin }>(`/api/admin/categorias/${idCategoria}/subcategorias/${id}`, {
+		method: 'DELETE',
+	});
+}
+
+function formularioCategoriaPath(idCategoria: number | string) {
+	return `/api/admin/categorias/${idCategoria}/formulario`;
+}
+
+function formularioSubcategoriaPath(idCategoria: number | string, idSubcategoria: number | string) {
+	return `/api/admin/categorias/${idCategoria}/subcategorias/${idSubcategoria}/formulario`;
+}
+
+export async function obtenerFormularioCategoriaAdmin(idCategoria: number | string, signal?: AbortSignal) {
+	return apiFetch<{ data: FormularioAdmin | null }>(formularioCategoriaPath(idCategoria), signal);
+}
+
+export async function guardarFormularioCategoriaAdmin(
+	idCategoria: number | string,
+	data: GuardarFormularioAdmin,
+	existe: boolean,
+) {
+	return apiRequest<{ data: FormularioAdmin }>(formularioCategoriaPath(idCategoria), {
+		method: existe ? 'PUT' : 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function obtenerFormularioSubcategoriaAdmin(
+	idCategoria: number | string,
+	idSubcategoria: number | string,
+	signal?: AbortSignal,
+) {
+	return apiFetch<{ data: FormularioAdmin | null }>(formularioSubcategoriaPath(idCategoria, idSubcategoria), signal);
+}
+
+export async function guardarFormularioSubcategoriaAdmin(
+	idCategoria: number | string,
+	idSubcategoria: number | string,
+	data: GuardarFormularioAdmin,
+	existe: boolean,
+) {
+	return apiRequest<{ data: FormularioAdmin }>(formularioSubcategoriaPath(idCategoria, idSubcategoria), {
+		method: existe ? 'PUT' : 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function crearPreguntaFormularioAdmin(idFormulario: number | string, data: CrearPreguntaFormularioAdmin) {
+	return apiRequest<{ data: FormularioAdmin }>(`/api/admin/formularios/${idFormulario}/preguntas`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function desactivarPreguntaFormularioAdmin(idFormulario: number | string, idPregunta: number | string) {
+	return apiRequest<{ data: FormularioAdmin }>(`/api/admin/formularios/${idFormulario}/preguntas/${idPregunta}`, {
 		method: 'DELETE',
 	});
 }

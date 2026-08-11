@@ -9,7 +9,6 @@ import CategoryIcon, {
 	isCategoriaIcono,
 	type CategoriaIcono,
 } from '../components/categoryIcon';
-import SubcategoriasManager from '../components/subcategoriasManager';
 import {
 	crearCategoriaAdmin,
 	editarCategoriaAdmin,
@@ -92,7 +91,10 @@ function renderIconoField({
 	);
 }
 
-export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
+type CategoriaAdminDataSource = DataSource<CategoriaDataModel> &
+	Required<Pick<DataSource<CategoriaDataModel>, 'getMany'>>;
+
+export const categoriasAdminDataSource: CategoriaAdminDataSource = {
 	fields: [
 		{ field: 'id', headerName: 'ID', width: 90 },
 		{
@@ -131,22 +133,18 @@ export const categoriasAdminDataSource: DataSource<CategoriaDataModel> = {
 				CATEGORY_ICON_OPTIONS.find((opt) => opt.value === value)?.label ?? String(value ?? ''),
 		},
 		{
+			field: 'cantidadSubcategorias',
+			headerName: 'Subcategorías',
+			type: 'number',
+			editable: false,
+			width: 150,
+		},
+		{
 			field: 'cantidadActores',
 			headerName: 'Actores',
 			type: 'number',
 			editable: false,
 			width: 120,
-		},
-		{
-			field: 'subcategorias',
-			editable: false,
-			filterable: false,
-			sortable: false,
-			valueFormatter: (_value, row) => {
-				const categoryId = (row as CategoriaDataModel)?.id;
-				if (!categoryId) return null;
-				return <SubcategoriasManager categoryId={categoryId} />;
-			},
 		},
 	],
 	getMany: async ({ paginationModel, filterModel, sortModel }) => {

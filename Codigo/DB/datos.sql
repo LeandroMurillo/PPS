@@ -604,22 +604,22 @@ VALUES
 
 -- -----------------------------------------------------
 -- 13. Formularios
--- idSubcategoria NULL identifica un formulario de categoría.
+-- idSubcategoria 0 identifica un formulario de categoría.
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Formularios`
   (`idFormulario`, `idCategoria`, `idSubcategoria`, `titulo`, `descripcion`, `fechaCreacion`)
 VALUES
-  (1, 2, NULL,
+  (1, 2, 0,
    'Relevamiento de Artesanía',
    'Información productiva general de los actores de la categoría Artesanía.',
    '2026-06-01 09:00:00'),
 
-  (2, 1, NULL,
+  (2, 1, 0,
    'Relevamiento de Música',
    'Información general sobre la actividad y trayectoria musical.',
    '2026-06-01 09:15:00'),
 
-  (3, 4, NULL,
+  (3, 4, 0,
    'Relevamiento Audiovisual',
    'Información técnica general de productores y realizadores audiovisuales.',
    '2026-06-01 09:30:00'),

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import AddIcon from '@mui/icons-material/Add';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import Alert from '@mui/material/Alert';
@@ -19,6 +20,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { useNavigate } from 'react-router-dom';
 
 import {
 	crearSubcategoriaAdmin,
@@ -39,9 +41,16 @@ const pageSize = 25;
 
 interface SubcategoriasManagerProps {
 	categoryId: number;
+	contained?: boolean;
+	showTitle?: boolean;
 }
 
-export default function SubcategoriasManager({ categoryId }: SubcategoriasManagerProps) {
+export default function SubcategoriasManager({
+	categoryId,
+	contained = false,
+	showTitle = true,
+}: SubcategoriasManagerProps) {
+	const navigate = useNavigate();
 	const [search, setSearch] = React.useState('');
 	const [state, setState] = React.useState('');
 	const [page, setPage] = React.useState(0);
@@ -206,6 +215,15 @@ export default function SubcategoriasManager({ categoryId }: SubcategoriasManage
 			align: 'center',
 			render: (row) => (
 				<Stack direction="row" spacing={1} justifyContent="center">
+					<Tooltip title="Administrar formulario">
+						<IconButton
+							size="small"
+							color="primary"
+							onClick={() => navigate(`/categorias/${categoryId}/subcategorias/${row.id}/formulario`)}
+						>
+							<AssignmentIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
 					<Tooltip title="Modificar subcategoría">
 						<IconButton size="small" onClick={() => handleOpenEdit(row)}>
 							<EditIcon fontSize="small" />
@@ -224,8 +242,8 @@ export default function SubcategoriasManager({ categoryId }: SubcategoriasManage
 	return (
 		<Box
 			sx={{
-				margin: '-8px -16px',
-				width: { xs: 'calc(100% + 32px)', sm: 'calc(200% + 48px)' },
+				margin: contained ? 0 : '-8px -16px',
+				width: contained ? '100%' : { xs: 'calc(100% + 32px)', sm: 'calc(200% + 48px)' },
 				p: 2.5,
 				boxSizing: 'border-box',
 				borderRadius: 2,
@@ -237,9 +255,11 @@ export default function SubcategoriasManager({ categoryId }: SubcategoriasManage
 			<Stack spacing={2.5}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} flexWrap="wrap">
 					<Stack direction="row" alignItems="center" spacing={1.5}>
-						<Typography variant="h6" fontWeight={600}>
-							Subcategorías
-						</Typography>
+						{showTitle && (
+							<Typography variant="h6" fontWeight={600}>
+								Subcategorías
+							</Typography>
+						)}
 						<Chip label={`${total}`} size="small" color="primary" variant="outlined" />
 					</Stack>
 

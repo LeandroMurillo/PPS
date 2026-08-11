@@ -6,32 +6,43 @@ import {
 	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
+	crearPreguntaFormularioAdminBodySchema,
+	formularioAdminParamsSchema,
+	formularioSubcategoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
+	guardarFormularioAdminBodySchema,
 	guardarSubcategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarCategoriasAdminQuerySchema,
 	listarSubcategoriasAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
+	preguntaFormularioAdminParamsSchema,
 	subcategoriaAdminCategoriaParamSchema,
 	subcategoriaAdminParamsSchema,
 	usuarioAdminParamsSchema,
 } from './admin.schemas.js';
 import {
 	asignarModeradorAdminService,
+	buscarFormularioAdminService,
 	cambiarEstadoActoresAdminService,
 	cambiarEstadoUsuarioAdminService,
 	crearCategoriaAdminService,
+	crearFormularioAdminService,
+	crearPreguntaFormularioAdminService,
 	crearSubcategoriaAdminService,
 	editarCategoriaAdminService,
+	editarFormularioAdminService,
 	editarSubcategoriaAdminService,
 	eliminarCategoriaAdminService,
 	eliminarSubcategoriaAdminService,
+	desactivarPreguntaFormularioAdminService,
 	listarActoresAdminService,
 	listarCategoriasAdminService,
 	listarSubcategoriasAdminService,
 	listarUsuariosAdminService,
 	obtenerActorAdminService,
 	obtenerCategoriaAdminService,
+	obtenerFormularioAdminService,
 	obtenerSubcategoriaAdminService,
 	obtenerUsuarioAdminService,
 } from './admin.service.js';
@@ -122,6 +133,33 @@ function subcategoryNameConflict(response: Parameters<RequestHandler>[1]) {
 		error: {
 			code: 'SUBCATEGORY_NAME_CONFLICT',
 			message: 'Ya existe una subcategoría con ese nombre para esta categoría.',
+		},
+	});
+}
+
+function formNotFound(response: Parameters<RequestHandler>[1]) {
+	response.status(404).json({
+		error: {
+			code: 'FORM_NOT_FOUND',
+			message: 'No se encontró el formulario solicitado',
+		},
+	});
+}
+
+function isFormScopeConflict(error: unknown): boolean {
+	return (
+		error instanceof Error &&
+		(error.message.includes('Ya existe un formulario para ese ámbito') ||
+			error.message.includes('uq_Formularios_ambito') ||
+			error.message.includes('Duplicate entry'))
+	);
+}
+
+function formScopeConflict(response: Parameters<RequestHandler>[1]) {
+	response.status(409).json({
+		error: {
+			code: 'FORM_SCOPE_CONFLICT',
+			message: 'Ya existe un formulario para esta categoría o subcategoría.',
 		},
 	});
 }
@@ -485,7 +523,166 @@ export const eliminarSubcategoriaAdminController: RequestHandler = async (reques
 		return;
 	}
 
+	response.status(200).json(await eliminarSubcategoriaAdminService(params.data.idCategoria, params.data.id));
+};
+
+export const obtenerFormularioCategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminCategoriaParamSchema.safeParse(request.params);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!(await obtenerCategoriaAdminService(params.data.idCategoria))) {
+		categoryNotFound(response);
+		return;
+	}
+
+	response.status(200).json(await buscarFormularioAdminService(params.data.idCategoria, null));
+};
+
+export const crearFormularioCategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminCategoriaParamSchema.safeParse(request.params);
+	const body = guardarFormularioAdminBodySchema.safeParse(request.body);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+	if (!(await obtenerCategoriaAdminService(params.data.idCategoria))) {
+		categoryNotFound(response);
+		return;
+	}
+
+	try {
+		response.status(201).json(await crearFormularioAdminService(params.data.idCategoria, null, body.data));
+	} catch (error) {
+		if (isFormScopeConflict(error)) {
+			formScopeConflict(response);
+			return;
+		}
+		throw error;
+	}
+};
+
+export const editarFormularioCategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = subcategoriaAdminCategoriaParamSchema.safeParse(request.params);
+	const body = guardarFormularioAdminBodySchema.safeParse(request.body);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	const formulario = await buscarFormularioAdminService(params.data.idCategoria, null);
+	if (!formulario.data) {
+		formNotFound(response);
+		return;
+	}
+
+	response.status(200).json(await editarFormularioAdminService(formulario.data.id, body.data));
+};
+
+export const obtenerFormularioSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = formularioSubcategoriaAdminParamsSchema.safeParse(request.params);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!(await obtenerSubcategoriaAdminService(params.data.idCategoria, params.data.idSubcategoria))) {
+		subcategoryNotFound(response);
+		return;
+	}
+
+	response.status(200).json(await buscarFormularioAdminService(params.data.idCategoria, params.data.idSubcategoria));
+};
+
+export const crearFormularioSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = formularioSubcategoriaAdminParamsSchema.safeParse(request.params);
+	const body = guardarFormularioAdminBodySchema.safeParse(request.body);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+	if (!(await obtenerSubcategoriaAdminService(params.data.idCategoria, params.data.idSubcategoria))) {
+		subcategoryNotFound(response);
+		return;
+	}
+
+	try {
+		response
+			.status(201)
+			.json(await crearFormularioAdminService(params.data.idCategoria, params.data.idSubcategoria, body.data));
+	} catch (error) {
+		if (isFormScopeConflict(error)) {
+			formScopeConflict(response);
+			return;
+		}
+		throw error;
+	}
+};
+
+export const editarFormularioSubcategoriaAdminController: RequestHandler = async (request, response) => {
+	const params = formularioSubcategoriaAdminParamsSchema.safeParse(request.params);
+	const body = guardarFormularioAdminBodySchema.safeParse(request.body);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	const formulario = await buscarFormularioAdminService(params.data.idCategoria, params.data.idSubcategoria);
+	if (!formulario.data) {
+		formNotFound(response);
+		return;
+	}
+
+	response.status(200).json(await editarFormularioAdminService(formulario.data.id, body.data));
+};
+
+export const crearPreguntaFormularioAdminController: RequestHandler = async (request, response) => {
+	const params = formularioAdminParamsSchema.safeParse(request.params);
+	const body = crearPreguntaFormularioAdminBodySchema.safeParse(request.body);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+	if (!(await obtenerFormularioAdminService(params.data.idFormulario))) {
+		formNotFound(response);
+		return;
+	}
+
+	response.status(201).json(await crearPreguntaFormularioAdminService(params.data.idFormulario, body.data));
+};
+
+export const desactivarPreguntaFormularioAdminController: RequestHandler = async (request, response) => {
+	const params = preguntaFormularioAdminParamsSchema.safeParse(request.params);
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!(await obtenerFormularioAdminService(params.data.idFormulario))) {
+		formNotFound(response);
+		return;
+	}
+
 	response
 		.status(200)
-		.json(await eliminarSubcategoriaAdminService(params.data.idCategoria, params.data.id));
+		.json(await desactivarPreguntaFormularioAdminService(params.data.idFormulario, params.data.idPregunta));
 };

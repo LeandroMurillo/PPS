@@ -115,6 +115,8 @@ ALTER TABLE `cultura`.`Convocatorias`
     CHECK (`fechaCierre` > `fechaCreacion`);
 
 ALTER TABLE `cultura`.`Formularios`
+  ADD CONSTRAINT `chk_Formularios_subcategoria`
+    CHECK (`idSubcategoria` >= 0),
   ADD CONSTRAINT `chk_Formularios_titulo`
     CHECK (`titulo` = TRIM(`titulo`) AND `titulo` <> ''),
   ADD CONSTRAINT `chk_Formularios_descripcion`

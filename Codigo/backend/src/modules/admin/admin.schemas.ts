@@ -414,12 +414,7 @@ export const categoriaAdminDuplicadaResponseSchema = z.object({
 	}),
 });
 
-export const subcategoriaAdminSortBySchema = z.enum([
-	'idSubcategoria',
-	'nombre',
-	'estado',
-	'cantidadActores',
-]);
+export const subcategoriaAdminSortBySchema = z.enum(['idSubcategoria', 'nombre', 'estado', 'cantidadActores']);
 
 export const listarSubcategoriasAdminQuerySchema = z.strictObject({
 	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
@@ -487,6 +482,131 @@ export const subcategoriaAdminNoEncontradaResponseSchema = z.object({
 export const subcategoriaAdminDuplicadaResponseSchema = z.object({
 	error: z.object({
 		code: z.literal('SUBCATEGORY_NAME_CONFLICT'),
+		message: z.string(),
+	}),
+});
+
+export const formularioSubcategoriaAdminParamsSchema = z.strictObject({
+	idCategoria: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+	idSubcategoria: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+});
+
+export type FormularioSubcategoriaAdminParams = z.infer<typeof formularioSubcategoriaAdminParamsSchema>;
+
+export const formularioAdminParamsSchema = z.strictObject({
+	idFormulario: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+});
+
+export const preguntaFormularioAdminParamsSchema = formularioAdminParamsSchema.extend({
+	idPregunta: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+});
+
+export const guardarFormularioAdminBodySchema = z.strictObject({
+	titulo: z.string().trim().min(1).max(150),
+	descripcion: z.preprocess(
+		(value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+		z.string().trim().min(1).max(1000).nullable().default(null),
+	),
+});
+
+export type GuardarFormularioAdminBody = z.infer<typeof guardarFormularioAdminBodySchema>;
+
+export const tipoPreguntaAdminSchema = z.enum([
+	'TEXTO',
+	'NUMERO',
+	'BOOLEANO',
+	'FECHA',
+	'URL',
+	'EMAIL',
+	'TELEFONO',
+	'OPCION_UNICA',
+	'OPCION_MULTIPLE',
+]);
+
+export const crearPreguntaFormularioAdminBodySchema = z
+	.strictObject({
+		pregunta: z.string().trim().min(1).max(500),
+		tipoDato: tipoPreguntaAdminSchema,
+		opciones: z.array(z.string().trim().min(1).max(150)).min(2).max(50).nullable().default(null),
+		orden: z.number().int().positive().nullable().default(null),
+		esObligatorio: z.boolean().default(false),
+		esPublico: z.boolean().default(true),
+	})
+	.superRefine((value, context) => {
+		const requiereOpciones = value.tipoDato === 'OPCION_UNICA' || value.tipoDato === 'OPCION_MULTIPLE';
+
+		if (requiereOpciones && value.opciones === null) {
+			context.addIssue({
+				code: 'custom',
+				path: ['opciones'],
+				message: 'Este tipo de pregunta requiere opciones.',
+			});
+		}
+		if (!requiereOpciones && value.opciones !== null) {
+			context.addIssue({
+				code: 'custom',
+				path: ['opciones'],
+				message: 'Este tipo de pregunta no admite opciones.',
+			});
+		}
+	});
+
+export type CrearPreguntaFormularioAdminBody = z.infer<typeof crearPreguntaFormularioAdminBodySchema>;
+
+export const preguntaFormularioAdminSchema = z.object({
+	id: z.number().int().positive(),
+	pregunta: z.string(),
+	tipoDato: tipoPreguntaAdminSchema,
+	opciones: z.array(z.string()).nullable(),
+	idPreguntaReemplazada: z.number().int().positive().nullable(),
+	preguntaReemplazada: z.string().nullable(),
+	orden: z.number().int().positive(),
+	esObligatorio: z.boolean(),
+	esPublico: z.boolean(),
+	fechaIncorporacion: z.string(),
+	fechaDesactivacion: z.string().nullable(),
+	estado: z.enum(['A', 'I']),
+	cantidadActoresQueRespondieron: z.number().int().min(0),
+});
+
+export type PreguntaFormularioAdmin = z.infer<typeof preguntaFormularioAdminSchema>;
+
+export const formularioAdminSchema = z.object({
+	id: z.number().int().positive(),
+	idCategoria: z.number().int().positive(),
+	categoria: z.string(),
+	estadoCategoria: z.enum(['A', 'I']),
+	idSubcategoria: z.number().int().positive().nullable(),
+	subcategoria: z.string().nullable(),
+	estadoSubcategoria: z.enum(['A', 'I']).nullable(),
+	ambito: z.enum(['CATEGORIA', 'SUBCATEGORIA']),
+	titulo: z.string(),
+	descripcion: z.string().nullable(),
+	fechaCreacion: z.string(),
+	cantidadPreguntasHistoricas: z.number().int().min(0),
+	cantidadPreguntasActivas: z.number().int().min(0),
+	cantidadActoresConRespuestas: z.number().int().min(0),
+	preguntas: z.array(preguntaFormularioAdminSchema),
+});
+
+export type FormularioAdmin = z.infer<typeof formularioAdminSchema>;
+
+export const obtenerFormularioAdminResponseSchema = z.object({ data: formularioAdminSchema });
+export type ObtenerFormularioAdminResponse = z.infer<typeof obtenerFormularioAdminResponseSchema>;
+
+export const buscarFormularioAdminResponseSchema = z.object({ data: formularioAdminSchema.nullable() });
+export type BuscarFormularioAdminResponse = z.infer<typeof buscarFormularioAdminResponseSchema>;
+
+export const formularioAdminNoEncontradoResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('FORM_NOT_FOUND'),
+		message: z.string(),
+	}),
+});
+
+export const formularioAdminDuplicadoResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('FORM_SCOPE_CONFLICT'),
 		message: z.string(),
 	}),
 });

@@ -5,13 +5,20 @@ import {
 	asignarModeradorAdminBodySchema,
 	actorAdminNoEncontradoResponseSchema,
 	actorAdminParamsSchema,
+	buscarFormularioAdminResponseSchema,
 	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoActoresAdminResponseSchema,
 	cambiarEstadoUsuarioAdminBodySchema,
+	crearPreguntaFormularioAdminBodySchema,
 	categoriaAdminDuplicadaResponseSchema,
 	categoriaAdminNoEncontradaResponseSchema,
 	categoriaAdminParamsSchema,
+	formularioAdminDuplicadoResponseSchema,
+	formularioAdminNoEncontradoResponseSchema,
+	formularioAdminParamsSchema,
+	formularioSubcategoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
+	guardarFormularioAdminBodySchema,
 	guardarSubcategoriaAdminBodySchema,
 	listarActoresAdminQuerySchema,
 	listarActoresAdminResponseSchema,
@@ -25,6 +32,8 @@ import {
 	obtenerActorAdminResponseSchema,
 	obtenerCategoriaAdminResponseSchema,
 	obtenerSubcategoriaAdminResponseSchema,
+	obtenerFormularioAdminResponseSchema,
+	preguntaFormularioAdminParamsSchema,
 	subcategoriaAdminCategoriaParamSchema,
 	subcategoriaAdminDuplicadaResponseSchema,
 	subcategoriaAdminNoEncontradaResponseSchema,
@@ -482,6 +491,143 @@ export function registerAdminOpenApi(): void {
 			404: {
 				description: 'Subcategoría no encontrada.',
 				content: { 'application/json': { schema: subcategoriaAdminNoEncontradaResponseSchema } },
+			},
+		},
+	});
+
+	for (const method of ['get', 'post', 'put'] as const) {
+		openApiRegistry.registerPath({
+			method,
+			path: '/api/admin/categorias/{idCategoria}/formulario',
+			tags: ['Administración'],
+			summary:
+				method === 'get'
+					? 'Obtener el formulario de una categoría'
+					: method === 'post'
+						? 'Crear el formulario de una categoría'
+						: 'Modificar el formulario de una categoría',
+			request: {
+				params: subcategoriaAdminCategoriaParamSchema,
+				...(method === 'get'
+					? {}
+					: { body: { content: { 'application/json': { schema: guardarFormularioAdminBodySchema } } } }),
+			},
+			responses: {
+				[method === 'post' ? 201 : 200]: {
+					description: 'Formulario procesado correctamente.',
+					content: {
+						'application/json': {
+							schema:
+								method === 'get'
+									? buscarFormularioAdminResponseSchema
+									: obtenerFormularioAdminResponseSchema,
+						},
+					},
+				},
+				400: {
+					description: 'Datos inválidos.',
+					content: { 'application/json': { schema: validationErrorResponseSchema } },
+				},
+				404: {
+					description: 'Categoría o formulario no encontrado.',
+					content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
+				},
+				409: {
+					description: 'Ya existe un formulario para la categoría.',
+					content: { 'application/json': { schema: formularioAdminDuplicadoResponseSchema } },
+				},
+			},
+		});
+	}
+
+	for (const method of ['get', 'post', 'put'] as const) {
+		openApiRegistry.registerPath({
+			method,
+			path: '/api/admin/categorias/{idCategoria}/subcategorias/{idSubcategoria}/formulario',
+			tags: ['Administración'],
+			summary:
+				method === 'get'
+					? 'Obtener el formulario de una subcategoría'
+					: method === 'post'
+						? 'Crear el formulario de una subcategoría'
+						: 'Modificar el formulario de una subcategoría',
+			request: {
+				params: formularioSubcategoriaAdminParamsSchema,
+				...(method === 'get'
+					? {}
+					: { body: { content: { 'application/json': { schema: guardarFormularioAdminBodySchema } } } }),
+			},
+			responses: {
+				[method === 'post' ? 201 : 200]: {
+					description: 'Formulario procesado correctamente.',
+					content: {
+						'application/json': {
+							schema:
+								method === 'get'
+									? buscarFormularioAdminResponseSchema
+									: obtenerFormularioAdminResponseSchema,
+						},
+					},
+				},
+				400: {
+					description: 'Datos inválidos.',
+					content: { 'application/json': { schema: validationErrorResponseSchema } },
+				},
+				404: {
+					description: 'Subcategoría o formulario no encontrado.',
+					content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
+				},
+				409: {
+					description: 'Ya existe un formulario para la subcategoría.',
+					content: { 'application/json': { schema: formularioAdminDuplicadoResponseSchema } },
+				},
+			},
+		});
+	}
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/formularios/{idFormulario}/preguntas',
+		tags: ['Administración'],
+		summary: 'Crear y agregar una pregunta a un formulario',
+		request: {
+			params: formularioAdminParamsSchema,
+			body: { content: { 'application/json': { schema: crearPreguntaFormularioAdminBodySchema } } },
+		},
+		responses: {
+			201: {
+				description: 'Pregunta agregada correctamente.',
+				content: { 'application/json': { schema: obtenerFormularioAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Formulario no encontrado.',
+				content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'delete',
+		path: '/api/admin/formularios/{idFormulario}/preguntas/{idPregunta}',
+		tags: ['Administración'],
+		summary: 'Dar de baja una pregunta de un formulario',
+		request: { params: preguntaFormularioAdminParamsSchema },
+		responses: {
+			200: {
+				description: 'Pregunta dada de baja correctamente.',
+				content: { 'application/json': { schema: obtenerFormularioAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificadores inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Formulario no encontrado.',
+				content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
 			},
 		},
 	});

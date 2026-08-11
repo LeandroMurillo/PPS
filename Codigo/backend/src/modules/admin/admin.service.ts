@@ -1,13 +1,18 @@
 import {
 	asignarModeradorAdminRepository,
+	buscarFormularioAdminRepository,
 	cambiarEstadoActoresAdminRepository,
 	cambiarEstadoUsuarioAdminRepository,
 	crearCategoriaAdminRepository,
+	crearFormularioAdminRepository,
+	crearPreguntaFormularioAdminRepository,
 	crearSubcategoriaAdminRepository,
 	editarCategoriaAdminRepository,
+	editarFormularioAdminRepository,
 	editarSubcategoriaAdminRepository,
 	eliminarCategoriaAdminRepository,
 	eliminarSubcategoriaAdminRepository,
+	desactivarPreguntaFormularioAdminRepository,
 	listarActoresAdminRepository,
 	listarCategoriasAdminRepository,
 	listarSubcategoriasAdminRepository,
@@ -15,6 +20,7 @@ import {
 	obtenerActorAdminRepository,
 	obtenerCategoriaAdminRepository,
 	obtenerSubcategoriaAdminRepository,
+	obtenerFormularioAdminRepository,
 	obtenerUsuarioAdminRepository,
 } from './admin.repository.js';
 
@@ -32,6 +38,10 @@ import type {
 	ObtenerCategoriaAdminResponse,
 	ObtenerSubcategoriaAdminResponse,
 	CambiarEstadoActoresAdminResponse,
+	BuscarFormularioAdminResponse,
+	CrearPreguntaFormularioAdminBody,
+	GuardarFormularioAdminBody,
+	ObtenerFormularioAdminResponse,
 } from './admin.schemas.js';
 
 function pagination(total: number, count: number, limit: number, offset: number) {
@@ -182,4 +192,48 @@ export async function eliminarSubcategoriaAdminService(
 	idSubcategoria: number,
 ): Promise<ObtenerSubcategoriaAdminResponse> {
 	return { data: await eliminarSubcategoriaAdminRepository(idCategoria, idSubcategoria) };
+}
+
+export async function buscarFormularioAdminService(
+	idCategoria: number,
+	idSubcategoria: number | null,
+): Promise<BuscarFormularioAdminResponse> {
+	return { data: await buscarFormularioAdminRepository(idCategoria, idSubcategoria) };
+}
+
+export async function obtenerFormularioAdminService(
+	idFormulario: number,
+): Promise<ObtenerFormularioAdminResponse | null> {
+	const formulario = await obtenerFormularioAdminRepository(idFormulario);
+
+	return formulario ? { data: formulario } : null;
+}
+
+export async function crearFormularioAdminService(
+	idCategoria: number,
+	idSubcategoria: number | null,
+	data: GuardarFormularioAdminBody,
+): Promise<ObtenerFormularioAdminResponse> {
+	return { data: await crearFormularioAdminRepository(idCategoria, idSubcategoria, data) };
+}
+
+export async function editarFormularioAdminService(
+	idFormulario: number,
+	data: GuardarFormularioAdminBody,
+): Promise<ObtenerFormularioAdminResponse> {
+	return { data: await editarFormularioAdminRepository(idFormulario, data) };
+}
+
+export async function crearPreguntaFormularioAdminService(
+	idFormulario: number,
+	data: CrearPreguntaFormularioAdminBody,
+): Promise<ObtenerFormularioAdminResponse> {
+	return { data: await crearPreguntaFormularioAdminRepository(idFormulario, data) };
+}
+
+export async function desactivarPreguntaFormularioAdminService(
+	idFormulario: number,
+	idPregunta: number,
+): Promise<ObtenerFormularioAdminResponse> {
+	return { data: await desactivarPreguntaFormularioAdminRepository(idFormulario, idPregunta) };
 }

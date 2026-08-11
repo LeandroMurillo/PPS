@@ -1885,7 +1885,7 @@ BEGIN
       -- Puede ser el formulario general de la categoría
       -- o el formulario específico de su subcategoría.
       AND (
-            f.idSubcategoria IS NULL
+            f.idSubcategoria = 0
             OR f.idSubcategoria = a.idSubcategoria
           )
 
@@ -1894,7 +1894,7 @@ BEGIN
 
     ORDER BY
         CASE
-            WHEN f.idSubcategoria IS NULL THEN 0
+            WHEN f.idSubcategoria = 0 THEN 0
             ELSE 1
         END ASC,
 
@@ -2239,8 +2239,8 @@ BEGIN
         AND (pIdCategoria IS NULL OR f.idCategoria = pIdCategoria)
         AND (
             vAmbito = 'TODOS'
-            OR (vAmbito = 'CATEGORIA' AND f.idSubcategoria IS NULL)
-            OR (vAmbito = 'SUBCATEGORIA' AND f.idSubcategoria IS NOT NULL)
+            OR (vAmbito = 'CATEGORIA' AND f.idSubcategoria = 0)
+            OR (vAmbito = 'SUBCATEGORIA' AND f.idSubcategoria > 0)
         );
 
     SELECT
@@ -2252,7 +2252,7 @@ BEGIN
         s.nombre AS subcategoria,
         s.estado AS estadoSubcategoria,
         CASE
-            WHEN f.idSubcategoria IS NULL THEN 'CATEGORIA'
+            WHEN f.idSubcategoria = 0 THEN 'CATEGORIA'
             ELSE 'SUBCATEGORIA'
         END AS ambito,
         f.titulo,
@@ -2298,8 +2298,8 @@ BEGIN
         AND (pIdCategoria IS NULL OR f.idCategoria = pIdCategoria)
         AND (
             vAmbito = 'TODOS'
-            OR (vAmbito = 'CATEGORIA' AND f.idSubcategoria IS NULL)
-            OR (vAmbito = 'SUBCATEGORIA' AND f.idSubcategoria IS NOT NULL)
+            OR (vAmbito = 'CATEGORIA' AND f.idSubcategoria = 0)
+            OR (vAmbito = 'SUBCATEGORIA' AND f.idSubcategoria > 0)
         )
     ORDER BY c.nombre ASC, s.nombre ASC, f.idFormulario ASC
     LIMIT vLimit OFFSET vOffset;
@@ -2319,6 +2319,7 @@ COMMENT 'Crea el único formulario correspondiente a una categoría o subcategor
 BEGIN
     DECLARE vTitulo VARCHAR(150);
     DECLARE vDescripcion VARCHAR(1000);
+    DECLARE vIdSubcategoria INT DEFAULT 0;
     DECLARE vEstadoCategoria CHAR(1);
     DECLARE vEstadoSubcategoria CHAR(1);
     DECLARE vIdFormulario INT;
@@ -2331,6 +2332,7 @@ BEGIN
 
     SET vTitulo = NULLIF(TRIM(pTitulo), '');
     SET vDescripcion = NULLIF(TRIM(pDescripcion), '');
+    SET vIdSubcategoria = COALESCE(pIdSubcategoria, 0);
 
     IF pIdCategoria IS NULL OR pIdCategoria <= 0 THEN
         SIGNAL SQLSTATE '45000'
@@ -2374,12 +2376,12 @@ BEGIN
             SET MESSAGE_TEXT = 'La categoría debe estar activa.';
     END IF;
 
-    IF pIdSubcategoria IS NOT NULL THEN
-        IF pIdSubcategoria <= 0 OR NOT EXISTS (
+    IF vIdSubcategoria > 0 THEN
+        IF NOT EXISTS (
             SELECT 1
             FROM `Subcategorias` s
             WHERE s.idCategoria = pIdCategoria
-              AND s.idSubcategoria = pIdSubcategoria
+              AND s.idSubcategoria = vIdSubcategoria
         ) THEN
             SIGNAL SQLSTATE '45000'
                 SET MESSAGE_TEXT = 'La subcategoría indicada no existe en la categoría.';
@@ -2389,7 +2391,7 @@ BEGIN
           INTO vEstadoSubcategoria
         FROM `Subcategorias` s
         WHERE s.idCategoria = pIdCategoria
-          AND s.idSubcategoria = pIdSubcategoria
+          AND s.idSubcategoria = vIdSubcategoria
         FOR UPDATE;
 
         IF vEstadoSubcategoria <> 'A' THEN
@@ -2402,7 +2404,7 @@ BEGIN
         SELECT 1
         FROM `Formularios` f
         WHERE f.idCategoria = pIdCategoria
-          AND f.idSubcategoria <=> pIdSubcategoria
+          AND f.idSubcategoria = vIdSubcategoria
     ) THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Ya existe un formulario para ese ámbito.';
@@ -2416,7 +2418,7 @@ BEGIN
     )
     VALUES (
         pIdCategoria,
-        pIdSubcategoria,
+        vIdSubcategoria,
         vTitulo,
         vDescripcion
     );
@@ -3038,7 +3040,7 @@ BEGIN
     SELECT
         f.idFormulario,
         CASE
-            WHEN f.idSubcategoria IS NULL THEN 'CATEGORIA'
+            WHEN f.idSubcategoria = 0 THEN 'CATEGORIA'
             ELSE 'SUBCATEGORIA'
         END AS ambito,
         f.idCategoria,
@@ -3071,7 +3073,7 @@ BEGIN
     INNER JOIN `Formularios` f
         ON f.idCategoria = a.idCategoria
        AND (
-            f.idSubcategoria IS NULL
+            f.idSubcategoria = 0
             OR f.idSubcategoria = a.idSubcategoria
        )
     INNER JOIN `Categorias` c
@@ -3095,7 +3097,7 @@ BEGIN
         f.titulo,
         f.descripcion
     ORDER BY
-        CASE WHEN f.idSubcategoria IS NULL THEN 0 ELSE 1 END,
+        CASE WHEN f.idSubcategoria = 0 THEN 0 ELSE 1 END,
         f.idFormulario ASC;
 END //
 
@@ -3130,7 +3132,7 @@ BEGIN
             ON f.idFormulario = pIdFormulario
            AND f.idCategoria = a.idCategoria
            AND (
-                f.idSubcategoria IS NULL
+                f.idSubcategoria = 0
                 OR f.idSubcategoria = a.idSubcategoria
            )
         WHERE a.idActor = pIdActor
@@ -3387,7 +3389,7 @@ BEGIN
             ON f.idFormulario = pIdFormulario
            AND f.idCategoria = a.idCategoria
            AND (
-                f.idSubcategoria IS NULL
+                f.idSubcategoria = 0
                 OR f.idSubcategoria = a.idSubcategoria
            )
         WHERE a.idActor = pIdActor
@@ -3467,7 +3469,7 @@ BEGIN
         f.idFormulario,
         f.titulo AS formulario,
         CASE
-            WHEN f.idSubcategoria IS NULL THEN 'CATEGORIA'
+            WHEN f.idSubcategoria = 0 THEN 'CATEGORIA'
             ELSE 'SUBCATEGORIA'
         END AS ambito,
         pf.idPregunta,
@@ -3480,7 +3482,7 @@ BEGIN
     INNER JOIN `Formularios` f
         ON f.idCategoria = a.idCategoria
        AND (
-            f.idSubcategoria IS NULL
+            f.idSubcategoria = 0
             OR f.idSubcategoria = a.idSubcategoria
        )
     INNER JOIN `PreguntasFormulario` pf
@@ -3496,7 +3498,7 @@ BEGIN
     WHERE a.idActor = pIdActor
       AND r.idPregunta IS NULL
     ORDER BY
-        CASE WHEN f.idSubcategoria IS NULL THEN 0 ELSE 1 END,
+        CASE WHEN f.idSubcategoria = 0 THEN 0 ELSE 1 END,
         f.idFormulario ASC,
         pf.orden ASC;
 END //
@@ -3640,5 +3642,3 @@ BEGIN
 END //
 
 DELIMITER ;
-
-
