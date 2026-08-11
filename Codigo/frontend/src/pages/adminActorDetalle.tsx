@@ -11,11 +11,14 @@ import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
+import Radio from '@mui/material/Radio';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -29,107 +32,7 @@ import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
 
-type MockSurvey = {
-	id: number;
-	tipo: 'categoria' | 'subcategoria';
-	titulo: string;
-	descripcion: string;
-	estado: 'respondida' | 'pendiente' | 'incompleta';
-	secciones: {
-		titulo: string;
-		respuestas: {
-			pregunta: string;
-			respuesta: React.ReactNode;
-			obligatoria: boolean;
-			publica: boolean;
-		}[];
-	}[];
-};
-
-const mockSurveyTemplates: Omit<MockSurvey, 'titulo' | 'descripcion'>[] = [
-	{
-		id: 1,
-		tipo: 'categoria',
-		estado: 'respondida',
-		secciones: [
-			{
-				titulo: 'Trayectoria',
-				respuestas: [
-					{
-						pregunta: '¿Hace cuánto desarrolla esta actividad cultural?',
-						respuesta: 'Más de 10 años, con aprendizaje familiar transmitido por generaciones.',
-						obligatoria: true,
-						publica: true,
-					},
-					{
-						pregunta: '¿Cuál es el principal espacio donde produce o ensaya?',
-						respuesta: 'Taller propio en la vivienda familiar, con participación ocasional de familiares.',
-						obligatoria: true,
-						publica: false,
-					},
-				],
-			},
-			{
-				titulo: 'Producción y circulación',
-				respuestas: [
-					{
-						pregunta: '¿Dónde comparte o comercializa su producción?',
-						respuesta: 'Ferias municipales, encuentros culturales, pedidos personalizados e Instagram.',
-						obligatoria: false,
-						publica: true,
-					},
-					{
-						pregunta: '¿Cuenta con equipamiento suficiente para sostener la actividad?',
-						respuesta: 'Parcialmente. El telar principal está operativo, pero requiere renovación de herramientas menores.',
-						obligatoria: false,
-						publica: false,
-					},
-				],
-			},
-		],
-	},
-	{
-		id: 2,
-		tipo: 'subcategoria',
-		estado: 'respondida',
-		secciones: [
-			{
-				titulo: 'Técnicas específicas',
-				respuestas: [
-					{
-						pregunta: '¿Qué técnicas utiliza con mayor frecuencia?',
-						respuesta: 'Telar criollo, hilado manual, lectura de ovillos y teñido con pigmentos naturales.',
-						obligatoria: true,
-						publica: true,
-					},
-					{
-						pregunta: '¿Trabaja con materias primas locales?',
-						respuesta: 'Sí. Principalmente lana de oveja hilada a mano y tintes naturales de la zona del cerro.',
-						obligatoria: true,
-						publica: true,
-					},
-				],
-			},
-			{
-				titulo: 'Patrimonio y transmisión',
-				respuestas: [
-					{
-						pregunta: '¿Realiza actividades de formación o transmisión de saberes?',
-						respuesta: 'Talleres breves para jóvenes de la comunidad y demostraciones en ferias artesanales.',
-						obligatoria: false,
-						publica: true,
-					},
-					{
-						pregunta: '¿La práctica se vincula con una tradición familiar o comunitaria?',
-						respuesta: 'Sí. La técnica fue aprendida de su madre y abuela, y se sostiene como práctica comunitaria.',
-						obligatoria: true,
-						publica: false,
-					},
-				],
-			},
-		],
-	},
-];
+type SurveyAnswer = ActorDetalleAdmin['encuestas'][number]['secciones'][number]['respuestas'][number];
 
 function formatDate(value: string) {
 	return new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' }).format(new Date(value));
@@ -141,26 +44,63 @@ function formatCuit(value: string | null) {
 	return digits.length === 11 ? `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}` : value;
 }
 
-function buildMockSurveys(actor: ActorDetalleAdmin): MockSurvey[] {
-	return mockSurveyTemplates.map((survey) => {
-		const isCategorySurvey = survey.tipo === 'categoria';
-		const surveyScope = isCategorySurvey
-			? actor.categoria.nombre
-			: actor.subcategoria?.nombre ?? 'Subcategoría no asignada';
+function SurveyAnswerValue({ answer }: { answer: SurveyAnswer }) {
+	const isSingleChoice = answer.tipoDato === 'OPCION_UNICA';
+	const isMultipleChoice = answer.tipoDato === 'OPCION_MULTIPLE';
+	const isBoolean = answer.tipoDato === 'BOOLEANO';
 
-		return {
-			...survey,
-			titulo: `Encuesta de ${surveyScope}`,
-			descripcion: isCategorySurvey
-				? `Formulario general para relevar la trayectoria, producción y circulación de actores vinculados a ${surveyScope}.`
-				: `Formulario específico para registrar técnicas, saberes y prácticas propias de ${surveyScope}.`,
-		};
-	});
-}
+	if (isSingleChoice || isMultipleChoice || isBoolean) {
+		const options = isBoolean ? ['Sí', 'No'] : (answer.opciones ?? []);
+		const selectedValues = Array.isArray(answer.respuesta)
+			? answer.respuesta
+			: answer.respuesta === null
+				? []
+				: [answer.respuesta];
 
-function getSurveyTabLabel(survey: MockSurvey, actor: ActorDetalleAdmin) {
-	if (survey.tipo === 'categoria') return actor.categoria.nombre;
-	return actor.subcategoria?.nombre ?? 'Subcategoría';
+		if (options.length > 0) {
+			return (
+				<Stack spacing={0.25}>
+					{options.map((option) => {
+						const control = isSingleChoice || isBoolean ? (
+							<Radio checked={selectedValues.includes(option)} disabled size="small" />
+						) : (
+							<Checkbox checked={selectedValues.includes(option)} disabled size="small" />
+						);
+
+						return (
+							<FormControlLabel
+								key={option}
+								control={control}
+								label={option}
+								disabled
+								sx={{
+									m: 0,
+									width: 'fit-content',
+									'&.Mui-disabled': { opacity: 1 },
+									'& .MuiFormControlLabel-label': { fontSize: '1rem' },
+									'& .MuiFormControlLabel-label.Mui-disabled': { color: 'text.primary' },
+									'& .MuiButtonBase-root.Mui-disabled': {
+										color: selectedValues.includes(option) ? 'primary.main' : 'action.disabled',
+									},
+								}}
+							/>
+						);
+					})}
+					{answer.respuesta === null && (
+						<Typography variant="body2" color="text.secondary">
+							Sin respuesta
+						</Typography>
+					)}
+				</Stack>
+			);
+		}
+	}
+
+	return (
+		<Typography variant="body1" color={answer.respuesta === null ? 'text.secondary' : 'text.primary'}>
+			{Array.isArray(answer.respuesta) ? answer.respuesta.join(', ') : (answer.respuesta ?? 'Sin respuesta')}
+		</Typography>
+	);
 }
 
 function Section({
@@ -421,9 +361,13 @@ function ProfileTab({ actor }: { actor: ActorDetalleAdmin }) {
 }
 
 function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
-	const surveys = React.useMemo(() => buildMockSurveys(actor), [actor]);
+	const surveys = actor.encuestas;
 	const [activeSurveyIndex, setActiveSurveyIndex] = React.useState(0);
 	const activeSurvey = surveys[activeSurveyIndex] ?? surveys[0];
+
+	React.useEffect(() => {
+		setActiveSurveyIndex(0);
+	}, [actor.id]);
 
 	if (surveys.length === 0) {
 		return (
@@ -434,6 +378,8 @@ function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
 			</Section>
 		);
 	}
+
+	const answers = activeSurvey.secciones.flatMap((section) => section.respuestas);
 
 	return (
 		<Stack spacing={2}>
@@ -471,51 +417,45 @@ function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
 					}}
 				>
 					{surveys.map((survey) => (
-						<Tab key={survey.id} label={getSurveyTabLabel(survey, actor)} />
+						<Tab key={survey.id} label={survey.ambito} />
 					))}
 				</Tabs>
 			</Paper>
 
-			<Section title={activeSurvey.titulo} description={activeSurvey.descripcion}>
-				<Stack spacing={2.25}>
-					<Stack spacing={3.25}>
-						{activeSurvey.secciones.map((section) => (
-							<Box key={section.titulo}>
-								<Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-									{section.titulo}
+			<Section title={activeSurvey.titulo} description={activeSurvey.descripcion ?? undefined}>
+				<Stack spacing={3.25}>
+					{answers.map((answer) => (
+						<Box key={answer.id}>
+							<Stack
+								direction="row"
+								spacing={1}
+								alignItems="center"
+								flexWrap="wrap"
+								useFlexGap
+								sx={{ mb: 0.75 }}
+							>
+								<Typography variant="body1" color="text.secondary" fontWeight={600}>
+									{answer.pregunta}
+									{answer.obligatoria ? ' (*)' : ''}
 								</Typography>
-								<Stack spacing={1.75}>
-									{section.respuestas.map((answer) => (
-										<Box key={answer.pregunta}>
-											<Stack
-												direction="row"
-												spacing={1}
-												alignItems="center"
-												flexWrap="wrap"
-												useFlexGap
-												sx={{ mb: 0.75 }}
-											>
-												<Typography variant="body1" color="text.secondary" fontWeight={600}>
-													{answer.pregunta}
-													{answer.obligatoria ? ' (*)' : ''}
-												</Typography>
-												{answer.publica && (
-													<Chip
-														label="Pública"
-														size="small"
-														variant="outlined"
-														color="success"
-														sx={{ height: 20, fontSize: 11 }}
-													/>
-												)}
-											</Stack>
-											<Typography variant="body1">{answer.respuesta}</Typography>
-										</Box>
-									))}
-								</Stack>
-							</Box>
-						))}
-					</Stack>
+								{answer.publica && (
+									<Chip
+										label="Pública"
+										size="small"
+										variant="outlined"
+										color="success"
+										sx={{ height: 20, fontSize: 11 }}
+									/>
+								)}
+							</Stack>
+							<SurveyAnswerValue answer={answer} />
+						</Box>
+					))}
+					{answers.length === 0 && (
+							<Typography variant="body2" color="text.secondary">
+								Este formulario no tiene preguntas activas.
+							</Typography>
+					)}
 				</Stack>
 			</Section>
 		</Stack>

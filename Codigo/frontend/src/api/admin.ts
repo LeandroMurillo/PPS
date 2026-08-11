@@ -105,6 +105,34 @@ export type ActorDetalleAdmin = ActorAdmin & {
 		url: string;
 		fechaCreacion: string;
 	}[];
+	encuestas: {
+		id: number;
+		tipo: 'categoria' | 'subcategoria';
+		ambito: string;
+		titulo: string;
+		descripcion: string | null;
+		secciones: {
+			titulo: string;
+			respuestas: {
+				id: number;
+				pregunta: string;
+				tipoDato:
+					| 'TEXTO'
+					| 'NUMERO'
+					| 'BOOLEANO'
+					| 'FECHA'
+					| 'URL'
+					| 'EMAIL'
+					| 'TELEFONO'
+					| 'OPCION_UNICA'
+					| 'OPCION_MULTIPLE';
+				opciones: string[] | null;
+				respuesta: string | string[] | null;
+				obligatoria: boolean;
+				publica: boolean;
+			}[];
+		}[];
+	}[];
 };
 
 export type CategoriaAdmin = {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	asignarModeradorAdminBodySchema,
+	actorDetalleEncuestaAdminSchema,
 	actorAdminParamsSchema,
 	cambiarEstadoActoresAdminBodySchema,
 	cambiarEstadoUsuarioAdminBodySchema,
@@ -82,6 +83,34 @@ describe('consultas administrativas', () => {
 		expect(actorAdminParamsSchema.parse({ id: '12' })).toEqual({ id: 12 });
 		expect(actorAdminParamsSchema.safeParse({ id: '0' }).success).toBe(false);
 		expect(actorAdminParamsSchema.safeParse({ id: 'actor' }).success).toBe(false);
+	});
+
+	it('valida las encuestas incluidas en el detalle administrativo del actor', () => {
+		expect(
+			actorDetalleEncuestaAdminSchema.safeParse({
+				id: 1,
+				tipo: 'categoria',
+				ambito: 'Artesanía',
+				titulo: 'Relevamiento de Artesanía',
+				descripcion: 'Información productiva general.',
+				secciones: [
+					{
+						titulo: 'Preguntas',
+						respuestas: [
+							{
+								id: 1,
+								pregunta: 'Rama productiva principal',
+								tipoDato: 'OPCION_UNICA',
+								opciones: ['Telar Criollo', 'Macramé'],
+								respuesta: 'Telar Criollo',
+								obligatoria: true,
+								publica: true,
+							},
+						],
+					},
+				],
+			}).success,
+		).toBe(true);
 	});
 
 	it('solo permite activar o dar de baja a un usuario', () => {
