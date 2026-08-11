@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { pool } from '../../database/pool.js';
-import { categoriaIconoSchema } from './admin.schemas.js';
+import { categoriaIconoSchema, tipoPreguntaAdminSchema } from './admin.schemas.js';
 
 import type {
 	ActorAdmin,
@@ -11,6 +11,7 @@ import type {
 	CategoriaAdmin,
 	CategoriaModeracionAdmin,
 	CrearPreguntaFormularioAdminBody,
+	EditarPreguntaAdminBody,
 	FormularioAdmin,
 	GuardarFormularioAdminBody,
 	ListarActoresAdminQuery,
@@ -19,6 +20,7 @@ import type {
 	ListarSubcategoriasAdminQuery,
 	ListarUsuariosAdminQuery,
 	PreguntaBancoAdmin,
+	ReemplazarPreguntaFormularioAdminBody,
 	SubcategoriaAdmin,
 	UsuarioAdmin,
 	UsuarioDetalleAdmin,
@@ -885,5 +887,87 @@ export async function listarPreguntasAdminRepository(
 	});
 
 	return z.array(preguntaBancoRowSchema).parse(rows);
+}
+
+export async function editarPreguntaAdminRepository(
+	idPregunta: number,
+	data: EditarPreguntaAdminBody,
+): Promise<PreguntaBancoAdmin> {
+	const procedureName = 'sp_admin_editar_pregunta';
+	const result: unknown = await pool.query('CALL sp_admin_editar_pregunta(?, ?, ?, ?)', [
+		idPregunta,
+		data.pregunta,
+		data.tipoDato,
+		data.opciones ? JSON.stringify(data.opciones) : null,
+	]);
+	const rows = z
+		.array(
+			z.object({
+				idPregunta: databaseIntegerSchema,
+				pregunta: z.string(),
+				tipoDato: tipoPreguntaAdminSchema,
+				opciones: databaseQuestionOptionsSchema,
+			}),
+		)
+		.parse(getResultSet(result, 0, procedureName));
+
+	const row = rows[0];
+	if (!row) throw new Error(`${procedureName} no devolvió la pregunta editada`);
+
+	return {
+		id: row.idPregunta,
+		pregunta: row.pregunta,
+		tipoDato: row.tipoDato,
+		opciones: row.opciones,
+	};
+}
+
+export async function reemplazarPreguntaFormularioAdminRepository(
+	idFormulario: number,
+	idPreguntaAnterior: number,
+	data: ReemplazarPreguntaFormularioAdminBody,
+): Promise<FormularioAdmin> {
+	await pool.query('CALL sp_admin_reemplazar_pregunta_formulario(?, ?, ?, ?, ?)', [
+		idFormulario,
+		idPreguntaAnterior,
+		data.idPreguntaNueva,
+		data.esObligatorio !== undefined ? (data.esObligatorio ? 1 : 0) : null,
+		data.esPublico !== undefined ? (data.esPublico ? 1 : 0) : null,
+	]);
+
+	const formulario = await obtenerFormularioAdminRepository(idFormulario);
+	if (!formulario) throw new Error('No se pudo recuperar el formulario actualizado');
+
+	return formulario;
+}
+
+export async function crearPreguntaBancoAdminRepository(
+	data: CrearPreguntaFormularioAdminBody,
+): Promise<PreguntaBancoAdmin> {
+	const crearProcedureName = 'sp_admin_crear_pregunta';
+	const crearResult: unknown = await pool.query('CALL sp_admin_crear_pregunta(?, ?, ?)', [
+		data.pregunta,
+		data.tipoDato,
+		data.opciones ? JSON.stringify(data.opciones) : null,
+	]);
+	const rows = z
+		.array(
+			z.object({
+				idPregunta: databaseIntegerSchema,
+				pregunta: z.string(),
+				tipoDato: tipoPreguntaAdminSchema,
+				opciones: databaseQuestionOptionsSchema,
+			}),
+		)
+		.parse(getResultSet(crearResult, 0, crearProcedureName));
+	const row = rows[0];
+	if (!row) throw new Error(`${crearProcedureName} no devolvió la pregunta creada`);
+
+	return {
+		id: row.idPregunta,
+		pregunta: row.pregunta,
+		tipoDato: row.tipoDato,
+		opciones: row.opciones,
+	};
 }
 

@@ -38,10 +38,13 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import EditIcon from '@mui/icons-material/Edit';
 import {
 	asociarPreguntaFormularioAdmin,
+	crearPreguntaBancoAdmin,
 	crearPreguntaFormularioAdmin,
 	desactivarPreguntaFormularioAdmin,
+	editarPreguntaAdmin,
 	guardarFormularioCategoriaAdmin,
 	guardarFormularioSubcategoriaAdmin,
 	listarCategoriasAdmin,
@@ -51,6 +54,7 @@ import {
 	obtenerFormularioCategoriaAdmin,
 	obtenerFormularioSubcategoriaAdmin,
 	obtenerSubcategoriaAdmin,
+	reemplazarPreguntaFormularioAdmin,
 	type CategoriaAdmin,
 	type FormularioAdmin,
 	type PreguntaBancoAdmin,
@@ -105,6 +109,153 @@ export default function AdminCategoriaFormularioPage() {
 	const [questionSubmitting, setQuestionSubmitting] = React.useState(false);
 	const [questionError, setQuestionError] = React.useState<string | null>(null);
 	const [deletingQuestion, setDeletingQuestion] = React.useState<PreguntaFormularioAdmin | null>(null);
+
+	// State para modal de editar/reemplazar pregunta
+	const [editQuestionDialogOpen, setEditQuestionDialogOpen] = React.useState(false);
+	const [editingQuestion, setEditingQuestion] = React.useState<PreguntaFormularioAdmin | null>(null);
+	const [editMode, setEditMode] = React.useState<'global' | 'reemplazar'>('global');
+
+	const [editQuestionText, setEditQuestionText] = React.useState('');
+	const [editQuestionType, setEditQuestionType] = React.useState<TipoPreguntaAdmin>('TEXTO');
+	const [editQuestionOptions, setEditQuestionOptions] = React.useState('');
+
+	const [replaceQuestionMode, setReplaceQuestionMode] = React.useState<'existente' | 'nueva'>('existente');
+	const [replaceSelectedBankQuestion, setReplaceSelectedBankQuestion] = React.useState<PreguntaBancoAdmin | null>(null);
+	const [replaceQuestionText, setReplaceQuestionText] = React.useState('');
+	const [replaceQuestionType, setReplaceQuestionType] = React.useState<TipoPreguntaAdmin>('TEXTO');
+	const [replaceQuestionOptions, setReplaceQuestionOptions] = React.useState('');
+	const [replaceQuestionRequired, setReplaceQuestionRequired] = React.useState(false);
+	const [replaceQuestionPublic, setReplaceQuestionPublic] = React.useState(true);
+
+	const [editQuestionSubmitting, setEditQuestionSubmitting] = React.useState(false);
+	const [editQuestionError, setEditQuestionError] = React.useState<string | null>(null);
+
+	function openEditQuestionDialog(question: PreguntaFormularioAdmin) {
+		setEditingQuestion(question);
+		setEditMode('global');
+		setEditQuestionText(question.pregunta);
+		setEditQuestionType(question.tipoDato);
+		setEditQuestionOptions(question.opciones ? question.opciones.join('\n') : '');
+
+		setReplaceQuestionMode('existente');
+		setReplaceSelectedBankQuestion(null);
+		setReplaceQuestionText('');
+		setReplaceQuestionType('TEXTO');
+		setReplaceQuestionOptions('');
+		setReplaceQuestionRequired(question.esObligatorio);
+		setReplaceQuestionPublic(question.esPublico);
+
+		setEditQuestionError(null);
+		setEditQuestionDialogOpen(true);
+
+		setLoadingBank(true);
+		void listarPreguntasAdmin()
+			.then((res) => setBankQuestions(res.data))
+			.catch(() => setBankQuestions([]))
+			.finally(() => setLoadingBank(false));
+	}
+
+	async function handleSaveEditQuestion(event: React.FormEvent) {
+		event.preventDefault();
+		if (!formulario || !editingQuestion) return;
+
+		if (editMode === 'global') {
+			const usesOpts = editQuestionType === 'OPCION_UNICA' || editQuestionType === 'OPCION_MULTIPLE';
+			const opts = usesOpts
+				? editQuestionOptions
+						.split('\n')
+						.map((o) => o.trim())
+						.filter(Boolean)
+				: null;
+
+			if (!editQuestionText.trim()) {
+				setEditQuestionError('La pregunta es obligatoria.');
+				return;
+			}
+			if (usesOpts && (!opts || opts.length < 2)) {
+				setEditQuestionError('Ingresá al menos dos opciones, una por línea.');
+				return;
+			}
+
+			setEditQuestionSubmitting(true);
+			setEditQuestionError(null);
+			try {
+				await editarPreguntaAdmin(editingQuestion.id, {
+					pregunta: editQuestionText.trim(),
+					tipoDato: editQuestionType,
+					opciones: opts,
+				});
+				const freshForm = subcategoria
+					? await obtenerFormularioSubcategoriaAdmin(categoria!.id, subcategoria.id)
+					: await obtenerFormularioCategoriaAdmin(categoria!.id);
+				setFormulario(freshForm.data);
+				setEditQuestionDialogOpen(false);
+			} catch (err) {
+				setEditQuestionError(err instanceof Error ? err.message : 'No se pudo editar la pregunta.');
+			} finally {
+				setEditQuestionSubmitting(false);
+			}
+			return;
+		}
+
+		setEditQuestionSubmitting(true);
+		setEditQuestionError(null);
+
+		try {
+			let newQuestionId: number;
+
+			if (replaceQuestionMode === 'existente') {
+				if (!replaceSelectedBankQuestion) {
+					setEditQuestionError('Seleccioná una pregunta del listado.');
+					setEditQuestionSubmitting(false);
+					return;
+				}
+				newQuestionId = replaceSelectedBankQuestion.id;
+			} else {
+				const usesOpts = replaceQuestionType === 'OPCION_UNICA' || replaceQuestionType === 'OPCION_MULTIPLE';
+				const opts = usesOpts
+					? replaceQuestionOptions
+							.split('\n')
+							.map((o) => o.trim())
+							.filter(Boolean)
+					: null;
+
+				if (!replaceQuestionText.trim()) {
+					setEditQuestionError('La pregunta es obligatoria.');
+					setEditQuestionSubmitting(false);
+					return;
+				}
+				if (usesOpts && (!opts || opts.length < 2)) {
+					setEditQuestionError('Ingresá al menos dos opciones, una por línea.');
+					setEditQuestionSubmitting(false);
+					return;
+				}
+
+				const created = await crearPreguntaBancoAdmin({
+					pregunta: replaceQuestionText.trim(),
+					tipoDato: replaceQuestionType,
+					opciones: opts,
+					orden: null,
+					esObligatorio: replaceQuestionRequired,
+					esPublico: replaceQuestionPublic,
+				});
+				newQuestionId = created.data.id;
+			}
+
+			const response = await reemplazarPreguntaFormularioAdmin(formulario.id, editingQuestion.id, {
+				idPreguntaNueva: newQuestionId,
+				esObligatorio: replaceQuestionRequired,
+				esPublico: replaceQuestionPublic,
+			});
+
+			setFormulario(response.data);
+			setEditQuestionDialogOpen(false);
+		} catch (err) {
+			setEditQuestionError(err instanceof Error ? err.message : 'No se pudo reemplazar la pregunta.');
+		} finally {
+			setEditQuestionSubmitting(false);
+		}
+	}
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -485,8 +636,13 @@ export default function AdminCategoriaFormularioPage() {
 														{question.pregunta}
 													</Typography>
 													{question.opciones && (
-														<Typography variant="caption" color="text.secondary">
+														<Typography variant="caption" color="text.secondary" display="block">
 															{question.opciones.join(' · ')}
+														</Typography>
+													)}
+													{question.preguntaReemplazada && (
+														<Typography variant="caption" color="primary.main" display="block" sx={{ mt: 0.5 }}>
+															Reemplaza a: «{question.preguntaReemplazada}»
 														</Typography>
 													)}
 												</TableCell>
@@ -508,15 +664,26 @@ export default function AdminCategoriaFormularioPage() {
 												</TableCell>
 												<TableCell align="center">
 													{question.estado === 'A' && (
-														<Tooltip title="Dar de baja">
-															<IconButton
-																size="small"
-																color="error"
-																onClick={() => setDeletingQuestion(question)}
-															>
-																<DeleteIcon fontSize="small" />
-															</IconButton>
-														</Tooltip>
+														<Stack direction="row" spacing={0.5} justifyContent="center">
+															<Tooltip title="Editar o reemplazar">
+																<IconButton
+																	size="small"
+																	color="primary"
+																	onClick={() => openEditQuestionDialog(question)}
+																>
+																	<EditIcon fontSize="small" />
+																</IconButton>
+															</Tooltip>
+															<Tooltip title="Dar de baja">
+																<IconButton
+																	size="small"
+																	color="error"
+																	onClick={() => setDeletingQuestion(question)}
+																>
+																	<DeleteIcon fontSize="small" />
+																</IconButton>
+															</Tooltip>
+														</Stack>
 													)}
 												</TableCell>
 											</TableRow>
@@ -716,6 +883,180 @@ export default function AdminCategoriaFormularioPage() {
 						Dar de baja
 					</Button>
 				</DialogActions>
+			</Dialog>
+
+			<Dialog open={editQuestionDialogOpen} onClose={() => setEditQuestionDialogOpen(false)} maxWidth="sm" fullWidth>
+				<form onSubmit={(event) => void handleSaveEditQuestion(event)}>
+					<DialogTitle>Editar / Reemplazar pregunta</DialogTitle>
+					<DialogContent dividers>
+						<Stack spacing={2.5} sx={{ pt: 1 }}>
+							<ToggleButtonGroup
+								exclusive
+								fullWidth
+								value={editMode}
+								onChange={(_event, value) => {
+									if (value) setEditMode(value);
+								}}
+							>
+								<ToggleButton value="global">Editar globalmente</ToggleButton>
+								<ToggleButton value="reemplazar">Reemplazar en este formulario</ToggleButton>
+							</ToggleButtonGroup>
+
+							{editQuestionError && <Alert severity="error">{editQuestionError}</Alert>}
+
+							{editMode === 'global' ? (
+								<Stack spacing={2}>
+									<Alert severity="info">
+										Modificar la pregunta la actualizará globalmente en el banco. Si la pregunta ya posee respuestas registradas, no se permitirá modificar el tipo de dato ni las opciones.
+									</Alert>
+									<TextField
+										label="Pregunta"
+										required
+										value={editQuestionText}
+										onChange={(event) => setEditQuestionText(event.target.value)}
+										inputProps={{ maxLength: 500 }}
+									/>
+									<FormControl fullWidth>
+										<InputLabel id="edit-question-type-label">Tipo de dato</InputLabel>
+										<Select
+											labelId="edit-question-type-label"
+											value={editQuestionType}
+											label="Tipo de dato"
+											onChange={(event) => setEditQuestionType(event.target.value as TipoPreguntaAdmin)}
+										>
+											{questionTypes.map((type) => (
+												<MenuItem key={type} value={type}>
+													{questionTypeLabels[type]}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+									{(editQuestionType === 'OPCION_UNICA' || editQuestionType === 'OPCION_MULTIPLE') && (
+										<TextField
+											label="Opciones (una por línea)"
+											required
+											multiline
+											minRows={3}
+											value={editQuestionOptions}
+											onChange={(event) => setEditQuestionOptions(event.target.value)}
+											helperText="Mínimo 2 opciones. Cada línea será una opción seleccionable."
+										/>
+									)}
+								</Stack>
+							) : (
+								<Stack spacing={2}>
+									<Alert severity="warning">
+										Desactivará la pregunta actual en este formulario y la reemplazará en el mismo orden, conservando la trazabilidad histórica de respuestas.
+									</Alert>
+
+									<ToggleButtonGroup
+										exclusive
+										fullWidth
+										size="small"
+										value={replaceQuestionMode}
+										onChange={(_event, value) => {
+											if (value) setReplaceQuestionMode(value);
+										}}
+									>
+										<ToggleButton value="existente">Pregunta existente</ToggleButton>
+										<ToggleButton value="nueva">Pregunta nueva</ToggleButton>
+									</ToggleButtonGroup>
+
+									{replaceQuestionMode === 'existente' ? (
+										<Autocomplete
+											options={availableBankQuestions}
+											getOptionLabel={(option) => `${option.pregunta} (${questionTypeLabels[option.tipoDato]})`}
+											value={replaceSelectedBankQuestion}
+											onChange={(_event, newValue) => setReplaceSelectedBankQuestion(newValue)}
+											loading={loadingBank}
+											renderInput={(params) => (
+												<TextField
+													{...params}
+													label="Seleccionar pregunta del banco"
+													placeholder="Buscar pregunta..."
+													InputProps={{
+														...params.InputProps,
+														endAdornment: (
+															<React.Fragment>
+																{loadingBank ? <CircularProgress color="inherit" size={20} /> : null}
+																{params.InputProps.endAdornment}
+															</React.Fragment>
+														),
+													}}
+												/>
+											)}
+										/>
+									) : (
+										<Stack spacing={2}>
+											<TextField
+												label="Pregunta nueva"
+												required
+												value={replaceQuestionText}
+												onChange={(event) => setReplaceQuestionText(event.target.value)}
+												inputProps={{ maxLength: 500 }}
+											/>
+											<FormControl fullWidth>
+												<InputLabel id="replace-question-type-label">Tipo de dato</InputLabel>
+												<Select
+													labelId="replace-question-type-label"
+													value={replaceQuestionType}
+													label="Tipo de dato"
+													onChange={(event) => setReplaceQuestionType(event.target.value as TipoPreguntaAdmin)}
+												>
+													{questionTypes.map((type) => (
+														<MenuItem key={type} value={type}>
+															{questionTypeLabels[type]}
+														</MenuItem>
+													))}
+												</Select>
+											</FormControl>
+											{(replaceQuestionType === 'OPCION_UNICA' || replaceQuestionType === 'OPCION_MULTIPLE') && (
+												<TextField
+													label="Opciones (una por línea)"
+													required
+													multiline
+													minRows={3}
+													value={replaceQuestionOptions}
+													onChange={(event) => setReplaceQuestionOptions(event.target.value)}
+													helperText="Mínimo 2 opciones. Cada línea será una opción."
+												/>
+											)}
+										</Stack>
+									)}
+
+									<Stack direction="row" spacing={2}>
+										<FormControlLabel
+											control={
+												<Checkbox
+													checked={replaceQuestionRequired}
+													onChange={(event) => setReplaceQuestionRequired(event.target.checked)}
+												/>
+											}
+											label="Obligatoria"
+										/>
+										<FormControlLabel
+											control={
+												<Checkbox
+													checked={replaceQuestionPublic}
+													onChange={(event) => setReplaceQuestionPublic(event.target.checked)}
+												/>
+											}
+											label="Visible públicamente"
+										/>
+									</Stack>
+								</Stack>
+							)}
+						</Stack>
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={() => setEditQuestionDialogOpen(false)} disabled={editQuestionSubmitting}>
+							Cancelar
+						</Button>
+						<Button type="submit" variant="contained" loading={editQuestionSubmitting}>
+							{editMode === 'global' ? 'Guardar globalmente' : 'Reemplazar en formulario'}
+						</Button>
+					</DialogActions>
+				</form>
 			</Dialog>
 		</PageContainer>
 	);

@@ -10,10 +10,13 @@ import {
 	crearSubcategoriaAdminRepository,
 	editarCategoriaAdminRepository,
 	editarFormularioAdminRepository,
+	editarPreguntaAdminRepository,
 	editarSubcategoriaAdminRepository,
 	eliminarCategoriaAdminRepository,
 	eliminarSubcategoriaAdminRepository,
 	desactivarPreguntaFormularioAdminRepository,
+	reemplazarPreguntaFormularioAdminRepository,
+	crearPreguntaBancoAdminRepository,
 	listarActoresAdminRepository,
 	listarCategoriasAdminRepository,
 	listarPreguntasAdminRepository,
@@ -45,8 +48,11 @@ import type {
 	CambiarEstadoActoresAdminResponse,
 	BuscarFormularioAdminResponse,
 	CrearPreguntaFormularioAdminBody,
+	EditarPreguntaAdminBody,
 	GuardarFormularioAdminBody,
 	ObtenerFormularioAdminResponse,
+	PreguntaBancoAdmin,
+	ReemplazarPreguntaFormularioAdminBody,
 } from './admin.schemas.js';
 
 function pagination(total: number, count: number, limit: number, offset: number) {
@@ -248,6 +254,29 @@ export async function asociarPreguntaFormularioAdminService(
 	data: AsociarPreguntaFormularioAdminBody,
 ): Promise<ObtenerFormularioAdminResponse> {
 	return { data: await asociarPreguntaFormularioAdminRepository(idFormulario, data) };
+}
+
+export async function editarPreguntaAdminService(
+	idPregunta: number,
+	data: EditarPreguntaAdminBody,
+): Promise<{ data: PreguntaBancoAdmin }> {
+	return { data: await editarPreguntaAdminRepository(idPregunta, data) };
+}
+
+export async function reemplazarPreguntaFormularioAdminService(
+	idFormulario: number,
+	idPreguntaAnterior: number,
+	data: ReemplazarPreguntaFormularioAdminBody,
+): Promise<ObtenerFormularioAdminResponse> {
+	return {
+		data: await reemplazarPreguntaFormularioAdminRepository(idFormulario, idPreguntaAnterior, data),
+	};
+}
+
+export async function crearPreguntaBancoAdminService(
+	data: CrearPreguntaFormularioAdminBody,
+): Promise<{ data: PreguntaBancoAdmin }> {
+	return { data: await crearPreguntaBancoAdminRepository(data) };
 }
 
 export async function listarPreguntasAdminService(

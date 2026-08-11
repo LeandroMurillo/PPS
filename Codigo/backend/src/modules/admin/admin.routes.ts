@@ -7,15 +7,18 @@ import {
 	crearCategoriaAdminController,
 	crearFormularioCategoriaAdminController,
 	crearFormularioSubcategoriaAdminController,
+	crearPreguntaBancoAdminController,
 	crearPreguntaFormularioAdminController,
 	crearSubcategoriaAdminController,
 	editarCategoriaAdminController,
 	editarFormularioCategoriaAdminController,
 	editarFormularioSubcategoriaAdminController,
+	editarPreguntaAdminController,
 	editarSubcategoriaAdminController,
 	eliminarCategoriaAdminController,
 	eliminarSubcategoriaAdminController,
 	desactivarPreguntaFormularioAdminController,
+	reemplazarPreguntaFormularioAdminController,
 	cambiarEstadoActoresAdminController,
 	listarActoresAdminController,
 	listarCategoriasAdminController,
@@ -43,8 +46,8 @@ adminRouter.get('/actores', listarActoresAdminController);
 adminRouter.patch('/actores/estado', cambiarEstadoActoresAdminController);
 adminRouter.get('/actores/:id', obtenerActorAdminController);
 adminRouter.get('/categorias', listarCategoriasAdminController);
-adminRouter.get('/categorias/:id', obtenerCategoriaAdminController);
 adminRouter.post('/categorias', crearCategoriaAdminController);
+adminRouter.get('/categorias/:id', obtenerCategoriaAdminController);
 adminRouter.put('/categorias/:id', editarCategoriaAdminController);
 adminRouter.delete('/categorias/:id', eliminarCategoriaAdminController);
 adminRouter.get('/categorias/:idCategoria/formulario', obtenerFormularioCategoriaAdminController);
@@ -68,6 +71,12 @@ adminRouter.get('/categorias/:idCategoria/subcategorias/:id', obtenerSubcategori
 adminRouter.put('/categorias/:idCategoria/subcategorias/:id', editarSubcategoriaAdminController);
 adminRouter.delete('/categorias/:idCategoria/subcategorias/:id', eliminarSubcategoriaAdminController);
 adminRouter.get('/preguntas', listarPreguntasAdminController);
+adminRouter.post('/preguntas', crearPreguntaBancoAdminController);
+adminRouter.put('/preguntas/:idPregunta', editarPreguntaAdminController);
 adminRouter.post('/formularios/:idFormulario/preguntas', crearPreguntaFormularioAdminController);
 adminRouter.post('/formularios/:idFormulario/preguntas/existente', asociarPreguntaFormularioAdminController);
+adminRouter.post(
+	'/formularios/:idFormulario/preguntas/:idPregunta/reemplazar',
+	reemplazarPreguntaFormularioAdminController,
+);
 adminRouter.delete('/formularios/:idFormulario/preguntas/:idPregunta', desactivarPreguntaFormularioAdminController);

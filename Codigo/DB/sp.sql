@@ -1402,14 +1402,15 @@ BEGIN
         AND (
             pBusqueda IS NULL
             OR TRIM(pBusqueda) = ''
-            OR a.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR a.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR a.tipoActor LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR c.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR s.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR ub.departamento LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR ub.localidad LIKE CONCAT('%', TRIM(pBusqueda), '%')
-            OR ub.direccion LIKE CONCAT('%', TRIM(pBusqueda), '%')
+            OR NOT EXISTS (
+                SELECT 1
+                FROM JSON_TABLE(
+                    CONCAT('["', REPLACE(REPLACE(TRIM(pBusqueda), '"', '\\"'), ' ', '","'), '"]'),
+                    '$[*]' COLUMNS (palabra VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci PATH '$')
+                ) AS palabrasBusqueda
+                WHERE LENGTH(palabrasBusqueda.palabra) > 0
+                  AND CONCAT_WS(' ', a.nombre, COALESCE(a.descripcion, ''), a.tipoActor, c.nombre, COALESCE(s.nombre, ''), ub.departamento, ub.localidad, COALESCE(ub.direccion, '')) COLLATE utf8mb4_general_ci NOT LIKE CONCAT('%', palabrasBusqueda.palabra COLLATE utf8mb4_general_ci, '%')
+            )
         )
         AND (
             pDepartamento IS NULL
@@ -2578,6 +2579,85 @@ BEGIN
         p.opciones
     FROM `Preguntas` p
     WHERE p.idPregunta = vIdPregunta;
+END //
+
+-- -----------------------------------------------------
+-- sp_admin_editar_pregunta
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_admin_editar_pregunta`(
+    IN pIdPregunta INT,
+    IN pPregunta VARCHAR(500),
+    IN pTipoDato ENUM('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE'),
+    IN pOpciones JSON DEFAULT NULL
+)
+MODIFIES SQL DATA
+COMMENT 'Edita una pregunta existente globalmente. Si la pregunta ya posee respuestas registradas en Respuestas, prohíbe cambios de tipoDato u opciones.'
+BEGIN
+    DECLARE vPregunta VARCHAR(500);
+    DECLARE vTipoDatoActual VARCHAR(50);
+    DECLARE vOpcionesActuales JSON;
+    DECLARE vTieneRespuestas INT DEFAULT 0;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    SET vPregunta = NULLIF(TRIM(pPregunta), '');
+
+    IF pIdPregunta IS NULL OR NOT EXISTS (SELECT 1 FROM `Preguntas` WHERE idPregunta = pIdPregunta) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La pregunta no existe.';
+    END IF;
+
+    IF vPregunta IS NULL OR CHAR_LENGTH(vPregunta) > 500 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La pregunta debe tener entre 1 y 500 caracteres.';
+    END IF;
+
+    CALL `sp_interno_validar_opciones_pregunta`(pTipoDato, pOpciones);
+
+    SELECT tipoDato, opciones
+      INTO vTipoDatoActual, vOpcionesActuales
+    FROM `Preguntas`
+    WHERE idPregunta = pIdPregunta;
+
+    SELECT COUNT(*) INTO vTieneRespuestas
+    FROM `Respuestas`
+    WHERE idPregunta = pIdPregunta;
+
+    IF vTieneRespuestas > 0 THEN
+        IF vTipoDatoActual <> pTipoDato THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'No se puede cambiar el tipo de dato de una pregunta que ya posee respuestas registradas. Reemplace la pregunta en el formulario en su lugar.';
+        END IF;
+
+        IF (vOpcionesActuales IS NULL AND pOpciones IS NOT NULL)
+           OR (vOpcionesActuales IS NOT NULL AND pOpciones IS NULL)
+           OR (vOpcionesActuales IS NOT NULL AND pOpciones IS NOT NULL AND JSON_UNQUOTE(vOpcionesActuales) <> JSON_UNQUOTE(pOpciones)) THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'No se pueden modificar las opciones de una pregunta que ya posee respuestas registradas. Reemplace la pregunta en el formulario en su lugar.';
+        END IF;
+    END IF;
+
+    START TRANSACTION;
+
+    UPDATE `Preguntas`
+    SET pregunta = vPregunta,
+        tipoDato = pTipoDato,
+        opciones = pOpciones
+    WHERE idPregunta = pIdPregunta;
+
+    COMMIT;
+
+    SELECT
+        p.idPregunta,
+        p.pregunta,
+        p.tipoDato,
+        p.opciones
+    FROM `Preguntas` p
+    WHERE p.idPregunta = pIdPregunta;
 END //
 
 -- -----------------------------------------------------

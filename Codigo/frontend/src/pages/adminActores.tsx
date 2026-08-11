@@ -149,6 +149,12 @@ export default function AdminActoresPage() {
 		return () => controller.abort();
 	}, []);
 
+	React.useEffect(() => {
+		setPage(0);
+		setRows([]);
+		setSelectedActorIds([]);
+	}, [debouncedActorType, debouncedCategoryId, debouncedDepartment, debouncedSearch, debouncedState, sortBy, sortDir]);
+
 	const loadActores = React.useCallback(
 		(signal?: AbortSignal) => {
 			setLoading(true);
@@ -169,7 +175,7 @@ export default function AdminActoresPage() {
 				signal,
 			)
 				.then((result) => {
-					setRows(result.data);
+					setRows((prev) => (page === 0 ? result.data : [...prev, ...result.data]));
 					setTotal(result.pagination.total);
 				})
 				.catch((requestError: unknown) => {
@@ -380,6 +386,8 @@ export default function AdminActoresPage() {
 						setPage(0);
 					}}
 					onRowClick={(row) => navigate(`/actoresAdmin/${buildSlugConId(row.id, row.nombre)}`)}
+					infiniteScroll
+					hasMore={rows.length < total}
 				/>
 			</Stack>
 

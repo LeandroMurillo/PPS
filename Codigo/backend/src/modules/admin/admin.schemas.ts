@@ -497,6 +497,10 @@ export const formularioAdminParamsSchema = z.strictObject({
 	idFormulario: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
 });
 
+export const preguntaAdminParamsSchema = z.strictObject({
+	idPregunta: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+});
+
 export const preguntaFormularioAdminParamsSchema = formularioAdminParamsSchema.extend({
 	idPregunta: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
 });
@@ -639,3 +643,37 @@ export const formularioAdminDuplicadoResponseSchema = z.object({
 		message: z.string(),
 	}),
 });
+
+export const editarPreguntaAdminBodySchema = z
+	.strictObject({
+		pregunta: z.string().trim().min(1).max(500),
+		tipoDato: tipoPreguntaAdminSchema,
+		opciones: z.array(z.string().trim().min(1).max(255)).min(2).max(100).nullable().optional(),
+	})
+	.superRefine((data, ctx) => {
+		const esOpcion = data.tipoDato === 'OPCION_UNICA' || data.tipoDato === 'OPCION_MULTIPLE';
+		if (esOpcion && (!data.opciones || data.opciones.length < 2)) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Las preguntas de opción requieren al menos 2 opciones.',
+				path: ['opciones'],
+			});
+		}
+		if (!esOpcion && data.opciones && data.opciones.length > 0) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Solo las preguntas de opción pueden incluir opciones.',
+				path: ['opciones'],
+			});
+		}
+	});
+
+export type EditarPreguntaAdminBody = z.infer<typeof editarPreguntaAdminBodySchema>;
+
+export const reemplazarPreguntaFormularioAdminBodySchema = z.strictObject({
+	idPreguntaNueva: z.preprocess(normalizeQueryInteger, z.number().int().positive().max(4_294_967_295)),
+	esObligatorio: z.boolean().optional(),
+	esPublico: z.boolean().optional(),
+});
+
+export type ReemplazarPreguntaFormularioAdminBody = z.infer<typeof reemplazarPreguntaFormularioAdminBodySchema>;

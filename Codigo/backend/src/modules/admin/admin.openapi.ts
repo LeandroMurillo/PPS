@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { internalErrorResponseSchema, validationErrorResponseSchema } from '../../openapi/common.schemas.js';
 import { openApiRegistry } from '../../openapi/registry.js';
 
@@ -33,7 +35,11 @@ import {
 	obtenerCategoriaAdminResponseSchema,
 	obtenerSubcategoriaAdminResponseSchema,
 	obtenerFormularioAdminResponseSchema,
+	editarPreguntaAdminBodySchema,
+	preguntaAdminParamsSchema,
+	preguntaBancoAdminSchema,
 	preguntaFormularioAdminParamsSchema,
+	reemplazarPreguntaFormularioAdminBodySchema,
 	subcategoriaAdminCategoriaParamSchema,
 	subcategoriaAdminDuplicadaResponseSchema,
 	subcategoriaAdminNoEncontradaResponseSchema,
@@ -623,6 +629,52 @@ export function registerAdminOpenApi(): void {
 			},
 			400: {
 				description: 'Identificadores inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Formulario no encontrado.',
+				content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'put',
+		path: '/api/admin/preguntas/{idPregunta}',
+		tags: ['Administración'],
+		summary: 'Editar una pregunta del banco globalmente',
+		request: {
+			params: preguntaAdminParamsSchema,
+			body: { content: { 'application/json': { schema: editarPreguntaAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Pregunta editada correctamente.',
+				content: { 'application/json': { schema: z.object({ data: preguntaBancoAdminSchema }) } },
+			},
+			400: {
+				description: 'Datos inválidos o cambios de tipo/opciones no permitidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/formularios/{idFormulario}/preguntas/{idPregunta}/reemplazar',
+		tags: ['Administración'],
+		summary: 'Reemplazar una pregunta activa en un formulario conservando el historial',
+		request: {
+			params: preguntaFormularioAdminParamsSchema,
+			body: { content: { 'application/json': { schema: reemplazarPreguntaFormularioAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Pregunta reemplazada correctamente.',
+				content: { 'application/json': { schema: obtenerFormularioAdminResponseSchema } },
+			},
+			400: {
+				description: 'Parámetros o datos de reemplazo inválidos.',
 				content: { 'application/json': { schema: validationErrorResponseSchema } },
 			},
 			404: {

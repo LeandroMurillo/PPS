@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
 	Alert,
@@ -30,10 +30,11 @@ import {
 } from '../api/actores';
 import CategoryIcon from '../components/categoryIcon';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { Button } from '@mui/material';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { buildSlugConId } from '../utils/slug';
 
 export default function ListaActoresPublica() {
+	const sentinelRef = useRef<HTMLDivElement | null>(null);
 	const [actores, setActores] = useState<ActorResumen[]>([]);
 	const [categorias, setCategorias] = useState<FiltroCategoria[]>([]);
 	const [departamentos, setDepartamentos] = useState<FiltroDepartamento[]>([]);
@@ -50,6 +51,12 @@ export default function ListaActoresPublica() {
 	const [page, setPage] = useState(0);
 	const [hasNext, setHasNext] = useState(false);
 	const LIMIT = 20;
+
+	useInfiniteScroll(sentinelRef, {
+		hasNext,
+		cargando,
+		onLoadMore: () => setPage((prev) => prev + 1),
+	});
 
 	useEffect(() => {
 		setPage(0);
@@ -217,11 +224,11 @@ export default function ListaActoresPublica() {
 				)}
 			</Box>
 
-			{hasNext && (
-				<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-					<Button variant="outlined" onClick={() => setPage((prev) => prev + 1)}>
-						Cargar más
-					</Button>
+			<Box ref={sentinelRef} sx={{ height: 20, mt: 2 }} />
+
+			{cargando && page > 0 && (
+				<Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+					<CircularProgress size={28} />
 				</Box>
 			)}
 		</Box>

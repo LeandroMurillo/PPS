@@ -105,6 +105,11 @@ export default function AdminUsuariosPage() {
 	const debouncedSearch = useDebouncedValue(search);
 
 	React.useEffect(() => {
+		setPage(0);
+		setRows([]);
+	}, [debouncedSearch, role, sortBy, sortDir, state]);
+
+	React.useEffect(() => {
 		const controller = new AbortController();
 		setLoading(true);
 		setError(null);
@@ -122,7 +127,7 @@ export default function AdminUsuariosPage() {
 			controller.signal,
 		)
 			.then((result) => {
-				setRows(result.data);
+				setRows((prev) => (page === 0 ? result.data : [...prev, ...result.data]));
 				setTotal(result.pagination.total);
 			})
 			.catch((requestError: unknown) => {
@@ -144,6 +149,7 @@ export default function AdminUsuariosPage() {
 	const changeFilter = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
 		setter(value);
 		setPage(0);
+		setRows([]);
 	};
 
 	return (
@@ -158,6 +164,7 @@ export default function AdminUsuariosPage() {
 						setRole('');
 						setState('A');
 						setPage(0);
+						setRows([]);
 					}}
 				>
 					<TextField
@@ -204,13 +211,17 @@ export default function AdminUsuariosPage() {
 					onPageSizeChange={(value) => {
 						setPageSize(value);
 						setPage(0);
+						setRows([]);
 					}}
 					onSortChange={(field, direction) => {
 						setSortBy(field);
 						setSortDir(direction);
 						setPage(0);
+						setRows([]);
 					}}
 					onRowClick={(row) => navigate(`/usuarios/${row.id}`)}
+					infiniteScroll
+					hasMore={rows.length < total}
 				/>
 			</Stack>
 		</PageContainer>

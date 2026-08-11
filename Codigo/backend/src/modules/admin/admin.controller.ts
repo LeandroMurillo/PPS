@@ -8,6 +8,7 @@ import {
 	cambiarEstadoUsuarioAdminBodySchema,
 	categoriaAdminParamsSchema,
 	crearPreguntaFormularioAdminBodySchema,
+	editarPreguntaAdminBodySchema,
 	formularioAdminParamsSchema,
 	formularioSubcategoriaAdminParamsSchema,
 	guardarCategoriaAdminBodySchema,
@@ -18,7 +19,9 @@ import {
 	listarPreguntasAdminQuerySchema,
 	listarSubcategoriasAdminQuerySchema,
 	listarUsuariosAdminQuerySchema,
+	preguntaAdminParamsSchema,
 	preguntaFormularioAdminParamsSchema,
+	reemplazarPreguntaFormularioAdminBodySchema,
 	subcategoriaAdminCategoriaParamSchema,
 	subcategoriaAdminParamsSchema,
 	usuarioAdminParamsSchema,
@@ -35,10 +38,13 @@ import {
 	crearSubcategoriaAdminService,
 	editarCategoriaAdminService,
 	editarFormularioAdminService,
+	editarPreguntaAdminService,
 	editarSubcategoriaAdminService,
 	eliminarCategoriaAdminService,
 	eliminarSubcategoriaAdminService,
 	desactivarPreguntaFormularioAdminService,
+	reemplazarPreguntaFormularioAdminService,
+	crearPreguntaBancoAdminService,
 	listarActoresAdminService,
 	listarCategoriasAdminService,
 	listarPreguntasAdminService,
@@ -718,4 +724,85 @@ export const listarPreguntasAdminController: RequestHandler = async (request, re
 	}
 
 	response.status(200).json(await listarPreguntasAdminService(query.data));
+};
+
+export const editarPreguntaAdminController: RequestHandler = async (request, response) => {
+	const params = preguntaAdminParamsSchema.safeParse(request.params);
+	const body = editarPreguntaAdminBodySchema.safeParse(request.body);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	try {
+		const result = await editarPreguntaAdminService(params.data.idPregunta, body.data);
+		response.status(200).json(result);
+	} catch (error) {
+		response.status(400).json({
+			error: {
+				code: 'QUESTION_EDIT_FAILED',
+				message: error instanceof Error ? error.message : 'No se pudo editar la pregunta.',
+			},
+		});
+	}
+};
+
+export const reemplazarPreguntaFormularioAdminController: RequestHandler = async (request, response) => {
+	const params = preguntaFormularioAdminParamsSchema.safeParse(request.params);
+	const body = reemplazarPreguntaFormularioAdminBodySchema.safeParse(request.body);
+
+	if (!params.success) {
+		response.status(400).json(validationError(params.error.issues));
+		return;
+	}
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+	if (!(await obtenerFormularioAdminService(params.data.idFormulario))) {
+		formNotFound(response);
+		return;
+	}
+
+	try {
+		const result = await reemplazarPreguntaFormularioAdminService(
+			params.data.idFormulario,
+			params.data.idPregunta,
+			body.data,
+		);
+		response.status(200).json(result);
+	} catch (error) {
+		response.status(400).json({
+			error: {
+				code: 'QUESTION_REPLACE_FAILED',
+				message: error instanceof Error ? error.message : 'No se pudo reemplazar la pregunta.',
+			},
+		});
+	}
+};
+
+export const crearPreguntaBancoAdminController: RequestHandler = async (request, response) => {
+	const body = crearPreguntaFormularioAdminBodySchema.safeParse(request.body);
+
+	if (!body.success) {
+		response.status(400).json(validationError(body.error.issues));
+		return;
+	}
+
+	try {
+		const result = await crearPreguntaBancoAdminService(body.data);
+		response.status(201).json(result);
+	} catch (error) {
+		response.status(400).json({
+			error: {
+				code: 'QUESTION_CREATE_FAILED',
+				message: error instanceof Error ? error.message : 'No se pudo crear la pregunta.',
+			},
+		});
+	}
 };

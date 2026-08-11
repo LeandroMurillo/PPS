@@ -467,3 +467,37 @@ export async function asociarPreguntaFormularioAdmin(
 		body: JSON.stringify(data),
 	});
 }
+
+export async function editarPreguntaAdmin(
+	idPregunta: number | string,
+	data: { pregunta: string; tipoDato: TipoPreguntaAdmin; opciones?: string[] | null },
+) {
+	return apiRequest<{ data: PreguntaBancoAdmin }>(`/api/admin/preguntas/${idPregunta}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function crearPreguntaBancoAdmin(data: CrearPreguntaFormularioAdmin) {
+	return apiRequest<{ data: PreguntaBancoAdmin }>('/api/admin/preguntas', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function reemplazarPreguntaFormularioAdmin(
+	idFormulario: number | string,
+	idPregunta: number | string,
+	data: { idPreguntaNueva: number; esObligatorio?: boolean; esPublico?: boolean },
+) {
+	return apiRequest<{ data: FormularioAdmin }>(
+		`/api/admin/formularios/${idFormulario}/preguntas/${idPregunta}/reemplazar`,
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+		},
+	);
+}

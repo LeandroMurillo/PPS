@@ -160,6 +160,7 @@ export default function TucumanMap() {
 	const debouncedBusqueda = useDebouncedValue(busqueda);
 	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
 
+	const [cargandoPuntos, setCargandoPuntos] = React.useState<boolean>(false);
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
 	const [error, setError] = React.useState<string | null>(null);
 
@@ -204,6 +205,7 @@ export default function TucumanMap() {
 
 		async function loadPoints() {
 			try {
+				setCargandoPuntos(true);
 				setError(null);
 
 				const result = await obtenerActoresMapa(
@@ -230,13 +232,17 @@ export default function TucumanMap() {
 				if (!(error instanceof DOMException && error.name === 'AbortError')) {
 					setError(error instanceof Error ? error.message : 'No se pudieron cargar los puntos del mapa.');
 				}
+			} finally {
+				if (!controller.signal.aborted) {
+					setCargandoPuntos(false);
+				}
 			}
 		}
 
 		loadPoints();
 
 		return () => controller.abort();
-	}, [busqueda, departamentoSeleccionado, categoriasSeleccionadas]);
+	}, [debouncedBusqueda, departamentoSeleccionado, categoriasSeleccionadas]);
 
 	return (
 		<Box
@@ -314,6 +320,8 @@ export default function TucumanMap() {
 					onCambiarBusqueda={setBusqueda}
 					departamentoSeleccionado={departamentoSeleccionado}
 					onCambiarDepartamento={setDepartamentoSeleccionado}
+					cargando={cargandoPuntos}
+					totalResultados={puntosProcesados.length}
 				/>
 			</Box>
 

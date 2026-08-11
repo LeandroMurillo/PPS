@@ -1,6 +1,8 @@
 import * as React from 'react';
 import {
+	Alert,
 	Box,
+	CircularProgress,
 	FormControl,
 	InputLabel,
 	Select,
@@ -11,6 +13,7 @@ import {
 	InputAdornment,
 	ListItemIcon,
 	ListItemText,
+	Typography,
 } from '@mui/material';
 
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -28,6 +31,8 @@ type FiltroCategoriasCulturalesProps = {
 	onCambiarBusqueda: (busqueda: string) => void;
 	departamentoSeleccionado: string;
 	onCambiarDepartamento: (departamento: string) => void;
+	cargando?: boolean;
+	totalResultados?: number;
 };
 
 export default function FiltroCategoriasCulturales({
@@ -39,6 +44,8 @@ export default function FiltroCategoriasCulturales({
 	onCambiarBusqueda,
 	departamentoSeleccionado,
 	onCambiarDepartamento,
+	cargando = false,
+	totalResultados,
 }: FiltroCategoriasCulturalesProps) {
 	function handleCategoriasChange(event: SelectChangeEvent<number[]>) {
 		const { value } = event.target;
@@ -56,6 +63,11 @@ export default function FiltroCategoriasCulturales({
 	function handleDepartamentoChange(event: SelectChangeEvent<string>) {
 		onCambiarDepartamento(event.target.value);
 	}
+
+	const hayFiltrosActivos = Boolean(
+		busqueda.trim() || departamentoSeleccionado || categoriasSeleccionadas.length > 0,
+	);
+	const sinResultados = !cargando && totalResultados === 0 && hayFiltrosActivos;
 
 	return (
 		<Box sx={{ width: '100%', p: 2 }}>
@@ -79,6 +91,11 @@ export default function FiltroCategoriasCulturales({
 								<SearchIcon />
 							</InputAdornment>
 						),
+						endAdornment: cargando ? (
+							<InputAdornment position="end">
+								<CircularProgress size={20} />
+							</InputAdornment>
+						) : undefined,
 					}}
 				/>
 
@@ -144,6 +161,18 @@ export default function FiltroCategoriasCulturales({
 						))}
 					</Select>
 				</FormControl>
+
+				{sinResultados && (
+					<Alert severity="info" sx={{ py: 0.5 }}>
+						No se encontraron resultados para los filtros seleccionados.
+					</Alert>
+				)}
+
+				{!cargando && totalResultados !== undefined && totalResultados > 0 && hayFiltrosActivos && (
+					<Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
+						{totalResultados === 1 ? '1 resultado encontrado' : `${totalResultados} resultados encontrados`}
+					</Typography>
+				)}
 			</Box>
 		</Box>
 	);
