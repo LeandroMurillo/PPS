@@ -47,6 +47,8 @@ import {
 	type PreguntaFormularioAplicable,
 } from '../api/actores';
 
+import RequiredAsterisk from '../components/requiredAsterisk';
+
 import 'leaflet/dist/leaflet.css';
 
 const STEPS = ['Sobre tu actividad cultural'];
@@ -57,22 +59,22 @@ type ActorType = 'persona' | 'colectivo' | 'institucion';
 
 type FormAnswer = string | string[];
 
-const localitiesByDepartment: Record<string, string[]> = {
+const localitiesMap: Record<string, string[]> = {
 	Burruyacú: ['Burruyacú', 'El Chañar', 'El Naranjo', 'Garmendia'],
 	Capital: ['San Miguel de Tucumán'],
 	Chicligasta: ['Concepción', 'Alpachiri', 'Arcadia'],
-	'Cruz Alta': ['Banda del Río Salí', 'Alderetes', 'Colombres', 'Los Ralos'],
+	'Cruz Alta': ['Banda del Río Salí', 'Alderetes', 'Colombres', 'Los Ralos', 'Lastenia'],
 	Famaillá: ['Famaillá'],
 	Graneros: ['Graneros', 'Taco Ralo'],
 	'Juan Bautista Alberdi': ['Juan Bautista Alberdi', 'Villa Belgrano'],
 	'La Cocha': ['La Cocha', 'San José de La Cocha'],
 	Leales: ['Bella Vista', 'Estación Aráoz', 'Los Gómez'],
 	Lules: ['Lules', 'El Manantial', 'San Pablo'],
-	Monteros: ['Monteros', 'Acheral', 'Río Seco'],
+	Monteros: ['Monteros', 'Acheral', 'Río Seco', 'Villa Quinteros', 'Capitán Cáceres', 'Santa Lucía'],
 	'Río Chico': ['Aguilares', 'Los Sarmientos'],
 	Simoca: ['Simoca', 'Atahona'],
 	'Tafí del Valle': ['Tafí del Valle', 'Amaicha del Valle', 'El Mollar', 'Colalao del Valle'],
-	'Tafí Viejo': ['Tafí Viejo', 'Las Talitas', 'El Cadillal'],
+	'Tafí Viejo': ['Tafí Viejo', 'Las Talitas', 'El Cadillal', 'Raco'],
 	Trancas: ['Trancas', 'San Pedro de Colalao'],
 	'Yerba Buena': ['Yerba Buena', 'San Javier', 'Cevil Redondo'],
 };
@@ -80,6 +82,7 @@ const localitiesByDepartment: Record<string, string[]> = {
 type MapPoint = { lat: number; lng: number };
 
 type GeneralFieldErrors = {
+	tipoActor: boolean;
 	nombre: boolean;
 	descripcion: boolean;
 	cuit: boolean;
@@ -94,7 +97,6 @@ type GeneralFieldErrors = {
 type GeneralActorData = {
 	nombre: string;
 	descripcion: string;
-	tieneCuit: boolean;
 	cuit: string;
 	departamento: string;
 	localidad: string;
@@ -108,10 +110,9 @@ type GeneralActorData = {
 const INITIAL_GENERAL_DATA: GeneralActorData = {
 	nombre: '',
 	descripcion: '',
-	tieneCuit: false,
 	cuit: '',
-	departamento: 'Capital',
-	localidad: 'San Miguel de Tucumán',
+	departamento: '',
+	localidad: '',
 	direccion: '',
 	ubicacion: null,
 	ubicacionPublica: true,
@@ -148,10 +149,11 @@ const actorTypeOptions: {
 export default function ActorNuevoPage() {
 	const pageTopRef = useRef<HTMLDivElement>(null);
 	const [activeStep, setActiveStep] = useState(0);
-	const [actorType, setActorType] = useState<ActorType>('colectivo');
+	const [actorType, setActorType] = useState<ActorType | null>(null);
 	const [categories, setCategories] = useState<OpcionCategoriaRegistro[]>([]);
 	const [categoryId, setCategoryId] = useState<number | null>(null);
 	const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
+	const [departmentList, setDepartmentList] = useState<string[]>([]);
 	const [catalogLoading, setCatalogLoading] = useState(true);
 	const [catalogError, setCatalogError] = useState('');
 	const [forms, setForms] = useState<FormularioAplicable[]>([]);
@@ -165,12 +167,45 @@ export default function ActorNuevoPage() {
 	useEffect(() => {
 		const controller = new AbortController();
 
+		void fetch('/data/departamentos.geojson', { signal: controller.signal })
+			.then((res) => res.json())
+			.then((data: { features?: Array<{ properties?: { name?: string; admin_level?: string } }> }) => {
+				if (data.features) {
+					const names = data.features
+						.filter((f) => f.properties?.admin_level === '5' && f.properties?.name)
+						.map((f) => (f.properties?.name ?? '').replace(/^Departamento\s+/i, '').trim())
+						.filter(Boolean);
+					const uniqueNames = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, 'es'));
+					setDepartmentList(uniqueNames);
+				}
+			})
+			.catch(() => {
+				setDepartmentList([
+					'Burruyacú',
+					'Capital',
+					'Chicligasta',
+					'Cruz Alta',
+					'Famaillá',
+					'Graneros',
+					'Juan Bautista Alberdi',
+					'La Cocha',
+					'Leales',
+					'Lules',
+					'Monteros',
+					'Río Chico',
+					'Simoca',
+					'Tafí del Valle',
+					'Tafí Viejo',
+					'Trancas',
+					'Yerba Buena',
+				]);
+			});
+
 		void obtenerOpcionesRegistroApi(controller.signal)
 			.then((response) => {
 				setCategories(response.data);
-				const firstCategory = response.data[0] ?? null;
-				setCategoryId(firstCategory?.id ?? null);
-				setSubcategoryId(firstCategory?.subcategorias[0]?.id ?? null);
+				setCategoryId(null);
+				setSubcategoryId(null);
 				setCatalogError('');
 			})
 			.catch((error: unknown) => {
@@ -194,7 +229,10 @@ export default function ActorNuevoPage() {
 		setFormsLoading(true);
 		setFormsError('');
 
-		void obtenerFormulariosAplicablesApi({ idCategoria: categoryId, idSubcategoria: subcategoryId }, controller.signal)
+		void obtenerFormulariosAplicablesApi(
+			{ idCategoria: categoryId, idSubcategoria: subcategoryId },
+			controller.signal,
+		)
 			.then((response) => setForms(response.data))
 			.catch((error: unknown) => {
 				if (!controller.signal.aborted) {
@@ -210,12 +248,12 @@ export default function ActorNuevoPage() {
 	}, [activeStep, categoryId, subcategoryId]);
 
 	const generalFieldErrors: GeneralFieldErrors = {
+		tipoActor: validationAttempted && actorType === null,
 		nombre: validationAttempted && !generalData.nombre.trim(),
 		descripcion: validationAttempted && !generalData.descripcion.trim(),
-		cuit: validationAttempted && generalData.tieneCuit && !/^\d{11}$/.test(generalData.cuit),
+		cuit: validationAttempted && generalData.cuit.trim() !== '' && !/^\d{11}$/.test(generalData.cuit.trim()),
 		categoria: validationAttempted && categoryId === null,
-		subcategoria:
-			validationAttempted && Boolean(selectedCategory?.subcategorias.length) && subcategoryId === null,
+		subcategoria: validationAttempted && Boolean(selectedCategory?.subcategorias.length) && subcategoryId === null,
 		departamento: validationAttempted && !generalData.departamento,
 		localidad: validationAttempted && !generalData.localidad.trim(),
 		direccion: validationAttempted && !generalData.direccion.trim(),
@@ -240,6 +278,7 @@ export default function ActorNuevoPage() {
 		if (activeStep === 0) {
 			setValidationAttempted(true);
 			if (
+				actorType === null ||
 				categoryId === null ||
 				(Boolean(selectedCategory?.subcategorias.length) && subcategoryId === null) ||
 				!generalData.nombre.trim() ||
@@ -248,7 +287,7 @@ export default function ActorNuevoPage() {
 				!generalData.localidad ||
 				!generalData.direccion.trim() ||
 				!generalData.ubicacion ||
-				(generalData.tieneCuit && !/^\d{11}$/.test(generalData.cuit))
+				(generalData.cuit.trim() !== '' && !/^\d{11}$/.test(generalData.cuit.trim()))
 			) {
 				scrollToTop();
 				return;
@@ -289,11 +328,6 @@ export default function ActorNuevoPage() {
 							<Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 0.5 }}>
 								Registrar actor cultural
 							</Typography>
-							<Typography color="text.secondary" sx={{ maxWidth: 740 }}>
-								Un flujo por etapas: primero los datos base de la actividad, después los formularios
-								específicos según categoría y subcategoría, y al final el portafolio público con vista
-								previa.
-							</Typography>
 						</Box>
 					)}
 				</Stack>
@@ -325,6 +359,7 @@ export default function ActorNuevoPage() {
 											categories={categories}
 											categoryId={categoryId}
 											subcategoryId={subcategoryId}
+											departmentList={departmentList}
 											catalogLoading={catalogLoading}
 											value={generalData}
 											errors={generalFieldErrors}
@@ -389,6 +424,7 @@ function GeneralActorFields({
 	categories,
 	categoryId,
 	subcategoryId,
+	departmentList,
 	catalogLoading,
 	value,
 	errors,
@@ -397,10 +433,11 @@ function GeneralActorFields({
 	onCategoryChange,
 	onSubcategoryChange,
 }: {
-	actorType: ActorType;
+	actorType: ActorType | null;
 	categories: OpcionCategoriaRegistro[];
 	categoryId: number | null;
 	subcategoryId: number | null;
+	departmentList: string[];
 	catalogLoading: boolean;
 	value: GeneralActorData;
 	errors: GeneralFieldErrors;
@@ -410,12 +447,11 @@ function GeneralActorFields({
 	onSubcategoryChange: (value: number | null) => void;
 }) {
 	const availableSubcategories = categories.find((item) => item.id === categoryId)?.subcategorias ?? [];
-	const availableLocalities = localitiesByDepartment[value.departamento] ?? [];
 
 	const handleDepartmentChange = (newDepartment: string) => {
 		onChange({
 			departamento: newDepartment,
-			localidad: localitiesByDepartment[newDepartment]?.[0] ?? '',
+			localidad: '',
 			ubicacion: null,
 		});
 	};
@@ -442,8 +478,12 @@ function GeneralActorFields({
 			<Grid size={{ xs: 12 }}>
 				<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
 					¿Cómo desarrollás esta actividad?
+					<RequiredAsterisk tooltipTitle="Pregunta obligatoria" />
 				</Typography>
-				<RadioGroup value={actorType} onChange={(event) => onActorTypeChange(event.target.value as ActorType)}>
+				<RadioGroup
+					value={actorType ?? ''}
+					onChange={(event) => onActorTypeChange(event.target.value as ActorType)}
+				>
 					<Grid container spacing={1.5}>
 						{actorTypeOptions.map((option) => {
 							const selected = actorType === option.value;
@@ -453,7 +493,11 @@ function GeneralActorFields({
 									<Box
 										sx={{
 											border: '1px solid',
-											borderColor: selected ? 'primary.main' : 'divider',
+											borderColor: errors.tipoActor
+												? 'error.main'
+												: selected
+													? 'primary.main'
+													: 'divider',
 											borderRadius: 1,
 											p: 1.5,
 											bgcolor: selected ? 'action.selected' : 'transparent',
@@ -484,6 +528,11 @@ function GeneralActorFields({
 						})}
 					</Grid>
 				</RadioGroup>
+				{errors.tipoActor && (
+					<FormHelperText error sx={{ mt: 1 }}>
+						Seleccioná cómo desarrollás esta actividad.
+					</FormHelperText>
+				)}
 			</Grid>
 
 			<Grid size={{ xs: 12, md: 6 }}>
@@ -502,13 +551,25 @@ function GeneralActorFields({
 						))}
 					</Select>
 					<FormHelperText>
-						{errors.categoria ? 'Seleccioná un sector cultural.' : 'Elegí la opción que mejor represente tu actividad.'}
+						{errors.categoria
+							? 'Seleccioná un sector cultural.'
+							: 'Elegí la opción que mejor represente tu actividad.'}
 					</FormHelperText>
 				</FormControl>
 			</Grid>
 
 			<Grid size={{ xs: 12, md: 6 }}>
-				{availableSubcategories.length > 0 ? (
+				{categoryId === null ? (
+					<FormControl fullWidth disabled>
+						<InputLabel>Área específica</InputLabel>
+						<Select label="Área específica" value="">
+							<MenuItem value="" disabled>
+								Seleccioná un sector cultural primero
+							</MenuItem>
+						</Select>
+						<FormHelperText>Primero seleccioná un sector cultural principal.</FormHelperText>
+					</FormControl>
+				) : availableSubcategories.length > 0 ? (
 					<FormControl fullWidth required error={errors.subcategoria}>
 						<InputLabel>Área específica</InputLabel>
 						<Select
@@ -529,7 +590,17 @@ function GeneralActorFields({
 						</FormHelperText>
 					</FormControl>
 				) : (
-					<Alert severity="info" variant="outlined">
+					<Alert
+						severity="info"
+						variant="outlined"
+						sx={{
+							height: 56,
+							boxSizing: 'border-box',
+							display: 'flex',
+							alignItems: 'center',
+							py: 0,
+						}}
+					>
 						Este sector no requiere seleccionar un área específica.
 					</Alert>
 				)}
@@ -554,44 +625,31 @@ function GeneralActorFields({
 				/>
 			</Grid>
 
-			<Grid size={{ xs: 12, md: value.tieneCuit ? 6 : 12 }}>
-				<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
-					¿Tu actividad está asociada a un CUIT?
-				</Typography>
-				<RadioGroup
-					row
-					value={value.tieneCuit ? 'si' : 'no'}
-					onChange={(event) => onChange({ tieneCuit: event.target.value === 'si', cuit: '' })}
-				>
-					<FormControlLabel value="si" control={<Radio size="small" />} label="Sí" />
-					<FormControlLabel value="no" control={<Radio size="small" />} label="No" />
-				</RadioGroup>
+			<Grid size={{ xs: 12 }}>
+				<TextField
+					fullWidth
+					label="CUIT"
+					placeholder="Ej. 20123456789"
+					inputProps={{ inputMode: 'numeric', maxLength: 11 }}
+					value={value.cuit}
+					onChange={(event) => onChange({ cuit: event.target.value.replace(/\D/g, '') })}
+					error={errors.cuit}
+					helperText={
+						errors.cuit
+							? 'El CUIT debe tener exactamente 11 números.'
+							: 'Si tu actividad cuenta con CUIT, ingresá los 11 números sin guiones (opcional).'
+					}
+				/>
 			</Grid>
 
-			{value.tieneCuit && (
-				<Grid size={{ xs: 12, md: 6 }}>
-					<TextField
-						fullWidth
-						required
-						label="CUIT asociado"
-						placeholder="Ej. 20123456789"
-						inputProps={{ inputMode: 'numeric', maxLength: 11 }}
-						value={value.cuit}
-						onChange={(event) => onChange({ cuit: event.target.value.replace(/\D/g, '') })}
-						error={errors.cuit}
-						helperText={
-							errors.cuit
-								? 'El CUIT debe tener exactamente 11 números.'
-								: 'Ingresá los 11 números, sin guiones.'
-						}
-					/>
-				</Grid>
-			)}
-
 			<Grid size={{ xs: 12 }}>
+				<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+					Agregá una imagen de tu actividad cultural
+				</Typography>
+
 				<UploadBox
 					icon={<AddPhotoAlternateIcon color="primary" />}
-					title="Agregá una imagen de tu actividad cultural"
+					title=""
 					detail="Puede ser una foto tuya, de tu grupo, espacio, trabajo o logotipo."
 					fileName={value.fotoNombre}
 					previewUrl={value.fotoPreview}
@@ -627,23 +685,11 @@ function GeneralActorFields({
 						value={value.departamento}
 						onChange={(event) => handleDepartmentChange(event.target.value)}
 					>
-						<MenuItem value="Burruyacú">Burruyacú</MenuItem>
-						<MenuItem value="Capital">Capital</MenuItem>
-						<MenuItem value="Chicligasta">Chicligasta</MenuItem>
-						<MenuItem value="Cruz Alta">Cruz Alta</MenuItem>
-						<MenuItem value="Famaillá">Famaillá</MenuItem>
-						<MenuItem value="Graneros">Graneros</MenuItem>
-						<MenuItem value="Juan Bautista Alberdi">Juan Bautista Alberdi</MenuItem>
-						<MenuItem value="La Cocha">La Cocha</MenuItem>
-						<MenuItem value="Leales">Leales</MenuItem>
-						<MenuItem value="Lules">Lules</MenuItem>
-						<MenuItem value="Monteros">Monteros</MenuItem>
-						<MenuItem value="Río Chico">Río Chico</MenuItem>
-						<MenuItem value="Simoca">Simoca</MenuItem>
-						<MenuItem value="Tafí del Valle">Tafí del Valle</MenuItem>
-						<MenuItem value="Tafí Viejo">Tafí Viejo</MenuItem>
-						<MenuItem value="Trancas">Trancas</MenuItem>
-						<MenuItem value="Yerba Buena">Yerba Buena</MenuItem>
+						{departmentList.map((dept) => (
+							<MenuItem key={dept} value={dept}>
+								{dept}
+							</MenuItem>
+						))}
 					</Select>
 					{errors.departamento && <FormHelperText>Seleccioná un departamento.</FormHelperText>}
 				</FormControl>
@@ -651,7 +697,7 @@ function GeneralActorFields({
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Autocomplete
 					freeSolo
-					options={availableLocalities}
+					options={localitiesMap[value.departamento] ?? []}
 					value={value.localidad}
 					onInputChange={(_, newValue) => onChange({ localidad: newValue, ubicacion: null })}
 					renderInput={(params) => (
@@ -659,6 +705,7 @@ function GeneralActorFields({
 							{...params}
 							required
 							label="Localidad"
+							placeholder="Ej. San Miguel de Tucumán"
 							error={errors.localidad}
 							helperText={errors.localidad ? 'Ingresá o seleccioná una localidad.' : undefined}
 						/>
@@ -722,26 +769,26 @@ function CategoryForms({
 
 	if (loading) {
 		return (
-		<Stack alignItems="center" spacing={1.5} sx={{ py: 6 }}>
-			<CircularProgress size={32} />
-			<Typography color="text.secondary">Cargando preguntas de {categoryName}…</Typography>
-		</Stack>
+			<Stack alignItems="center" spacing={1.5} sx={{ py: 6 }}>
+				<CircularProgress size={32} />
+				<Typography color="text.secondary">Cargando preguntas de {categoryName}…</Typography>
+			</Stack>
 		);
 	}
 
 	if (error) {
 		return (
-		<Alert severity="error" variant="outlined">
-			{error}
-		</Alert>
+			<Alert severity="error" variant="outlined">
+				{error}
+			</Alert>
 		);
 	}
 
 	if (forms.length === 0) {
 		return (
-		<Alert severity="info" variant="outlined">
-			No hay un formulario configurado para {categoryName}. Podés volver atrás y elegir otra categoría.
-		</Alert>
+			<Alert severity="info" variant="outlined">
+				No hay un formulario configurado para {categoryName}. Podés volver atrás y elegir otra categoría.
+			</Alert>
 		);
 	}
 
@@ -751,12 +798,14 @@ function CategoryForms({
 				<Box key={form.id}>
 					{index > 0 && <Divider sx={{ mb: 3 }} />}
 					<Stack spacing={0.5} sx={{ mb: 2.5 }}>
-						<Typography variant={index === 0 ? 'h4' : 'h5'} component={index === 0 ? 'h1' : 'h2'} fontWeight={700}>
+						<Typography
+							variant={index === 0 ? 'h4' : 'h5'}
+							component={index === 0 ? 'h1' : 'h2'}
+							fontWeight={700}
+						>
 							{form.titulo}
 						</Typography>
-						{form.descripcion && (
-							<Typography color="text.secondary">{form.descripcion}</Typography>
-						)}
+						{form.descripcion && <Typography color="text.secondary">{form.descripcion}</Typography>}
 					</Stack>
 					{form.preguntas.length === 0 ? (
 						<Typography variant="body2" color="text.secondary">
@@ -899,25 +948,10 @@ function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }
 		>
 			<Typography variant="subtitle2" fontWeight={700}>
 				{question.pregunta}
-				{question.esObligatorio && (
-					<Tooltip title="Pregunta obligatoria" arrow>
-						<Typography
-							component="span"
-							color="error.main"
-							aria-label="Pregunta obligatoria"
-							tabIndex={0}
-							sx={{ cursor: 'help' }}
-						>
-							{' *'}
-						</Typography>
-					</Tooltip>
-				)}
+				{question.esObligatorio && <RequiredAsterisk tooltipTitle="Pregunta obligatoria" />}
 			</Typography>
 			{question.esPublico && (
-				<Tooltip
-					title="Esta respuesta podrá mostrarse en el perfil público del actor cultural."
-					arrow
-				>
+				<Tooltip title="Esta respuesta podrá mostrarse en el perfil público del actor cultural." arrow>
 					<Chip
 						size="small"
 						variant="outlined"
@@ -1075,10 +1109,7 @@ function LocationPicker({
 		<Stack spacing={1}>
 			<Box>
 				<Typography variant="subtitle2" fontWeight={700}>
-					Indicá la dirección o referencia{' '}
-					<Typography component="span" color="error">
-						*
-					</Typography>
+					Indicá la dirección o referencia <RequiredAsterisk />
 				</Typography>
 				<Typography variant="body2" color="text.secondary">
 					Podés buscarla, usar tu ubicación actual o marcar directamente el punto en el mapa.
@@ -1196,6 +1227,7 @@ function UploadBox({
 	fileName,
 	previewUrl,
 	onFileSelect,
+	maxSizeMB = 5,
 }: {
 	icon: ReactNode;
 	title: string;
@@ -1203,48 +1235,79 @@ function UploadBox({
 	fileName?: string;
 	previewUrl?: string;
 	onFileSelect?: (file: File | null) => void;
+	maxSizeMB?: number;
 }) {
+	const [fileError, setFileError] = useState<string | null>(null);
+
+	const handleFileChange = (file: File | null) => {
+		if (!file) {
+			setFileError(null);
+			onFileSelect?.(null);
+			return;
+		}
+
+		const maxSizeBytes = maxSizeMB * 1024 * 1024;
+		if (file.size > maxSizeBytes) {
+			const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+			setFileError(
+				`La imagen seleccionada pesa ${sizeInMB} MB. El tamaño máximo permitido es de ${maxSizeMB} MB.`,
+			);
+			onFileSelect?.(null);
+			return;
+		}
+
+		setFileError(null);
+		onFileSelect?.(file);
+	};
+
 	return (
-		<Box
-			sx={{
-				border: '1px dashed',
-				borderColor: 'primary.main',
-				borderRadius: 1,
-				p: 2,
-				minHeight: 140,
-				display: 'flex',
-				flexDirection: 'column',
-				justifyContent: 'center',
-				alignItems: 'center',
-				textAlign: 'center',
-				bgcolor: 'action.hover',
-			}}
-		>
-			{previewUrl ? (
-				<Box
-					component="img"
-					src={previewUrl}
-					alt="Vista previa de la imagen seleccionada"
-					sx={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 1 }}
-				/>
-			) : (
-				icon
+		<Box>
+			<Box
+				sx={{
+					border: '1px dashed',
+					borderColor: fileError ? 'error.main' : 'primary.main',
+					borderRadius: 1,
+					p: 2,
+					minHeight: 140,
+					display: 'flex',
+					flexDirection: 'column',
+					justifyContent: 'center',
+					alignItems: 'center',
+					textAlign: 'center',
+					bgcolor: 'action.hover',
+				}}
+			>
+				{previewUrl ? (
+					<Box
+						component="img"
+						src={previewUrl}
+						alt="Vista previa de la imagen seleccionada"
+						sx={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 1 }}
+					/>
+				) : (
+					icon
+				)}
+				<Typography variant="subtitle2" fontWeight={700} sx={{ mt: 1 }}>
+					{title}
+				</Typography>
+				<Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+					{fileName || detail} (Máximo {maxSizeMB} MB)
+				</Typography>
+				<Button component="label" size="small" variant="outlined" startIcon={<CloudUploadIcon />}>
+					{fileName ? 'Cambiar imagen' : 'Adjuntar'}
+					<input
+						hidden
+						type="file"
+						accept="image/png,image/jpeg,image/webp"
+						onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
+					/>
+				</Button>
+			</Box>
+			{fileError && (
+				<Alert severity="error" variant="outlined" sx={{ mt: 1 }}>
+					{fileError}
+				</Alert>
 			)}
-			<Typography variant="subtitle2" fontWeight={700} sx={{ mt: 1 }}>
-				{title}
-			</Typography>
-			<Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-				{fileName || detail}
-			</Typography>
-			<Button component="label" size="small" variant="outlined" startIcon={<CloudUploadIcon />}>
-				{fileName ? 'Cambiar imagen' : 'Adjuntar'}
-				<input
-					hidden
-					type="file"
-					accept="image/png,image/jpeg,image/webp"
-					onChange={(event) => onFileSelect?.(event.target.files?.[0] ?? null)}
-				/>
-			</Button>
 		</Box>
 	);
 }
