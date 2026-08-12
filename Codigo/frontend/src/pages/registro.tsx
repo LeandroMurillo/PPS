@@ -727,8 +727,8 @@ export default function RegistroPage() {
 							<Button variant="contained" onClick={() => navigate('/')} size="large">
 								Ir al Mapa Principal
 							</Button>
-							<Button variant="outlined" onClick={() => navigate('/actores')} size="large">
-								Ver Actores Culturales
+							<Button variant="outlined" onClick={() => navigate('/login')} size="large">
+								Iniciar Sesión
 							</Button>
 						</Box>
 					</Box>

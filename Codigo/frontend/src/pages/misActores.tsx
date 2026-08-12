@@ -387,7 +387,7 @@ export default function MisActoresPage() {
 	// Open Status Change Modal
 	const handleOpenStatusModal = (actor: MyActor, defaultNext?: 'A' | 'P' | 'I') => {
 		setTargetStatusActor(actor);
-		const initialChoice = defaultNext || (actor.estado === 'I' ? 'P' : 'I');
+		const initialChoice = defaultNext || (actor.estado === 'A' ? 'I' : actor.estado === 'I' ? 'P' : 'I');
 		setSelectedNextStatus(initialChoice);
 		setStatusModalOpen(true);
 	};
@@ -1234,23 +1234,28 @@ export default function MisActoresPage() {
 							value={selectedNextStatus}
 							onChange={(e) => setSelectedNextStatus(e.target.value as 'A' | 'P' | 'I')}
 						>
-							<Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1 }}>
-								<FormControlLabel
-									value="P"
-									control={<Radio size="small" color="warning" />}
-									label={
-										<Box>
-											<Typography variant="subtitle2" fontWeight={700}>
-												P - Pendiente de revisión
-											</Typography>
-											<Typography variant="caption" color="text.secondary">
-												Marca la ficha para ser revisada y aprobada por los moderadores.
-											</Typography>
-										</Box>
-									}
-									sx={{ m: 0, alignItems: 'flex-start' }}
-								/>
-							</Box>
+							{/* Option P (Pendiente) is ONLY visible if actor is not currently Active */}
+							{targetStatusActor?.estado !== 'A' && (
+								<Box
+									sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1 }}
+								>
+									<FormControlLabel
+										value="P"
+										control={<Radio size="small" color="warning" />}
+										label={
+											<Box>
+												<Typography variant="subtitle2" fontWeight={700}>
+													P - Pendiente de revisión
+												</Typography>
+												<Typography variant="caption" color="text.secondary">
+													Marca la ficha para ser revisada y aprobada por los moderadores.
+												</Typography>
+											</Box>
+										}
+										sx={{ m: 0, alignItems: 'flex-start' }}
+									/>
+								</Box>
+							)}
 
 							<Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, mb: 1 }}>
 								<FormControlLabel
