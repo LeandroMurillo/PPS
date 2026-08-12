@@ -47,34 +47,6 @@ function AppSidebarFooter({ mini }: { mini: boolean }) {
 	return (
 		<Box sx={{ px: 1, pb: 1, width: '100%', boxSizing: 'border-box' }}>
 			<Box
-				component={Link}
-				to="/licencia"
-				sx={{
-					display: 'flex',
-					alignItems: 'center',
-					py: 0,
-					px: 1.4,
-					height: 48,
-					width: '100%',
-					boxSizing: 'border-box',
-					color: 'inherit',
-					textDecoration: 'none',
-					borderRadius: 1,
-					transition: 'background-color 0.2s ease',
-					'&:hover': {
-						backgroundColor: 'action.hover',
-					},
-				}}
-			>
-				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 34 }}>
-					<InfoIcon color="primary" fontSize="small" />
-				</Box>
-				<Typography variant="body1" sx={{ ml: 1.2, whiteSpace: 'nowrap' }}>
-					Licencia
-				</Typography>
-			</Box>
-
-			<Box
 				component="label"
 				sx={{
 					display: 'flex',
@@ -104,6 +76,34 @@ function AppSidebarFooter({ mini }: { mini: boolean }) {
 					onChange={(event) => setMode(event.target.checked ? 'dark' : 'light')}
 					inputProps={{ 'aria-label': isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro' }}
 				/>
+			</Box>
+
+			<Box
+				component={Link}
+				to="/licencia"
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					py: 0,
+					px: 1.4,
+					height: 48,
+					width: '100%',
+					boxSizing: 'border-box',
+					color: 'inherit',
+					textDecoration: 'none',
+					borderRadius: 1,
+					transition: 'background-color 0.2s ease',
+					'&:hover': {
+						backgroundColor: 'action.hover',
+					},
+				}}
+			>
+				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 34 }}>
+					<InfoIcon color="primary" fontSize="small" />
+				</Box>
+				<Typography variant="body1" sx={{ ml: 1.2, whiteSpace: 'nowrap' }}>
+					Licencia
+				</Typography>
 			</Box>
 		</Box>
 	);

@@ -6,6 +6,7 @@ const theme = createTheme({
 		colorSchemeSelector: 'data-toolpad-color-scheme',
 	},
 	colorSchemes: { light: true, dark: true },
+	defaultColorScheme: 'dark',
 });
 
 export default theme;

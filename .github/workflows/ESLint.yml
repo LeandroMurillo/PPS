@@ -10,7 +10,17 @@ on:
 jobs:
   eslint:
     # The type of runner that the job will run on
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:lts-noble
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cultura
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -22,6 +32,9 @@ jobs:
         with:
           node-version: "lts/*"
 
+      - name: Install mariadb-client
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
+
       - name: npm ci frontend
         run: |
           cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 1
@@ -32,9 +45,18 @@ jobs:
           cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 1
           npm ci
 
-      - name: ESLint y tsc
+      - name: ESLint, tsc y SQL
         run: |
           fracaso=0
+
+          echo "🏁🏁🏁🏁🏁 Lint SQL 🗄️"
+          npx -y sql-lint --driver mysql "${GITHUB_WORKSPACE}"/Codigo/DB/*.sql || fracaso=1
+
+          echo "🏁🏁🏁🏁🏁 Validar carga de SQL en MariaDB 🦭"
+          mariadb -h 127.0.0.1 -u root -proot cultura < "${GITHUB_WORKSPACE}"/Codigo/DB/cultura.sql || fracaso=1
+          mariadb -h 127.0.0.1 -u root -proot cultura < "${GITHUB_WORKSPACE}"/Codigo/DB/checks.sql || fracaso=1
+          mariadb -h 127.0.0.1 -u root -proot cultura < "${GITHUB_WORKSPACE}"/Codigo/DB/sp.sql || fracaso=1
+          mariadb -h 127.0.0.1 -u root -proot cultura < "${GITHUB_WORKSPACE}"/Codigo/DB/datos.sql || fracaso=1
 
           echo "🏁🏁🏁🏁🏁 Lint backend 🤖"
           cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 2

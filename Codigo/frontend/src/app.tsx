@@ -13,6 +13,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 
+import theme from '../theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const BRANDING = {
@@ -148,6 +149,7 @@ function AppContent() {
 
 	return (
 		<ReactRouterAppProvider
+			theme={theme}
 			navigation={navigation}
 			branding={BRANDING}
 			localeText={LOCALE_TEXT}
