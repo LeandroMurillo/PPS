@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import AddIcon from '@mui/icons-material/Add';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -24,7 +26,6 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
 	crearCategoriaAdmin,

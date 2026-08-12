@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { openApiDocument } from '../src/openapi/document.js';
+
 import { loginBodySchema, registrarUsuarioBodySchema } from '../src/modules/auth/auth.schemas.js';
 import { hashPassword, verifyPassword } from '../src/modules/auth/auth.service.js';
+import { openApiDocument } from '../src/openapi/document.js';
 
 describe('validación del registro y login de usuario', () => {
 	const validPayload = {

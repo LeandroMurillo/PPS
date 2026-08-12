@@ -1,14 +1,9 @@
-import { DataSourceCache, type DataSource } from '@toolpad/core/Crud';
-import { FormControl, FormHelperText, FormLabel, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import { createElement } from 'react';
 import { z } from 'zod';
 
-import CategoryIcon, {
-	CATEGORY_ICON_OPTIONS,
-	categoryIcons,
-	isCategoriaIcono,
-	type CategoriaIcono,
-} from '../components/categoryIcon';
+import { FormControl, FormHelperText, FormLabel, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { DataSourceCache, type DataSource } from '@toolpad/core/Crud';
+
 import {
 	crearCategoriaAdmin,
 	editarCategoriaAdmin,
@@ -18,6 +13,12 @@ import {
 	type CategoriaAdmin,
 	type CategoriaAdminSortBy,
 } from '../api/admin';
+import CategoryIcon, {
+	CATEGORY_ICON_OPTIONS,
+	categoryIcons,
+	isCategoriaIcono,
+	type CategoriaIcono,
+} from '../components/categoryIcon';
 
 export type CategoriaDataModel = CategoriaAdmin;
 

@@ -1,5 +1,5 @@
 'use client';
-import { DataModel, DataSource, DataSourceCache } from '@toolpad/core/Crud';
+import { type DataModel, type DataSource, DataSourceCache } from '@toolpad/core/Crud';
 import { z } from 'zod';
 
 type EmployeeRole = 'Market' | 'Finance' | 'Development';

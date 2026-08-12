@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router';
+
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DoNotDisturbOnOutlinedIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
 import Alert from '@mui/material/Alert';
@@ -16,7 +18,6 @@ import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
-import { useNavigate } from 'react-router';
 
 import {
 	cambiarEstadoActoresAdmin,

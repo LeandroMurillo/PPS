@@ -1,26 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
+
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SearchIcon from '@mui/icons-material/Search';
 import {
 	Alert,
+	Box,
 	Card,
 	CardActionArea,
 	CardContent,
 	CardMedia,
-	Typography,
-	TextField,
+	Chip,
+	CircularProgress,
+	FormControl,
+	Grid,
+	InputAdornment,
+	InputLabel,
 	MenuItem,
 	Select,
-	FormControl,
-	InputLabel,
-	Grid,
-	Box,
-	InputAdornment,
-	Chip,
 	Stack,
-	CircularProgress,
+	TextField,
+	Typography,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+
 import {
 	listarActores,
 	obtenerFiltrosListadoActores,

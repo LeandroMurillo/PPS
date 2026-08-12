@@ -1,16 +1,18 @@
 import * as React from 'react';
 import { Outlet, useNavigate } from 'react-router';
-import { ReactRouterAppProvider } from '@toolpad/core/react-router';
+
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
 import CategoryIcon from '@mui/icons-material/Category';
 import ChecklistIcon from '@mui/icons-material/Checklist';
+import CodeIcon from '@mui/icons-material/Code';
 import GroupIcon from '@mui/icons-material/Group';
-import InfoIcon from '@mui/icons-material/Info';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { Navigation } from '@toolpad/core/AppProvider';
+import { ReactRouterAppProvider } from '@toolpad/core/react-router';
+
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const BRANDING = {
@@ -54,17 +56,16 @@ function AppContent() {
 				segment: 'actores',
 				icon: <PeopleIcon />,
 			},
-			{
-				title: 'Licencia',
-				segment: 'licencia',
-				icon: <InfoIcon />,
-			},
 		];
 
 		if (user) {
 			nav.push(
 				{
 					kind: 'divider',
+				},
+				{
+					kind: 'header',
+					title: 'Usuario',
 				},
 				{
 					title: 'Registrar actor cultural',
@@ -85,6 +86,9 @@ function AppContent() {
 
 			if (user.rol === 'ADMIN' || user.rol === 'MODERADOR') {
 				nav.push(
+					{
+						kind: 'divider',
+					},
 					{
 						kind: 'header',
 						title: 'Admin',
@@ -116,6 +120,11 @@ function AppContent() {
 						segment: 'categorias',
 						icon: <CategoryIcon />,
 						pattern: 'categorias{/:categoriaSlug}*',
+					},
+					{
+						title: 'Docs API',
+						segment: 'docs-api',
+						icon: <CodeIcon />,
 					},
 				);
 			}

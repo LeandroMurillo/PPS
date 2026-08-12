@@ -1,20 +1,20 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 
 import { env } from './config/env.js';
-import { openApiRouter } from './openapi/openapi.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found-handler.js';
-import { adminRouter } from './modules/admin/admin.routes.js';
 import { actoresPublicosRouter } from './modules/actores/actores.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { openApiRouter } from './openapi/openapi.routes.js';
 import { logger } from './shared/logger.js';
-
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

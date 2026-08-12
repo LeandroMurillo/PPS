@@ -1,26 +1,27 @@
 import { useState } from 'react';
+
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EventIcon from '@mui/icons-material/Event';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import {
 	Box,
-	Typography,
-	Grid,
+	Button,
 	Card,
 	CardActionArea,
 	CardContent,
-	Chip,
-	Stack,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	Button,
-	FormGroup,
-	FormControlLabel,
 	Checkbox,
+	Chip,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	Divider,
+	FormControlLabel,
+	FormGroup,
+	Grid,
+	Stack,
+	Typography,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import EventIcon from '@mui/icons-material/Event';
 
 // --- Datos Mock ---
 type Convocatoria = {

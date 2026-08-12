@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import BadgeIcon from '@mui/icons-material/Badge';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import SendIcon from '@mui/icons-material/Send';
 import {
 	Alert,
 	Autocomplete,
@@ -25,12 +32,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import SendIcon from '@mui/icons-material/Send';
-import BadgeIcon from '@mui/icons-material/Badge';
+
 import {
 	obtenerActividadesArcaApi,
 	registrarUsuarioApi,

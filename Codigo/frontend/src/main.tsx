@@ -1,30 +1,33 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, useRouteError } from 'react-router-dom';
+
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+
 import App from './app';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import Layout from './layouts/dashboard';
-import Mapa from './pages/mapa';
-import EmployeesCrudPage from './pages/employees';
+
+import ActorNuevoMockupPage from './pages/actorNuevoMockup';
 import ActorPortfolio from './pages/actorPortfolio';
 import Actores from './pages/actores';
-import Licencia from './pages/licencia';
-import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
-import AdminActoresPage from './pages/adminActores';
 import AdminActorDetallePage from './pages/adminActorDetalle';
-import AdminUsuariosPage from './pages/adminUsuarios';
-import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
-import AdminCategoriasPage from './pages/adminCategorias';
+import AdminActoresPage from './pages/adminActores';
 import AdminCategoriaDetallePage from './pages/adminCategoriaDetalle';
 import AdminCategoriaFormularioPage from './pages/adminCategoriaFormulario';
+import AdminCategoriasPage from './pages/adminCategorias';
 import AdminSubcategoriasPage from './pages/adminSubcategorias';
-import RegistroPage from './pages/registro';
+import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
+import AdminUsuariosPage from './pages/adminUsuarios';
+import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
+import EmployeesCrudPage from './pages/employees';
+import Licencia from './pages/licencia';
 import LoginPage from './pages/login';
-import ActorNuevoMockupPage from './pages/actorNuevoMockup';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import Mapa from './pages/mapa';
+import RegistroPage from './pages/registro';
 
 function RootErrorBoundary() {
 	const error = useRouteError();

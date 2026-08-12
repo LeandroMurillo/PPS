@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
@@ -22,12 +25,11 @@ import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router';
-import 'leaflet/dist/leaflet.css';
 
 import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
+
+import 'leaflet/dist/leaflet.css';
 
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;

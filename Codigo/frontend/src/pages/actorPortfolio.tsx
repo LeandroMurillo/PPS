@@ -1,32 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate, Link as RouterLink } from 'react-router';
-import {
-	Box,
-	Typography,
-	Button,
-	IconButton,
-	Paper,
-	Grid,
-	Card,
-	CardContent,
-	Stack,
-	Link as MuiLink,
-	Alert,
-	CircularProgress,
-} from '@mui/material';
+import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
+import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router';
+
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LinkIcon from '@mui/icons-material/Link';
+import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import YouTubeIcon from '@mui/icons-material/YouTube';
-import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
-// @ts-ignore
-import 'leaflet/dist/leaflet.css';
-import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import {
+	Alert,
+	Box,
+	Button,
+	Card,
+	CardContent,
+	CircularProgress,
+	Grid,
+	IconButton,
+	Link as MuiLink,
+	Paper,
+	Stack,
+	Typography,
+} from '@mui/material';
+
 import { obtenerActor, type ActorDetalle } from '../api/actores';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
+
+// @ts-ignore
+import 'leaflet/dist/leaflet.css';
 
 type TipoEnlace = 'youtube' | 'instagram' | 'facebook' | 'whatsapp' | 'otro';
 

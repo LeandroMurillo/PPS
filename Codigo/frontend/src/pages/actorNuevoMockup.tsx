@@ -1,4 +1,15 @@
 import { useRef, useState, type ReactNode } from 'react';
+
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import BusinessIcon from '@mui/icons-material/Business';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CollectionsIcon from '@mui/icons-material/Collections';
+import GroupsIcon from '@mui/icons-material/Groups';
+import PersonIcon from '@mui/icons-material/Person';
+import SendIcon from '@mui/icons-material/Send';
 import {
 	Alert,
 	Box,
@@ -18,16 +29,6 @@ import {
 	TextField,
 	Typography,
 } from '@mui/material';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
-import BusinessIcon from '@mui/icons-material/Business';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CollectionsIcon from '@mui/icons-material/Collections';
-import GroupsIcon from '@mui/icons-material/Groups';
-import PersonIcon from '@mui/icons-material/Person';
-import SendIcon from '@mui/icons-material/Send';
 
 const STEPS = ['Datos generales', 'Categoría', 'Subcategoría', 'Portafolio', 'Vista previa'];
 

@@ -1,13 +1,15 @@
 import * as React from 'react';
+import { Link, Outlet } from 'react-router';
+
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import InfoIcon from '@mui/icons-material/Info';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import { useColorScheme } from '@mui/material/styles';
 import { Account } from '@toolpad/core/Account';
-import { Outlet } from 'react-router';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 
 function AppToolbarActions() {
@@ -44,6 +46,34 @@ function AppSidebarFooter({ mini }: { mini: boolean }) {
 
 	return (
 		<Box sx={{ px: 1, pb: 1, width: '100%', boxSizing: 'border-box' }}>
+			<Box
+				component={Link}
+				to="/licencia"
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					py: 0,
+					px: 1.4,
+					height: 48,
+					width: '100%',
+					boxSizing: 'border-box',
+					color: 'inherit',
+					textDecoration: 'none',
+					borderRadius: 1,
+					transition: 'background-color 0.2s ease',
+					'&:hover': {
+						backgroundColor: 'action.hover',
+					},
+				}}
+			>
+				<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 34 }}>
+					<InfoIcon color="primary" fontSize="small" />
+				</Box>
+				<Typography variant="body1" sx={{ ml: 1.2, whiteSpace: 'nowrap' }}>
+					Licencia
+				</Typography>
+			</Box>
+
 			<Box
 				component="label"
 				sx={{
@@ -82,17 +112,7 @@ function AppSidebarFooter({ mini }: { mini: boolean }) {
 export default function Layout() {
 	return (
 		<DashboardLayout
-			defaultSidebarCollapsed
 			sidebarExpandedWidth={264}
-			sx={{
-				'& .MuiDrawer-docked:has(.MuiTypography-caption)': {
-					width: 0,
-				},
-				'& .MuiDrawer-docked:has(.MuiTypography-caption) .MuiDrawer-paper': {
-					width: 0,
-					borderRight: 0,
-				},
-			}}
 			slots={{
 				toolbarActions: AppToolbarActions,
 				sidebarFooter: AppSidebarFooter,

@@ -1,17 +1,16 @@
 import { z } from 'zod';
 
 import { pool } from '../../database/pool.js';
-
-import type {
-	ActorDetallePublico,
-	ActorMapaPublico,
-	ActorPublicoResumen,
-	ListarActoresFiltroCategoria,
-	ListarActoresFiltroDepartamento,
-	MapaFiltroCategoria,
-	MapaFiltroDepartamento,
+import {
+	categoriaIconoSchema,
+	type ActorDetallePublico,
+	type ActorMapaPublico,
+	type ActorPublicoResumen,
+	type ListarActoresFiltroCategoria,
+	type ListarActoresFiltroDepartamento,
+	type MapaFiltroCategoria,
+	type MapaFiltroDepartamento,
 } from './actores.schemas.js';
-import { categoriaIconoSchema } from './actores.schemas.js';
 import type {
 	ListarActoresRepositoryInput,
 	ListarActoresRepositoryResult,

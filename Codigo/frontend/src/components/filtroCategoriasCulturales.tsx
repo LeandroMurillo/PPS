@@ -1,23 +1,23 @@
 import * as React from 'react';
+
+import SearchIcon from '@mui/icons-material/Search';
 import {
 	Alert,
 	Box,
+	Chip,
 	CircularProgress,
 	FormControl,
-	InputLabel,
-	Select,
-	MenuItem,
-	Chip,
-	OutlinedInput,
-	TextField,
 	InputAdornment,
+	InputLabel,
 	ListItemIcon,
 	ListItemText,
+	MenuItem,
+	OutlinedInput,
+	Select,
+	TextField,
 	Typography,
 } from '@mui/material';
-
 import type { SelectChangeEvent } from '@mui/material/Select';
-import SearchIcon from '@mui/icons-material/Search';
 
 import type { FiltroCategoria, FiltroDepartamento } from '../api/actores';
 import CategoryIcon from './categoryIcon';

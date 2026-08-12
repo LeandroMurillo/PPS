@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Box, Typography, Container, Paper } from '@mui/material';
+import { useEffect, useState } from 'react';
+
+import { Box, Container, Paper, Typography } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 
 const EMOJIS = ['🦦', '🚁', '🦝'];

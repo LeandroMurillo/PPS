@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { useNavigate, useParams } from 'react-router';
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BlockIcon from '@mui/icons-material/Block';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
@@ -20,7 +22,6 @@ import { Show, type DataSource } from '@toolpad/core/Crud';
 import { PageContainer, type PageContainerProps } from '@toolpad/core/PageContainer';
 import { useDialogs } from '@toolpad/core/useDialogs';
 import { useNotifications } from '@toolpad/core/useNotifications';
-import { useNavigate, useParams } from 'react-router';
 
 import { asignarModeradorAdmin, cambiarEstadoUsuarioAdmin, type UsuarioDetalleAdmin } from '../api/admin';
 import { usuarioAdminDataSource, type UsuarioDetalleDataModel } from '../data/adminUsuarios';

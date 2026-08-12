@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import ArchitectureIcon from '@mui/icons-material/Architecture';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
@@ -21,7 +23,6 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import TheaterComedyIcon from '@mui/icons-material/TheaterComedy';
 import { Box, type SvgIconProps } from '@mui/material';
-import type { ComponentType } from 'react';
 
 export const CATEGORY_ICON_OPTIONS = [
 	{ value: 'Category', label: 'General' },

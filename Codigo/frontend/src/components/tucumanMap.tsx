@@ -1,14 +1,14 @@
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import L from 'leaflet';
 import * as React from 'react';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
 import { Link, useSearchParams } from 'react-router';
-import { useColorScheme } from '@mui/material/styles';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
+
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import CategoryIcon from './categoryIcon';
-import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
-import L from 'leaflet';
+import { useColorScheme } from '@mui/material/styles';
+
 import {
 	obtenerActoresMapa,
 	obtenerFiltrosMapa,
@@ -16,7 +16,9 @@ import {
 	type FiltroCategoria,
 	type FiltroDepartamento,
 } from '../api/actores';
-import type { FeatureCollection, Geometry, Feature } from 'geojson';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import CategoryIcon from './categoryIcon';
+import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
