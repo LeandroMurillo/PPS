@@ -26,6 +26,7 @@ import {
 	CardContent,
 	CardMedia,
 	Chip,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -153,134 +154,6 @@ const SUBCATEGORIAS_OPCIONES: Record<string, string[]> = {
 	Literatura: ['Poesía', 'Narrativa', 'Edición independiente'],
 };
 
-// Seed sample actors tied to user IDs
-const SEED_ACTORES: MyActor[] = [
-	{
-		id: 4,
-		idUsuarioDueno: 1, // Default logged-in user
-		nombre: 'Los Carpinchos del Alba',
-		tipoActor: 'COLECTIVO',
-		categoria: 'Música',
-		categoriaIcono: 'MusicNote',
-		subcategoria: 'Folklore y fusión',
-		departamento: 'Capital',
-		localidad: 'San Miguel de Tucumán',
-		direccion: 'Av. Mate de Luna 2100',
-		cuit: '30712345678',
-		descripcion:
-			'Grupo musical de folklore fusión creado en 2018. Presentaciones en festivales provinciales y nacionales.',
-		fotoPerfilUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-		estado: 'A',
-		fechaCreacion: '2024-02-15',
-		portafolio: [
-			{
-				id: 1,
-				tipo: 'IMAGEN',
-				descripcion: 'Presentación en Septiembre Musical',
-				url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
-			},
-			{
-				id: 2,
-				tipo: 'RRSS',
-				descripcion: 'Instagram oficial',
-				url: 'https://instagram.com/carpinchosdelalba',
-			},
-		],
-		eventos: [
-			{
-				id: 1,
-				nombre: 'Peña Folklórica del Alba',
-				fecha: '2026-09-15',
-				descripcion: 'Noche folklórica en Anfiteatro San Martín.',
-			},
-			{
-				id: 2,
-				nombre: 'Festival del Limón 2026',
-				fecha: '2026-10-04',
-				descripcion: 'Escenario principal Tafí Viejo.',
-			},
-		],
-	},
-	{
-		id: 6,
-		idUsuarioDueno: 1, // Default logged-in user
-		nombre: 'Compañía Circo Fuego',
-		tipoActor: 'COLECTIVO',
-		categoria: 'Artes escénicas',
-		categoriaIcono: 'TheaterComedy',
-		subcategoria: 'Circo contemporáneo',
-		departamento: 'Capital',
-		localidad: 'San Miguel de Tucumán',
-		direccion: 'Gral. Paz 540',
-		cuit: '30789012345',
-		descripcion:
-			'Compañía de circo y teatro de calle con espectáculos para todo público, talleres y seminarios intensivos.',
-		fotoPerfilUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80',
-		estado: 'P',
-		fechaCreacion: '2023-11-10',
-		portafolio: [
-			{
-				id: 3,
-				tipo: 'IMAGEN',
-				descripcion: 'Show de acrobacia aérea',
-				url: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80',
-			},
-			{
-				id: 4,
-				tipo: 'LINK',
-				descripcion: 'Video promocional YouTube',
-				url: 'https://youtube.com/watch?v=demo',
-			},
-		],
-		eventos: [
-			{
-				id: 3,
-				nombre: 'Varieté de Primavera',
-				fecha: '2026-09-21',
-				descripcion: 'Espectáculo circense en Plaza Independencia.',
-			},
-		],
-	},
-	{
-		id: 12,
-		idUsuarioDueno: 1, // Default logged-in user
-		nombre: 'Grupo Ráfaga',
-		tipoActor: 'COLECTIVO',
-		categoria: 'Música',
-		categoriaIcono: 'MusicNote',
-		subcategoria: 'Música popular',
-		departamento: 'Monteros',
-		localidad: 'Monteros',
-		direccion: 'Belgrano 120',
-		cuit: '20334455669',
-		descripcion: 'Banda de música popular y tropical con amplia trayectoria en eventos culturales y festivales.',
-		fotoPerfilUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
-		estado: 'I',
-		fechaCreacion: '2025-01-20',
-		portafolio: [],
-		eventos: [],
-	},
-	{
-		id: 99,
-		idUsuarioDueno: 999, // Owned by another user
-		nombre: 'Orquesta de los Valles',
-		tipoActor: 'COLECTIVO',
-		categoria: 'Música',
-		categoriaIcono: 'MusicNote',
-		subcategoria: 'Música académica',
-		departamento: 'Tafí del Valle',
-		localidad: 'Tafí del Valle',
-		direccion: 'Av. Calchaquí 100',
-		cuit: '30712399999',
-		descripcion: 'Orquesta perteneciente a otro usuario.',
-		fotoPerfilUrl: null,
-		estado: 'A',
-		fechaCreacion: '2024-05-10',
-		portafolio: [],
-		eventos: [],
-	},
-];
-
 export default function MisActoresPage() {
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -288,11 +161,9 @@ export default function MisActoresPage() {
 	const currentUserId = user?.idUsuario ?? 1;
 	const isAdminOrMod = user?.rol === 'ADMIN' || user?.rol === 'MODERADOR';
 
-	const [actores, setActores] = React.useState<MyActor[]>(() => {
-		return SEED_ACTORES.map((actor) =>
-			actor.idUsuarioDueno === 1 && currentUserId !== 1 ? { ...actor, idUsuarioDueno: currentUserId } : actor,
-		);
-	});
+	const [actores, setActores] = React.useState<MyActor[]>([]);
+	const [loading, setLoading] = React.useState<boolean>(true);
+	const [error, setError] = React.useState<string | null>(null);
 
 	const [search, setSearch] = React.useState('');
 	const [categoryFilter, setCategoryFilter] = React.useState('');
@@ -359,49 +230,53 @@ export default function MisActoresPage() {
 
 	const debouncedSearch = useDebouncedValue(search);
 
-	// Load actors from API if available
-	React.useEffect(() => {
-		let isMounted = true;
-		async function fetchMisActores() {
-			try {
-				const res = await listarMisActoresApi({
-					busqueda: debouncedSearch,
-					estado: (stateFilter as 'A' | 'P' | 'I') || undefined,
-				});
+	// Load actors directly from backend API (database)
+	const fetchMisActores = React.useCallback(async () => {
+		try {
+			setLoading(true);
+			setError(null);
+			const res = await listarMisActoresApi({
+				busqueda: debouncedSearch || undefined,
+				estado: (stateFilter as 'A' | 'P' | 'I') || undefined,
+				idCategoria: categoryFilter ? getCategoryIdByName(categoryFilter) : undefined,
+			});
 
-				if (isMounted && res?.data && res.data.length > 0) {
-					const mapApiActores: MyActor[] = res.data.map((item) => ({
-						id: item.id,
-						idUsuarioDueno: currentUserId,
-						nombre: item.nombre,
-						tipoActor: item.tipoActor,
-						categoria: item.categoria,
-						categoriaIcono: item.categoriaIcono,
-						subcategoria: item.subcategoria,
-						departamento: item.ubicacion.departamento,
-						localidad: item.ubicacion.localidad,
-						direccion: item.ubicacion.direccion,
-						cuit: item.cuit,
-						descripcion: item.descripcion,
-						fotoPerfilUrl: item.foto,
-						estado: item.estado,
-						fechaCreacion: item.fechaCreacion,
-						portafolio: [],
-						eventos: [],
-					}));
-					setActores(mapApiActores);
-				}
-			} catch (err) {
-				// Quiet failover to initial SEED_ACTORES state
-				console.log('Modo fallback activo:', err);
+			if (res?.data) {
+				const mapApiActores: MyActor[] = res.data.map((item) => ({
+					id: item.id,
+					idUsuarioDueno: currentUserId,
+					nombre: item.nombre,
+					tipoActor: item.tipoActor,
+					categoria: item.categoria,
+					categoriaIcono: item.categoriaIcono,
+					subcategoria: item.subcategoria,
+					departamento: item.ubicacion.departamento,
+					localidad: item.ubicacion.localidad,
+					direccion: item.ubicacion.direccion,
+					cuit: item.cuit,
+					descripcion: item.descripcion,
+					fotoPerfilUrl: item.foto,
+					estado: item.estado,
+					fechaCreacion: item.fechaCreacion,
+					portafolio: [],
+					eventos: [],
+				}));
+				setActores(mapApiActores);
+			} else {
+				setActores([]);
 			}
+		} catch (err) {
+			console.error('Error al obtener actores del backend:', err);
+			setError('No se pudieron cargar los actores culturales desde la base de datos.');
+			setActores([]);
+		} finally {
+			setLoading(false);
 		}
+	}, [debouncedSearch, stateFilter, categoryFilter, currentUserId]);
 
+	React.useEffect(() => {
 		fetchMisActores();
-		return () => {
-			isMounted = false;
-		};
-	}, [debouncedSearch, stateFilter, currentUserId]);
+	}, [fetchMisActores]);
 
 	// STRICT OWNER FILTERING: Only actors owned by the logged-in user
 	const misActoresPropios = React.useMemo(() => {
@@ -908,20 +783,30 @@ export default function MisActoresPage() {
 
 				{/* --- Results Summary --- */}
 				<Typography variant="body2" color="text.secondary">
-					{filteredActores.length === 1
-						? '1 actor cultural propio encontrado'
-						: `${filteredActores.length} actores culturales propios encontrados`}
+					{loading
+						? 'Cargando actores desde la base de datos...'
+						: filteredActores.length === 1
+							? '1 actor cultural propio encontrado'
+							: `${filteredActores.length} actores culturales propios encontrados`}
 				</Typography>
 
 				{/* --- Content Area --- */}
-				{filteredActores.length === 0 ? (
+				{loading ? (
+					<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+						<CircularProgress />
+					</Box>
+				) : error ? (
+					<Alert severity="error" sx={{ my: 2 }}>
+						{error}
+					</Alert>
+				) : filteredActores.length === 0 ? (
 					<Paper variant="outlined" sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}>
 						<Typography variant="h6" color="text.secondary" gutterBottom>
-							No tenés actores registrados con estos criterios
+							No tenés actores registrados en la base de datos
 						</Typography>
 						<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
 							{misActoresPropios.length === 0
-								? 'Todavía no registraste ningún actor cultural propio.'
+								? 'Todavía no registraste ningún actor cultural propio en tu cuenta.'
 								: 'Modificá los filtros de búsqueda para volver a ver tus actores.'}
 						</Typography>
 						<Button
