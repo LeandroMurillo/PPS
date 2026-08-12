@@ -58,7 +58,8 @@ export const obtenerActorController: RequestHandler = async (request, response) 
 		return;
 	}
 
-	const result = await obtenerActorService(validationResult.data.id);
+	const userId = request.user?.idUsuario ?? null;
+	const result = await obtenerActorService(validationResult.data.id, userId);
 
 	if (!result) {
 		response.status(404).json({

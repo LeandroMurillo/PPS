@@ -67,6 +67,7 @@ export type ActorDetalle = {
 	nombre: string;
 	descripcion: string | null;
 	foto: string | null;
+	estado?: 'A' | 'P' | 'I';
 	categoria: string;
 	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;

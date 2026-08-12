@@ -1683,12 +1683,16 @@ END //
 -- -----------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE `sp_publico_obtener_actor`(
-    IN pIdActor INT
+    IN pIdActor INT,
+    IN pIdUsuario INT
 )
 SQL SECURITY DEFINER
 READS SQL DATA
-COMMENT 'Obtiene la ficha pública completa de un actor cultural activo: datos generales, portafolio, eventos, respuestas públicas e integrantes.'
+COMMENT 'Obtiene la ficha pública completa de un actor cultural. Si está activo es visible para todos. Si no está activo (P o I), solo es visible si pIdUsuario es integrante o admin/moderador.'
 BEGIN
+    DECLARE vEsIntegrante INT DEFAULT 0;
+    DECLARE vEsAdmin INT DEFAULT 0;
+
     -- =====================================================
     -- Validación de argumentos
     -- =====================================================
@@ -1698,19 +1702,25 @@ BEGIN
                 MESSAGE_TEXT = 'pIdActor debe ser un entero positivo';
     END IF;
 
+    IF pIdUsuario IS NOT NULL AND pIdUsuario > 0 THEN
+        SELECT COUNT(*) INTO vEsIntegrante
+        FROM `Integrantes`
+        WHERE idActor = pIdActor AND idUsuario = pIdUsuario;
+
+        SELECT COUNT(*) INTO vEsAdmin
+        FROM `Usuarios`
+        WHERE idUsuario = pIdUsuario AND rol IN ('ADMIN', 'MODERADOR');
+    END IF;
 
     -- =====================================================
     -- RESULTADO 1: datos generales del actor
-    --
-    -- Si el actor no existe, está pendiente, está inactivo
-    -- o pertenece a una categoría/subcategoría inactiva,
-    -- este conjunto no devolverá filas.
     -- =====================================================
     SELECT
         a.idActor as id,
         a.nombre,
         a.descripcion,
         a.fotoPerfilUrl,
+        a.estado,
         c.nombre AS categoria,
         c.icono AS categoriaIcono,
         s.nombre AS subcategoria,
@@ -1747,7 +1757,7 @@ BEGIN
         ON u.idUbicacion = a.idUbicacion
 
     WHERE a.idActor = pIdActor
-      AND a.estado = 'A'
+      AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
       AND c.estado = 'A'
       AND (
             a.idSubcategoria IS NULL
@@ -1776,7 +1786,7 @@ BEGIN
        AND s.idSubcategoria = a.idSubcategoria
 
     WHERE a.idActor = pIdActor
-      AND a.estado = 'A'
+      AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
       AND c.estado = 'A'
       AND (
             a.idSubcategoria IS NULL
@@ -1811,7 +1821,7 @@ BEGIN
        AND s.idSubcategoria = a.idSubcategoria
 
     WHERE a.idActor = pIdActor
-      AND a.estado = 'A'
+      AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
       AND c.estado = 'A'
       AND (
             a.idSubcategoria IS NULL
@@ -1873,7 +1883,7 @@ BEGIN
         ON p.idPregunta = r.idPregunta
 
     WHERE a.idActor = pIdActor
-      AND a.estado = 'A'
+      AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
       AND c.estado = 'A'
       AND (
             a.idSubcategoria IS NULL
@@ -1932,7 +1942,7 @@ BEGIN
        AND s.idSubcategoria = a.idSubcategoria
 
     WHERE a.idActor = pIdActor
-      AND a.estado = 'A'
+      AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
       AND c.estado = 'A'
       AND (
             a.idSubcategoria IS NULL

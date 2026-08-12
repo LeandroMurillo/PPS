@@ -420,6 +420,11 @@ export const actorDetallePublicoSchema = z
 			example: 'https://img.com/teatro-alberdi.jpg',
 		}),
 
+		estado: z.enum(['A', 'P', 'I']).optional().meta({
+			description: 'Estado del actor cultural.',
+			example: 'A',
+		}),
+
 		categoria: z.string().meta({
 			description: 'Categoría cultural principal.',
 			example: 'Artes Escénicas',

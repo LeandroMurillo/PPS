@@ -50,8 +50,8 @@ export async function listarActoresService(query: ListarActoresQuery): Promise<L
 	};
 }
 
-export async function obtenerActorService(id: number): Promise<ObtenerActorResponse | null> {
-	const result = await obtenerActorRepository(id);
+export async function obtenerActorService(id: number, idUsuario?: number | null): Promise<ObtenerActorResponse | null> {
+	const result = await obtenerActorRepository(id, idUsuario);
 
 	if (!result.actor) {
 		return null;

@@ -53,6 +53,27 @@ export function verifyToken(req: Request, res: Response, next: NextFunction): vo
 	}
 }
 
+export function optionalToken(req: Request, _res: Response, next: NextFunction): void {
+	let token: string | undefined;
+
+	const authHeader = req.headers.authorization;
+	if (authHeader && authHeader.startsWith('Bearer ')) {
+		token = authHeader.substring(7);
+	} else if (typeof req.query.token === 'string' && req.query.token) {
+		token = req.query.token;
+	}
+
+	if (token) {
+		try {
+			const decoded = jwt.verify(token, env.JWT_SECRET) as AuthUser;
+			req.user = decoded;
+		} catch {
+			// Ignore invalid token on optional endpoints
+		}
+	}
+	next();
+}
+
 export function requireRole(...allowedRoles: string[]) {
 	return (req: Request, res: Response, next: NextFunction): void => {
 		if (!req.user) {

@@ -129,6 +129,7 @@ const actorDetalleDatabaseRowSchema = z.object({
 	nombre: z.string(),
 	descripcion: z.string().nullable(),
 	fotoPerfilUrl: z.string().nullable(),
+	estado: z.enum(['A', 'P', 'I']).optional(),
 	categoria: z.string(),
 	categoriaIcono: categoriaIconoSchema,
 	subcategoria: z.string().nullable(),
@@ -256,8 +257,8 @@ export async function listarActoresRepository(
 	};
 }
 
-export async function obtenerActorRepository(id: number): Promise<ObtenerActorRepositoryResult> {
-	const procedureResult: unknown = await pool.query('CALL sp_publico_obtener_actor(?)', [id]);
+export async function obtenerActorRepository(id: number, idUsuario?: number | null): Promise<ObtenerActorRepositoryResult> {
+	const procedureResult: unknown = await pool.query('CALL sp_publico_obtener_actor(?, ?)', [id, idUsuario ?? null]);
 
 	const actorResultSet = getResultSet(procedureResult, 0, 'sp_publico_obtener_actor');
 	const portafolioResultSet = getResultSet(procedureResult, 1, 'sp_publico_obtener_actor');
@@ -284,6 +285,7 @@ export async function obtenerActorRepository(id: number): Promise<ObtenerActorRe
 		nombre: actorRow.nombre,
 		descripcion: actorRow.descripcion,
 		foto: actorRow.fotoPerfilUrl,
+		estado: actorRow.estado,
 		categoria: actorRow.categoria,
 		categoriaIcono: actorRow.categoriaIcono,
 		subcategoria: actorRow.subcategoria,

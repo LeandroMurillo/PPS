@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { optionalToken } from '../../middleware/auth.middleware.js';
 import {
 	listarActoresController,
 	obtenerActoresMapaController,
@@ -14,4 +15,4 @@ actoresPublicosRouter.get('/filtros', obtenerFiltrosListadoActoresController);
 actoresPublicosRouter.get('/mapa/filtros', obtenerFiltrosMapaController);
 actoresPublicosRouter.get('/mapa', obtenerActoresMapaController);
 actoresPublicosRouter.get('/', listarActoresController);
-actoresPublicosRouter.get('/:id', obtenerActorController);
+actoresPublicosRouter.get('/:id', optionalToken, obtenerActorController);
