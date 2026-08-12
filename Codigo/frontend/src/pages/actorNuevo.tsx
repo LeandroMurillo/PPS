@@ -74,6 +74,16 @@ const localitiesByDepartment: Record<string, string[]> = {
 
 type MapPoint = { lat: number; lng: number };
 
+type GeneralFieldErrors = {
+	nombre: boolean;
+	descripcion: boolean;
+	cuit: boolean;
+	departamento: boolean;
+	localidad: boolean;
+	direccion: boolean;
+	ubicacion: boolean;
+};
+
 type GeneralActorData = {
 	nombre: string;
 	descripcion: string;
@@ -135,7 +145,17 @@ export default function ActorNuevoPage() {
 	const [category, setCategory] = useState('Artes escénicas');
 	const [subcategory, setSubcategory] = useState('Circo contemporáneo');
 	const [generalData, setGeneralData] = useState<GeneralActorData>(INITIAL_GENERAL_DATA);
-	const [generalError, setGeneralError] = useState('');
+	const [validationAttempted, setValidationAttempted] = useState(false);
+
+	const generalFieldErrors: GeneralFieldErrors = {
+		nombre: validationAttempted && !generalData.nombre.trim(),
+		descripcion: validationAttempted && !generalData.descripcion.trim(),
+		cuit: validationAttempted && generalData.tieneCuit && !/^\d{11}$/.test(generalData.cuit),
+		departamento: validationAttempted && !generalData.departamento,
+		localidad: validationAttempted && !generalData.localidad.trim(),
+		direccion: validationAttempted && !generalData.direccion.trim(),
+		ubicacion: validationAttempted && !generalData.ubicacion,
+	};
 
 	const handleCategoryChange = (newCategory: string) => {
 		setCategory(newCategory);
@@ -150,7 +170,7 @@ export default function ActorNuevoPage() {
 
 	const handleNext = () => {
 		if (activeStep === 0) {
-			const cuitInvalido = generalData.tieneCuit && !/^\d{11}$/.test(generalData.cuit);
+			setValidationAttempted(true);
 			if (
 				!generalData.nombre.trim() ||
 				!generalData.descripcion.trim() ||
@@ -158,17 +178,11 @@ export default function ActorNuevoPage() {
 				!generalData.localidad ||
 				!generalData.direccion.trim() ||
 				!generalData.ubicacion ||
-				cuitInvalido
+				(generalData.tieneCuit && !/^\d{11}$/.test(generalData.cuit))
 			) {
-				setGeneralError(
-					cuitInvalido
-						? 'Revisá el CUIT: debe tener exactamente 11 números.'
-						: 'Completá los campos obligatorios y seleccioná una ubicación antes de continuar.',
-				);
 				scrollToTop();
 				return;
 			}
-			setGeneralError('');
 		}
 
 		setActiveStep(1);
@@ -227,15 +241,14 @@ export default function ActorNuevoPage() {
 
 								{activeStep === 0 && (
 									<Stack spacing={2.5}>
-										{generalError && <Alert severity="error">{generalError}</Alert>}
 										<GeneralActorFields
 											actorType={actorType}
 											category={category}
 											subcategory={subcategory}
 											value={generalData}
+											errors={generalFieldErrors}
 											onChange={(changes) => {
 												setGeneralData((current) => ({ ...current, ...changes }));
-												setGeneralError('');
 											}}
 											onActorTypeChange={setActorType}
 											onCategoryChange={handleCategoryChange}
@@ -285,6 +298,7 @@ function GeneralActorFields({
 	category,
 	subcategory,
 	value,
+	errors,
 	onChange,
 	onActorTypeChange,
 	onCategoryChange,
@@ -294,6 +308,7 @@ function GeneralActorFields({
 	category: string;
 	subcategory: string;
 	value: GeneralActorData;
+	errors: GeneralFieldErrors;
 	onChange: (changes: Partial<GeneralActorData>) => void;
 	onActorTypeChange: (value: ActorType) => void;
 	onCategoryChange: (value: string) => void;
@@ -318,9 +333,14 @@ function GeneralActorFields({
 					required
 					label="¿Cómo se llama tu proyecto o actividad cultural?"
 					placeholder="Ej. Compañía Circo Fuego"
-					helperText="Puede ser tu nombre artístico o el de tu colectivo, espacio o institución."
 					value={value.nombre}
 					onChange={(event) => onChange({ nombre: event.target.value })}
+					error={errors.nombre}
+					helperText={
+						errors.nombre
+							? 'Ingresá el nombre de tu proyecto o actividad cultural.'
+							: 'Puede ser tu nombre artístico o el de tu colectivo, espacio o institución.'
+					}
 				/>
 			</Grid>
 
@@ -421,10 +441,15 @@ function GeneralActorFields({
 					minRows={4}
 					label="Contanos brevemente sobre tu actividad cultural"
 					placeholder="Qué hacés, a quién está dirigida tu propuesta y qué la distingue."
-					helperText="Esta descripción se mostrará en listados, mapas y tarjetas."
 					required
 					value={value.descripcion}
 					onChange={(event) => onChange({ descripcion: event.target.value })}
+					error={errors.descripcion}
+					helperText={
+						errors.descripcion
+							? 'Contanos brevemente sobre tu actividad cultural.'
+							: 'Esta descripción se mostrará en listados, mapas y tarjetas.'
+					}
 				/>
 			</Grid>
 
@@ -449,10 +474,15 @@ function GeneralActorFields({
 						required
 						label="CUIT asociado"
 						placeholder="Ej. 20123456789"
-						helperText="Ingresá los 11 números, sin guiones."
 						inputProps={{ inputMode: 'numeric', maxLength: 11 }}
 						value={value.cuit}
 						onChange={(event) => onChange({ cuit: event.target.value.replace(/\D/g, '') })}
+						error={errors.cuit}
+						helperText={
+							errors.cuit
+								? 'El CUIT debe tener exactamente 11 números.'
+								: 'Ingresá los 11 números, sin guiones.'
+						}
 					/>
 				</Grid>
 			)}
@@ -489,7 +519,7 @@ function GeneralActorFields({
 			</Grid>
 
 			<Grid size={{ xs: 12, md: 6 }}>
-				<FormControl fullWidth required>
+				<FormControl fullWidth required error={errors.departamento}>
 					<InputLabel>Departamento</InputLabel>
 					<Select
 						label="Departamento"
@@ -514,6 +544,7 @@ function GeneralActorFields({
 						<MenuItem value="Trancas">Trancas</MenuItem>
 						<MenuItem value="Yerba Buena">Yerba Buena</MenuItem>
 					</Select>
+					{errors.departamento && <FormHelperText>Seleccioná un departamento.</FormHelperText>}
 				</FormControl>
 			</Grid>
 			<Grid size={{ xs: 12, md: 6 }}>
@@ -522,7 +553,15 @@ function GeneralActorFields({
 					options={availableLocalities}
 					value={value.localidad}
 					onInputChange={(_, newValue) => onChange({ localidad: newValue, ubicacion: null })}
-					renderInput={(params) => <TextField {...params} required label="Localidad" />}
+					renderInput={(params) => (
+						<TextField
+							{...params}
+							required
+							label="Localidad"
+							error={errors.localidad}
+							helperText={errors.localidad ? 'Ingresá o seleccioná una localidad.' : undefined}
+						/>
+					)}
 				/>
 			</Grid>
 
@@ -533,6 +572,8 @@ function GeneralActorFields({
 					locality={value.localidad}
 					address={value.direccion}
 					point={value.ubicacion}
+					addressError={errors.direccion}
+					pointError={errors.ubicacion}
 					onAddressChange={(direccion) => onChange({ direccion })}
 					onPointChange={(ubicacion) => onChange({ ubicacion })}
 				/>
@@ -585,6 +626,8 @@ function LocationPicker({
 	locality,
 	address,
 	point,
+	addressError,
+	pointError,
 	onAddressChange,
 	onPointChange,
 }: {
@@ -592,6 +635,8 @@ function LocationPicker({
 	locality: string;
 	address: string;
 	point: MapPoint | null;
+	addressError: boolean;
+	pointError: boolean;
 	onAddressChange: (address: string) => void;
 	onPointChange: (point: MapPoint | null) => void;
 }) {
@@ -723,9 +768,11 @@ function LocationPicker({
 						void searchAddress();
 					}
 				}}
-				error={Boolean(searchError)}
+				error={addressError || Boolean(searchError)}
 				helperText={
-					searchError || 'Este texto se guardará como dirección, aunque sea una referencia aproximada.'
+					addressError
+						? 'Ingresá una dirección o una referencia para identificar el lugar.'
+						: searchError || 'Este texto se guardará como dirección, aunque sea una referencia aproximada.'
 				}
 			/>
 
@@ -759,7 +806,8 @@ function LocationPicker({
 				sx={{
 					height: { xs: 300, md: 380 },
 					border: '1px solid',
-					borderColor: point ? 'success.main' : 'divider',
+					borderColor: pointError ? 'error.main' : point ? 'success.main' : 'divider',
+					borderWidth: pointError ? 2 : 1,
 					borderRadius: 1,
 					overflow: 'hidden',
 					'& .leaflet-container': { cursor: 'crosshair' },
@@ -792,10 +840,16 @@ function LocationPicker({
 				</MapContainer>
 			</Box>
 
-			<Alert severity={point ? 'success' : 'warning'} variant="outlined" icon={<LocationOnIcon />}>
+			<Alert
+				severity={pointError ? 'error' : point ? 'success' : 'warning'}
+				variant="outlined"
+				icon={<LocationOnIcon />}
+			>
 				{point
 					? `${address.trim() ? 'Ubicación lista. Se guardarán la dirección o referencia, la latitud y la longitud.' : 'El punto está seleccionado. Completá una dirección o referencia para poder guardar.'}${resolvedAddress ? ` Resultado encontrado: ${resolvedAddress}` : ''}`
-					: 'Buscá una dirección o referencia, usá tu ubicación actual o señalá el punto en el mapa.'}
+					: pointError
+						? 'Seleccioná una ubicación buscando una referencia, usando tu ubicación actual o señalando el punto en el mapa.'
+						: 'Buscá una dirección o referencia, usá tu ubicación actual o señalá el punto en el mapa.'}
 			</Alert>
 		</Stack>
 	);

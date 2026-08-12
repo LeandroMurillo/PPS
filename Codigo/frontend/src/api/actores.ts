@@ -297,6 +297,17 @@ export async function agregarEventoApi(
 	});
 }
 
+export type MiActorEventoApiItem = {
+	id: number;
+	nombre: string;
+	descripcion: string;
+	fecha: string;
+};
+
+export async function listarEventosApi(idActor: number) {
+	return apiFetch<{ data: MiActorEventoApiItem[] }>(`/api/mis-actores/${idActor}/eventos`);
+}
+
 export async function eliminarEventoApi(idActor: number, idEvento: number) {
 	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/eventos/${idEvento}`, {
 		method: 'DELETE',

@@ -27,6 +27,13 @@ const idEventoRowSchema = z.object({
 	idEvento: databaseIntegerSchema,
 });
 
+const eventoRowSchema = z.object({
+	idEvento: databaseIntegerSchema,
+	nombre: z.string(),
+	descripcion: z.string(),
+	fecha: z.union([z.date(), z.string()]).transform((val) => (val instanceof Date ? val.toISOString() : String(val))),
+});
+
 export const misActoresDatabaseRowSchema = z.object({
 	idActor: databaseIntegerSchema,
 	nombre: z.string(),
@@ -34,7 +41,9 @@ export const misActoresDatabaseRowSchema = z.object({
 	fotoPerfilUrl: z.string().nullable(),
 	cuit: z.string().nullable(),
 	tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']),
-	fechaCreacion: z.union([z.date(), z.string()]).transform((val) => (val instanceof Date ? val.toISOString() : String(val))),
+	fechaCreacion: z
+		.union([z.date(), z.string()])
+		.transform((val) => (val instanceof Date ? val.toISOString() : String(val))),
 	estado: z.enum(['A', 'P', 'I']),
 	idCategoria: databaseIntegerSchema,
 	categoria: z.string(),
@@ -71,17 +80,14 @@ export async function listarMisActoresRepository(input: {
 	limit: number;
 	offset: number;
 }) {
-	const procedureResult: unknown = await pool.query(
-		'CALL sp_actor_listar_mis_actores(?, ?, ?, ?, ?, ?)',
-		[
-			input.idUsuario,
-			input.busqueda || null,
-			input.idCategoria || null,
-			input.estado || null,
-			input.limit,
-			input.offset,
-		],
-	);
+	const procedureResult: unknown = await pool.query('CALL sp_actor_listar_mis_actores(?, ?, ?, ?, ?, ?)', [
+		input.idUsuario,
+		input.busqueda || null,
+		input.idCategoria || null,
+		input.estado || null,
+		input.limit,
+		input.offset,
+	]);
 
 	const totalSet = getResultSet(procedureResult, 0, 'sp_actor_listar_mis_actores');
 	const actoresSet = getResultSet(procedureResult, 1, 'sp_actor_listar_mis_actores');
@@ -188,16 +194,8 @@ export async function cambiarEstadoActorRepository(input: {
 	]);
 }
 
-export async function eliminarActorRepository(input: {
-	idUsuario: number;
-	idActor: number;
-	esAdmin: boolean;
-}) {
-	await pool.query('CALL sp_actor_eliminar_actor(?, ?, ?)', [
-		input.idUsuario,
-		input.idActor,
-		input.esAdmin ? 1 : 0,
-	]);
+export async function eliminarActorRepository(input: { idUsuario: number; idActor: number; esAdmin: boolean }) {
+	await pool.query('CALL sp_actor_eliminar_actor(?, ?, ?)', [input.idUsuario, input.idActor, input.esAdmin ? 1 : 0]);
 }
 
 export async function agregarItemPortafolioRepository(input: {
@@ -207,24 +205,21 @@ export async function agregarItemPortafolioRepository(input: {
 	descripcion: string;
 	url: string;
 }) {
-	const procedureResult: unknown = await pool.query(
-		'CALL sp_actor_agregar_item_portafolio(?, ?, ?, ?, ?)',
-		[input.idUsuario, input.idActor, input.tipo, input.descripcion, input.url],
-	);
+	const procedureResult: unknown = await pool.query('CALL sp_actor_agregar_item_portafolio(?, ?, ?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.tipo,
+		input.descripcion,
+		input.url,
+	]);
 
 	const resultSet = getResultSet(procedureResult, 0, 'sp_actor_agregar_item_portafolio');
 	const idRows = z.array(idItemRowSchema).parse(resultSet);
 	return { idItem: idRows[0]?.idItem };
 }
 
-export async function eliminarItemPortafolioRepository(input: {
-	idUsuario: number;
-	idItem: number;
-}) {
-	await pool.query('CALL sp_actor_eliminar_item_portafolio(?, ?)', [
-		input.idUsuario,
-		input.idItem,
-	]);
+export async function eliminarItemPortafolioRepository(input: { idUsuario: number; idItem: number }) {
+	await pool.query('CALL sp_actor_eliminar_item_portafolio(?, ?)', [input.idUsuario, input.idItem]);
 }
 
 export async function agregarEventoRepository(input: {
@@ -234,24 +229,31 @@ export async function agregarEventoRepository(input: {
 	descripcion: string;
 	fecha?: string | null | undefined;
 }) {
-	const procedureResult: unknown = await pool.query(
-		'CALL sp_actor_agregar_evento(?, ?, ?, ?, ?)',
-		[input.idUsuario, input.idActor, input.nombre, input.descripcion, input.fecha || null],
-	);
+	const procedureResult: unknown = await pool.query('CALL sp_actor_agregar_evento(?, ?, ?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.nombre,
+		input.descripcion,
+		input.fecha || null,
+	]);
 
 	const resultSet = getResultSet(procedureResult, 0, 'sp_actor_agregar_evento');
 	const idRows = z.array(idEventoRowSchema).parse(resultSet);
 	return { idEvento: idRows[0]?.idEvento };
 }
 
-export async function eliminarEventoRepository(input: {
-	idUsuario: number;
-	idEvento: number;
-}) {
-	await pool.query('CALL sp_actor_eliminar_evento(?, ?)', [
+export async function listarEventosRepository(input: { idUsuario: number; idActor: number }) {
+	const procedureResult: unknown = await pool.query('CALL sp_actor_listar_eventos(?, ?)', [
 		input.idUsuario,
-		input.idEvento,
+		input.idActor,
 	]);
+
+	const resultSet = getResultSet(procedureResult, 0, 'sp_actor_listar_eventos');
+	return z.array(eventoRowSchema).parse(resultSet);
+}
+
+export async function eliminarEventoRepository(input: { idUsuario: number; idActor: number; idEvento: number }) {
+	await pool.query('CALL sp_actor_eliminar_evento(?, ?, ?)', [input.idUsuario, input.idActor, input.idEvento]);
 }
 
 const integranteRowSchema = z.object({
@@ -263,10 +265,7 @@ const integranteRowSchema = z.object({
 	esDueño: databaseIntegerSchema.transform((v) => Boolean(v)),
 });
 
-export async function listarIntegrantesRepository(input: {
-	idUsuario: number;
-	idActor: number;
-}) {
+export async function listarIntegrantesRepository(input: { idUsuario: number; idActor: number }) {
 	const procedureResult: unknown = await pool.query('CALL sp_actor_listar_integrantes(?, ?)', [
 		input.idUsuario,
 		input.idActor,

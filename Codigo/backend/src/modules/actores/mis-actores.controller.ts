@@ -12,6 +12,7 @@ import {
 	eliminarEventoService,
 	eliminarIntegranteService,
 	eliminarItemPortafolioService,
+	listarEventosService,
 	listarIntegrantesService,
 	listarMisActoresService,
 } from './mis-actores.service.js';
@@ -74,9 +75,9 @@ const portafolioBodySchema = z.object({
 });
 
 const eventoBodySchema = z.object({
-	nombre: z.string().trim().min(1).max(100),
-	descripcion: z.string().trim().min(1).max(500),
-	fecha: z.string().optional(),
+	nombre: z.string().trim().min(1).max(45),
+	descripcion: z.string().trim().min(1).max(455),
+	fecha: z.iso.datetime({ local: true }).or(z.iso.date()).optional(),
 });
 
 export async function listarMisActoresController(req: Request, res: Response): Promise<void> {
@@ -258,13 +259,39 @@ export async function agregarEventoController(req: Request, res: Response): Prom
 	}
 }
 
+export async function listarEventosController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = z.coerce.number().int().positive().parse(req.params.id);
+		const eventos = await listarEventosService({ idUsuario: user.idUsuario, idActor });
+
+		res.json({
+			data: eventos.map((evento) => ({
+				id: evento.idEvento,
+				nombre: evento.nombre,
+				descripcion: evento.descripcion,
+				fecha: evento.fecha,
+			})),
+		});
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al listar los eventos.',
+			},
+		});
+	}
+}
+
 export async function eliminarEventoController(req: Request, res: Response): Promise<void> {
 	try {
 		const user = req.user!;
+		const idActor = z.coerce.number().int().positive().parse(req.params.id);
 		const idEvento = Number(req.params.idEvento);
 
 		await eliminarEventoService({
 			idUsuario: user.idUsuario,
+			idActor,
 			idEvento,
 		});
 

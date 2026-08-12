@@ -4052,6 +4052,32 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_actor_listar_eventos
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_listar_eventos`(
+    IN pIdUsuario INT,
+    IN pIdActor INT
+)
+READS SQL DATA
+COMMENT 'Lista los eventos de un actor para sus integrantes.'
+BEGIN
+    DECLARE vEsIntegrante INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsIntegrante
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor;
+
+    IF vEsIntegrante = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para ver los eventos de este actor.';
+    END IF;
+
+    SELECT idEvento, nombre, descripcion, fecha
+    FROM `Eventos`
+    WHERE idActor = pIdActor
+    ORDER BY fecha ASC, idEvento ASC;
+END //
+
+-- -----------------------------------------------------
 -- sp_actor_agregar_evento
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_actor_agregar_evento`(
@@ -4085,6 +4111,7 @@ END //
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_actor_eliminar_evento`(
     IN pIdUsuario INT,
+    IN pIdActor INT,
     IN pIdEvento INT
 )
 MODIFIES SQL DATA
@@ -4093,7 +4120,9 @@ BEGIN
     DECLARE vIdActor INT;
     DECLARE vEsDueno INT DEFAULT 0;
 
-    SELECT idActor INTO vIdActor FROM `Eventos` WHERE idEvento = pIdEvento;
+    SELECT idActor INTO vIdActor
+    FROM `Eventos`
+    WHERE idEvento = pIdEvento AND idActor = pIdActor;
 
     IF vIdActor IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El evento no existe.';

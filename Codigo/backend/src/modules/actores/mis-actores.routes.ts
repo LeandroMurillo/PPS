@@ -12,6 +12,7 @@ import {
 	eliminarEventoController,
 	eliminarIntegranteController,
 	eliminarItemPortafolioController,
+	listarEventosController,
 	listarIntegrantesController,
 	listarMisActoresController,
 } from './mis-actores.controller.js';
@@ -30,6 +31,7 @@ misActoresRouter.post('/:id/portafolio', agregarItemPortafolioController);
 misActoresRouter.delete('/:id/portafolio/:idItem', eliminarItemPortafolioController);
 
 misActoresRouter.post('/:id/eventos', agregarEventoController);
+misActoresRouter.get('/:id/eventos', listarEventosController);
 misActoresRouter.delete('/:id/eventos/:idEvento', eliminarEventoController);
 
 misActoresRouter.get('/:id/integrantes', listarIntegrantesController);

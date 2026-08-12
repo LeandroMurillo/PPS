@@ -70,6 +70,7 @@ import {
 	eliminarItemPortafolioApi,
 	eliminarMiActorApi,
 	listarIntegrantesApi,
+	listarEventosApi,
 	listarMisActoresApi,
 	type IntegranteApiItem,
 } from '../api/actores';
@@ -119,6 +120,11 @@ export type MyActor = {
 const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
 const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
+
+function formatEventDate(value: string): string {
+	const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+	return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+}
 
 const departamentos = [
 	'Burruyacú',
@@ -219,6 +225,10 @@ export default function MisActoresPage() {
 	const [newEventNombre, setNewEventNombre] = React.useState('');
 	const [newEventFecha, setNewEventFecha] = React.useState('');
 	const [newEventDesc, setNewEventDesc] = React.useState('');
+	const [eventsLoading, setEventsLoading] = React.useState(false);
+	const [eventsError, setEventsError] = React.useState<string | null>(null);
+	const [eventCreating, setEventCreating] = React.useState(false);
+	const [deletingEventId, setDeletingEventId] = React.useState<number | null>(null);
 
 	// Members Management Modal
 	const [membersModalOpen, setMembersModalOpen] = React.useState(false);
@@ -515,66 +525,90 @@ export default function MisActoresPage() {
 	};
 
 	// Open Events Modal
-	const handleOpenEventsModal = (actor: MyActor) => {
+	const handleOpenEventsModal = async (actor: MyActor) => {
 		setTargetEventsActor(actor);
 		setNewEventNombre('');
 		setNewEventFecha('');
 		setNewEventDesc('');
+		setEventsError(null);
 		setEventsModalOpen(true);
+		setEventsLoading(true);
+
+		try {
+			const res = await listarEventosApi(actor.id);
+			const eventos = res.data ?? [];
+			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, eventos } : item)));
+			setTargetEventsActor((prev) => (prev?.id === actor.id ? { ...prev, eventos } : prev));
+		} catch (err) {
+			setEventsError(err instanceof Error ? err.message : 'No se pudieron cargar los eventos.');
+		} finally {
+			setEventsLoading(false);
+		}
 	};
 
 	// Add Event
 	const handleAddEvent = async () => {
 		if (!targetEventsActor || !newEventNombre.trim()) return;
 
-		let createdId = Date.now();
+		setEventCreating(true);
+		setEventsError(null);
 		try {
 			const res = await agregarEventoApi(targetEventsActor.id, {
 				nombre: newEventNombre.trim(),
 				descripcion: newEventDesc.trim() || 'Sin descripción',
 				fecha: newEventFecha.trim() || undefined,
 			});
-			if (res?.data?.idEvento) {
-				createdId = res.data.idEvento;
-			}
+			if (!res.data.idEvento) throw new Error('El backend no devolvió el identificador del evento.');
+
+			const newEvt: MyActorEvent = {
+				id: res.data.idEvento,
+				nombre: newEventNombre.trim(),
+				fecha: newEventFecha.trim() || new Date().toISOString(),
+				descripcion: newEventDesc.trim() || 'Sin descripción',
+			};
+
+			const updatedEvents = [...(targetEventsActor.eventos || []), newEvt].sort((a, b) =>
+				a.fecha.localeCompare(b.fecha),
+			);
+
+			setActores((prev) =>
+				prev.map((a) => (a.id === targetEventsActor.id ? { ...a, eventos: updatedEvents } : a)),
+			);
+			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
+
+			setNewEventNombre('');
+			setNewEventFecha('');
+			setNewEventDesc('');
+			setSnackbarMessage('Evento agregado correctamente.');
 		} catch (err) {
-			console.log('Error API agregar evento:', err);
+			setEventsError(err instanceof Error ? err.message : 'No se pudo agregar el evento.');
+		} finally {
+			setEventCreating(false);
 		}
-
-		const newEvt: MyActorEvent = {
-			id: createdId,
-			nombre: newEventNombre.trim(),
-			fecha: newEventFecha.trim() || new Date().toISOString().split('T')[0],
-			descripcion: newEventDesc.trim() || 'Sin descripción',
-		};
-
-		const updatedEvents = [...(targetEventsActor.eventos || []), newEvt];
-
-		setActores((prev) => prev.map((a) => (a.id === targetEventsActor.id ? { ...a, eventos: updatedEvents } : a)));
-		setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
-
-		setNewEventNombre('');
-		setNewEventFecha('');
-		setNewEventDesc('');
-		setSnackbarMessage('Evento agregado correctamente.');
 	};
 
 	// Delete Event
 	const handleDeleteEvent = async (eventId: number) => {
 		if (!targetEventsActor) return;
 
+		setDeletingEventId(eventId);
+		setEventsError(null);
 		try {
 			await eliminarEventoApi(targetEventsActor.id, eventId);
+
+			const updatedEvents = (targetEventsActor.eventos || []).filter((e) => e.id !== eventId);
+
+			setActores((prev) =>
+				prev.map((a) => (a.id === targetEventsActor.id ? { ...a, eventos: updatedEvents } : a)),
+			);
+			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
+
+			setSnackbarMessage('Evento eliminado.');
 		} catch (err) {
-			console.log('Error API eliminar evento:', err);
+			setEventsError(err instanceof Error ? err.message : 'No se pudo eliminar el evento.');
+		} finally {
+			setDeletingEventId(null);
 		}
-
-		const updatedEvents = (targetEventsActor.eventos || []).filter((e) => e.id !== eventId);
-
-		setActores((prev) => prev.map((a) => (a.id === targetEventsActor.id ? { ...a, eventos: updatedEvents } : a)));
-		setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
-
-		setSnackbarMessage('Evento eliminado.');
 	};
 
 	// Open Members Modal
@@ -925,30 +959,37 @@ export default function MisActoresPage() {
 										},
 									}}
 								>
-									{actor.fotoPerfilUrl ? (
-										<CardMedia
-											component="img"
-											height="180"
-											image={actor.fotoPerfilUrl}
-											alt={`Foto de ${actor.nombre}`}
-											sx={{ objectFit: 'cover' }}
-										/>
-									) : (
-										<Box
-											sx={{
-												height: 180,
-												display: 'flex',
-												alignItems: 'center',
-												justifyContent: 'center',
-												bgcolor: 'action.hover',
-												color: 'text.secondary',
-											}}
-										>
-											<Typography variant="body2" color="text.secondary">
-												Sin foto de perfil
-											</Typography>
-										</Box>
-									)}
+									<Box
+										component={RouterLink}
+										to={`/actores/${buildSlugConId(actor.id, actor.nombre)}`}
+										aria-label={`Ver perfil público de ${actor.nombre}`}
+										sx={{ display: 'block', textDecoration: 'none' }}
+									>
+										{actor.fotoPerfilUrl ? (
+											<CardMedia
+												component="img"
+												height="180"
+												image={actor.fotoPerfilUrl}
+												alt={`Foto de ${actor.nombre}`}
+												sx={{ objectFit: 'cover' }}
+											/>
+										) : (
+											<Box
+												sx={{
+													height: 180,
+													display: 'flex',
+													alignItems: 'center',
+													justifyContent: 'center',
+													bgcolor: 'action.hover',
+													color: 'text.secondary',
+												}}
+											>
+												<Typography variant="body2" color="text.secondary">
+													Sin foto de perfil
+												</Typography>
+											</Box>
+										)}
+									</Box>
 
 									<CardContent sx={{ flexGrow: 1, p: 2.5 }}>
 										<Stack
@@ -1613,6 +1654,8 @@ export default function MisActoresPage() {
 							Agregá o eliminá presentaciones, funciones o eventos programados para este actor cultural.
 						</Typography>
 
+						{eventsError && <Alert severity="error">{eventsError}</Alert>}
+
 						{/* Form to add new event */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -1628,6 +1671,7 @@ export default function MisActoresPage() {
 										placeholder="Ej. Noche de Folklore en Anfiteatro"
 										value={newEventNombre}
 										onChange={(e) => setNewEventNombre(e.target.value)}
+										slotProps={{ htmlInput: { maxLength: 45 } }}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, md: 3 }}>
@@ -1649,6 +1693,7 @@ export default function MisActoresPage() {
 										placeholder="Ej. Plaza Independencia"
 										value={newEventDesc}
 										onChange={(e) => setNewEventDesc(e.target.value)}
+										slotProps={{ htmlInput: { maxLength: 455 } }}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12 }}>
@@ -1657,9 +1702,9 @@ export default function MisActoresPage() {
 										size="small"
 										startIcon={<AddIcon />}
 										onClick={handleAddEvent}
-										disabled={!newEventNombre.trim()}
+										disabled={!newEventNombre.trim() || eventCreating || eventsLoading}
 									>
-										Agregar evento
+										{eventCreating ? 'Agregando…' : 'Agregar evento'}
 									</Button>
 								</Grid>
 							</Grid>
@@ -1670,7 +1715,11 @@ export default function MisActoresPage() {
 							Eventos programados ({(targetEventsActor?.eventos || []).length})
 						</Typography>
 
-						{(targetEventsActor?.eventos || []).length === 0 ? (
+						{eventsLoading ? (
+							<Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+								<CircularProgress size={28} aria-label="Cargando eventos" />
+							</Box>
+						) : (targetEventsActor?.eventos || []).length === 0 ? (
 							<Alert severity="info">Este actor no tiene eventos registrados actualmente.</Alert>
 						) : (
 							<Stack spacing={1.5} divider={<Divider />}>
@@ -1689,7 +1738,7 @@ export default function MisActoresPage() {
 													{evt.nombre}
 												</Typography>
 												<Typography variant="caption" color="text.secondary">
-													📅 {evt.fecha} · {evt.descripcion}
+													📅 {formatEventDate(evt.fecha)} · {evt.descripcion}
 												</Typography>
 											</Box>
 										</Stack>
@@ -1697,8 +1746,14 @@ export default function MisActoresPage() {
 											size="small"
 											color="error"
 											onClick={() => handleDeleteEvent(evt.id)}
+											disabled={deletingEventId !== null}
+											aria-label={`Eliminar evento ${evt.nombre}`}
 										>
-											<DeleteOutlineIcon fontSize="small" />
+											{deletingEventId === evt.id ? (
+												<CircularProgress size={18} />
+											) : (
+												<DeleteOutlineIcon fontSize="small" />
+											)}
 										</IconButton>
 									</Stack>
 								))}
@@ -1717,9 +1772,7 @@ export default function MisActoresPage() {
 			{/* MODAL: Gestionar Integrantes                                             */}
 			{/* ========================================================================= */}
 			<Dialog open={membersModalOpen} onClose={() => setMembersModalOpen(false)} maxWidth="md" fullWidth>
-				<DialogTitle fontWeight={700}>
-					Gestionar integrantes: {targetMembersActor?.nombre}
-				</DialogTitle>
+				<DialogTitle fontWeight={700}>Gestionar integrantes: {targetMembersActor?.nombre}</DialogTitle>
 				<DialogContent dividers>
 					<Stack spacing={3}>
 						<Typography variant="body2" color="text.secondary">
