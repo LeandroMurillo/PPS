@@ -9,7 +9,6 @@ import CodeIcon from '@mui/icons-material/Code';
 import GroupIcon from '@mui/icons-material/Group';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 
@@ -67,11 +66,6 @@ function AppContent() {
 				{
 					kind: 'header',
 					title: 'Usuario',
-				},
-				{
-					title: 'Registrar actor cultural',
-					segment: 'actores/nuevo',
-					icon: <PersonAddIcon />,
 				},
 				{
 					title: 'Mis actores',

@@ -23,6 +23,7 @@ import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminUsuariosPage from './pages/adminUsuarios';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
+import MisActoresPage from './pages/misActores';
 import EmployeesCrudPage from './pages/employees';
 import Licencia from './pages/licencia';
 import LoginPage from './pages/login';
@@ -95,7 +96,7 @@ const router = createBrowserRouter([
 						path: 'mis-actores',
 						element: (
 							<ProtectedRoute>
-								<EmployeesCrudPage />
+								<MisActoresPage />
 							</ProtectedRoute>
 						),
 					},

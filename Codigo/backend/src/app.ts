@@ -10,6 +10,7 @@ import { env } from './config/env.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found-handler.js';
 import { actoresPublicosRouter } from './modules/actores/actores.routes.js';
+import { misActoresRouter } from './modules/actores/mis-actores.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
@@ -57,6 +58,7 @@ app.use('/api', healthRouter);
 
 app.use('/api/publico/auth', authRouter);
 app.use('/api/publico/actores', actoresPublicosRouter);
+app.use('/api/mis-actores', misActoresRouter);
 app.use('/api/admin', adminRouter);
 
 app.use(openApiRouter);

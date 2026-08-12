@@ -3722,4 +3722,387 @@ BEGIN
     ORDER BY aa.descripcion ASC;
 END //
 
+-- -----------------------------------------------------
+-- sp_actor_listar_mis_actores
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_listar_mis_actores`(
+    IN pIdUsuario INT,
+    IN pBusqueda VARCHAR(100),
+    IN pIdCategoria INT,
+    IN pEstado CHAR(1),
+    IN pLimit INT,
+    IN pOffset INT
+)
+READS SQL DATA
+COMMENT 'Lista los actores culturales pertenecientes al usuario autenticado (donde esDueño = 1).'
+BEGIN
+    DECLARE vLimit INT DEFAULT 25;
+    DECLARE vOffset INT DEFAULT 0;
+
+    IF pLimit IS NOT NULL AND pLimit > 0 AND pLimit <= 100 THEN
+        SET vLimit = pLimit;
+    END IF;
+
+    IF pOffset IS NOT NULL AND pOffset >= 0 THEN
+        SET vOffset = pOffset;
+    END IF;
+
+    -- Result set 1: Total
+    SELECT COUNT(DISTINCT a.idActor) AS total
+    FROM `Actores` a
+    JOIN `Integrantes` i ON a.idActor = i.idActor
+    JOIN `Ubicaciones` u ON a.idUbicacion = u.idUbicacion
+    WHERE i.idUsuario = pIdUsuario
+      AND i.esDueño = 1
+      AND (pIdCategoria IS NULL OR pIdCategoria = 0 OR a.idCategoria = pIdCategoria)
+      AND (pEstado IS NULL OR pEstado = '' OR a.estado = pEstado)
+      AND (
+          pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR
+          a.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%') OR
+          a.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%') OR
+          u.departamento LIKE CONCAT('%', TRIM(pBusqueda), '%') OR
+          u.localidad LIKE CONCAT('%', TRIM(pBusqueda), '%')
+      );
+
+    -- Result set 2: Actores
+    SELECT
+        a.idActor,
+        a.nombre,
+        a.descripcion,
+        a.fotoPerfilUrl,
+        a.cuit,
+        a.tipoActor,
+        a.fechaCreacion,
+        a.estado,
+        c.idCategoria,
+        c.nombre AS categoria,
+        c.icono AS iconoCategoria,
+        s.idSubcategoria,
+        s.nombre AS subcategoria,
+        u.idUbicacion,
+        u.provincia,
+        u.departamento,
+        u.localidad,
+        u.direccion,
+        u.latitud,
+        u.longitud,
+        u.esPublica
+    FROM `Actores` a
+    JOIN `Integrantes` i ON a.idActor = i.idActor
+    JOIN `Categorias` c ON a.idCategoria = c.idCategoria
+    LEFT JOIN `Subcategorias` s ON a.idCategoria = s.idCategoria AND a.idSubcategoria = s.idSubcategoria
+    JOIN `Ubicaciones` u ON a.idUbicacion = u.idUbicacion
+    WHERE i.idUsuario = pIdUsuario
+      AND i.esDueño = 1
+      AND (pIdCategoria IS NULL OR pIdCategoria = 0 OR a.idCategoria = pIdCategoria)
+      AND (pEstado IS NULL OR pEstado = '' OR a.estado = pEstado)
+      AND (
+          pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR
+          a.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%') OR
+          a.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%') OR
+          u.departamento LIKE CONCAT('%', TRIM(pBusqueda), '%') OR
+          u.localidad LIKE CONCAT('%', TRIM(pBusqueda), '%')
+      )
+    ORDER BY a.idActor DESC
+    LIMIT vLimit OFFSET vOffset;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_crear_actor
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_crear_actor`(
+    IN pIdUsuario INT,
+    IN pIdCategoria INT,
+    IN pIdSubcategoria INT,
+    IN pNombre VARCHAR(100),
+    IN pDescripcion VARCHAR(500),
+    IN pFotoPerfilUrl VARCHAR(245),
+    IN pCuit CHAR(11),
+    IN pTipoActor VARCHAR(20),
+    IN pProvincia VARCHAR(45),
+    IN pDepartamento VARCHAR(45),
+    IN pLocalidad VARCHAR(45),
+    IN pDireccion VARCHAR(150),
+    IN pLatitud DECIMAL(10,8),
+    IN pLongitud DECIMAL(11,8)
+)
+MODIFIES SQL DATA
+COMMENT 'Crea un nuevo actor cultural para el usuario autenticado (con estado Pendiente).'
+BEGIN
+    DECLARE vIdUbicacion INT;
+    DECLARE vIdActor INT;
+
+    INSERT INTO `Ubicaciones` (provincia, departamento, localidad, esPublica, direccion, latitud, longitud)
+    VALUES (
+        COALESCE(pProvincia, 'Tucumán'),
+        pDepartamento,
+        pLocalidad,
+        1,
+        pDireccion,
+        COALESCE(pLatitud, -26.82414000),
+        COALESCE(pLongitud, -65.22260000)
+    );
+
+    SET vIdUbicacion = LAST_INSERT_ID();
+
+    INSERT INTO `Actores` (
+        idCategoria, idSubcategoria, idUbicacion, nombre, descripcion,
+        fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado
+    ) VALUES (
+        pIdCategoria,
+        pIdSubcategoria,
+        vIdUbicacion,
+        pNombre,
+        pDescripcion,
+        pFotoPerfilUrl,
+        pCuit,
+        pTipoActor,
+        NOW(),
+        'P'
+    );
+
+    SET vIdActor = LAST_INSERT_ID();
+
+    INSERT INTO `Integrantes` (idUsuario, idActor, rol, esDueño)
+    VALUES (pIdUsuario, vIdActor, 'Contacto Principal', 1);
+
+    SELECT vIdActor AS idActor;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_editar_actor
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_editar_actor`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pIdCategoria INT,
+    IN pIdSubcategoria INT,
+    IN pNombre VARCHAR(100),
+    IN pDescripcion VARCHAR(500),
+    IN pFotoPerfilUrl VARCHAR(245),
+    IN pCuit CHAR(11),
+    IN pTipoActor VARCHAR(20),
+    IN pDepartamento VARCHAR(45),
+    IN pLocalidad VARCHAR(45),
+    IN pDireccion VARCHAR(150),
+    IN pEsAdmin TINYINT
+)
+MODIFIES SQL DATA
+COMMENT 'Edita los datos de un actor cultural. Si es editado por usuario estándar pasa a estado Pendiente.'
+BEGIN
+    DECLARE vIdUbicacion INT;
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 AND COALESCE(pEsAdmin, 0) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para editar este actor cultural.';
+    END IF;
+
+    SELECT idUbicacion INTO vIdUbicacion FROM `Actores` WHERE idActor = pIdActor;
+
+    UPDATE `Ubicaciones`
+    SET departamento = pDepartamento,
+        localidad = pLocalidad,
+        direccion = pDireccion
+    WHERE idUbicacion = vIdUbicacion;
+
+    UPDATE `Actores`
+    SET idCategoria = pIdCategoria,
+        idSubcategoria = pIdSubcategoria,
+        nombre = pNombre,
+        descripcion = pDescripcion,
+        fotoPerfilUrl = pFotoPerfilUrl,
+        cuit = pCuit,
+        tipoActor = pTipoActor,
+        estado = IF(COALESCE(pEsAdmin, 0) = 1, estado, 'P')
+    WHERE idActor = pIdActor;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_cambiar_estado_actor
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_cambiar_estado_actor`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pNuevoEstado CHAR(1),
+    IN pEsAdmin TINYINT
+)
+MODIFIES SQL DATA
+COMMENT 'Cambia el estado de un actor (P, I, o A si es admin).'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 AND COALESCE(pEsAdmin, 0) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para gestionar este actor cultural.';
+    END IF;
+
+    IF pNuevoEstado = 'A' AND COALESCE(pEsAdmin, 0) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Solo administradores o moderadores pueden activar un actor.';
+    END IF;
+
+    IF pNuevoEstado NOT IN ('A', 'P', 'I') THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Estado no válido.';
+    END IF;
+
+    UPDATE `Actores`
+    SET estado = pNuevoEstado
+    WHERE idActor = pIdActor;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_eliminar_actor
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_eliminar_actor`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pEsAdmin TINYINT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina permanentemente un actor cultural y sus datos asociados.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+    DECLARE vIdUbicacion INT;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 AND COALESCE(pEsAdmin, 0) = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para eliminar este actor cultural.';
+    END IF;
+
+    SELECT idUbicacion INTO vIdUbicacion FROM `Actores` WHERE idActor = pIdActor;
+
+    DELETE FROM `ItemsPortafolio` WHERE idActor = pIdActor;
+    DELETE FROM `Eventos` WHERE idActor = pIdActor;
+    DELETE FROM `Integrantes` WHERE idActor = pIdActor;
+    DELETE FROM `Actores` WHERE idActor = pIdActor;
+    DELETE FROM `Ubicaciones` WHERE idUbicacion = vIdUbicacion;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_agregar_item_portafolio
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_agregar_item_portafolio`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pTipo VARCHAR(20),
+    IN pDescripcion VARCHAR(255),
+    IN pUrl VARCHAR(255)
+)
+MODIFIES SQL DATA
+COMMENT 'Agrega un ítem al portafolio de un actor cultural.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos sobre este actor.';
+    END IF;
+
+    INSERT INTO `ItemsPortafolio` (idActor, tipo, descripcion, url, fechaCreacion)
+    VALUES (pIdActor, pTipo, pDescripcion, pUrl, NOW());
+
+    SELECT LAST_INSERT_ID() AS idItem;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_eliminar_item_portafolio
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_eliminar_item_portafolio`(
+    IN pIdUsuario INT,
+    IN pIdItem INT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina un ítem del portafolio.'
+BEGIN
+    DECLARE vIdActor INT;
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT idActor INTO vIdActor FROM `ItemsPortafolio` WHERE idItem = pIdItem;
+
+    IF vIdActor IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El ítem de portafolio no existe.';
+    END IF;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = vIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para eliminar este ítem.';
+    END IF;
+
+    DELETE FROM `ItemsPortafolio` WHERE idItem = pIdItem;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_agregar_evento
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_agregar_evento`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pNombre VARCHAR(100),
+    IN pDescripcion VARCHAR(500),
+    IN pFecha DATETIME
+)
+MODIFIES SQL DATA
+COMMENT 'Agrega un evento a un actor cultural.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos sobre este actor.';
+    END IF;
+
+    INSERT INTO `Eventos` (idActor, nombre, descripcion, fecha, fechaCreacion, estado)
+    VALUES (pIdActor, pNombre, pDescripcion, COALESCE(pFecha, NOW()), NOW(), 'A');
+
+    SELECT LAST_INSERT_ID() AS idEvento;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_eliminar_evento
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_eliminar_evento`(
+    IN pIdUsuario INT,
+    IN pIdEvento INT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina un evento de un actor cultural.'
+BEGIN
+    DECLARE vIdActor INT;
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT idActor INTO vIdActor FROM `Eventos` WHERE idEvento = pIdEvento;
+
+    IF vIdActor IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El evento no existe.';
+    END IF;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = vIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para eliminar este evento.';
+    END IF;
+
+    DELETE FROM `Eventos` WHERE idEvento = pIdEvento;
+END //
+
 DELIMITER ;
