@@ -59,6 +59,7 @@ import { PageContainer } from '@toolpad/core/PageContainer';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { type CategoriaIcono } from '../components/categoryIcon';
+import DatePickerSpanish from '../components/datePickerSpanish';
 import {
 	agregarEventoApi,
 	agregarIntegranteApi,
@@ -1675,7 +1676,6 @@ export default function MisActoresPage() {
 								<Grid size={{ xs: 12, md: 5 }}>
 									<TextField
 										fullWidth
-										size="small"
 										required
 										label="Nombre del evento"
 										placeholder="Ej. Noche de Folklore en Anfiteatro"
@@ -1685,20 +1685,15 @@ export default function MisActoresPage() {
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, md: 3 }}>
-									<TextField
-										fullWidth
-										size="small"
-										type="date"
+									<DatePickerSpanish
 										label="Fecha"
-										slotProps={{ inputLabel: { shrink: true } }}
 										value={newEventFecha}
-										onChange={(e) => setNewEventFecha(e.target.value)}
+										onChange={(dateStr) => setNewEventFecha(dateStr)}
 									/>
 								</Grid>
 								<Grid size={{ xs: 12, md: 4 }}>
 									<TextField
 										fullWidth
-										size="small"
 										label="Descripción / Lugar"
 										placeholder="Ej. Plaza Independencia"
 										value={newEventDesc}
@@ -1709,7 +1704,7 @@ export default function MisActoresPage() {
 								<Grid size={{ xs: 12 }}>
 									<Button
 										variant="contained"
-										size="small"
+										size="medium"
 										startIcon={<AddIcon />}
 										onClick={handleAddEvent}
 										disabled={!newEventNombre.trim() || eventCreating || eventsLoading}

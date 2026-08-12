@@ -28,6 +28,8 @@ export default function LoginPage() {
 	const { login } = useAuth();
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
+	const [emailError, setEmailError] = useState<string | null>(null);
+	const [passwordError, setPasswordError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [customError, setCustomError] = useState<string | null>(null);
 
@@ -57,19 +59,39 @@ export default function LoginPage() {
 		e.preventDefault();
 		setCustomError(null);
 
-		if (!email.trim() || !password) {
-			setCustomError('Por favor complete todos los campos.');
+		let hasError = false;
+		setEmailError(null);
+		setPasswordError(null);
+
+		const trimmedEmail = email.trim();
+		if (!trimmedEmail) {
+			setEmailError('El correo electrónico es obligatorio.');
+			hasError = true;
+		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+			setEmailError('Ingrese un correo electrónico válido.');
+			hasError = true;
+		}
+
+		if (!password) {
+			setPasswordError('La contraseña es obligatoria.');
+			hasError = true;
+		}
+
+		if (hasError) {
+			setCustomError('Por favor complete correctamente los campos en rojo.');
 			return;
 		}
 
 		setLoading(true);
 		try {
-			const response = await loginApi({ email: email.trim(), contraseña: password });
+			const response = await loginApi({ email: trimmedEmail, contraseña: password });
 			login(response.usuario, response.token);
 			navigate('/');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
 			setCustomError(msg);
+			setEmailError('Verifique sus credenciales');
+			setPasswordError('Verifique sus credenciales');
 		} finally {
 			setLoading(false);
 		}
@@ -126,7 +148,12 @@ export default function LoginPage() {
 							autoComplete="email"
 							autoFocus
 							value={email}
-							onChange={(e) => setEmail(e.target.value)}
+							onChange={(e) => {
+								setEmail(e.target.value);
+								if (emailError) setEmailError(null);
+							}}
+							error={Boolean(emailError)}
+							helperText={emailError}
 							sx={{ mb: 2 }}
 						/>
 
@@ -139,7 +166,12 @@ export default function LoginPage() {
 							type="password"
 							autoComplete="current-password"
 							value={password}
-							onChange={(e) => setPassword(e.target.value)}
+							onChange={(e) => {
+								setPassword(e.target.value);
+								if (passwordError) setPasswordError(null);
+							}}
+							error={Boolean(passwordError)}
+							helperText={passwordError}
 							sx={{ mb: 2 }}
 						/>
 

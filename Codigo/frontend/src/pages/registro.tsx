@@ -33,6 +33,7 @@ import {
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 
+import DatePickerSpanish from '../components/datePickerSpanish';
 import {
 	obtenerActividadesArcaApi,
 	registrarUsuarioApi,
@@ -309,432 +310,436 @@ export default function RegistroPage() {
 						</Alert>
 					)}
 
-				{/* PASO 1: Formulario de Datos Personales */}
-				{activeStep === 0 && (
-					<Box component="form" noValidate>
-						<Typography
-							variant="h6"
-							sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
-						>
-							<BadgeIcon color="primary" /> Datos personales y de acceso
-						</Typography>
+					{/* PASO 1: Formulario de Datos Personales */}
+					{activeStep === 0 && (
+						<Box component="form" noValidate>
+							<Typography
+								variant="h6"
+								sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+							>
+								<BadgeIcon color="primary" /> Datos personales y de acceso
+							</Typography>
 
-						<Grid container spacing={2}>
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									required
-									fullWidth
-									label="Nombre"
-									value={formData.nombre}
-									onChange={handleChange('nombre')}
-									error={!!formErrors.nombre}
-									helperText={formErrors.nombre}
-								/>
-							</Grid>
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									required
-									fullWidth
-									label="Apellido"
-									value={formData.apellido}
-									onChange={handleChange('apellido')}
-									error={!!formErrors.apellido}
-									helperText={formErrors.apellido}
-								/>
-							</Grid>
+							<Grid container spacing={2}>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										required
+										fullWidth
+										label="Nombre"
+										value={formData.nombre}
+										onChange={handleChange('nombre')}
+										error={!!formErrors.nombre}
+										helperText={formErrors.nombre}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										required
+										fullWidth
+										label="Apellido"
+										value={formData.apellido}
+										onChange={handleChange('apellido')}
+										error={!!formErrors.apellido}
+										helperText={formErrors.apellido}
+									/>
+								</Grid>
 
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									required
-									fullWidth
-									type="email"
-									label="Correo electrónico"
-									value={formData.email}
-									onChange={handleChange('email')}
-									error={!!formErrors.email}
-									helperText={formErrors.email || 'Será tu identificador único de usuario'}
-								/>
-							</Grid>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										required
+										fullWidth
+										type="email"
+										label="Correo electrónico"
+										value={formData.email}
+										onChange={handleChange('email')}
+										error={!!formErrors.email}
+										helperText={formErrors.email || 'Será tu identificador único de usuario'}
+									/>
+								</Grid>
 
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									required
-									fullWidth
-									label="CUIL (11 dígitos)"
-									value={formData.CUIL}
-									onChange={handleChange('CUIL')}
-									error={!!formErrors.CUIL}
-									helperText={formErrors.CUIL || 'Ejemplo: 20384445558 (sin guiones)'}
-									slotProps={{ htmlInput: { maxLength: 11 } }}
-								/>
-							</Grid>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										required
+										fullWidth
+										label="CUIL (11 dígitos)"
+										value={formData.CUIL}
+										onChange={handleChange('CUIL')}
+										error={!!formErrors.CUIL}
+										helperText={formErrors.CUIL || 'Ejemplo: 20384445558 (sin guiones)'}
+										slotProps={{ htmlInput: { maxLength: 11 } }}
+									/>
+								</Grid>
 
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									required
-									fullWidth
-									type="password"
-									label="Contraseña"
-									value={formData.contraseña}
-									onChange={handleChange('contraseña')}
-									error={!!formErrors.contraseña}
-									helperText={formErrors.contraseña || 'Mínimo 6 caracteres (debe contener letras y números)'}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 6 }}>
-								<TextField
-									required
-									fullWidth
-									type="password"
-									label="Confirmar contraseña"
-									value={formData.confirmarContraseña}
-									onChange={handleChange('confirmarContraseña')}
-									error={!!formErrors.confirmarContraseña}
-									helperText={formErrors.confirmarContraseña}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 4 }}>
-								<TextField
-									required
-									fullWidth
-									type="date"
-									label="Fecha de Nacimiento"
-									slotProps={{ inputLabel: { shrink: true } }}
-									value={formData.fechaNacimiento}
-									onChange={handleChange('fechaNacimiento')}
-									error={!!formErrors.fechaNacimiento}
-									helperText={formErrors.fechaNacimiento}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 4 }}>
-								<FormControl fullWidth required error={!!formErrors.genero}>
-									<InputLabel id="genero-label">Género</InputLabel>
-									<Select
-										labelId="genero-label"
-										label="Género"
-										value={formData.genero}
-										onChange={handleChange('genero')}
-									>
-										<MenuItem value="F">Femenino (F)</MenuItem>
-										<MenuItem value="M">Masculino (M)</MenuItem>
-										<MenuItem value="X">No binario / Otro (X)</MenuItem>
-									</Select>
-									{formErrors.genero && <FormHelperText>{formErrors.genero}</FormHelperText>}
-								</FormControl>
-							</Grid>
-
-							<Grid size={{ xs: 12, sm: 4 }}>
-								<TextField
-									required
-									fullWidth
-									label="Nacionalidad"
-									value={formData.nacionalidad}
-									onChange={handleChange('nacionalidad')}
-									error={!!formErrors.nacionalidad}
-									helperText={formErrors.nacionalidad}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12 }}>
-								<Autocomplete
-									options={actividadesArca}
-									getOptionLabel={(option) => `${option.codigo} - ${option.descripcion}`}
-									value={
-										actividadesArca.find((a) => a.codigo === formData.actividadesArcaCodigo) || null
-									}
-									onChange={(_e, newValue) => {
-										setFormData((prev) => ({
-											...prev,
-											actividadesArcaCodigo: newValue ? newValue.codigo : '',
-										}));
-										if (formErrors.actividadesArcaCodigo) {
-											setFormErrors((prev) => {
-												const updated = { ...prev };
-												delete updated.actividadesArcaCodigo;
-												return updated;
-											});
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										required
+										fullWidth
+										type="password"
+										label="Contraseña"
+										value={formData.contraseña}
+										onChange={handleChange('contraseña')}
+										error={!!formErrors.contraseña}
+										helperText={
+											formErrors.contraseña ||
+											'Mínimo 6 caracteres (debe contener letras y números)'
 										}
-									}}
-									renderInput={(params) => (
-										<TextField
-											{...params}
-											label="Código de Actividad Rentas/ARCA (Opcional)"
-											placeholder="Seleccioná tu actividad económica de la lista"
-											error={!!formErrors.actividadesArcaCodigo}
-											helperText={
-												formErrors.actividadesArcaCodigo ||
-												'Seleccioná tu código de actividad formal registrado en Rentas/ARCA'
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<TextField
+										required
+										fullWidth
+										type="password"
+										label="Confirmar contraseña"
+										value={formData.confirmarContraseña}
+										onChange={handleChange('confirmarContraseña')}
+										error={!!formErrors.confirmarContraseña}
+										helperText={formErrors.confirmarContraseña}
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 4 }}>
+									<DatePickerSpanish
+										required
+										label="Fecha de Nacimiento"
+										value={formData.fechaNacimiento}
+										onChange={(dateStr) => {
+											setFormData((prev) => ({ ...prev, fechaNacimiento: dateStr }));
+											if (formErrors.fechaNacimiento) {
+												setFormErrors((prev) => ({ ...prev, fechaNacimiento: '' }));
 											}
-										/>
-									)}
-									noOptionsText="No se encontraron actividades"
-								/>
+										}}
+										error={!!formErrors.fechaNacimiento}
+										helperText={formErrors.fechaNacimiento}
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 4 }}>
+									<FormControl fullWidth required error={!!formErrors.genero}>
+										<InputLabel id="genero-label">Género</InputLabel>
+										<Select
+											labelId="genero-label"
+											label="Género"
+											value={formData.genero}
+											onChange={handleChange('genero')}
+										>
+											<MenuItem value="F">Femenino (F)</MenuItem>
+											<MenuItem value="M">Masculino (M)</MenuItem>
+											<MenuItem value="X">No binario / Otro (X)</MenuItem>
+										</Select>
+										{formErrors.genero && <FormHelperText>{formErrors.genero}</FormHelperText>}
+									</FormControl>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 4 }}>
+									<TextField
+										required
+										fullWidth
+										label="Nacionalidad"
+										value={formData.nacionalidad}
+										onChange={handleChange('nacionalidad')}
+										error={!!formErrors.nacionalidad}
+										helperText={formErrors.nacionalidad}
+									/>
+								</Grid>
+
+								<Grid size={{ xs: 12 }}>
+									<Autocomplete
+										options={actividadesArca}
+										getOptionLabel={(option) => `${option.codigo} - ${option.descripcion}`}
+										value={
+											actividadesArca.find((a) => a.codigo === formData.actividadesArcaCodigo) ||
+											null
+										}
+										onChange={(_e, newValue) => {
+											setFormData((prev) => ({
+												...prev,
+												actividadesArcaCodigo: newValue ? newValue.codigo : '',
+											}));
+											if (formErrors.actividadesArcaCodigo) {
+												setFormErrors((prev) => {
+													const updated = { ...prev };
+													delete updated.actividadesArcaCodigo;
+													return updated;
+												});
+											}
+										}}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												label="Código de Actividad Rentas/ARCA (Opcional)"
+												placeholder="Seleccioná tu actividad económica de la lista"
+												error={!!formErrors.actividadesArcaCodigo}
+												helperText={
+													formErrors.actividadesArcaCodigo ||
+													'Seleccioná tu código de actividad formal registrado en Rentas/ARCA'
+												}
+											/>
+										)}
+										noOptionsText="No se encontraron actividades"
+									/>
+								</Grid>
+
+								{/* Documento de identidad */}
+								<Grid size={{ xs: 12 }}>
+									<Box
+										sx={{
+											p: 3,
+											border: '2px dashed',
+											borderColor: formErrors.documentoIdentidad ? 'error.main' : 'primary.main',
+											borderRadius: 2,
+											bgcolor: 'action.hover',
+											textAlign: 'center',
+										}}
+									>
+										<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+											Imagen del Documento de Identidad *
+										</Typography>
+										<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+											Adjuntá una foto legible de tu DNI / Documento para validar tu identidad.
+										</Typography>
+
+										<Button
+											variant="contained"
+											component="label"
+											startIcon={<CloudUploadIcon />}
+											sx={{ mb: 1 }}
+										>
+											Seleccionar Imagen
+											<input type="file" hidden accept="image/*" onChange={handleFileChange} />
+										</Button>
+
+										{documentoFileName && (
+											<Typography
+												variant="body2"
+												color="success.main"
+												sx={{ mt: 1, fontWeight: 'medium' }}
+											>
+												Archivo seleccionado: {documentoFileName}
+											</Typography>
+										)}
+
+										{formData.documentoIdentidad && (
+											<Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+												<Box
+													component="img"
+													src={formData.documentoIdentidad}
+													alt="Vista previa del documento"
+													sx={{
+														maxHeight: 180,
+														maxWidth: '100%',
+														borderRadius: 1,
+														boxShadow: 2,
+													}}
+												/>
+											</Box>
+										)}
+
+										{formErrors.documentoIdentidad && (
+											<Typography variant="caption" color="error" display="block" sx={{ mt: 1 }}>
+												{formErrors.documentoIdentidad}
+											</Typography>
+										)}
+									</Box>
+								</Grid>
 							</Grid>
 
-							{/* Documento de identidad */}
-							<Grid size={{ xs: 12 }}>
-								<Box
-									sx={{
-										p: 3,
-										border: '2px dashed',
-										borderColor: formErrors.documentoIdentidad ? 'error.main' : 'primary.main',
-										borderRadius: 2,
-										bgcolor: 'action.hover',
-										textAlign: 'center',
-									}}
+							<Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+								<Button
+									variant="contained"
+									endIcon={<ArrowForwardIcon />}
+									onClick={handleNext}
+									size="large"
 								>
-									<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-										Imagen del Documento de Identidad *
-									</Typography>
-									<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-										Adjuntá una foto legible de tu DNI / Documento para validar tu identidad.
-									</Typography>
+									Siguiente (Confirmación)
+								</Button>
+							</Box>
+						</Box>
+					)}
 
-									<Button
-										variant="contained"
-										component="label"
-										startIcon={<CloudUploadIcon />}
-										sx={{ mb: 1 }}
-									>
-										Seleccionar Imagen
-										<input type="file" hidden accept="image/*" onChange={handleFileChange} />
-									</Button>
+					{/* PASO 2: Confirmación de datos antes del envío */}
+					{activeStep === 1 && (
+						<Box>
+							<Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+								Confirmar datos antes de registrarse
+							</Typography>
 
-									{documentoFileName && (
-										<Typography
-											variant="body2"
-											color="success.main"
-											sx={{ mt: 1, fontWeight: 'medium' }}
-										>
-											Archivo seleccionado: {documentoFileName}
-										</Typography>
-									)}
+							<Alert severity="info" sx={{ mb: 3 }}>
+								Por favor, revisá atentamente que todos tus datos sean correctos antes de confirmar tu
+								registro.
+							</Alert>
+
+							<Card variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
+								<CardContent>
+									<Grid container spacing={2}>
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Nombre Completo
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{formData.nombre} {formData.apellido}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Correo Electrónico
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{formData.email}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												CUIL
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{formData.CUIL}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Fecha de Nacimiento
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{formData.fechaNacimiento}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Género
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{formData.genero === 'F'
+													? 'Femenino (F)'
+													: formData.genero === 'M'
+														? 'Masculino (M)'
+														: 'No binario / Otro (X)'}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Nacionalidad
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{formData.nacionalidad}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Código Rentas / ARCA
+											</Typography>
+											<Typography variant="body1" fontWeight="bold">
+												{(() => {
+													const match = actividadesArca.find(
+														(a) => a.codigo === formData.actividadesArcaCodigo,
+													);
+													return match
+														? `${match.codigo} - ${match.descripcion}`
+														: formData.actividadesArcaCodigo || 'No registrado';
+												})()}
+											</Typography>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<Typography variant="caption" color="text.secondary">
+												Documento de Identidad
+											</Typography>
+											<Box sx={{ mt: 0.5 }}>
+												<Chip label="Imagen Adjunta" color="success" size="small" />
+											</Box>
+										</Grid>
+									</Grid>
+
+									<Divider sx={{ my: 2 }} />
 
 									{formData.documentoIdentidad && (
-										<Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+										<Box sx={{ textAlign: 'center' }}>
+											<Typography
+												variant="caption"
+												color="text.secondary"
+												display="block"
+												sx={{ mb: 1 }}
+											>
+												Vista Previa del Documento Adjunto:
+											</Typography>
 											<Box
 												component="img"
 												src={formData.documentoIdentidad}
-												alt="Vista previa del documento"
-												sx={{
-													maxHeight: 180,
-													maxWidth: '100%',
-													borderRadius: 1,
-													boxShadow: 2,
-												}}
+												alt="Documento adjunto"
+												sx={{ maxHeight: 150, maxWidth: '100%', borderRadius: 1 }}
 											/>
 										</Box>
 									)}
+								</CardContent>
+							</Card>
 
-									{formErrors.documentoIdentidad && (
-										<Typography variant="caption" color="error" display="block" sx={{ mt: 1 }}>
-											{formErrors.documentoIdentidad}
-										</Typography>
-									)}
-								</Box>
-							</Grid>
-						</Grid>
+							<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+								<Button
+									variant="outlined"
+									startIcon={<ArrowBackIcon />}
+									onClick={handleBack}
+									disabled={loading}
+								>
+									Volver a Editar
+								</Button>
 
-						<Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-							<Button
-								variant="contained"
-								endIcon={<ArrowForwardIcon />}
-								onClick={handleNext}
-								size="large"
-							>
-								Siguiente (Confirmación)
-							</Button>
+								<Button
+									variant="contained"
+									color="primary"
+									startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+									onClick={handleConfirmAndSubmit}
+									disabled={loading}
+									size="large"
+								>
+									{loading ? 'Registrando...' : 'Confirmar y Registrarse'}
+								</Button>
+							</Box>
 						</Box>
-					</Box>
-				)}
+					)}
 
-				{/* PASO 2: Confirmación de datos antes del envío */}
-				{activeStep === 1 && (
-					<Box>
-						<Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-							Confirmar datos antes de registrarse
-						</Typography>
+					{/* PASO 3: Registro completado */}
+					{activeStep === 2 && (
+						<Box sx={{ textAlign: 'center', py: 4 }}>
+							<CheckCircleOutlineIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
 
-						<Alert severity="info" sx={{ mb: 3 }}>
-							Por favor, revisá atentamente que todos tus datos sean correctos antes de confirmar tu
-							registro.
-						</Alert>
+							<Typography variant="h5" fontWeight="bold" gutterBottom color="success.main">
+								¡Registro Solicitado con Éxito!
+							</Typography>
 
-						<Card variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
-							<CardContent>
-								<Grid container spacing={2}>
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Nombre Completo
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{formData.nombre} {formData.apellido}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Correo Electrónico
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{formData.email}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											CUIL
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{formData.CUIL}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Fecha de Nacimiento
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{formData.fechaNacimiento}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Género
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{formData.genero === 'F'
-												? 'Femenino (F)'
-												: formData.genero === 'M'
-													? 'Masculino (M)'
-													: 'No binario / Otro (X)'}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Nacionalidad
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{formData.nacionalidad}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Código Rentas / ARCA
-										</Typography>
-										<Typography variant="body1" fontWeight="bold">
-											{(() => {
-												const match = actividadesArca.find(
-													(a) => a.codigo === formData.actividadesArcaCodigo,
-												);
-												return match
-													? `${match.codigo} - ${match.descripcion}`
-													: formData.actividadesArcaCodigo || 'No registrado';
-											})()}
-										</Typography>
-									</Grid>
-
-									<Grid size={{ xs: 12, sm: 6 }}>
-										<Typography variant="caption" color="text.secondary">
-											Documento de Identidad
-										</Typography>
-										<Box sx={{ mt: 0.5 }}>
-											<Chip label="Imagen Adjunta" color="success" size="small" />
-										</Box>
-									</Grid>
-								</Grid>
-
-								<Divider sx={{ my: 2 }} />
-
-								{formData.documentoIdentidad && (
-									<Box sx={{ textAlign: 'center' }}>
-										<Typography
-											variant="caption"
-											color="text.secondary"
-											display="block"
-											sx={{ mb: 1 }}
-										>
-											Vista Previa del Documento Adjunto:
-										</Typography>
-										<Box
-											component="img"
-											src={formData.documentoIdentidad}
-											alt="Documento adjunto"
-											sx={{ maxHeight: 150, maxWidth: '100%', borderRadius: 1 }}
-										/>
-									</Box>
-								)}
-							</CardContent>
-						</Card>
-
-						<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-							<Button
-								variant="outlined"
-								startIcon={<ArrowBackIcon />}
-								onClick={handleBack}
-								disabled={loading}
+							<Typography
+								variant="body1"
+								color="text.secondary"
+								paragraph
+								sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
 							>
-								Volver a Editar
-							</Button>
+								{registroExitoso ||
+									`Se ha enviado un correo electrónico de confirmación a ${formData.email}. Por favor, revisá tu casilla para activar la cuenta. Tu cuenta permanecerá en estado Pendiente hasta su activación.`}
+							</Typography>
 
-							<Button
-								variant="contained"
-								color="primary"
-								startIcon={
-									loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />
-								}
-								onClick={handleConfirmAndSubmit}
-								disabled={loading}
-								size="large"
-							>
-								{loading ? 'Registrando...' : 'Confirmar y Registrarse'}
-							</Button>
+							<Alert severity="warning" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
+								Una vez activada la cuenta, podrás iniciar sesión para gestionar tus perfiles de actor
+								cultural y publicar en el mapa.
+							</Alert>
+
+							<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+								<Button variant="contained" onClick={() => navigate('/')} size="large">
+									Ir al Mapa Principal
+								</Button>
+								<Button variant="outlined" onClick={() => navigate('/login')} size="large">
+									Iniciar Sesión
+								</Button>
+							</Box>
 						</Box>
-					</Box>
-				)}
-
-				{/* PASO 3: Registro completado */}
-				{activeStep === 2 && (
-					<Box sx={{ textAlign: 'center', py: 4 }}>
-						<CheckCircleOutlineIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-
-						<Typography variant="h5" fontWeight="bold" gutterBottom color="success.main">
-							¡Registro Solicitado con Éxito!
-						</Typography>
-
-						<Typography
-							variant="body1"
-							color="text.secondary"
-							paragraph
-							sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
-						>
-							{registroExitoso ||
-								`Se ha enviado un correo electrónico de confirmación a ${formData.email}. Por favor, revisá tu casilla para activar la cuenta. Tu cuenta permanecerá en estado Pendiente hasta su activación.`}
-						</Typography>
-
-						<Alert severity="warning" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
-							Una vez activada la cuenta, podrás iniciar sesión para gestionar tus perfiles de actor
-							cultural y publicar en el mapa.
-						</Alert>
-
-						<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-							<Button variant="contained" onClick={() => navigate('/')} size="large">
-								Ir al Mapa Principal
-							</Button>
-							<Button variant="outlined" onClick={() => navigate('/login')} size="large">
-								Iniciar Sesión
-							</Button>
-						</Box>
-					</Box>
-				)}
-			</Paper>
-		</Container>
-	</Box>
+					)}
+				</Paper>
+			</Container>
+		</Box>
 	);
 }
