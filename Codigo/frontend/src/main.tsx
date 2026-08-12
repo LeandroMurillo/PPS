@@ -23,6 +23,7 @@ import AdminCategoriaFormularioPage from './pages/adminCategoriaFormulario';
 import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import RegistroPage from './pages/registro';
 import LoginPage from './pages/login';
+import ActorNuevoMockupPage from './pages/actorNuevoMockup';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function RootErrorBoundary() {
@@ -73,7 +74,7 @@ const router = createBrowserRouter([
 					},
 					{
 						path: 'actores/nuevo',
-						Component: EmployeesCrudPage,
+						Component: ActorNuevoMockupPage,
 					},
 					{
 						path: 'mis-actores',
