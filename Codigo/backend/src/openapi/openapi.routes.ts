@@ -54,7 +54,18 @@ openApiRouter.use(
 				spec: {
 					content: openApiDocument,
 				},
-				theme: 'default',
+				theme: 'elysiajs',
+				localization: {
+					locale: 'es',
+				},
+				agent: {
+					disabled: true,
+				},
+				// showDeveloperTools: 'never',
+				// mcp: {
+				// 	disabled: true,
+				// },
+				telemetry: false,
 				metaData: {
 					title: 'Mapa Cultural de Tucumán API',
 					description: 'Documentación de la API del Mapa Cultural de Tucumán',
