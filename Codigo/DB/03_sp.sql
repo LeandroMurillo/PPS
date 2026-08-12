@@ -3980,9 +3980,7 @@ BEGIN
 
     SELECT idUbicacion INTO vIdUbicacion FROM `Actores` WHERE idActor = pIdActor;
 
-    DELETE FROM `PreguntasOcultasActor` WHERE idActor = pIdActor;
-    DELETE FROM `RespuestasDefinitivasFormularios` WHERE idActor = pIdActor;
-    DELETE FROM `RespuestasFormularios` WHERE idActor = pIdActor;
+    DELETE FROM `Respuestas` WHERE idActor = pIdActor;
     DELETE FROM `Postulaciones` WHERE idActor = pIdActor;
     DELETE FROM `ItemsPortafolio` WHERE idActor = pIdActor;
     DELETE FROM `Eventos` WHERE idActor = pIdActor;
