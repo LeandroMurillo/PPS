@@ -699,9 +699,6 @@ export default function MisActoresPage() {
 						alignItems={{ xs: 'stretch', sm: 'center' }}
 					>
 						<Box>
-							<Typography variant="h5" component="h1" fontWeight={750} gutterBottom>
-								Mis actores culturales
-							</Typography>
 							<Typography variant="body2" color="text.secondary">
 								Gestioná tus perfiles artísticos. Podés editar sus datos, administrar portafolios y
 								eventos, pasarlos a revisión (Pendiente), dar de baja o eliminarlos.
@@ -802,7 +799,7 @@ export default function MisActoresPage() {
 				) : filteredActores.length === 0 ? (
 					<Paper variant="outlined" sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}>
 						<Typography variant="h6" color="text.secondary" gutterBottom>
-							No tenés actores registrados en la base de datos
+							No tenés actores registrados con estos criterios
 						</Typography>
 						<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
 							{misActoresPropios.length === 0
