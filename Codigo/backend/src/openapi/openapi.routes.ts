@@ -1,14 +1,18 @@
 import { apiReference } from '@scalar/express-api-reference';
+import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { Router } from 'express';
 
+import { requireRole, verifyToken } from '../middleware/auth.middleware.js';
 import { openApiDocument } from './document.js';
 
 export const openApiRouter = Router();
 
+const adminAuthMiddleware = [verifyToken, requireRole('ADMIN')];
+
 /**
- * Documento OpenAPI en formato JSON.
+ * Documento OpenAPI en formato JSON (protegido para ADMIN y MODERADOR).
  */
-openApiRouter.get('/openapi.json', (_request, response) => {
+openApiRouter.get('/openapi.json', adminAuthMiddleware, (_request: Request, response: Response) => {
 	response.status(200).json(openApiDocument);
 });
 
@@ -20,7 +24,8 @@ openApiRouter.get('/openapi.json', (_request, response) => {
  */
 openApiRouter.use(
 	'/docs',
-	(_request, response, next) => {
+	adminAuthMiddleware,
+	(_request: Request, response: Response, next: NextFunction) => {
 		response.setHeader(
 			'Content-Security-Policy',
 			[
@@ -39,16 +44,23 @@ openApiRouter.use(
 
 		next();
 	},
+	(request: Request, response: Response, next: NextFunction) => {
+		const token = (request.query.token as string | undefined) ?? request.headers.authorization?.substring(7) ?? '';
+		const specUrl = token ? `/openapi.json?token=${encodeURIComponent(token)}` : '/openapi.json';
 
-	apiReference({
-		url: '/openapi.json',
-		theme: 'default',
-
-		metaData: {
-			title: 'Mapa Cultural de Tucumán API',
-			description: 'Documentación de la API del Mapa Cultural de Tucumán',
-		},
-
-		withDefaultFonts: true,
-	}),
+		return (
+			apiReference({
+				url: specUrl,
+				spec: {
+					content: openApiDocument,
+				},
+				theme: 'default',
+				metaData: {
+					title: 'Mapa Cultural de Tucumán API',
+					description: 'Documentación de la API del Mapa Cultural de Tucumán',
+				},
+				withDefaultFonts: true,
+			}) as unknown as RequestHandler
+		)(request, response, next);
+	},
 );

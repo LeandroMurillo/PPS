@@ -20,8 +20,16 @@ declare global {
 }
 
 export function verifyToken(req: Request, res: Response, next: NextFunction): void {
+	let token: string | undefined;
+
 	const authHeader = req.headers.authorization;
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+	if (authHeader && authHeader.startsWith('Bearer ')) {
+		token = authHeader.substring(7);
+	} else if (typeof req.query.token === 'string' && req.query.token) {
+		token = req.query.token;
+	}
+
+	if (!token) {
 		res.status(401).json({
 			error: {
 				code: 'UNAUTHORIZED',
@@ -30,8 +38,6 @@ export function verifyToken(req: Request, res: Response, next: NextFunction): vo
 		});
 		return;
 	}
-
-	const token = authHeader.substring(7);
 
 	try {
 		const decoded = jwt.verify(token, env.JWT_SECRET) as AuthUser;

@@ -122,12 +122,15 @@ function AppContent() {
 						icon: <CategoryIcon />,
 						pattern: 'categorias{/:categoriaSlug}*',
 					},
-					{
-						title: 'Docs API',
-						segment: 'docs-api',
-						icon: <CodeIcon />,
-					},
 				);
+			}
+
+			if (user.rol === 'ADMIN') {
+				nav.push({
+					title: 'Docs API',
+					segment: 'docs-api',
+					icon: <CodeIcon />,
+				});
 			}
 		}
 

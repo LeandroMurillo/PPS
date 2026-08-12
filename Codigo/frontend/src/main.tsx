@@ -29,6 +29,18 @@ import LoginPage from './pages/login';
 import Mapa from './pages/mapa';
 import RegistroPage from './pages/registro';
 
+function DocsApiRedirect() {
+	React.useEffect(() => {
+		const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+		const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+		const token = typeof localStorage !== 'undefined' ? localStorage.getItem('mosaico_cultural_token') : null;
+		const query = token ? `?token=${encodeURIComponent(token)}` : '';
+		window.location.href = `${protocol}//${host}:3000/docs${query}`;
+	}, []);
+
+	return null;
+}
+
 function RootErrorBoundary() {
 	const error = useRouteError();
 	const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado al cargar la página.';
@@ -196,6 +208,14 @@ const router = createBrowserRouter([
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
 								<AdminCategoriasPage />
+							</ProtectedRoute>
+						),
+					},
+					{
+						path: 'docs-api',
+						element: (
+							<ProtectedRoute allowedRoles={['ADMIN']}>
+								<DocsApiRedirect />
 							</ProtectedRoute>
 						),
 					},
