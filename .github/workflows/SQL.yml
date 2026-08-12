@@ -1,0 +1,55 @@
+name: SQL
+
+# Controls when the workflow will run
+on:
+  push:
+    paths:
+      - "Codigo/**/*.sql"
+      - ".github/workflows/SQL.yml"
+
+jobs:
+  sql-check:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:lts-noble
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cultura
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+
+      - name: Install mariadb-client
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
+
+      - name: Lint y Validar SQL
+        run: |
+          fracaso=0
+
+          echo "🏁🏁🏁🏁🏁 Lint SQL 🗄️"
+          npx -y sql-lint --driver mysql "${GITHUB_WORKSPACE}"/Codigo/**/*.sql || fracaso=1
+
+          echo "🏁🏁🏁🏁🏁 Validar carga en MariaDB 🦭"
+
+          for sql_file in "${GITHUB_WORKSPACE}"/Codigo/**/*.sql; do
+            echo "📄 Cargando $(basename "$sql_file")..."
+            mariadb --verbose -h 127.0.0.1 -u root -proot cultura < "$sql_file" || fracaso=1
+            echo
+          done
+
+          if [ ${fracaso} -eq 1 ]; then
+            echo "Se encontraron errores en los archivos SQL 😱"
+            exit 1
+          else
+            echo "Archivos SQL cargados correctamente 🦭🌟✨🐬"
+          fi
