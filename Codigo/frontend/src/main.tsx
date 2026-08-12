@@ -11,7 +11,7 @@ import App from './app';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Layout from './layouts/dashboard';
 
-import ActorNuevoMockupPage from './pages/actorNuevoMockup';
+import ActorNuevoPage from './pages/actorNuevo';
 import ActorPortfolio from './pages/actorPortfolio';
 import Actores from './pages/actores';
 import AdminActorDetallePage from './pages/adminActorDetalle';
@@ -90,7 +90,11 @@ const router = createBrowserRouter([
 					},
 					{
 						path: 'actores/nuevo',
-						Component: ActorNuevoMockupPage,
+						element: (
+							<ProtectedRoute>
+								<ActorNuevoPage />
+							</ProtectedRoute>
+						),
 					},
 					{
 						path: 'mis-actores',

@@ -13,4 +13,4 @@ Codigo/DB/db.pdf
 .vscode/
 *.mwb.bak
 .*~
-Codigo/backend/package-lock.json
+Codigo/backend/uploads

@@ -106,11 +106,12 @@ export async function crearActorRepository(input: {
 	departamento: string;
 	localidad: string;
 	direccion: string;
-	latitud?: number | null | undefined;
-	longitud?: number | null | undefined;
+	latitud: number;
+	longitud: number;
+	esPublica: boolean;
 }) {
 	const procedureResult: unknown = await pool.query(
-		'CALL sp_actor_crear_actor(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+		'CALL sp_actor_crear_actor(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 		[
 			input.idUsuario,
 			input.idCategoria,
@@ -124,8 +125,9 @@ export async function crearActorRepository(input: {
 			input.departamento,
 			input.localidad,
 			input.direccion,
-			input.latitud || null,
-			input.longitud || null,
+			input.latitud,
+			input.longitud,
+			input.esPublica ? 1 : 0,
 		],
 	);
 

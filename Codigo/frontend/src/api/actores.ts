@@ -208,6 +208,31 @@ export async function listarMisActoresApi(
 	return apiFetch<ListarMisActoresResponse>(`/api/mis-actores${query ? `?${query}` : ''}`, signal);
 }
 
+export type CrearActorInput = {
+	idCategoria: number;
+	idSubcategoria?: number | null;
+	nombre: string;
+	descripcion: string;
+	fotoPerfilUrl?: string | null;
+	cuit?: string | null;
+	tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
+	provincia?: string;
+	departamento: string;
+	localidad: string;
+	direccion: string;
+	latitud: number;
+	longitud: number;
+	esPublica: boolean;
+};
+
+export async function crearMiActorApi(input: CrearActorInput) {
+	return apiRequest<{ data: { idActor: number } }>('/api/mis-actores', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(input),
+	});
+}
+
 export async function editarMiActorApi(
 	idActor: number,
 	input: {

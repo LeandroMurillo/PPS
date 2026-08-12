@@ -77,8 +77,9 @@ export async function crearActorService(input: {
 	departamento: string;
 	localidad: string;
 	direccion: string;
-	latitud?: number | null | undefined;
-	longitud?: number | null | undefined;
+	latitud: number;
+	longitud: number;
+	esPublica: boolean;
 }) {
 	return crearActorRepository(input);
 }

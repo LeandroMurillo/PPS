@@ -3822,9 +3822,10 @@ CREATE OR REPLACE PROCEDURE `sp_actor_crear_actor`(
     IN pProvincia VARCHAR(45),
     IN pDepartamento VARCHAR(45),
     IN pLocalidad VARCHAR(45),
-    IN pDireccion VARCHAR(150),
+    IN pDireccion VARCHAR(205),
     IN pLatitud DECIMAL(10,8),
-    IN pLongitud DECIMAL(11,8)
+    IN pLongitud DECIMAL(11,8),
+    IN pEsPublica TINYINT
 )
 MODIFIES SQL DATA
 COMMENT 'Crea un nuevo actor cultural para el usuario autenticado (con estado Pendiente).'
@@ -3837,10 +3838,10 @@ BEGIN
         COALESCE(pProvincia, 'Tucumán'),
         pDepartamento,
         pLocalidad,
-        1,
+        COALESCE(pEsPublica, 0),
         pDireccion,
-        COALESCE(pLatitud, -26.82414000),
-        COALESCE(pLongitud, -65.22260000)
+        pLatitud,
+        pLongitud
     );
 
     SET vIdUbicacion = LAST_INSERT_ID();

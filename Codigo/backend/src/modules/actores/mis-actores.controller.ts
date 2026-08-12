@@ -45,8 +45,9 @@ const crearBodySchema = z.object({
 	departamento: z.string().trim().min(1),
 	localidad: z.string().trim().min(1),
 	direccion: z.string().trim().min(1),
-	latitud: z.number().optional(),
-	longitud: z.number().optional(),
+	latitud: z.number().min(-27.95).max(-25.75),
+	longitud: z.number().min(-66.35).max(-64.45),
+	esPublica: z.boolean(),
 });
 
 const editarBodySchema = z.object({
