@@ -112,6 +112,11 @@ VALUES
   (12, '900011', 'Leandro', 'M', 'M', '1999-09-05', 'Argentina',
    'leandro.carpinchos@email.com',
    '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa',
+   '2026-06-22 09:05:00', 'USUARIO', 'A', '20411119997'),
+
+  (13, NULL, 'asd', 'asd', 'M', '1999-09-05', 'Argentina',
+   'asd@asd.com',
+   '7aefa344b2310e917582912b2b05839c:09597715c95d7b4d112f84a04b9aa86755bb989d02c8e26382ffc677c822194e',
    '2026-06-22 09:05:00', 'USUARIO', 'A', '20411119997');
 
 -- -----------------------------------------------------

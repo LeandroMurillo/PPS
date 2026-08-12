@@ -83,6 +83,13 @@ function getCategoryIdByName(categoriaNombre: string): number {
 	return idx >= 0 ? idx + 1 : 1;
 }
 
+function getSubcategoryIdByName(categoriaNombre: string, subcategoriaNombre?: string | null): number | null {
+	if (!subcategoriaNombre) return null;
+	const subOpts = SUBCATEGORIAS_OPCIONES[categoriaNombre] || [];
+	const idx = subOpts.indexOf(subcategoriaNombre);
+	return idx >= 0 ? idx + 1 : null;
+}
+
 export type MyActorPortfolioItem = {
 	id: number;
 	tipo: 'IMAGEN' | 'LINK' | 'RRSS';
@@ -328,11 +335,15 @@ export default function MisActoresPage() {
 	// Open Edit Dialog
 	const handleOpenEdit = (actor: MyActor) => {
 		setEditingActor(actor);
+		const cat = CATEGORIAS_OPCIONES.includes(actor.categoria) ? actor.categoria : CATEGORIAS_OPCIONES[0];
+		const subOpts = SUBCATEGORIAS_OPCIONES[cat] || [];
+		const sub = actor.subcategoria && subOpts.includes(actor.subcategoria) ? actor.subcategoria : subOpts[0] || '';
+
 		setFormValues({
 			nombre: actor.nombre,
 			tipoActor: actor.tipoActor,
-			categoria: actor.categoria,
-			subcategoria: actor.subcategoria || '',
+			categoria: cat,
+			subcategoria: sub,
 			departamento: actor.departamento,
 			localidad: actor.localidad,
 			direccion: actor.direccion,
@@ -366,6 +377,7 @@ export default function MisActoresPage() {
 		try {
 			await editarMiActorApi(editingActor.id, {
 				idCategoria: getCategoryIdByName(formValues.categoria),
+				idSubcategoria: getSubcategoryIdByName(formValues.categoria, formValues.subcategoria),
 				nombre: formValues.nombre.trim(),
 				descripcion: formValues.descripcion.trim(),
 				fotoPerfilUrl: formValues.fotoPerfilUrl.trim() || null,
@@ -1345,12 +1357,10 @@ export default function MisActoresPage() {
 							¿Deseás guardar las modificaciones realizadas en <strong>{formValues.nombre}</strong>?
 						</DialogContentText>
 
-						{!isAdminOrMod && (
-							<Alert severity="info">
-								Al guardar los cambios, la ficha del actor pasará automáticamente al estado{' '}
-								<strong>Pendiente de revisión</strong> para su aprobación por parte de los moderadores.
-							</Alert>
-						)}
+						<Alert severity="info">
+							Al guardar los cambios, la ficha del actor volverá automáticamente al estado{' '}
+							<strong>Pendiente de revisión</strong> hasta que sea aprobada por los moderadores.
+						</Alert>
 					</Stack>
 				</DialogContent>
 				<DialogActions sx={{ p: 2 }}>
