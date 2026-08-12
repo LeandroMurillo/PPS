@@ -772,7 +772,7 @@ export default function MisActoresPage() {
 						<IconButton
 							size="small"
 							color="info"
-							onClick={() => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}`)}
+							onClick={() => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)}
 						>
 							<VisibilityIcon fontSize="small" />
 						</IconButton>
@@ -974,7 +974,7 @@ export default function MisActoresPage() {
 								>
 									<Box
 										component={RouterLink}
-										to={`/actores/${buildSlugConId(actor.id, actor.nombre)}`}
+										to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=/mis-actores`}
 										aria-label={`Ver perfil público de ${actor.nombre}`}
 										sx={{ display: 'block', textDecoration: 'none' }}
 									>
@@ -1085,7 +1085,7 @@ export default function MisActoresPage() {
 											size="small"
 											startIcon={<VisibilityIcon />}
 											component={RouterLink}
-											to={`/actores/${buildSlugConId(actor.id, actor.nombre)}`}
+											to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=/mis-actores`}
 										>
 											Ver perfil
 										</Button>
@@ -1172,7 +1172,7 @@ export default function MisActoresPage() {
 						emptyMessage="No tenés actores cargados con esos criterios."
 						onPageChange={() => {}}
 						onSortChange={() => {}}
-						onRowClick={(row) => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}`)}
+						onRowClick={(row) => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)}
 					/>
 				)}
 			</Stack>
