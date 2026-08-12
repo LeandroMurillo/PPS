@@ -8,25 +8,26 @@ services:
     restart: unless-stopped
     environment:
       # Use .env file for these values
-      MYSQL_ROOT_HOST: '%' # Allows root to connect from any container
+      MYSQL_ROOT_HOST: "%" # Allows root to connect from any container
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       # Expose on host port 3306 for easy access with a DB client like DBeaver
-      - '3306:3306'
+      - "3306:3306"
     volumes:
       # Persist database data
       - mariadb-data:/var/lib/mysql
       # Mount all your SQL scripts to initialize the database
       # The entrypoint runs them in alphabetical order.
-      - ./DB/cultura.sql:/docker-entrypoint-initdb.d/1_schema.sql
-      - ./DB/checks.sql:/docker-entrypoint-initdb.d/2_checks.sql
-      - ./DB/sp.sql:/docker-entrypoint-initdb.d/3_stored_procedures.sql
-      - ./DB/datos.sql:/docker-entrypoint-initdb.d/4_data.sql
+      - ./DB/01_cultura.sql:/docker-entrypoint-initdb.d/01_cultura.sql
+      - ./DB/02_checks.sql:/docker-entrypoint-initdb.d/02_checks.sql
+      - ./DB/03_sp.sql:/docker-entrypoint-initdb.d/03_sp.sql
+      - ./DB/04_datos.sql:/docker-entrypoint-initdb.d/04_datos.sql
+      - ./DB/05_exportar_listado_sp.sql:/docker-entrypoint-initdb.d/05_exportar_listado_sp.sql
     healthcheck:
-      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -51,7 +52,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_CONNECTION_LIMIT: 10
     ports:
-      - '3000:3000'
+      - "3000:3000"
     volumes:
       - /app/node_modules
     depends_on:
@@ -76,7 +77,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - '5173:5173'
+      - "5173:5173"
     # environment:
     #   # This URL is used by the *browser* to find the API
     #   VITE_API_URL: 'http://cultura.com:3000'

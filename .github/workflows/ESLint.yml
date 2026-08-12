@@ -38,19 +38,31 @@ jobs:
 
           echo "🏁🏁🏁🏁🏁 Lint backend 🤖"
           cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 2
-          npm run lint || fracaso=1
+          if ! npm run lint; then
+            echo "❌ Error en Lint backend 😢"
+            fracaso=1
+          fi
 
           echo "🏁🏁🏁🏁🏁 Build backend 🍇"
           cd "${GITHUB_WORKSPACE}"/Codigo/backend || exit 3
-          npm run build || fracaso=1
+          if ! npm run build; then
+            echo "❌ Error en Build backend 😞"
+            fracaso=1
+          fi
 
           echo "🏁🏁🏁🏁🏁 Lint frontend 🚀"
           cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 4
-          npm run lint || fracaso=1
+          if ! npm run lint; then
+            echo "❌ Error en Lint frontend 😔"
+            fracaso=1
+          fi
 
           echo "🏁🏁🏁🏁🏁 Build frontend 🛠️"
           cd "${GITHUB_WORKSPACE}"/Codigo/frontend || exit 5
-          npm run build || fracaso=1
+          if ! npm run build; then
+            echo "❌ Error en Build frontend 😟"
+            fracaso=1
+          fi
 
           if [ ${fracaso} -eq 1 ]; then
             echo "Se encontraron errores en el código 😱"

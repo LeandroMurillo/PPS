@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const root = resolve(currentDir, "../..");
-const spSqlPath = resolve(root, "Codigo/DB/sp.sql");
+const spSqlPath = resolve(root, "Codigo/DB/03_sp.sql");
 const outputTsvPath = resolve(root, "Informe/listado_sp.tsv");
 
 function splitTopLevel(text, separator = ",") {
@@ -51,7 +51,9 @@ function parseComment(routineSql) {
 	const match = routineSql.match(/\bCOMMENT\s+'((?:\\'|''|[^'])*)'/is);
 	if (!match) return ["Sin descripcion", ""];
 
-	const comment = normalizeSpaces(match[1].replaceAll("\\'", "'").replaceAll("''", "'"));
+	const comment = normalizeSpaces(
+		match[1].replaceAll("\\'", "'").replaceAll("''", "'"),
+	);
 	const parts = comment.split(/\bResultsets\s*:/i);
 	if (parts.length === 1) {
 		const [description] = comment.split(/\s+RS\d+\s*:/i);
@@ -184,9 +186,13 @@ function findTopLevelKeyword(sql, keyword) {
 		if (["'", '"', "`"].includes(char)) quote = char;
 		else if (char === "(") depth += 1;
 		else if (char === ")") depth = Math.max(0, depth - 1);
-		else if (depth === 0 && sql.slice(i, i + keyword.length).toUpperCase() === upperKeyword) {
+		else if (
+			depth === 0 &&
+			sql.slice(i, i + keyword.length).toUpperCase() === upperKeyword
+		) {
 			const before = i > 0 ? sql[i - 1] : " ";
-			const after = i + keyword.length < sql.length ? sql[i + keyword.length] : " ";
+			const after =
+				i + keyword.length < sql.length ? sql[i + keyword.length] : " ";
 			if (!/[\w]/.test(before) && !/[\w]/.test(after)) return i;
 		}
 	}
@@ -225,10 +231,14 @@ function inferResultsets(body) {
 	for (const statement of extractSelectStatements(body)) {
 		if (!statementReturnsResultset(statement)) continue;
 
-		let selectBody = normalizeSpaces(statement).slice("SELECT".length).trim().replace(/;$/, "");
+		let selectBody = normalizeSpaces(statement)
+			.slice("SELECT".length)
+			.trim()
+			.replace(/;$/, "");
 		selectBody = selectBody.replace(/^DISTINCT\s+/i, "");
 		const fromPos = findTopLevelKeyword(selectBody, "FROM");
-		const selectList = fromPos === -1 ? selectBody : selectBody.slice(0, fromPos).trim();
+		const selectList =
+			fromPos === -1 ? selectBody : selectBody.slice(0, fromPos).trim();
 		const columns = splitTopLevel(selectList).map(columnName);
 		resultsets.push(`RS${resultsets.length + 1}: (${columns.join(", ")})`);
 	}
@@ -237,7 +247,9 @@ function inferResultsets(body) {
 }
 
 function extractCallTargets(body) {
-	return [...body.matchAll(/\bCALL\s+`?(?<name>[\w]+)`?\s*\(/gi)].map((match) => match.groups.name);
+	return [...body.matchAll(/\bCALL\s+`?(?<name>[\w]+)`?\s*\(/gi)].map(
+		(match) => match.groups.name,
+	);
 }
 
 function findMatchingParenthesis(sql, openPos) {
@@ -269,24 +281,32 @@ function findMatchingParenthesis(sql, openPos) {
 
 function iterProcedures(sql) {
 	const procedures = [];
-	const createPattern = /CREATE\s+OR\s+REPLACE\s+PROCEDURE\s+`?(?<name>[\w]+)`?\s*\(/gi;
+	const createPattern =
+		/CREATE\s+OR\s+REPLACE\s+PROCEDURE\s+`?(?<name>[\w]+)`?\s*\(/gi;
 
 	for (const match of sql.matchAll(createPattern)) {
 		const openPos = sql.indexOf("(", match.index);
 		const closePos = findMatchingParenthesis(sql, openPos);
 		const tail = sql.slice(closePos);
 		const endMatch = tail.match(/\bEND\s*\/\//i);
-		if (!endMatch) throw new Error(`No se encontro el cierre END // de ${match.groups.name}`);
+		if (!endMatch)
+			throw new Error(
+				`No se encontro el cierre END // de ${match.groups.name}`,
+			);
 
 		const endPos = closePos + endMatch.index + endMatch[0].length;
 		const routineSql = sql.slice(match.index, endPos);
 		const beginMatch = routineSql.match(/\bBEGIN\b/i);
-		if (!beginMatch) throw new Error(`No se encontro BEGIN en ${match.groups.name}`);
+		if (!beginMatch)
+			throw new Error(`No se encontro BEGIN en ${match.groups.name}`);
 
 		procedures.push({
 			name: match.groups.name,
 			params: sql.slice(openPos + 1, closePos),
-			body: routineSql.slice(beginMatch.index + beginMatch[0].length, routineSql.length - endMatch[0].length),
+			body: routineSql.slice(
+				beginMatch.index + beginMatch[0].length,
+				routineSql.length - endMatch[0].length,
+			),
 			routineSql,
 		});
 	}
@@ -301,10 +321,27 @@ function tsvCell(value) {
 function main() {
 	const sql = readFileSync(spSqlPath, "utf8");
 	const procedures = iterProcedures(sql);
-	const byName = new Map(procedures.map((procedure) => [procedure.name, procedure]));
-	const comments = new Map(procedures.map((procedure) => [procedure.name, parseComment(procedure.routineSql)]));
-	const directResultsets = new Map(procedures.map((procedure) => [procedure.name, inferResultsets(procedure.body)]));
-	const calls = new Map(procedures.map((procedure) => [procedure.name, extractCallTargets(procedure.body)]));
+	const byName = new Map(
+		procedures.map((procedure) => [procedure.name, procedure]),
+	);
+	const comments = new Map(
+		procedures.map((procedure) => [
+			procedure.name,
+			parseComment(procedure.routineSql),
+		]),
+	);
+	const directResultsets = new Map(
+		procedures.map((procedure) => [
+			procedure.name,
+			inferResultsets(procedure.body),
+		]),
+	);
+	const calls = new Map(
+		procedures.map((procedure) => [
+			procedure.name,
+			extractCallTargets(procedure.body),
+		]),
+	);
 
 	function resolveResultsets(name, seen = new Set()) {
 		if (seen.has(name)) return "";
@@ -335,12 +372,21 @@ function main() {
 				resultsets: resultsets || "Sin resultsets",
 			};
 		})
-		.sort((left, right) => left["stored procedure"].localeCompare(right["stored procedure"]));
+		.sort((left, right) =>
+			left["stored procedure"].localeCompare(right["stored procedure"]),
+		);
 
-	const headers = ["stored procedure", "descripcion", "parametros_entrada", "resultsets"];
+	const headers = [
+		"stored procedure",
+		"descripcion",
+		"parametros_entrada",
+		"resultsets",
+	];
 	const output = [
 		headers.join("\t"),
-		...rows.map((row) => headers.map((header) => tsvCell(row[header])).join("\t")),
+		...rows.map((row) =>
+			headers.map((header) => tsvCell(row[header])).join("\t"),
+		),
 	].join("\n");
 
 	writeFileSync(outputTsvPath, `${output}\n`, "utf8");

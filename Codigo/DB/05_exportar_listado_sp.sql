@@ -4,7 +4,7 @@ SET SESSION group_concat_max_len = 100000;
 
 -- Respaldo basado en information_schema.
 -- Para el informe final usar Codigo/DB/generar_listado_sp.mjs, que infiere
--- automaticamente los resultsets desde Codigo/DB/sp.sql.
+-- automaticamente los resultsets desde Codigo/DB/03_sp.sql.
 SELECT
 	r.ROUTINE_NAME AS `stored procedure`,
 	CASE
