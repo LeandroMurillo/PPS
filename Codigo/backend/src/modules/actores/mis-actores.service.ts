@@ -12,7 +12,119 @@ import {
 	listarEventosRepository,
 	listarIntegrantesRepository,
 	listarMisActoresRepository,
+	obtenerFormulariosAplicablesRepository,
+	obtenerOpcionesRegistroRepository,
 } from './mis-actores.repository.js';
+
+export async function obtenerOpcionesRegistroService() {
+	const rows = await obtenerOpcionesRegistroRepository();
+	const categorias = new Map<
+		number,
+		{
+			id: number;
+			nombre: string;
+			icono: (typeof rows)[number]['icono'];
+			subcategorias: { id: number; nombre: string }[];
+		}
+	>();
+
+	for (const row of rows) {
+		let categoria = categorias.get(row.idCategoria);
+
+		if (!categoria) {
+			categoria = {
+				id: row.idCategoria,
+				nombre: row.categoria,
+				icono: row.icono,
+				subcategorias: [],
+			};
+			categorias.set(row.idCategoria, categoria);
+		}
+
+		if (row.idSubcategoria !== null && row.subcategoria) {
+			categoria.subcategorias.push({ id: row.idSubcategoria, nombre: row.subcategoria });
+		}
+	}
+
+	return { data: Array.from(categorias.values()) };
+}
+
+export async function obtenerFormulariosAplicablesService(input: {
+	idCategoria: number;
+	idSubcategoria?: number | null | undefined;
+}) {
+	const opciones = await obtenerOpcionesRegistroService();
+	const categoria = opciones.data.find((item) => item.id === input.idCategoria);
+
+	if (!categoria) {
+		throw new Error('La categoría seleccionada no existe o está inactiva.');
+	}
+
+	if (
+		input.idSubcategoria !== null &&
+		input.idSubcategoria !== undefined &&
+		!categoria.subcategorias.some((item) => item.id === input.idSubcategoria)
+	) {
+		throw new Error('La subcategoría seleccionada no corresponde a la categoría.');
+	}
+
+	const rows = await obtenerFormulariosAplicablesRepository(input);
+	const formularios = new Map<
+		number,
+		{
+			id: number;
+			ambito: 'CATEGORIA' | 'SUBCATEGORIA';
+			idCategoria: number;
+			categoria: string;
+			idSubcategoria: number | null;
+			subcategoria: string | null;
+			titulo: string;
+			descripcion: string | null;
+			preguntas: {
+				id: number;
+				pregunta: string;
+				tipoDato: NonNullable<(typeof rows)[number]['tipoDato']>;
+				opciones: string[] | null;
+				orden: number;
+				esObligatorio: boolean;
+				esPublico: boolean;
+			}[];
+		}
+	>();
+
+	for (const row of rows) {
+		let formulario = formularios.get(row.idFormulario);
+
+		if (!formulario) {
+			formulario = {
+				id: row.idFormulario,
+				ambito: row.idSubcategoria === 0 ? 'CATEGORIA' : 'SUBCATEGORIA',
+				idCategoria: row.idCategoria,
+				categoria: row.categoria,
+				idSubcategoria: row.idSubcategoria === 0 ? null : row.idSubcategoria,
+				subcategoria: row.subcategoria,
+				titulo: row.titulo,
+				descripcion: row.descripcion,
+				preguntas: [],
+			};
+			formularios.set(row.idFormulario, formulario);
+		}
+
+		if (row.idPregunta !== null && row.pregunta && row.tipoDato && row.orden !== null) {
+			formulario.preguntas.push({
+				id: row.idPregunta,
+				pregunta: row.pregunta,
+				tipoDato: row.tipoDato,
+				opciones: row.opciones,
+				orden: row.orden,
+				esObligatorio: Boolean(row.esObligatorio),
+				esPublico: Boolean(row.esPublico),
+			});
+		}
+	}
+
+	return { data: Array.from(formularios.values()) };
+}
 
 export async function listarMisActoresService(input: {
 	idUsuario: number;

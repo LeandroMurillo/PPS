@@ -11,15 +11,20 @@ import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import type { LeafletMouseEvent } from 'leaflet';
+import PublicIcon from '@mui/icons-material/Public';
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import {
 	Alert,
 	Autocomplete,
 	Box,
 	Button,
+	Checkbox,
+	Chip,
+	CircularProgress,
 	Divider,
 	FormControl,
 	FormControlLabel,
+	FormGroup,
 	FormHelperText,
 	Grid,
 	InputLabel,
@@ -30,27 +35,27 @@ import {
 	Select,
 	Stack,
 	TextField,
+	Tooltip,
 	Typography,
 } from '@mui/material';
 
+import {
+	obtenerFormulariosAplicablesApi,
+	obtenerOpcionesRegistroApi,
+	type FormularioAplicable,
+	type OpcionCategoriaRegistro,
+	type PreguntaFormularioAplicable,
+} from '../api/actores';
+
 import 'leaflet/dist/leaflet.css';
 
-const STEPS = ['Sobre tu actividad cultural', 'Categoría'];
+const STEPS = ['Sobre tu actividad cultural'];
 
-const STEP_DESCRIPTIONS = [
-	'Contanos los datos principales de tu actividad, proyecto o espacio cultural.',
-	'La siguiente pantalla se definirá a partir del formulario configurado para la categoría elegida.',
-];
+const STEP_DESCRIPTIONS = ['Contanos los datos principales de tu actividad, proyecto o espacio cultural.'];
 
 type ActorType = 'persona' | 'colectivo' | 'institucion';
 
-const subcategoriesByCategory: Record<string, string[]> = {
-	Música: ['Solista', 'Banda o ensamble', 'Producción musical', 'Otra'],
-	'Artes escénicas': ['Circo contemporáneo', 'Teatro independiente', 'Danza', 'Títeres', 'Otra'],
-	'Artes visuales': ['Pintura', 'Escultura', 'Fotografía', 'Arte digital', 'Otra'],
-	Artesanías: ['Textil', 'Cerámica', 'Madera', 'Metales', 'Otra'],
-	'Gestión cultural': [],
-};
+type FormAnswer = string | string[];
 
 const localitiesByDepartment: Record<string, string[]> = {
 	Burruyacú: ['Burruyacú', 'El Chañar', 'El Naranjo', 'Garmendia'],
@@ -78,6 +83,8 @@ type GeneralFieldErrors = {
 	nombre: boolean;
 	descripcion: boolean;
 	cuit: boolean;
+	categoria: boolean;
+	subcategoria: boolean;
 	departamento: boolean;
 	localidad: boolean;
 	direccion: boolean;
@@ -142,24 +149,85 @@ export default function ActorNuevoPage() {
 	const pageTopRef = useRef<HTMLDivElement>(null);
 	const [activeStep, setActiveStep] = useState(0);
 	const [actorType, setActorType] = useState<ActorType>('colectivo');
-	const [category, setCategory] = useState('Artes escénicas');
-	const [subcategory, setSubcategory] = useState('Circo contemporáneo');
+	const [categories, setCategories] = useState<OpcionCategoriaRegistro[]>([]);
+	const [categoryId, setCategoryId] = useState<number | null>(null);
+	const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
+	const [catalogLoading, setCatalogLoading] = useState(true);
+	const [catalogError, setCatalogError] = useState('');
+	const [forms, setForms] = useState<FormularioAplicable[]>([]);
+	const [formsLoading, setFormsLoading] = useState(false);
+	const [formsError, setFormsError] = useState('');
+	const [answers, setAnswers] = useState<Record<string, FormAnswer>>({});
 	const [generalData, setGeneralData] = useState<GeneralActorData>(INITIAL_GENERAL_DATA);
 	const [validationAttempted, setValidationAttempted] = useState(false);
+	const selectedCategory = categories.find((item) => item.id === categoryId) ?? null;
+
+	useEffect(() => {
+		const controller = new AbortController();
+
+		void obtenerOpcionesRegistroApi(controller.signal)
+			.then((response) => {
+				setCategories(response.data);
+				const firstCategory = response.data[0] ?? null;
+				setCategoryId(firstCategory?.id ?? null);
+				setSubcategoryId(firstCategory?.subcategorias[0]?.id ?? null);
+				setCatalogError('');
+			})
+			.catch((error: unknown) => {
+				if (!controller.signal.aborted) {
+					setCatalogError(
+						error instanceof Error ? error.message : 'No se pudieron cargar las categorías culturales.',
+					);
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) setCatalogLoading(false);
+			});
+
+		return () => controller.abort();
+	}, []);
+
+	useEffect(() => {
+		if (activeStep !== 1 || categoryId === null) return;
+
+		const controller = new AbortController();
+		setFormsLoading(true);
+		setFormsError('');
+
+		void obtenerFormulariosAplicablesApi({ idCategoria: categoryId, idSubcategoria: subcategoryId }, controller.signal)
+			.then((response) => setForms(response.data))
+			.catch((error: unknown) => {
+				if (!controller.signal.aborted) {
+					setForms([]);
+					setFormsError(error instanceof Error ? error.message : 'No se pudieron cargar los formularios.');
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) setFormsLoading(false);
+			});
+
+		return () => controller.abort();
+	}, [activeStep, categoryId, subcategoryId]);
 
 	const generalFieldErrors: GeneralFieldErrors = {
 		nombre: validationAttempted && !generalData.nombre.trim(),
 		descripcion: validationAttempted && !generalData.descripcion.trim(),
 		cuit: validationAttempted && generalData.tieneCuit && !/^\d{11}$/.test(generalData.cuit),
+		categoria: validationAttempted && categoryId === null,
+		subcategoria:
+			validationAttempted && Boolean(selectedCategory?.subcategorias.length) && subcategoryId === null,
 		departamento: validationAttempted && !generalData.departamento,
 		localidad: validationAttempted && !generalData.localidad.trim(),
 		direccion: validationAttempted && !generalData.direccion.trim(),
 		ubicacion: validationAttempted && !generalData.ubicacion,
 	};
 
-	const handleCategoryChange = (newCategory: string) => {
-		setCategory(newCategory);
-		setSubcategory(subcategoriesByCategory[newCategory]?.[0] ?? '');
+	const handleCategoryChange = (newCategoryId: number) => {
+		const nextCategory = categories.find((item) => item.id === newCategoryId) ?? null;
+		setCategoryId(newCategoryId);
+		setSubcategoryId(nextCategory?.subcategorias[0]?.id ?? null);
+		setForms([]);
+		setAnswers({});
 	};
 
 	const scrollToTop = () => {
@@ -172,6 +240,8 @@ export default function ActorNuevoPage() {
 		if (activeStep === 0) {
 			setValidationAttempted(true);
 			if (
+				categoryId === null ||
+				(Boolean(selectedCategory?.subcategorias.length) && subcategoryId === null) ||
 				!generalData.nombre.trim() ||
 				!generalData.descripcion.trim() ||
 				!generalData.departamento ||
@@ -214,37 +284,48 @@ export default function ActorNuevoPage() {
 					alignItems={{ xs: 'stretch', md: 'flex-start' }}
 					sx={{ mb: 3 }}
 				>
-					<Box>
-						<Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 0.5 }}>
-							Registrar actor cultural
-						</Typography>
-						<Typography color="text.secondary" sx={{ maxWidth: 740 }}>
-							Un flujo por etapas: primero los datos base de la actividad, después los formularios
-							específicos según categoría y subcategoría, y al final el portafolio público con vista
-							previa.
-						</Typography>
-					</Box>
+					{activeStep === 0 && (
+						<Box>
+							<Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 0.5 }}>
+								Registrar actor cultural
+							</Typography>
+							<Typography color="text.secondary" sx={{ maxWidth: 740 }}>
+								Un flujo por etapas: primero los datos base de la actividad, después los formularios
+								específicos según categoría y subcategoría, y al final el portafolio público con vista
+								previa.
+							</Typography>
+						</Box>
+					)}
 				</Stack>
 
 				<Grid container spacing={3} alignItems="flex-start">
 					<Grid size={{ xs: 12 }}>
 						<Stack spacing={3}>
 							<Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, md: 3 } }}>
-								<Stack spacing={0.5} sx={{ mb: 3 }}>
-									<Typography variant="h5" fontWeight={700}>
-										{STEPS[activeStep]}
-									</Typography>
-									<Typography variant="body2" color="text.secondary">
-										{STEP_DESCRIPTIONS[activeStep]}
-									</Typography>
-								</Stack>
+								{activeStep === 0 && (
+									<Stack spacing={0.5} sx={{ mb: 3 }}>
+										<Typography variant="h5" fontWeight={700}>
+											{STEPS[0]}
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											{STEP_DESCRIPTIONS[0]}
+										</Typography>
+									</Stack>
+								)}
 
 								{activeStep === 0 && (
 									<Stack spacing={2.5}>
+										{catalogError && (
+											<Alert severity="error" variant="outlined">
+												{catalogError}
+											</Alert>
+										)}
 										<GeneralActorFields
 											actorType={actorType}
-											category={category}
-											subcategory={subcategory}
+											categories={categories}
+											categoryId={categoryId}
+											subcategoryId={subcategoryId}
+											catalogLoading={catalogLoading}
 											value={generalData}
 											errors={generalFieldErrors}
 											onChange={(changes) => {
@@ -252,16 +333,21 @@ export default function ActorNuevoPage() {
 											}}
 											onActorTypeChange={setActorType}
 											onCategoryChange={handleCategoryChange}
-											onSubcategoryChange={setSubcategory}
+											onSubcategoryChange={setSubcategoryId}
 										/>
 									</Stack>
 								)}
 								{activeStep === 1 && (
-									<Alert severity="info" variant="outlined">
-										Los datos generales quedaron completos. La pantalla con los campos específicos
-										de {category}
-										se implementará en la próxima etapa.
-									</Alert>
+									<CategoryForms
+										categoryName={selectedCategory?.nombre ?? 'la categoría seleccionada'}
+										forms={forms}
+										loading={formsLoading}
+										error={formsError}
+										answers={answers}
+										onAnswerChange={(key, value) => {
+											setAnswers((current) => ({ ...current, [key]: value }));
+										}}
+									/>
 								)}
 							</Paper>
 
@@ -280,7 +366,12 @@ export default function ActorNuevoPage() {
 									Atrás
 								</Button>
 								{activeStep === 0 && (
-									<Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={handleNext}>
+									<Button
+										variant="contained"
+										endIcon={<ArrowForwardIcon />}
+										onClick={handleNext}
+										disabled={catalogLoading || Boolean(catalogError)}
+									>
 										Siguiente
 									</Button>
 								)}
@@ -295,8 +386,10 @@ export default function ActorNuevoPage() {
 
 function GeneralActorFields({
 	actorType,
-	category,
-	subcategory,
+	categories,
+	categoryId,
+	subcategoryId,
+	catalogLoading,
 	value,
 	errors,
 	onChange,
@@ -305,16 +398,18 @@ function GeneralActorFields({
 	onSubcategoryChange,
 }: {
 	actorType: ActorType;
-	category: string;
-	subcategory: string;
+	categories: OpcionCategoriaRegistro[];
+	categoryId: number | null;
+	subcategoryId: number | null;
+	catalogLoading: boolean;
 	value: GeneralActorData;
 	errors: GeneralFieldErrors;
 	onChange: (changes: Partial<GeneralActorData>) => void;
 	onActorTypeChange: (value: ActorType) => void;
-	onCategoryChange: (value: string) => void;
-	onSubcategoryChange: (value: string) => void;
+	onCategoryChange: (value: number) => void;
+	onSubcategoryChange: (value: number | null) => void;
 }) {
-	const availableSubcategories = subcategoriesByCategory[category] ?? [];
+	const availableSubcategories = categories.find((item) => item.id === categoryId)?.subcategorias ?? [];
 	const availableLocalities = localitiesByDepartment[value.departamento] ?? [];
 
 	const handleDepartmentChange = (newDepartment: string) => {
@@ -392,40 +487,46 @@ function GeneralActorFields({
 			</Grid>
 
 			<Grid size={{ xs: 12, md: 6 }}>
-				<FormControl fullWidth required>
+				<FormControl fullWidth required error={errors.categoria}>
 					<InputLabel>Sector cultural principal</InputLabel>
 					<Select
 						label="Sector cultural principal"
-						value={category}
-						onChange={(event) => onCategoryChange(event.target.value)}
+						value={categoryId ?? ''}
+						onChange={(event) => onCategoryChange(Number(event.target.value))}
+						disabled={catalogLoading || categories.length === 0}
 					>
-						<MenuItem value="Música">Música</MenuItem>
-						<MenuItem value="Artes escénicas">Artes escénicas</MenuItem>
-						<MenuItem value="Artes visuales">Artes visuales</MenuItem>
-						<MenuItem value="Artesanías">Artesanías</MenuItem>
-						<MenuItem value="Gestión cultural">Gestión cultural</MenuItem>
+						{categories.map((option) => (
+							<MenuItem key={option.id} value={option.id}>
+								{option.nombre}
+							</MenuItem>
+						))}
 					</Select>
-					<FormHelperText>Elegí la opción que mejor represente tu actividad.</FormHelperText>
+					<FormHelperText>
+						{errors.categoria ? 'Seleccioná un sector cultural.' : 'Elegí la opción que mejor represente tu actividad.'}
+					</FormHelperText>
 				</FormControl>
 			</Grid>
 
 			<Grid size={{ xs: 12, md: 6 }}>
 				{availableSubcategories.length > 0 ? (
-					<FormControl fullWidth required>
+					<FormControl fullWidth required error={errors.subcategoria}>
 						<InputLabel>Área específica</InputLabel>
 						<Select
 							label="Área específica"
-							value={subcategory}
-							onChange={(event) => onSubcategoryChange(event.target.value)}
+							value={subcategoryId ?? ''}
+							onChange={(event) => onSubcategoryChange(Number(event.target.value))}
 						>
 							{availableSubcategories.map((option) => (
-								<MenuItem key={option} value={option}>
-									{option}
+								<MenuItem key={option.id} value={option.id}>
+									{option.nombre}
 								</MenuItem>
 							))}
-							<MenuItem value="No encuentro mi área">No encuentro mi área</MenuItem>
 						</Select>
-						<FormHelperText>Las opciones dependen del sector cultural elegido.</FormHelperText>
+						<FormHelperText>
+							{errors.subcategoria
+								? 'Seleccioná un área específica.'
+								: 'Las opciones dependen del sector cultural elegido.'}
+						</FormHelperText>
 					</FormControl>
 				) : (
 					<Alert severity="info" variant="outlined">
@@ -596,6 +697,239 @@ function GeneralActorFields({
 				</Typography>
 			</Grid>
 		</Grid>
+	);
+}
+
+function CategoryForms({
+	categoryName,
+	forms,
+	loading,
+	error,
+	answers,
+	onAnswerChange,
+}: {
+	categoryName: string;
+	forms: FormularioAplicable[];
+	loading: boolean;
+	error: string;
+	answers: Record<string, FormAnswer>;
+	onAnswerChange: (key: string, value: FormAnswer) => void;
+}) {
+	const orderedForms = [...forms].sort((left, right) => {
+		if (left.ambito === right.ambito) return left.id - right.id;
+		return left.ambito === 'CATEGORIA' ? -1 : 1;
+	});
+
+	if (loading) {
+		return (
+		<Stack alignItems="center" spacing={1.5} sx={{ py: 6 }}>
+			<CircularProgress size={32} />
+			<Typography color="text.secondary">Cargando preguntas de {categoryName}…</Typography>
+		</Stack>
+		);
+	}
+
+	if (error) {
+		return (
+		<Alert severity="error" variant="outlined">
+			{error}
+		</Alert>
+		);
+	}
+
+	if (forms.length === 0) {
+		return (
+		<Alert severity="info" variant="outlined">
+			No hay un formulario configurado para {categoryName}. Podés volver atrás y elegir otra categoría.
+		</Alert>
+		);
+	}
+
+	return (
+		<Stack spacing={3}>
+			{orderedForms.map((form, index) => (
+				<Box key={form.id}>
+					{index > 0 && <Divider sx={{ mb: 3 }} />}
+					<Stack spacing={0.5} sx={{ mb: 2.5 }}>
+						<Typography variant={index === 0 ? 'h4' : 'h5'} component={index === 0 ? 'h1' : 'h2'} fontWeight={700}>
+							{form.titulo}
+						</Typography>
+						{form.descripcion && (
+							<Typography color="text.secondary">{form.descripcion}</Typography>
+						)}
+					</Stack>
+					{form.preguntas.length === 0 ? (
+						<Typography variant="body2" color="text.secondary">
+							Este formulario no tiene preguntas activas.
+						</Typography>
+					) : (
+						<Stack spacing={2.5}>
+							{form.preguntas.map((question) => {
+								const key = `${form.id}:${question.id}`;
+								return (
+									<QuestionField
+										key={key}
+										question={question}
+										value={answers[key] ?? (question.tipoDato === 'OPCION_MULTIPLE' ? [] : '')}
+										onChange={(value) => onAnswerChange(key, value)}
+									/>
+								);
+							})}
+						</Stack>
+					)}
+				</Box>
+			))}
+		</Stack>
+	);
+}
+
+function QuestionField({
+	question,
+	value,
+	onChange,
+}: {
+	question: PreguntaFormularioAplicable;
+	value: FormAnswer;
+	onChange: (value: FormAnswer) => void;
+}) {
+	const label = question.pregunta;
+
+	if (question.tipoDato === 'BOOLEANO') {
+		return (
+			<Stack spacing={1}>
+				<QuestionHeading question={question} />
+				<RadioGroup
+					row
+					aria-label={label}
+					value={typeof value === 'string' ? value : ''}
+					onChange={(event) => onChange(event.target.value)}
+				>
+					<FormControlLabel value="true" control={<Radio size="small" />} label="Sí" />
+					<FormControlLabel value="false" control={<Radio size="small" />} label="No" />
+				</RadioGroup>
+			</Stack>
+		);
+	}
+
+	if (question.tipoDato === 'OPCION_UNICA') {
+		return (
+			<Stack spacing={1}>
+				<QuestionHeading question={question} />
+				<FormControl fullWidth required={question.esObligatorio}>
+					<Select
+						displayEmpty
+						value={typeof value === 'string' ? value : ''}
+						onChange={(event) => onChange(event.target.value)}
+						inputProps={{ 'aria-label': label }}
+					>
+						<MenuItem value="" disabled>
+							Seleccioná una opción
+						</MenuItem>
+						{question.opciones?.map((option) => (
+							<MenuItem key={option} value={option}>
+								{option}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
+			</Stack>
+		);
+	}
+
+	if (question.tipoDato === 'OPCION_MULTIPLE') {
+		const selected = Array.isArray(value) ? value : [];
+		return (
+			<Stack spacing={1}>
+				<QuestionHeading question={question} />
+				<FormGroup aria-label={label}>
+					{question.opciones?.map((option) => (
+						<FormControlLabel
+							key={option}
+							label={option}
+							control={
+								<Checkbox
+									checked={selected.includes(option)}
+									onChange={(event) =>
+										onChange(
+											event.target.checked
+												? [...selected, option]
+												: selected.filter((item) => item !== option),
+										)
+									}
+								/>
+							}
+						/>
+					))}
+				</FormGroup>
+			</Stack>
+		);
+	}
+
+	const inputType: Record<string, string> = {
+		NUMERO: 'number',
+		FECHA: 'date',
+		URL: 'url',
+		EMAIL: 'email',
+		TELEFONO: 'tel',
+	};
+
+	return (
+		<Stack spacing={1}>
+			<QuestionHeading question={question} />
+			<TextField
+				fullWidth
+				required={question.esObligatorio}
+				type={inputType[question.tipoDato] ?? 'text'}
+				placeholder={question.tipoDato === 'FECHA' ? undefined : 'Ingresá tu respuesta'}
+				value={typeof value === 'string' ? value : ''}
+				onChange={(event) => onChange(event.target.value)}
+				slotProps={{ htmlInput: { 'aria-label': label } }}
+			/>
+		</Stack>
+	);
+}
+
+function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }) {
+	return (
+		<Stack
+			direction={{ xs: 'column', sm: 'row' }}
+			spacing={1}
+			alignItems={{ xs: 'flex-start', sm: 'center' }}
+			justifyContent="space-between"
+		>
+			<Typography variant="subtitle2" fontWeight={700}>
+				{question.pregunta}
+				{question.esObligatorio && (
+					<Tooltip title="Pregunta obligatoria" arrow>
+						<Typography
+							component="span"
+							color="error.main"
+							aria-label="Pregunta obligatoria"
+							tabIndex={0}
+							sx={{ cursor: 'help' }}
+						>
+							{' *'}
+						</Typography>
+					</Tooltip>
+				)}
+			</Typography>
+			{question.esPublico && (
+				<Tooltip
+					title="Esta respuesta podrá mostrarse en el perfil público del actor cultural."
+					arrow
+				>
+					<Chip
+						size="small"
+						variant="outlined"
+						color="success"
+						icon={<PublicIcon />}
+						label="Respuesta pública"
+						tabIndex={0}
+						sx={{ cursor: 'help' }}
+					/>
+				</Tooltip>
+			)}
+		</Stack>
 	);
 }
 

@@ -34,6 +34,81 @@ const eventoRowSchema = z.object({
 	fecha: z.union([z.date(), z.string()]).transform((val) => (val instanceof Date ? val.toISOString() : String(val))),
 });
 
+const opcionRegistroRowSchema = z.object({
+	idCategoria: databaseIntegerSchema,
+	categoria: z.string(),
+	icono: categoriaIconoSchema,
+	idSubcategoria: databaseIntegerSchema.nullable(),
+	subcategoria: z.string().nullable(),
+});
+
+const categoriaRegistroDatabaseRowSchema = z.object({
+	idCategoria: databaseIntegerSchema,
+	nombre: z.string(),
+	icono: categoriaIconoSchema,
+});
+
+const subcategoriaRegistroDatabaseRowSchema = z.object({
+	idCategoria: databaseIntegerSchema,
+	id: databaseIntegerSchema,
+	nombre: z.string(),
+});
+
+const tipoPreguntaSchema = z.enum([
+	'TEXTO',
+	'NUMERO',
+	'BOOLEANO',
+	'FECHA',
+	'URL',
+	'EMAIL',
+	'TELEFONO',
+	'OPCION_UNICA',
+	'OPCION_MULTIPLE',
+]);
+
+const formularioAplicableRowSchema = z.object({
+	idFormulario: databaseIntegerSchema,
+	idCategoria: databaseIntegerSchema,
+	categoria: z.string(),
+	idSubcategoria: databaseIntegerSchema,
+	subcategoria: z.string().nullable(),
+	titulo: z.string(),
+	descripcion: z.string().nullable(),
+	idPregunta: databaseIntegerSchema.nullable(),
+	pregunta: z.string().nullable(),
+	tipoDato: tipoPreguntaSchema.nullable(),
+	opciones: z
+		.union([z.string(), z.array(z.string())])
+		.nullable()
+		.transform(parseOpcionesPregunta),
+	orden: databaseIntegerSchema.nullable(),
+	esObligatorio: databaseIntegerSchema.nullable(),
+	esPublico: databaseIntegerSchema.nullable(),
+});
+
+const formularioAplicableCabeceraDatabaseRowSchema = z.object({
+	idFormulario: databaseIntegerSchema,
+	idCategoria: databaseIntegerSchema,
+	categoria: z.string(),
+	estadoCategoria: z.enum(['A', 'I']),
+	idSubcategoria: databaseIntegerSchema,
+	subcategoria: z.string().nullable(),
+	estadoSubcategoria: z.enum(['A', 'I']).nullable(),
+	titulo: z.string(),
+	descripcion: z.string().nullable(),
+});
+
+const preguntaFormularioAplicableDatabaseRowSchema = z.object({
+	idPregunta: databaseIntegerSchema,
+	pregunta: z.string(),
+	tipoDato: tipoPreguntaSchema,
+	opciones: z.union([z.string(), z.array(z.string())]).nullable(),
+	orden: databaseIntegerSchema,
+	esObligatorio: databaseIntegerSchema,
+	esPublico: databaseIntegerSchema,
+	estado: z.enum(['A', 'I']),
+});
+
 export const misActoresDatabaseRowSchema = z.object({
 	idActor: databaseIntegerSchema,
 	nombre: z.string(),
@@ -70,6 +145,115 @@ function getResultSet(procedureResult: unknown, index: number, procedureName: st
 		throw new Error(`No se encontró el result set ${index + 1} de ${procedureName}`);
 	}
 	return resultSet;
+}
+
+function parseOpcionesPregunta(value: string | string[] | null): string[] | null {
+	if (value === null) return null;
+	if (Array.isArray(value)) return value;
+
+	try {
+		const parsed: unknown = JSON.parse(value);
+		return z.array(z.string()).parse(parsed);
+	} catch {
+		throw new Error('Una pregunta posee opciones inválidas en la base de datos.');
+	}
+}
+
+export async function obtenerOpcionesRegistroRepository() {
+	const categoriasResult: unknown = await pool.query(
+		"CALL sp_admin_listar_categorias(NULL, 'A', 100, 0, 'nombre', 'ASC')",
+	);
+	const categorias = z
+		.array(categoriaRegistroDatabaseRowSchema)
+		.parse(getResultSet(categoriasResult, 1, 'sp_admin_listar_categorias'));
+
+	const categoriasConSubcategorias = await Promise.all(
+		categorias.map(async (categoria) => {
+			const subcategoriasResult: unknown = await pool.query(
+				"CALL sp_admin_listar_subcategorias(?, NULL, 'A', 100, 0, 'nombre', 'ASC')",
+				[categoria.idCategoria],
+			);
+			const subcategorias = z
+				.array(subcategoriaRegistroDatabaseRowSchema)
+				.parse(getResultSet(subcategoriasResult, 1, 'sp_admin_listar_subcategorias'));
+
+			return subcategorias.length > 0
+				? subcategorias.map((subcategoria) => ({
+						idCategoria: categoria.idCategoria,
+						categoria: categoria.nombre,
+						icono: categoria.icono,
+						idSubcategoria: subcategoria.id,
+						subcategoria: subcategoria.nombre,
+					}))
+				: [
+						{
+							idCategoria: categoria.idCategoria,
+							categoria: categoria.nombre,
+							icono: categoria.icono,
+							idSubcategoria: null,
+							subcategoria: null,
+						},
+					];
+		}),
+	);
+
+	return z.array(opcionRegistroRowSchema).parse(categoriasConSubcategorias.flat());
+}
+
+export async function obtenerFormulariosAplicablesRepository(input: {
+	idCategoria: number;
+	idSubcategoria?: number | null | undefined;
+}) {
+	const listarResult: unknown = await pool.query("CALL sp_admin_listar_formularios(NULL, ?, 'TODOS', 100, 0)", [
+		input.idCategoria,
+	]);
+	const cabeceras = z
+		.array(formularioAplicableCabeceraDatabaseRowSchema)
+		.parse(getResultSet(listarResult, 1, 'sp_admin_listar_formularios'))
+		.filter(
+			(formulario) =>
+				formulario.estadoCategoria === 'A' &&
+				(formulario.idSubcategoria === 0 ||
+					(formulario.idSubcategoria === input.idSubcategoria && formulario.estadoSubcategoria === 'A')),
+		);
+
+	const formulariosConPreguntas = await Promise.all(
+		cabeceras.map(async (cabecera) => {
+			const obtenerResult: unknown = await pool.query('CALL sp_admin_obtener_formulario(?)', [cabecera.idFormulario]);
+			const preguntas = z
+				.array(preguntaFormularioAplicableDatabaseRowSchema)
+				.parse(getResultSet(obtenerResult, 1, 'sp_admin_obtener_formulario'))
+				.filter((pregunta) => pregunta.estado === 'A');
+
+			if (preguntas.length === 0) {
+				return [
+					{
+						...cabecera,
+						idPregunta: null,
+						pregunta: null,
+						tipoDato: null,
+						opciones: null,
+						orden: null,
+						esObligatorio: null,
+						esPublico: null,
+					},
+				];
+			}
+
+			return preguntas.map((pregunta) => ({
+				...cabecera,
+				idPregunta: pregunta.idPregunta,
+				pregunta: pregunta.pregunta,
+				tipoDato: pregunta.tipoDato,
+				opciones: parseOpcionesPregunta(pregunta.opciones),
+				orden: pregunta.orden,
+				esObligatorio: pregunta.esObligatorio,
+				esPublico: pregunta.esPublico,
+			}));
+		}),
+	);
+
+	return z.array(formularioAplicableRowSchema).parse(formulariosConPreguntas.flat());
 }
 
 export async function listarMisActoresRepository(input: {

@@ -15,7 +15,14 @@ import {
 	listarEventosService,
 	listarIntegrantesService,
 	listarMisActoresService,
+	obtenerFormulariosAplicablesService,
+	obtenerOpcionesRegistroService,
 } from './mis-actores.service.js';
+
+const formulariosAplicablesQuerySchema = z.object({
+	idCategoria: z.coerce.number().int().positive(),
+	idSubcategoria: z.coerce.number().int().positive().optional(),
+});
 
 const listarQuerySchema = z.object({
 	busqueda: z.string().optional(),
@@ -96,6 +103,33 @@ export async function listarMisActoresController(req: Request, res: Response): P
 			error: {
 				code: 'BAD_REQUEST',
 				message: error instanceof Error ? error.message : 'Error al listar los actores del usuario.',
+			},
+		});
+	}
+}
+
+export async function obtenerOpcionesRegistroController(_req: Request, res: Response): Promise<void> {
+	try {
+		res.json(await obtenerOpcionesRegistroService());
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al obtener las opciones de registro.',
+			},
+		});
+	}
+}
+
+export async function obtenerFormulariosAplicablesController(req: Request, res: Response): Promise<void> {
+	try {
+		const query = formulariosAplicablesQuerySchema.parse(req.query);
+		res.json(await obtenerFormulariosAplicablesService(query));
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al obtener los formularios aplicables.',
 			},
 		});
 	}

@@ -194,6 +194,68 @@ export type ListarMisActoresResponse = {
 	};
 };
 
+export type OpcionSubcategoriaRegistro = {
+	id: number;
+	nombre: string;
+};
+
+export type OpcionCategoriaRegistro = {
+	id: number;
+	nombre: string;
+	icono: CategoriaIcono;
+	subcategorias: OpcionSubcategoriaRegistro[];
+};
+
+export type TipoPreguntaFormulario =
+	| 'TEXTO'
+	| 'NUMERO'
+	| 'BOOLEANO'
+	| 'FECHA'
+	| 'URL'
+	| 'EMAIL'
+	| 'TELEFONO'
+	| 'OPCION_UNICA'
+	| 'OPCION_MULTIPLE';
+
+export type PreguntaFormularioAplicable = {
+	id: number;
+	pregunta: string;
+	tipoDato: TipoPreguntaFormulario;
+	opciones: string[] | null;
+	orden: number;
+	esObligatorio: boolean;
+	esPublico: boolean;
+};
+
+export type FormularioAplicable = {
+	id: number;
+	ambito: 'CATEGORIA' | 'SUBCATEGORIA';
+	idCategoria: number;
+	categoria: string;
+	idSubcategoria: number | null;
+	subcategoria: string | null;
+	titulo: string;
+	descripcion: string | null;
+	preguntas: PreguntaFormularioAplicable[];
+};
+
+export async function obtenerOpcionesRegistroApi(signal?: AbortSignal) {
+	return apiFetch<{ data: OpcionCategoriaRegistro[] }>('/api/mis-actores/opciones-registro', signal);
+}
+
+export async function obtenerFormulariosAplicablesApi(
+	input: { idCategoria: number; idSubcategoria?: number | null },
+	signal?: AbortSignal,
+) {
+	const params = new URLSearchParams({ idCategoria: String(input.idCategoria) });
+	appendOptionalParam(params, 'idSubcategoria', input.idSubcategoria);
+
+	return apiFetch<{ data: FormularioAplicable[] }>(
+		`/api/mis-actores/formularios-aplicables?${params.toString()}`,
+		signal,
+	);
+}
+
 export async function listarMisActoresApi(
 	input?: { busqueda?: string; idCategoria?: number; estado?: 'A' | 'P' | 'I'; limit?: number; offset?: number },
 	signal?: AbortSignal,

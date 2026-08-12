@@ -15,12 +15,16 @@ import {
 	listarEventosController,
 	listarIntegrantesController,
 	listarMisActoresController,
+	obtenerFormulariosAplicablesController,
+	obtenerOpcionesRegistroController,
 } from './mis-actores.controller.js';
 
 export const misActoresRouter = Router();
 
 misActoresRouter.use(verifyToken);
 
+misActoresRouter.get('/opciones-registro', obtenerOpcionesRegistroController);
+misActoresRouter.get('/formularios-aplicables', obtenerFormulariosAplicablesController);
 misActoresRouter.get('/', listarMisActoresController);
 misActoresRouter.post('/', crearActorController);
 misActoresRouter.put('/:id', editarActorController);
