@@ -7,6 +7,7 @@ import CollectionsIcon from '@mui/icons-material/Collections';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import GroupIcon from '@mui/icons-material/Group';
 import GridViewIcon from '@mui/icons-material/GridView';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -19,6 +20,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
 	Alert,
+	Avatar,
 	Box,
 	Button,
 	Card,
@@ -59,13 +61,17 @@ import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { type CategoriaIcono } from '../components/categoryIcon';
 import {
 	agregarEventoApi,
+	agregarIntegranteApi,
 	agregarItemPortafolioApi,
 	cambiarEstadoMiActorApi,
 	editarMiActorApi,
 	eliminarEventoApi,
+	eliminarIntegranteApi,
 	eliminarItemPortafolioApi,
 	eliminarMiActorApi,
+	listarIntegrantesApi,
 	listarMisActoresApi,
+	type IntegranteApiItem,
 } from '../api/actores';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
@@ -213,6 +219,15 @@ export default function MisActoresPage() {
 	const [newEventNombre, setNewEventNombre] = React.useState('');
 	const [newEventFecha, setNewEventFecha] = React.useState('');
 	const [newEventDesc, setNewEventDesc] = React.useState('');
+
+	// Members Management Modal
+	const [membersModalOpen, setMembersModalOpen] = React.useState(false);
+	const [targetMembersActor, setTargetMembersActor] = React.useState<MyActor | null>(null);
+	const [integrantesList, setIntegrantesList] = React.useState<IntegranteApiItem[]>([]);
+	const [newMemberEmail, setNewMemberEmail] = React.useState('');
+	const [newMemberRol, setNewMemberRol] = React.useState('Integrante');
+	const [membersLoading, setMembersLoading] = React.useState(false);
+	const [membersError, setMembersError] = React.useState<string | null>(null);
 
 	// Delete Modal
 	const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -562,6 +577,77 @@ export default function MisActoresPage() {
 		setSnackbarMessage('Evento eliminado.');
 	};
 
+	// Open Members Modal
+	const handleOpenMembersModal = async (actor: MyActor) => {
+		setTargetMembersActor(actor);
+		setNewMemberEmail('');
+		setNewMemberRol('Integrante');
+		setMembersError(null);
+		setMembersModalOpen(true);
+		setMembersLoading(true);
+
+		try {
+			const res = await listarIntegrantesApi(actor.id);
+			if (res?.data) {
+				setIntegrantesList(res.data);
+			} else {
+				setIntegrantesList([]);
+			}
+		} catch (err) {
+			console.log('Error al listar integrantes:', err);
+			setIntegrantesList([
+				{
+					idUsuario: currentUserId,
+					nombre: user?.nombre || 'Contacto',
+					apellido: user?.apellido || 'Principal',
+					email: user?.email || 'usuario@cultura.gob.ar',
+					rol: 'Contacto Principal',
+					esDueño: true,
+				},
+			]);
+		} finally {
+			setMembersLoading(false);
+		}
+	};
+
+	// Add Member by Email
+	const handleAddMember = async () => {
+		if (!targetMembersActor || !newMemberEmail.trim()) return;
+
+		setMembersError(null);
+		try {
+			await agregarIntegranteApi(targetMembersActor.id, {
+				email: newMemberEmail.trim(),
+				rol: newMemberRol.trim() || 'Integrante',
+			});
+
+			setSnackbarMessage('Integrante agregado correctamente.');
+			setNewMemberEmail('');
+			setNewMemberRol('Integrante');
+
+			const res = await listarIntegrantesApi(targetMembersActor.id);
+			if (res?.data) {
+				setIntegrantesList(res.data);
+			}
+		} catch (err) {
+			setMembersError(err instanceof Error ? err.message : 'Error al agregar integrante.');
+		}
+	};
+
+	// Delete Member
+	const handleDeleteMember = async (idUsuarioAEliminar: number) => {
+		if (!targetMembersActor) return;
+
+		setMembersError(null);
+		try {
+			await eliminarIntegranteApi(targetMembersActor.id, idUsuarioAEliminar);
+			setSnackbarMessage('Integrante eliminado.');
+			setIntegrantesList((prev) => prev.filter((m) => m.idUsuario !== idUsuarioAEliminar));
+		} catch (err) {
+			setMembersError(err instanceof Error ? err.message : 'Error al eliminar integrante.');
+		}
+	};
+
 	// Open Delete Confirmation Modal
 	const handleOpenDeleteModal = (actor: MyActor) => {
 		setTargetDeleteActor(actor);
@@ -642,6 +728,12 @@ export default function MisActoresPage() {
 							onClick={() => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}`)}
 						>
 							<VisibilityIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
+
+					<Tooltip title="Gestionar integrantes">
+						<IconButton size="small" color="secondary" onClick={() => handleOpenMembersModal(row)}>
+							<GroupIcon fontSize="small" />
 						</IconButton>
 					</Tooltip>
 
@@ -945,6 +1037,16 @@ export default function MisActoresPage() {
 										</Button>
 
 										<Stack direction="row" spacing={0.5}>
+											<Tooltip title="Gestionar integrantes">
+												<IconButton
+													size="small"
+													color="secondary"
+													onClick={() => handleOpenMembersModal(actor)}
+												>
+													<GroupIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+
 											<Tooltip title="Gestionar portafolio">
 												<IconButton
 													size="small"
@@ -1612,7 +1714,139 @@ export default function MisActoresPage() {
 			</Dialog>
 
 			{/* ========================================================================= */}
-			{/* MODAL: Borrar (Eliminar) - Confirmación Estricta                           */}
+			{/* MODAL: Gestionar Integrantes                                             */}
+			{/* ========================================================================= */}
+			<Dialog open={membersModalOpen} onClose={() => setMembersModalOpen(false)} maxWidth="md" fullWidth>
+				<DialogTitle fontWeight={700}>
+					Gestionar integrantes: {targetMembersActor?.nombre}
+				</DialogTitle>
+				<DialogContent dividers>
+					<Stack spacing={3}>
+						<Typography variant="body2" color="text.secondary">
+							Administrá los usuarios que forman parte de este colectivo, espacio o proyecto artístico.
+						</Typography>
+
+						{membersError && <Alert severity="error">{membersError}</Alert>}
+
+						{/* Form to add member */}
+						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
+							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
+								Agregar nuevo integrante por correo electrónico
+							</Typography>
+							<Grid container spacing={2} sx={{ mt: 0.5 }}>
+								<Grid size={{ xs: 12, md: 6 }}>
+									<TextField
+										fullWidth
+										size="small"
+										required
+										type="email"
+										label="Correo electrónico del usuario"
+										placeholder="ejemplo@correo.com"
+										value={newMemberEmail}
+										onChange={(e) => setNewMemberEmail(e.target.value)}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12, md: 6 }}>
+									<TextField
+										fullWidth
+										size="small"
+										label="Rol o función en el proyecto"
+										placeholder="Ej. Músico, Director, Prensa, Técnico"
+										value={newMemberRol}
+										onChange={(e) => setNewMemberRol(e.target.value)}
+									/>
+								</Grid>
+								<Grid size={{ xs: 12 }}>
+									<Button
+										variant="contained"
+										size="small"
+										startIcon={<GroupIcon />}
+										onClick={handleAddMember}
+										disabled={!newMemberEmail.trim()}
+									>
+										Agregar integrante
+									</Button>
+								</Grid>
+							</Grid>
+						</Paper>
+
+						{/* Members list */}
+						<Typography variant="subtitle2" fontWeight={700}>
+							Integrantes vinculados ({integrantesList.length})
+						</Typography>
+
+						{membersLoading ? (
+							<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+								<CircularProgress size={32} />
+							</Box>
+						) : integrantesList.length === 0 ? (
+							<Alert severity="info">No se encontraron integrantes registrados para este actor.</Alert>
+						) : (
+							<Stack spacing={1.5} divider={<Divider />}>
+								{integrantesList.map((member) => (
+									<Stack
+										key={member.idUsuario}
+										direction="row"
+										justifyContent="space-between"
+										alignItems="center"
+										spacing={2}
+									>
+										<Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+											<Avatar
+												sx={{
+													bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
+													width: 36,
+													height: 36,
+													fontSize: 14,
+												}}
+											>
+												{member.nombre.charAt(0)}
+												{member.apellido?.charAt(0) || ''}
+											</Avatar>
+											<Box sx={{ minWidth: 0 }}>
+												<Stack direction="row" spacing={1} alignItems="center">
+													<Typography variant="body2" fontWeight={600}>
+														{member.nombre} {member.apellido}
+													</Typography>
+													{member.esDueño && (
+														<Chip
+															label="Dueño Principal"
+															size="small"
+															color="primary"
+															sx={{ height: 20, fontSize: 10 }}
+														/>
+													)}
+												</Stack>
+												<Typography variant="caption" color="text.secondary">
+													📧 {member.email} · Rol: {member.rol}
+												</Typography>
+											</Box>
+										</Stack>
+
+										{!member.esDueño && (
+											<IconButton
+												size="small"
+												color="error"
+												onClick={() => handleDeleteMember(member.idUsuario)}
+											>
+												<DeleteOutlineIcon fontSize="small" />
+											</IconButton>
+										)}
+									</Stack>
+								))}
+							</Stack>
+						)}
+					</Stack>
+				</DialogContent>
+				<DialogActions sx={{ p: 2 }}>
+					<Button variant="contained" onClick={() => setMembersModalOpen(false)}>
+						Cerrar
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* ========================================================================= */}
+			{/* MODAL: Borrar (Eliminar) - Confirmación Estricta                          */}
 			{/* ========================================================================= */}
 			<Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} maxWidth="sm" fullWidth>
 				<DialogTitle fontWeight={700} color="error.main">

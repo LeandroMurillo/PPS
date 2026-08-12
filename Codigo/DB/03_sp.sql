@@ -3980,11 +3980,17 @@ BEGIN
 
     SELECT idUbicacion INTO vIdUbicacion FROM `Actores` WHERE idActor = pIdActor;
 
+    DELETE FROM `PreguntasOcultasActor` WHERE idActor = pIdActor;
+    DELETE FROM `RespuestasDefinitivasFormularios` WHERE idActor = pIdActor;
+    DELETE FROM `RespuestasFormularios` WHERE idActor = pIdActor;
+    DELETE FROM `Postulaciones` WHERE idActor = pIdActor;
     DELETE FROM `ItemsPortafolio` WHERE idActor = pIdActor;
     DELETE FROM `Eventos` WHERE idActor = pIdActor;
     DELETE FROM `Integrantes` WHERE idActor = pIdActor;
     DELETE FROM `Actores` WHERE idActor = pIdActor;
-    DELETE FROM `Ubicaciones` WHERE idUbicacion = vIdUbicacion;
+    IF vIdUbicacion IS NOT NULL THEN
+        DELETE FROM `Ubicaciones` WHERE idUbicacion = vIdUbicacion;
+    END IF;
 END //
 
 -- -----------------------------------------------------
@@ -4103,6 +4109,117 @@ BEGIN
     END IF;
 
     DELETE FROM `Eventos` WHERE idEvento = pIdEvento;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_listar_integrantes
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_listar_integrantes`(
+    IN pIdUsuario INT,
+    IN pIdActor INT
+)
+READS SQL DATA
+COMMENT 'Lista los integrantes de un actor cultural.'
+BEGIN
+    DECLARE vEsIntegrante INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsIntegrante
+    FROM `Integrantes`
+    WHERE idActor = pIdActor AND idUsuario = pIdUsuario;
+
+    IF vEsIntegrante = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para ver los integrantes de este actor.';
+    END IF;
+
+    SELECT
+        i.idUsuario,
+        u.nombre,
+        u.apellido,
+        u.email,
+        i.rol,
+        i.esDueño
+    FROM `Integrantes` i
+    JOIN `Usuarios` u ON i.idUsuario = u.idUsuario
+    WHERE i.idActor = pIdActor
+    ORDER BY i.esDueño DESC, u.nombre ASC;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_agregar_integrante
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_agregar_integrante`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pEmailUsuario VARCHAR(99),
+    IN pRol VARCHAR(45)
+)
+MODIFIES SQL DATA
+COMMENT 'Agrega a un usuario como integrante de un actor cultural mediante su correo electrónico.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+    DECLARE vTargetUsuarioId INT;
+    DECLARE vYaEsIntegrante INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para agregar integrantes a este actor.';
+    END IF;
+
+    SELECT idUsuario INTO vTargetUsuarioId
+    FROM `Usuarios`
+    WHERE email = LOWER(TRIM(pEmailUsuario));
+
+    IF vTargetUsuarioId IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se encontró ningún usuario registrado con ese correo electrónico.';
+    END IF;
+
+    SELECT COUNT(*) INTO vYaEsIntegrante
+    FROM `Integrantes`
+    WHERE idActor = pIdActor AND idUsuario = vTargetUsuarioId;
+
+    IF vYaEsIntegrante > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Este usuario ya es integrante del actor cultural.';
+    END IF;
+
+    INSERT INTO `Integrantes` (idUsuario, idActor, rol, esDueño)
+    VALUES (vTargetUsuarioId, pIdActor, COALESCE(NULLIF(TRIM(pRol), ''), 'Integrante'), 0);
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_eliminar_integrante
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_eliminar_integrante`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pIdUsuarioAEliminar INT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina a un integrante de un actor cultural.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+    DECLARE vEsDuenoTarget INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para eliminar integrantes de este actor.';
+    END IF;
+
+    SELECT COUNT(*) INTO vEsDuenoTarget
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuarioAEliminar AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDuenoTarget > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No se puede eliminar al dueño principal del actor cultural.';
+    END IF;
+
+    DELETE FROM `Integrantes`
+    WHERE idActor = pIdActor AND idUsuario = pIdUsuarioAEliminar;
 END //
 
 DELIMITER ;

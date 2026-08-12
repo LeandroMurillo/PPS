@@ -3,13 +3,16 @@ import { Router } from 'express';
 import { verifyToken } from '../../middleware/auth.middleware.js';
 import {
 	agregarEventoController,
+	agregarIntegranteController,
 	agregarItemPortafolioController,
 	cambiarEstadoActorController,
 	crearActorController,
 	editarActorController,
 	eliminarActorController,
 	eliminarEventoController,
+	eliminarIntegranteController,
 	eliminarItemPortafolioController,
+	listarIntegrantesController,
 	listarMisActoresController,
 } from './mis-actores.controller.js';
 
@@ -28,3 +31,7 @@ misActoresRouter.delete('/:id/portafolio/:idItem', eliminarItemPortafolioControl
 
 misActoresRouter.post('/:id/eventos', agregarEventoController);
 misActoresRouter.delete('/:id/eventos/:idEvento', eliminarEventoController);
+
+misActoresRouter.get('/:id/integrantes', listarIntegrantesController);
+misActoresRouter.post('/:id/integrantes', agregarIntegranteController);
+misActoresRouter.delete('/:id/integrantes/:idUsuario', eliminarIntegranteController);

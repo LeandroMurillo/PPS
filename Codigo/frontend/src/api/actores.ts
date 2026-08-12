@@ -277,3 +277,30 @@ export async function eliminarEventoApi(idActor: number, idEvento: number) {
 		method: 'DELETE',
 	});
 }
+
+export type IntegranteApiItem = {
+	idUsuario: number;
+	nombre: string;
+	apellido: string;
+	email: string;
+	rol: string;
+	esDueño: boolean;
+};
+
+export async function listarIntegrantesApi(idActor: number) {
+	return apiFetch<{ data: IntegranteApiItem[] }>(`/api/mis-actores/${idActor}/integrantes`);
+}
+
+export async function agregarIntegranteApi(idActor: number, input: { email: string; rol: string }) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(input),
+	});
+}
+
+export async function eliminarIntegranteApi(idActor: number, idUsuario: number) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes/${idUsuario}`, {
+		method: 'DELETE',
+	});
+}

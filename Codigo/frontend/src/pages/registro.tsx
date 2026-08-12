@@ -196,8 +196,8 @@ export default function RegistroPage() {
 			errors.fechaNacimiento = 'La fecha de nacimiento es obligatoria';
 		} else {
 			const birthDate = new Date(formData.fechaNacimiento);
-			if (isNaN(birthDate.getTime()) || birthDate >= new Date()) {
-				errors.fechaNacimiento = 'Ingrese una fecha de nacimiento válida y pasada';
+			if (isNaN(birthDate.getTime()) || birthDate >= new Date() || birthDate.getFullYear() < 1900) {
+				errors.fechaNacimiento = 'Ingrese una fecha de nacimiento válida (entre 1900 y la fecha actual)';
 			}
 		}
 

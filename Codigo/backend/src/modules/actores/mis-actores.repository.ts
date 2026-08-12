@@ -251,3 +251,51 @@ export async function eliminarEventoRepository(input: {
 		input.idEvento,
 	]);
 }
+
+const integranteRowSchema = z.object({
+	idUsuario: databaseIntegerSchema,
+	nombre: z.string(),
+	apellido: z.string(),
+	email: z.string(),
+	rol: z.string(),
+	esDueño: databaseIntegerSchema.transform((v) => Boolean(v)),
+});
+
+export async function listarIntegrantesRepository(input: {
+	idUsuario: number;
+	idActor: number;
+}) {
+	const procedureResult: unknown = await pool.query('CALL sp_actor_listar_integrantes(?, ?)', [
+		input.idUsuario,
+		input.idActor,
+	]);
+
+	const resultSet = getResultSet(procedureResult, 0, 'sp_actor_listar_integrantes');
+	return z.array(integranteRowSchema).parse(resultSet);
+}
+
+export async function agregarIntegranteRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	email: string;
+	rol: string;
+}) {
+	await pool.query('CALL sp_actor_agregar_integrante(?, ?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.email,
+		input.rol,
+	]);
+}
+
+export async function eliminarIntegranteRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	idUsuarioAEliminar: number;
+}) {
+	await pool.query('CALL sp_actor_eliminar_integrante(?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.idUsuarioAEliminar,
+	]);
+}

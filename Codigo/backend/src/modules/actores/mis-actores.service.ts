@@ -1,12 +1,15 @@
 import {
 	agregarEventoRepository,
+	agregarIntegranteRepository,
 	agregarItemPortafolioRepository,
 	cambiarEstadoActorRepository,
 	crearActorRepository,
 	editarActorRepository,
 	eliminarActorRepository,
 	eliminarEventoRepository,
+	eliminarIntegranteRepository,
 	eliminarItemPortafolioRepository,
+	listarIntegrantesRepository,
 	listarMisActoresRepository,
 } from './mis-actores.repository.js';
 
@@ -168,4 +171,28 @@ export async function eliminarEventoService(input: {
 	idEvento: number;
 }) {
 	await eliminarEventoRepository(input);
+}
+
+export async function listarIntegrantesService(input: {
+	idUsuario: number;
+	idActor: number;
+}) {
+	return listarIntegrantesRepository(input);
+}
+
+export async function agregarIntegranteService(input: {
+	idUsuario: number;
+	idActor: number;
+	email: string;
+	rol: string;
+}) {
+	await agregarIntegranteRepository(input);
+}
+
+export async function eliminarIntegranteService(input: {
+	idUsuario: number;
+	idActor: number;
+	idUsuarioAEliminar: number;
+}) {
+	await eliminarIntegranteRepository(input);
 }

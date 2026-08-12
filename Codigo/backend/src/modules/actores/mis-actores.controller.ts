@@ -3,13 +3,16 @@ import { z } from 'zod';
 
 import {
 	agregarEventoService,
+	agregarIntegranteService,
 	agregarItemPortafolioService,
 	cambiarEstadoActorService,
 	crearActorService,
 	editarActorService,
 	eliminarActorService,
 	eliminarEventoService,
+	eliminarIntegranteService,
 	eliminarItemPortafolioService,
+	listarIntegrantesService,
 	listarMisActoresService,
 } from './mis-actores.service.js';
 
@@ -270,6 +273,79 @@ export async function eliminarEventoController(req: Request, res: Response): Pro
 			error: {
 				code: 'BAD_REQUEST',
 				message: error instanceof Error ? error.message : 'Error al eliminar el evento.',
+			},
+		});
+	}
+}
+
+const integranteBodySchema = z.object({
+	email: z.string().trim().email('Correo electrónico inválido'),
+	rol: z.string().trim().min(1).max(45),
+});
+
+export async function listarIntegrantesController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+
+		const data = await listarIntegrantesService({
+			idUsuario: user.idUsuario,
+			idActor,
+		});
+
+		res.json({ data });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al listar los integrantes.',
+			},
+		});
+	}
+}
+
+export async function agregarIntegranteController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const body = integranteBodySchema.parse(req.body);
+
+		await agregarIntegranteService({
+			idUsuario: user.idUsuario,
+			idActor,
+			email: body.email,
+			rol: body.rol,
+		});
+
+		res.status(201).json({ message: 'Integrante agregado correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al agregar integrante.',
+			},
+		});
+	}
+}
+
+export async function eliminarIntegranteController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const idUsuarioAEliminar = Number(req.params.idUsuario);
+
+		await eliminarIntegranteService({
+			idUsuario: user.idUsuario,
+			idActor,
+			idUsuarioAEliminar,
+		});
+
+		res.json({ message: 'Integrante eliminado correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al eliminar el integrante.',
 			},
 		});
 	}
