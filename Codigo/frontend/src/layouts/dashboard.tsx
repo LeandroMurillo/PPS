@@ -12,6 +12,9 @@ import { useColorScheme } from '@mui/material/styles';
 import { Account } from '@toolpad/core/Account';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+
 function AppToolbarActions() {
 	return (
 		<Stack direction="row" alignItems="center">
@@ -42,7 +45,30 @@ function AppSidebarFooter({ mini }: { mini: boolean }) {
 	const effectiveMode = (mode === 'system' ? systemMode : mode) ?? 'light';
 	const isDarkMode = effectiveMode === 'dark';
 
-	if (mini) return null;
+	if (mini) {
+		return (
+			<Stack spacing={1} alignItems="center" sx={{ pb: 1, width: '100%' }}>
+				<Tooltip title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} placement="right" arrow>
+					<IconButton
+						onClick={() => setMode(isDarkMode ? 'light' : 'dark')}
+						aria-label={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+					>
+						{isDarkMode ? (
+							<DarkModeIcon color="primary" fontSize="small" />
+						) : (
+							<LightModeIcon color="primary" fontSize="small" />
+						)}
+					</IconButton>
+				</Tooltip>
+
+				<Tooltip title="Licencia" placement="right" arrow>
+					<IconButton component={Link} to="/licencia" aria-label="Licencia">
+						<InfoIcon color="primary" fontSize="small" />
+					</IconButton>
+				</Tooltip>
+			</Stack>
+		);
+	}
 
 	return (
 		<Box sx={{ px: 1, pb: 1, width: '100%', boxSizing: 'border-box' }}>
