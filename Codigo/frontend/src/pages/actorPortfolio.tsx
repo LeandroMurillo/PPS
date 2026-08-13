@@ -266,8 +266,9 @@ export default function ActorPortfolio() {
 
 			{actor.estado && actor.estado !== 'A' && (
 				<Alert severity="warning" sx={{ mb: 3 }}>
-					<strong>Vista Previa Exclusiva:</strong> La ficha cultural de <strong>{actor.nombre}</strong> está en estado{' '}
-					<strong>{actor.estado === 'P' ? 'Pendiente de revisión' : 'Inactivo'}</strong>. Esta vista previa únicamente es accesible para sus integrantes y moderadores.
+					<strong>Vista Previa Exclusiva:</strong> La ficha cultural de <strong>{actor.nombre}</strong> está
+					en estado <strong>{actor.estado === 'P' ? 'Pendiente de revisión' : 'Inactivo'}</strong>. Esta vista
+					previa únicamente es accesible para sus integrantes y moderadores.
 				</Alert>
 			)}
 

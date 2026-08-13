@@ -154,7 +154,15 @@ export default function AdminActoresPage() {
 		setPage(0);
 		setRows([]);
 		setSelectedActorIds([]);
-	}, [debouncedActorType, debouncedCategoryId, debouncedDepartment, debouncedSearch, debouncedState, sortBy, sortDir]);
+	}, [
+		debouncedActorType,
+		debouncedCategoryId,
+		debouncedDepartment,
+		debouncedSearch,
+		debouncedState,
+		sortBy,
+		sortDir,
+	]);
 
 	const loadActores = React.useCallback(
 		(signal?: AbortSignal) => {
@@ -416,7 +424,8 @@ export default function AdminActoresPage() {
 						>
 							{selectedRows.map((actor) => (
 								<li key={actor.id}>
-									<strong>{actor.nombre}</strong> ({actor.categoria.nombre} — {actor.ubicacion.departamento})
+									<strong>{actor.nombre}</strong> ({actor.categoria.nombre} —{' '}
+									{actor.ubicacion.departamento})
 								</li>
 							))}
 						</Box>

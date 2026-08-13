@@ -85,9 +85,7 @@ export function saveDniImage(base64Data: string): string | null {
 	}
 }
 
-export async function registrarUsuarioService(
-	input: RegistrarUsuarioBody,
-): Promise<RegistroUsuarioResponse> {
+export async function registrarUsuarioService(input: RegistrarUsuarioBody): Promise<RegistroUsuarioResponse> {
 	const contraseñaHash = hashPassword(input.contraseña);
 	const fotoDniUrl = saveDniImage(input.documentoIdentidad);
 

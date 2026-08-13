@@ -135,8 +135,8 @@ export default function AdminUsuarioDetallePage() {
 					? 'Se quitaron las categorías y el usuario dejó de ser moderador.'
 					: 'Rol y categorías de moderación actualizados.',
 				{
-				severity: 'success',
-				autoHideDuration: 3000,
+					severity: 'success',
+					autoHideDuration: 3000,
 				},
 			);
 		} catch (error) {
@@ -238,9 +238,7 @@ export default function AdminUsuarioDetallePage() {
 					<Button
 						variant="contained"
 						onClick={saveModeration}
-						disabled={
-							actionLoading || (usuario?.rol !== 'MODERADOR' && selectedCategories.length === 0)
-						}
+						disabled={actionLoading || (usuario?.rol !== 'MODERADOR' && selectedCategories.length === 0)}
 					>
 						Guardar
 					</Button>

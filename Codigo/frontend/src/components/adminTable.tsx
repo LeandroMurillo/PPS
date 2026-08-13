@@ -274,7 +274,11 @@ export default function AdminTable<T, S extends string>({
 								})}
 						{infiniteScroll && (
 							<TableRow ref={sentinelRef} sx={{ height: 24 }}>
-								<TableCell colSpan={columns.length + (selectable ? 1 : 0)} align="center" sx={{ borderBottom: 'none', py: 1 }}>
+								<TableCell
+									colSpan={columns.length + (selectable ? 1 : 0)}
+									align="center"
+									sx={{ borderBottom: 'none', py: 1 }}
+								>
 									{loading && rows.length > 0 && <CircularProgress size={24} />}
 								</TableCell>
 							</TableRow>

@@ -96,10 +96,7 @@ export const registrarUsuarioBodySchema = z.object({
 	contraseña: z
 		.string()
 		.min(6, 'La contraseña debe tener una longitud mínima de 6 caracteres')
-		.regex(
-			/^(?=.*[a-zA-Z])(?=.*\d)/,
-			'La contraseña debe incluir al menos una letra y un número',
-		),
+		.regex(/^(?=.*[a-zA-Z])(?=.*\d)/, 'La contraseña debe incluir al menos una letra y un número'),
 
 	CUIL: z
 		.string()
@@ -124,9 +121,7 @@ export const registrarUsuarioBodySchema = z.object({
 		)
 		.transform((val) => val ?? null),
 
-	documentoIdentidad: z
-		.string()
-		.min(1, 'Debe adjuntar la imagen de su documento de identidad'),
+	documentoIdentidad: z.string().min(1, 'Debe adjuntar la imagen de su documento de identidad'),
 });
 
 export type RegistrarUsuarioBody = z.infer<typeof registrarUsuarioBodySchema>;
@@ -173,9 +168,7 @@ export const loginBodySchema = z.object({
 				.email('El correo electrónico no tiene un formato válido')
 				.max(99, 'El correo electrónico debe tener como máximo 99 caracteres'),
 		),
-	contraseña: z
-		.string()
-		.min(1, 'La contraseña es obligatoria'),
+	contraseña: z.string().min(1, 'La contraseña es obligatoria'),
 });
 
 export type LoginBody = z.infer<typeof loginBodySchema>;
@@ -187,4 +180,3 @@ export const loginResponseSchema = z.object({
 });
 
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
-

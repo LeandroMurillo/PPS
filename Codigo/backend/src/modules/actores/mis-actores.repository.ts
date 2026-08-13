@@ -219,7 +219,9 @@ export async function obtenerFormulariosAplicablesRepository(input: {
 
 	const formulariosConPreguntas = await Promise.all(
 		cabeceras.map(async (cabecera) => {
-			const obtenerResult: unknown = await pool.query('CALL sp_admin_obtener_formulario(?)', [cabecera.idFormulario]);
+			const obtenerResult: unknown = await pool.query('CALL sp_admin_obtener_formulario(?)', [
+				cabecera.idFormulario,
+			]);
 			const preguntas = z
 				.array(preguntaFormularioAplicableDatabaseRowSchema)
 				.parse(getResultSet(obtenerResult, 1, 'sp_admin_obtener_formulario'))

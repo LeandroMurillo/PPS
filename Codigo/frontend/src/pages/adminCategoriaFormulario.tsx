@@ -121,7 +121,9 @@ export default function AdminCategoriaFormularioPage() {
 	const [editQuestionOptions, setEditQuestionOptions] = React.useState('');
 
 	const [replaceQuestionMode, setReplaceQuestionMode] = React.useState<'existente' | 'nueva'>('existente');
-	const [replaceSelectedBankQuestion, setReplaceSelectedBankQuestion] = React.useState<PreguntaBancoAdmin | null>(null);
+	const [replaceSelectedBankQuestion, setReplaceSelectedBankQuestion] = React.useState<PreguntaBancoAdmin | null>(
+		null,
+	);
 	const [replaceQuestionText, setReplaceQuestionText] = React.useState('');
 	const [replaceQuestionType, setReplaceQuestionType] = React.useState<TipoPreguntaAdmin>('TEXTO');
 	const [replaceQuestionOptions, setReplaceQuestionOptions] = React.useState('');
@@ -307,7 +309,11 @@ export default function AdminCategoriaFormularioPage() {
 					const directSubId = parseIdDesdeSlug(subcategoriaSlug);
 					if (directSubId) {
 						try {
-							const subRes = await obtenerSubcategoriaAdmin(resolvedCat.id, directSubId, controller.signal);
+							const subRes = await obtenerSubcategoriaAdmin(
+								resolvedCat.id,
+								directSubId,
+								controller.signal,
+							);
 							resolvedSub = subRes.data;
 						} catch {
 							// Ignorar error
@@ -357,7 +363,9 @@ export default function AdminCategoriaFormularioPage() {
 				if (resolvedSub) {
 					const subCanonical = buildSlugSinId(resolvedSub.nombre, resolvedSub.id);
 					if (categoriaSlug !== catCanonical || subcategoriaSlug !== subCanonical) {
-						navigate(`/categorias/${catCanonical}/subcategorias/${subCanonical}/formulario`, { replace: true });
+						navigate(`/categorias/${catCanonical}/subcategorias/${subCanonical}/formulario`, {
+							replace: true,
+						});
 					}
 				} else if (categoriaSlug !== catCanonical) {
 					navigate(`/categorias/${catCanonical}/formulario`, { replace: true });
@@ -637,12 +645,21 @@ export default function AdminCategoriaFormularioPage() {
 														{question.pregunta}
 													</Typography>
 													{question.opciones && (
-														<Typography variant="caption" color="text.secondary" display="block">
+														<Typography
+															variant="caption"
+															color="text.secondary"
+															display="block"
+														>
 															{question.opciones.join(' · ')}
 														</Typography>
 													)}
 													{question.preguntaReemplazada && (
-														<Typography variant="caption" color="primary.main" display="block" sx={{ mt: 0.5 }}>
+														<Typography
+															variant="caption"
+															color="primary.main"
+															display="block"
+															sx={{ mt: 0.5 }}
+														>
 															Reemplaza a: «{question.preguntaReemplazada}»
 														</Typography>
 													)}
@@ -749,7 +766,9 @@ export default function AdminCategoriaFormularioPage() {
 											labelId="question-type-label"
 											label="Tipo de respuesta"
 											value={questionType}
-											onChange={(event) => setQuestionType(event.target.value as TipoPreguntaAdmin)}
+											onChange={(event) =>
+												setQuestionType(event.target.value as TipoPreguntaAdmin)
+											}
 										>
 											{questionTypes.map((type) => (
 												<MenuItem key={type} value={type}>
@@ -808,7 +827,9 @@ export default function AdminCategoriaFormularioPage() {
 									{selectedBankQuestion && (
 										<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 											<Stack spacing={1}>
-												<Typography variant="subtitle2">Detalle de la pregunta seleccionada</Typography>
+												<Typography variant="subtitle2">
+													Detalle de la pregunta seleccionada
+												</Typography>
 												<Typography variant="body2" fontWeight={600}>
 													{selectedBankQuestion.pregunta}
 												</Typography>
@@ -886,7 +907,12 @@ export default function AdminCategoriaFormularioPage() {
 				</DialogActions>
 			</Dialog>
 
-			<Dialog open={editQuestionDialogOpen} onClose={() => setEditQuestionDialogOpen(false)} maxWidth="sm" fullWidth>
+			<Dialog
+				open={editQuestionDialogOpen}
+				onClose={() => setEditQuestionDialogOpen(false)}
+				maxWidth="sm"
+				fullWidth
+			>
 				<form onSubmit={(event) => void handleSaveEditQuestion(event)}>
 					<DialogTitle>Editar / Reemplazar pregunta</DialogTitle>
 					<DialogContent dividers>
@@ -908,7 +934,9 @@ export default function AdminCategoriaFormularioPage() {
 							{editMode === 'global' ? (
 								<Stack spacing={2}>
 									<Alert severity="info">
-										Modificar la pregunta la actualizará globalmente en el banco. Si la pregunta ya posee respuestas registradas, no se permitirá modificar el tipo de dato ni las opciones.
+										Modificar la pregunta la actualizará globalmente en el banco. Si la pregunta ya
+										posee respuestas registradas, no se permitirá modificar el tipo de dato ni las
+										opciones.
 									</Alert>
 									<TextField
 										label="Pregunta"
@@ -923,7 +951,9 @@ export default function AdminCategoriaFormularioPage() {
 											labelId="edit-question-type-label"
 											value={editQuestionType}
 											label="Tipo de dato"
-											onChange={(event) => setEditQuestionType(event.target.value as TipoPreguntaAdmin)}
+											onChange={(event) =>
+												setEditQuestionType(event.target.value as TipoPreguntaAdmin)
+											}
 										>
 											{questionTypes.map((type) => (
 												<MenuItem key={type} value={type}>
@@ -932,7 +962,8 @@ export default function AdminCategoriaFormularioPage() {
 											))}
 										</Select>
 									</FormControl>
-									{(editQuestionType === 'OPCION_UNICA' || editQuestionType === 'OPCION_MULTIPLE') && (
+									{(editQuestionType === 'OPCION_UNICA' ||
+										editQuestionType === 'OPCION_MULTIPLE') && (
 										<TextField
 											label="Opciones (una por línea)"
 											required
@@ -947,7 +978,8 @@ export default function AdminCategoriaFormularioPage() {
 							) : (
 								<Stack spacing={2}>
 									<Alert severity="warning">
-										Desactivará la pregunta actual en este formulario y la reemplazará en el mismo orden, conservando la trazabilidad histórica de respuestas.
+										Desactivará la pregunta actual en este formulario y la reemplazará en el mismo
+										orden, conservando la trazabilidad histórica de respuestas.
 									</Alert>
 
 									<ToggleButtonGroup
@@ -966,7 +998,9 @@ export default function AdminCategoriaFormularioPage() {
 									{replaceQuestionMode === 'existente' ? (
 										<Autocomplete
 											options={availableBankQuestions}
-											getOptionLabel={(option) => `${option.pregunta} (${questionTypeLabels[option.tipoDato]})`}
+											getOptionLabel={(option) =>
+												`${option.pregunta} (${questionTypeLabels[option.tipoDato]})`
+											}
 											value={replaceSelectedBankQuestion}
 											onChange={(_event, newValue) => setReplaceSelectedBankQuestion(newValue)}
 											loading={loadingBank}
@@ -979,7 +1013,9 @@ export default function AdminCategoriaFormularioPage() {
 														...params.InputProps,
 														endAdornment: (
 															<React.Fragment>
-																{loadingBank ? <CircularProgress color="inherit" size={20} /> : null}
+																{loadingBank ? (
+																	<CircularProgress color="inherit" size={20} />
+																) : null}
 																{params.InputProps.endAdornment}
 															</React.Fragment>
 														),
@@ -1002,7 +1038,9 @@ export default function AdminCategoriaFormularioPage() {
 													labelId="replace-question-type-label"
 													value={replaceQuestionType}
 													label="Tipo de dato"
-													onChange={(event) => setReplaceQuestionType(event.target.value as TipoPreguntaAdmin)}
+													onChange={(event) =>
+														setReplaceQuestionType(event.target.value as TipoPreguntaAdmin)
+													}
 												>
 													{questionTypes.map((type) => (
 														<MenuItem key={type} value={type}>
@@ -1011,7 +1049,8 @@ export default function AdminCategoriaFormularioPage() {
 													))}
 												</Select>
 											</FormControl>
-											{(replaceQuestionType === 'OPCION_UNICA' || replaceQuestionType === 'OPCION_MULTIPLE') && (
+											{(replaceQuestionType === 'OPCION_UNICA' ||
+												replaceQuestionType === 'OPCION_MULTIPLE') && (
 												<TextField
 													label="Opciones (una por línea)"
 													required
@@ -1030,7 +1069,9 @@ export default function AdminCategoriaFormularioPage() {
 											control={
 												<Checkbox
 													checked={replaceQuestionRequired}
-													onChange={(event) => setReplaceQuestionRequired(event.target.checked)}
+													onChange={(event) =>
+														setReplaceQuestionRequired(event.target.checked)
+													}
 												/>
 											}
 											label="Obligatoria"

@@ -854,9 +854,7 @@ export async function asociarPreguntaFormularioAdminRepository(
 	return formulario;
 }
 
-export async function listarPreguntasAdminRepository(
-	query: ListarPreguntasAdminQuery,
-): Promise<PreguntaBancoAdmin[]> {
+export async function listarPreguntasAdminRepository(query: ListarPreguntasAdminQuery): Promise<PreguntaBancoAdmin[]> {
 	let sql = 'SELECT idPregunta AS id, pregunta, tipoDato, opciones FROM `Preguntas`';
 	const params: unknown[] = [];
 
@@ -970,4 +968,3 @@ export async function crearPreguntaBancoAdminRepository(
 		opciones: row.opciones,
 	};
 }
-

@@ -231,4 +231,3 @@ describe('consultas administrativas', () => {
 		expect(asociarPreguntaFormularioAdminBodySchema.safeParse({ idPregunta: '0' }).success).toBe(false);
 	});
 });
-

@@ -130,4 +130,3 @@ export function registerAuthOpenApi(): void {
 		},
 	});
 }
-

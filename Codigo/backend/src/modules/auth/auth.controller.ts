@@ -25,10 +25,7 @@ export const registrarUsuarioController: RequestHandler = async (request, respon
 		const result = await registrarUsuarioService(validationResult.data);
 		response.status(201).json(result);
 	} catch (error) {
-		if (
-			error instanceof Error &&
-			(error.message.includes('registrado') || error.message.includes('existe'))
-		) {
+		if (error instanceof Error && (error.message.includes('registrado') || error.message.includes('existe'))) {
 			response.status(409).json({
 				error: {
 					code: 'USER_ALREADY_EXISTS',
@@ -79,7 +76,8 @@ export const loginController: RequestHandler = async (request, response, next) =
 				response.status(401).json({
 					error: {
 						code: 'ACCOUNT_PENDING',
-						message: 'Su cuenta se encuentra pendiente de activación. Por favor, revise su correo electrónico.',
+						message:
+							'Su cuenta se encuentra pendiente de activación. Por favor, revise su correo electrónico.',
 					},
 				});
 				return;
@@ -108,4 +106,3 @@ export const listarActividadesArcaController: RequestHandler = async (_request, 
 		next(error);
 	}
 };
-

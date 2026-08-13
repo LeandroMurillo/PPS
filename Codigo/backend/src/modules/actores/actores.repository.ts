@@ -257,7 +257,10 @@ export async function listarActoresRepository(
 	};
 }
 
-export async function obtenerActorRepository(id: number, idUsuario?: number | null): Promise<ObtenerActorRepositoryResult> {
+export async function obtenerActorRepository(
+	id: number,
+	idUsuario?: number | null,
+): Promise<ObtenerActorRepositoryResult> {
 	const procedureResult: unknown = await pool.query('CALL sp_publico_obtener_actor(?, ?)', [id, idUsuario ?? null]);
 
 	const actorResultSet = getResultSet(procedureResult, 0, 'sp_publico_obtener_actor');

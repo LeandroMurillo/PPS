@@ -1172,7 +1172,9 @@ export default function MisActoresPage() {
 						emptyMessage="No tenés actores cargados con esos criterios."
 						onPageChange={() => {}}
 						onSortChange={() => {}}
-						onRowClick={(row) => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)}
+						onRowClick={(row) =>
+							navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)
+						}
 					/>
 				)}
 			</Stack>

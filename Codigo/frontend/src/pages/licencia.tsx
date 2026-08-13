@@ -32,7 +32,7 @@ export default function Licencia() {
 				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',
 			}}
 		>
-			<Container maxWidth={false} disableGutters sx={{ width: '100%', maxWidth: 560 }}>
+			<Container maxWidth={false} disableGutters sx={{ width: '100%', maxWidth: 700 }}>
 				<Paper
 					elevation={0}
 					sx={{
@@ -43,49 +43,50 @@ export default function Licencia() {
 						backgroundColor: isDarkMode ? '#121212' : '#fdfdfc',
 					}}
 				>
-				<Box sx={{ textAlign: 'center', mb: 3 }}>
-					<Typography variant="h2" component="div" sx={{ mb: 2 }}>
-						{emoji}
+					<Box sx={{ textAlign: 'center', mb: 3 }}>
+						<Typography variant="h2" component="div" sx={{ mb: 2 }}>
+							{emoji}
+						</Typography>
+						<Typography
+							variant="h5"
+							component="h1"
+							gutterBottom
+							fontWeight="600"
+							color={isDarkMode ? '#ffffff' : '#111111'}
+						>
+							Mosaico Cultural
+						</Typography>
+					</Box>
+
+					<Typography variant="body2" color="text.secondary" paragraph>
+						Detrás de cada rincón de nuestro territorio, hay una historia que contar y un talento por
+						descubrir.
 					</Typography>
-					<Typography
-						variant="h5"
-						component="h1"
-						gutterBottom
-						fontWeight="600"
-						color={isDarkMode ? '#ffffff' : '#111111'}
+
+					<Typography variant="body2" color="text.secondary" paragraph>
+						<strong>Copyright &copy; 2026 Leandro Murillo y César Ezequiel Herrera</strong>
+					</Typography>
+
+					<Typography variant="body2" color="text.secondary" paragraph>
+						Este producto incluye software desarrollado por
+					</Typography>
+					<Typography variant="body2" color="text.secondary" paragraph>
+						Leandro Murillo y César Ezequiel Herrera.
+					</Typography>
+
+					<Box
+						sx={{
+							backgroundColor: isDarkMode ? '#1e1e1e' : '#f9f9f9',
+							p: 2,
+							borderRadius: 1,
+							overflowX: 'auto',
+							fontFamily: 'monospace',
+							fontSize: '0.8rem',
+							color: isDarkMode ? '#cccccc' : '#444444',
+						}}
 					>
-						Mosaico Cultural
-					</Typography>
-				</Box>
-
-				<Typography variant="body2" color="text.secondary" paragraph>
-					Detrás de cada rincón de nuestro territorio, hay una historia que contar y un talento por descubrir.
-				</Typography>
-
-				<Typography variant="body2" color="text.secondary" paragraph>
-					<strong>Copyright &copy; 2026 Leandro Murillo y César Ezequiel Herrera</strong>
-				</Typography>
-
-				<Typography variant="body2" color="text.secondary" paragraph>
-					Este producto incluye software desarrollado por
-				</Typography>
-				<Typography variant="body2" color="text.secondary" paragraph>
-					Leandro Murillo y César Ezequiel Herrera.
-				</Typography>
-
-				<Box
-					sx={{
-						backgroundColor: isDarkMode ? '#1e1e1e' : '#f9f9f9',
-						p: 2,
-						borderRadius: 1,
-						overflowX: 'auto',
-						fontFamily: 'monospace',
-						fontSize: '0.8rem',
-						color: isDarkMode ? '#cccccc' : '#444444',
-					}}
-				>
-					<Typography variant="body2" component="pre" sx={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-						{`Licensed under the Apache License, Version 2.0 (the "License");
+						<Typography variant="body2" component="pre" sx={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+							{`Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
@@ -96,8 +97,8 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.`}
-					</Typography>
-				</Box>
+						</Typography>
+					</Box>
 				</Paper>
 			</Container>
 		</Box>

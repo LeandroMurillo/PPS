@@ -207,15 +207,7 @@ export type OpcionCategoriaRegistro = {
 };
 
 export type TipoPreguntaFormulario =
-	| 'TEXTO'
-	| 'NUMERO'
-	| 'BOOLEANO'
-	| 'FECHA'
-	| 'URL'
-	| 'EMAIL'
-	| 'TELEFONO'
-	| 'OPCION_UNICA'
-	| 'OPCION_MULTIPLE';
+	'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
 
 export type PreguntaFormularioAplicable = {
 	id: number;

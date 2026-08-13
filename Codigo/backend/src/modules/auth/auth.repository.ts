@@ -32,7 +32,11 @@ const usuarioDBRowSchema = z.object({
 	nacionalidad: z.string(),
 	CUIL: z.string(),
 	actividadesArcaCodigo: z.string().nullable(),
-	fotoDniUrl: z.string().nullable().optional().transform((val) => val ?? null),
+	fotoDniUrl: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((val) => val ?? null),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.union([z.string(), z.date()]).transform((val) => {
@@ -56,26 +60,21 @@ export type RegistrarUsuarioRepositoryInput = Omit<RegistrarUsuarioBody, 'contra
 	fotoDniUrl: string | null;
 };
 
-export async function registrarUsuarioRepository(
-	input: RegistrarUsuarioRepositoryInput,
-): Promise<UsuarioRegistrado> {
+export async function registrarUsuarioRepository(input: RegistrarUsuarioRepositoryInput): Promise<UsuarioRegistrado> {
 	const procedureName = 'sp_publico_registrar_usuario';
 
-	const result: unknown = await pool.query(
-		'CALL sp_publico_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-		[
-			input.nombre,
-			input.apellido,
-			input.genero,
-			input.fechaNacimiento,
-			input.nacionalidad,
-			input.email,
-			input.contraseñaHash,
-			input.CUIL,
-			input.actividadesArcaCodigo ?? null,
-			input.fotoDniUrl ?? null,
-		],
-	);
+	const result: unknown = await pool.query('CALL sp_publico_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+		input.nombre,
+		input.apellido,
+		input.genero,
+		input.fechaNacimiento,
+		input.nacionalidad,
+		input.email,
+		input.contraseñaHash,
+		input.CUIL,
+		input.actividadesArcaCodigo ?? null,
+		input.fotoDniUrl ?? null,
+	]);
 
 	const rows = z.array(usuarioDBRowSchema).parse(getResultSet(result, 0, procedureName));
 
@@ -113,4 +112,3 @@ export async function listarActividadesArcaRepository(): Promise<ActividadArca[]
 
 	return rows;
 }
-
