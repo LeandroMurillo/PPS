@@ -1,49 +1,101 @@
 services:
   # ----------------------------------------
-  # Backend Service
+  # MariaDB Database Service (Local Dev)
+  # ----------------------------------------
+  db:
+    image: mariadb:lts-noble
+    container_name: cultura-db-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-eze}
+      MYSQL_DATABASE: ${DB_NAME:-cultura}
+      MYSQL_USER: ${DB_USER:-keze}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-eze}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./DB/01_cultura.sql:/docker-entrypoint-initdb.d/01_cultura.sql
+      - ./DB/02_checks.sql:/docker-entrypoint-initdb.d/02_checks.sql
+      - ./DB/03_sp.sql:/docker-entrypoint-initdb.d/03_sp.sql
+      - ./DB/04_datos.sql:/docker-entrypoint-initdb.d/04_datos.sql
+      - ./DB/05_exportar_listado_sp.sql:/docker-entrypoint-initdb.d/05_exportar_listado_sp.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ----------------------------------------
+  # Backend Service (Development)
   # ----------------------------------------
   backend:
-    container_name: cultura-backend
+    container_name: cultura-backend-dev
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3000
-      CORS_ORIGIN: ${CORS_ORIGIN:-${PUBLIC_BASE_URL}}
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-10}
-      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: http://localhost:5173
+      PUBLIC_BASE_URL: http://localhost:3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-keze}
+      DB_PASSWORD: ${DB_PASSWORD:-eze}
+      DB_NAME: ${DB_NAME:-cultura}
+      DB_CONNECTION_LIMIT: 10
+      JWT_SECRET: ${JWT_SECRET:-mosaico_cultural_jwt_secret_key_dev_mode_2026}
+    ports:
+      - "3000:3000"
     volumes:
+      - /app/node_modules
       - actor-uploads:/app/uploads
-    networks:
-      - default
-      - coolify
+    depends_on:
+      db:
+        condition: service_healthy
+    develop:
+      watch:
+        - path: ./backend/package.json
+          action: rebuild
+        - path: ./backend/package-lock.json
+          action: rebuild
+        - path: ./backend
+          target: /app
+          action: sync
 
   # ----------------------------------------
-  # Frontend Service (Servido por NGINX + Proxy para /api)
+  # Frontend Service (Development with Vite)
   # ----------------------------------------
   frontend:
-    container_name: cultura-frontend
+    container_name: cultura-frontend-dev
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    restart: unless-stopped
+      target: development
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:3000
+    volumes:
+      - /app/node_modules
     depends_on:
       - backend
-    networks:
-      - default
+    develop:
+      watch:
+        - path: ./frontend/package.json
+          action: rebuild
+        - path: ./frontend/package-lock.json
+          action: rebuild
+        - path: ./frontend
+          target: /app
+          action: sync
 
 volumes:
+  mariadb-data:
   actor-uploads:
 
-networks:
-  coolify:
-    external: true
 
