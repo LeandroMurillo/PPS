@@ -90,7 +90,7 @@ export default function ListaActoresPublica() {
 
 		async function loadActors() {
 			try {
-				if (page === 0) setCargando(true);
+				setCargando(true);
 				setError(null);
 
 				const result = await listarActores(
@@ -105,7 +105,12 @@ export default function ListaActoresPublica() {
 				);
 
 				// Append if loading more, replace if starting fresh
-				setActores((prev) => (page === 0 ? result.data : [...prev, ...result.data]));
+				setActores((prev) => {
+					if (page === 0) return result.data;
+					const existingIds = new Set(prev.map((a) => a.id));
+					const newUnique = result.data.filter((a) => !existingIds.has(a.id));
+					return [...prev, ...newUnique];
+				});
 				setTotal(result.pagination.total);
 				setHasNext(result.pagination.hasNext);
 			} catch (error) {

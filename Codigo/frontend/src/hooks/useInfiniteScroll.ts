@@ -15,22 +15,20 @@ export function useInfiniteScroll(
 	sentinelRef: React.RefObject<HTMLElement | null>,
 	{ hasNext, cargando, onLoadMore, rootMargin = '300px' }: UseInfiniteScrollOptions,
 ) {
-	const fetchEnCursoRef = useRef(false);
-
+	const onLoadMoreRef = useRef(onLoadMore);
 	useEffect(() => {
-		fetchEnCursoRef.current = cargando;
-	}, [cargando]);
+		onLoadMoreRef.current = onLoadMore;
+	}, [onLoadMore]);
 
 	useEffect(() => {
 		const sentinel = sentinelRef.current;
-		if (!sentinel || !hasNext) return;
+		if (!sentinel || !hasNext || cargando) return;
 
 		const observer = new IntersectionObserver(
 			(entries) => {
 				const entry = entries[0];
-				if (entry?.isIntersecting && hasNext && !fetchEnCursoRef.current) {
-					fetchEnCursoRef.current = true;
-					onLoadMore();
+				if (entry?.isIntersecting && hasNext && !cargando) {
+					onLoadMoreRef.current();
 				}
 			},
 			{ rootMargin },
@@ -41,5 +39,5 @@ export function useInfiniteScroll(
 		return () => {
 			observer.disconnect();
 		};
-	}, [sentinelRef, hasNext, onLoadMore, rootMargin]);
+	}, [sentinelRef, hasNext, cargando, rootMargin]);
 }
