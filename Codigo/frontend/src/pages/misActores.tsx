@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
 
 import AddIcon from '@mui/icons-material/Add';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -178,6 +178,7 @@ const departamentos = [
 
 export default function MisActoresPage() {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const { user } = useAuth();
 
 	const currentUserId = user?.idUsuario ?? 1;
@@ -268,6 +269,17 @@ export default function MisActoresPage() {
 
 	// Toast notification
 	const [snackbarMessage, setSnackbarMessage] = React.useState<string | null>(null);
+
+	React.useEffect(() => {
+		const navigationState = location.state as { toastMessage?: unknown } | null;
+		if (typeof navigationState?.toastMessage !== 'string') return;
+
+		setSnackbarMessage(navigationState.toastMessage);
+		navigate(`${location.pathname}${location.search}${location.hash}`, {
+			replace: true,
+			state: null,
+		});
+	}, [location.hash, location.pathname, location.search, location.state, navigate]);
 
 	const debouncedSearch = useDebouncedValue(search);
 	const selectedEditCategory = React.useMemo(
@@ -2163,6 +2175,7 @@ export default function MisActoresPage() {
 				autoHideDuration={4000}
 				onClose={() => setSnackbarMessage(null)}
 				message={snackbarMessage}
+				anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
 			/>
 		</PageContainer>
 	);

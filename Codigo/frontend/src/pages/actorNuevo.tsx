@@ -56,6 +56,7 @@ import {
 
 import {
 	crearMiActorApi,
+	listarMisActoresApi,
 	obtenerFormulariosAplicablesApi,
 	obtenerOpcionesRegistroApi,
 	type FormularioAplicable,
@@ -186,12 +187,41 @@ export default function ActorNuevoPage() {
 	const [portfolioItems, setPortfolioItems] = useState<PortfolioItemDraft[]>([]);
 	const [validationAttempted, setValidationAttempted] = useState(false);
 	const [formValidationAttempted, setFormValidationAttempted] = useState(false);
-	const [submitted, setSubmitted] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState('');
+	const [pendingActorName, setPendingActorName] = useState<string | null>(null);
+	const [pendingActorCheckLoading, setPendingActorCheckLoading] = useState(true);
+	const [pendingActorCheckError, setPendingActorCheckError] = useState('');
+	const [pendingActorCheckAttempt, setPendingActorCheckAttempt] = useState(0);
 	const selectedCategory = categories.find((item) => item.id === categoryId) ?? null;
 	const selectedSubcategory =
 		selectedCategory?.subcategorias.find((item) => item.id === subcategoryId) ?? null;
+
+	useEffect(() => {
+		const controller = new AbortController();
+		setPendingActorCheckLoading(true);
+		setPendingActorCheckError('');
+
+		void listarMisActoresApi({ estado: 'P', limit: 1 }, controller.signal)
+			.then((response) => {
+				setPendingActorName(response.data[0]?.nombre ?? null);
+			})
+			.catch((error: unknown) => {
+				if (!controller.signal.aborted) {
+					setPendingActorName(null);
+					setPendingActorCheckError(
+						error instanceof Error
+							? error.message
+							: 'No se pudo comprobar si tenés actores pendientes de revisión.',
+					);
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) setPendingActorCheckLoading(false);
+			});
+
+		return () => controller.abort();
+	}, [pendingActorCheckAttempt]);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -325,10 +355,6 @@ export default function ActorNuevoPage() {
 	};
 
 	const handleSubmit = async () => {
-		if (submitted) {
-			navigate('/mis-actores');
-			return;
-		}
 		if (submitting || categoryId === null || !generalData.ubicacion || actorType === null) return;
 
 		setSubmitting(true);
@@ -374,8 +400,10 @@ export default function ActorNuevoPage() {
 				})),
 			});
 
-			setSubmitted(true);
-			scrollToTop();
+			navigate('/mis-actores', {
+				replace: true,
+				state: { toastMessage: 'El actor fue enviado a revisión correctamente.' },
+			});
 		} catch (error) {
 			setSubmissionError(
 				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.',
@@ -385,6 +413,58 @@ export default function ActorNuevoPage() {
 			setSubmitting(false);
 		}
 	};
+
+	if (pendingActorCheckLoading || pendingActorCheckError || pendingActorName) {
+		return (
+			<Box
+				sx={{
+					width: '100%',
+					minHeight: 'calc(100vh - 64px)',
+					bgcolor: 'background.default',
+					px: { xs: 2, md: 3 },
+					py: { xs: 2, md: 3 },
+					boxSizing: 'border-box',
+				}}
+			>
+				<Box sx={{ maxWidth: 1240, mx: 'auto' }}>
+					<Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 2.5 }}>
+						Registrar actor cultural
+					</Typography>
+					<Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, md: 3 } }}>
+						{pendingActorCheckLoading ? (
+							<Stack direction="row" spacing={2} alignItems="center">
+								<CircularProgress size={24} />
+								<Typography>Comprobando si podés registrar un nuevo actor…</Typography>
+							</Stack>
+						) : pendingActorCheckError ? (
+							<Stack spacing={2} alignItems="flex-start">
+								<Alert severity="error" variant="outlined" sx={{ width: '100%' }}>
+									<strong>No se pudo comprobar si podés registrar un nuevo actor.</strong>{' '}
+									{pendingActorCheckError}
+								</Alert>
+								<Button variant="contained" onClick={() => setPendingActorCheckAttempt((value) => value + 1)}>
+									Reintentar
+								</Button>
+							</Stack>
+						) : (
+							<Stack spacing={2} alignItems="flex-start">
+								<Alert severity="warning" variant="outlined" sx={{ width: '100%' }}>
+									<Typography fontWeight={700} sx={{ mb: 0.5 }}>
+										No podés agregar un nuevo actor cultural
+									</Typography>
+									Ya tenés a <strong>“{pendingActorName}”</strong> pendiente de revisión. Vas a poder
+									registrar otro actor cuando finalice esa revisión.
+								</Alert>
+								<Button variant="contained" onClick={() => navigate('/mis-actores')}>
+									Ir a Mis actores
+								</Button>
+							</Stack>
+						)}
+					</Paper>
+				</Box>
+			</Box>
+		);
+	}
 
 	return (
 		<Box
@@ -492,7 +572,6 @@ export default function ActorNuevoPage() {
 										forms={forms}
 										answers={answers}
 										portfolioItems={portfolioItems}
-										submitted={submitted}
 										submissionError={submissionError}
 									/>
 								)}
@@ -508,7 +587,7 @@ export default function ActorNuevoPage() {
 									variant="outlined"
 									startIcon={<ArrowBackIcon />}
 									onClick={handleBack}
-									disabled={activeStep === 0 || submitted || submitting}
+									disabled={activeStep === 0 || submitting}
 								>
 									Atrás
 								</Button>
@@ -532,11 +611,7 @@ export default function ActorNuevoPage() {
 										onClick={() => void handleSubmit()}
 										disabled={submitting}
 									>
-										{submitting
-											? 'Guardando…'
-											: submitted
-												? 'Ir a Mis actores'
-												: 'Enviar a revisión'}
+										{submitting ? 'Guardando…' : 'Enviar a revisión'}
 									</Button>
 								)}
 							</Stack>
@@ -1080,7 +1155,6 @@ function PublicProfilePreview({
 	forms,
 	answers,
 	portfolioItems,
-	submitted,
 	submissionError,
 }: {
 	generalData: GeneralActorData;
@@ -1089,7 +1163,6 @@ function PublicProfilePreview({
 	forms: FormularioAplicable[];
 	answers: Record<string, FormAnswer>;
 	portfolioItems: PortfolioItemDraft[];
-	submitted: boolean;
 	submissionError: string;
 }) {
 	const images = [
@@ -1118,16 +1191,8 @@ function PublicProfilePreview({
 					<strong>No se pudo guardar la solicitud.</strong> {submissionError}
 				</Alert>
 			)}
-			<Alert severity={submitted ? 'success' : 'warning'} variant="outlined">
-				{submitted ? (
-					<>
-						<strong>Solicitud enviada.</strong> El perfil quedó pendiente de revisión antes de publicarse.
-					</>
-				) : (
-					<>
-						<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública.
-					</>
-				)}
+			<Alert severity="warning" variant="outlined">
+				<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública.
 			</Alert>
 
 			<Box sx={{ px: { xs: 0, md: 2 }, py: 1 }}>
