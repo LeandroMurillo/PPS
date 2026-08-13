@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -58,26 +58,6 @@ const STEP_DESCRIPTIONS = ['Contanos los datos principales de tu actividad, proy
 type ActorType = 'persona' | 'colectivo' | 'institucion';
 
 type FormAnswer = string | string[];
-
-const localitiesMap: Record<string, string[]> = {
-	Burruyacú: ['Burruyacú', 'El Chañar', 'El Naranjo', 'Garmendia'],
-	Capital: ['San Miguel de Tucumán'],
-	Chicligasta: ['Concepción', 'Alpachiri', 'Arcadia'],
-	'Cruz Alta': ['Banda del Río Salí', 'Alderetes', 'Colombres', 'Los Ralos', 'Lastenia'],
-	Famaillá: ['Famaillá'],
-	Graneros: ['Graneros', 'Taco Ralo'],
-	'Juan Bautista Alberdi': ['Juan Bautista Alberdi', 'Villa Belgrano'],
-	'La Cocha': ['La Cocha', 'San José de La Cocha'],
-	Leales: ['Bella Vista', 'Estación Aráoz', 'Los Gómez'],
-	Lules: ['Lules', 'El Manantial', 'San Pablo'],
-	Monteros: ['Monteros', 'Acheral', 'Río Seco', 'Villa Quinteros', 'Capitán Cáceres', 'Santa Lucía'],
-	'Río Chico': ['Aguilares', 'Los Sarmientos'],
-	Simoca: ['Simoca', 'Atahona'],
-	'Tafí del Valle': ['Tafí del Valle', 'Amaicha del Valle', 'El Mollar', 'Colalao del Valle'],
-	'Tafí Viejo': ['Tafí Viejo', 'Las Talitas', 'El Cadillal', 'Raco'],
-	Trancas: ['Trancas', 'San Pedro de Colalao'],
-	'Yerba Buena': ['Yerba Buena', 'San Javier', 'Cevil Redondo'],
-};
 
 type MapPoint = { lat: number; lng: number };
 
@@ -153,7 +133,7 @@ export default function ActorNuevoPage() {
 	const [categories, setCategories] = useState<OpcionCategoriaRegistro[]>([]);
 	const [categoryId, setCategoryId] = useState<number | null>(null);
 	const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
-	const [departmentList, setDepartmentList] = useState<string[]>([]);
+	const [tucumanData, setTucumanData] = useState<Record<string, string[]>>({});
 	const [catalogLoading, setCatalogLoading] = useState(true);
 	const [catalogError, setCatalogError] = useState('');
 	const [forms, setForms] = useState<FormularioAplicable[]>([]);
@@ -167,39 +147,12 @@ export default function ActorNuevoPage() {
 	useEffect(() => {
 		const controller = new AbortController();
 
-		void fetch('/data/departamentos.geojson', { signal: controller.signal })
+		void fetch('/data/tucuman_departamentos.json', { signal: controller.signal })
 			.then((res) => res.json())
-			.then((data: { features?: Array<{ properties?: { name?: string; admin_level?: string } }> }) => {
-				if (data.features) {
-					const names = data.features
-						.filter((f) => f.properties?.admin_level === '5' && f.properties?.name)
-						.map((f) => (f.properties?.name ?? '').replace(/^Departamento\s+/i, '').trim())
-						.filter(Boolean);
-					const uniqueNames = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b, 'es'));
-					setDepartmentList(uniqueNames);
-				}
+			.then((data: Record<string, string[]>) => {
+				setTucumanData(data);
 			})
-			.catch(() => {
-				setDepartmentList([
-					'Burruyacú',
-					'Capital',
-					'Chicligasta',
-					'Cruz Alta',
-					'Famaillá',
-					'Graneros',
-					'Juan Bautista Alberdi',
-					'La Cocha',
-					'Leales',
-					'Lules',
-					'Monteros',
-					'Río Chico',
-					'Simoca',
-					'Tafí del Valle',
-					'Tafí Viejo',
-					'Trancas',
-					'Yerba Buena',
-				]);
-			});
+			.catch(() => {});
 
 		void obtenerOpcionesRegistroApi(controller.signal)
 			.then((response) => {
@@ -221,6 +174,11 @@ export default function ActorNuevoPage() {
 
 		return () => controller.abort();
 	}, []);
+
+	const departmentList = useMemo(
+		() => Object.keys(tucumanData).sort((a, b) => a.localeCompare(b, 'es')),
+		[tucumanData],
+	);
 
 	useEffect(() => {
 		if (activeStep !== 1 || categoryId === null) return;
@@ -360,6 +318,7 @@ export default function ActorNuevoPage() {
 											categoryId={categoryId}
 											subcategoryId={subcategoryId}
 											departmentList={departmentList}
+											tucumanData={tucumanData}
 											catalogLoading={catalogLoading}
 											value={generalData}
 											errors={generalFieldErrors}
@@ -425,6 +384,7 @@ function GeneralActorFields({
 	categoryId,
 	subcategoryId,
 	departmentList,
+	tucumanData,
 	catalogLoading,
 	value,
 	errors,
@@ -438,6 +398,7 @@ function GeneralActorFields({
 	categoryId: number | null;
 	subcategoryId: number | null;
 	departmentList: string[];
+	tucumanData: Record<string, string[]>;
 	catalogLoading: boolean;
 	value: GeneralActorData;
 	errors: GeneralFieldErrors;
@@ -559,17 +520,7 @@ function GeneralActorFields({
 			</Grid>
 
 			<Grid size={{ xs: 12, md: 6 }}>
-				{categoryId === null ? (
-					<FormControl fullWidth disabled>
-						<InputLabel>Área específica</InputLabel>
-						<Select label="Área específica" value="">
-							<MenuItem value="" disabled>
-								Seleccioná un sector cultural primero
-							</MenuItem>
-						</Select>
-						<FormHelperText>Primero seleccioná un sector cultural principal.</FormHelperText>
-					</FormControl>
-				) : availableSubcategories.length > 0 ? (
+				{categoryId !== null && availableSubcategories.length > 0 ? (
 					<FormControl fullWidth required error={errors.subcategoria}>
 						<InputLabel>Área específica</InputLabel>
 						<Select
@@ -589,21 +540,7 @@ function GeneralActorFields({
 								: 'Las opciones dependen del sector cultural elegido.'}
 						</FormHelperText>
 					</FormControl>
-				) : (
-					<Alert
-						severity="info"
-						variant="outlined"
-						sx={{
-							height: 56,
-							boxSizing: 'border-box',
-							display: 'flex',
-							alignItems: 'center',
-							py: 0,
-						}}
-					>
-						Este sector no requiere seleccionar un área específica.
-					</Alert>
-				)}
+				) : null}
 			</Grid>
 
 			<Grid size={{ xs: 12 }}>
@@ -697,7 +634,7 @@ function GeneralActorFields({
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Autocomplete
 					freeSolo
-					options={localitiesMap[value.departamento] ?? []}
+					options={tucumanData[value.departamento] ?? []}
 					value={value.localidad}
 					onInputChange={(_, newValue) => onChange({ localidad: newValue, ubicacion: null })}
 					renderInput={(params) => (
