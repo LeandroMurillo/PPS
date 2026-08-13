@@ -34,6 +34,7 @@ import {
 import { useColorScheme } from '@mui/material/styles';
 
 import DatePickerSpanish from '../components/datePickerSpanish';
+import GENEROS, { getGeneroEtiqueta, type GeneroCodigo } from '../constants/generos';
 import {
 	obtenerActividadesArcaApi,
 	registrarUsuarioApi,
@@ -84,7 +85,7 @@ export default function RegistroPage() {
 		confirmarContraseña: '',
 		CUIL: '',
 		fechaNacimiento: '',
-		genero: 'F' as 'F' | 'M' | 'X',
+		genero: '' as GeneroCodigo | '',
 		nacionalidad: 'Argentina',
 		actividadesArcaCodigo: '',
 		documentoIdentidad: '',
@@ -193,6 +194,10 @@ export default function RegistroPage() {
 			errors.CUIL = 'El CUIL ingresado no es válido (dígito verificador incorrecto)';
 		}
 
+		if (!formData.genero) {
+			errors.genero = 'Seleccioná tu identidad de género';
+		}
+
 		if (!formData.fechaNacimiento) {
 			errors.fechaNacimiento = 'La fecha de nacimiento es obligatoria';
 		} else {
@@ -243,7 +248,7 @@ export default function RegistroPage() {
 			contraseña: formData.contraseña,
 			CUIL: formData.CUIL.trim(),
 			fechaNacimiento: formData.fechaNacimiento,
-			genero: formData.genero,
+			genero: formData.genero as GeneroCodigo,
 			nacionalidad: formData.nacionalidad.trim(),
 			actividadesArcaCodigo: formData.actividadesArcaCodigo.trim() || null,
 			documentoIdentidad: formData.documentoIdentidad,
@@ -417,16 +422,21 @@ export default function RegistroPage() {
 
 								<Grid size={{ xs: 12, sm: 4 }}>
 									<FormControl fullWidth required error={!!formErrors.genero}>
-										<InputLabel id="genero-label">Género</InputLabel>
+										<InputLabel id="genero-label">Identidad de género</InputLabel>
 										<Select
 											labelId="genero-label"
-											label="Género"
+											label="Identidad de género"
 											value={formData.genero}
 											onChange={handleChange('genero')}
 										>
-											<MenuItem value="F">Femenino (F)</MenuItem>
-											<MenuItem value="M">Masculino (M)</MenuItem>
-											<MenuItem value="X">No binario / Otro (X)</MenuItem>
+											<MenuItem value="" disabled>
+												Elige
+											</MenuItem>
+											{GENEROS.map((item) => (
+												<MenuItem key={item.code} value={item.code}>
+													{item.label}
+												</MenuItem>
+											))}
 										</Select>
 										{formErrors.genero && <FormHelperText>{formErrors.genero}</FormHelperText>}
 									</FormControl>
@@ -611,14 +621,10 @@ export default function RegistroPage() {
 
 										<Grid size={{ xs: 12, sm: 6 }}>
 											<Typography variant="caption" color="text.secondary">
-												Género
+												Identidad de género
 											</Typography>
 											<Typography variant="body1" fontWeight="bold">
-												{formData.genero === 'F'
-													? 'Femenino (F)'
-													: formData.genero === 'M'
-														? 'Masculino (M)'
-														: 'No binario / Otro (X)'}
+												{getGeneroEtiqueta(formData.genero)}
 											</Typography>
 										</Grid>
 

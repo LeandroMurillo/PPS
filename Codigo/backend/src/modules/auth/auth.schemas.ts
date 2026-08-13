@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-export const generoUsuarioSchema = z.enum(['F', 'M', 'X']);
+export const GENEROS_CODIGOS = ['F', 'M', 'MF', 'FM', 'B', 'O', 'N'] as const;
+export const generoUsuarioSchema = z.enum(GENEROS_CODIGOS);
 export type GeneroUsuario = z.infer<typeof generoUsuarioSchema>;
 
 export const rolUsuarioSchema = z.enum(['USUARIO', 'MODERADOR', 'ADMIN']);

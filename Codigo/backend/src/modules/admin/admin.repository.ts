@@ -48,6 +48,8 @@ const databaseDateSchema = z
 const totalRowSchema = z.object({ total: databaseIntegerSchema });
 const actualizadosRowSchema = z.object({ actualizados: databaseIntegerSchema });
 
+import { generoUsuarioSchema } from '../auth/auth.schemas.js';
+
 const usuarioDatabaseRowSchema = z.object({
 	idUsuario: databaseIntegerSchema,
 	actividadesArcaCodigo: z.string().nullable(),
@@ -55,7 +57,7 @@ const usuarioDatabaseRowSchema = z.object({
 	nombre: z.string(),
 	apellido: z.string(),
 	CUIL: z.string(),
-	genero: z.enum(['F', 'M', 'X']),
+	genero: generoUsuarioSchema,
 	fechaNacimiento: databaseDateSchema,
 	nacionalidad: z.string(),
 	email: z.string(),

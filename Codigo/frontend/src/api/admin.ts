@@ -13,6 +13,8 @@ export type AdminPagination = {
 	hasNext: boolean;
 };
 
+import type { GeneroCodigo } from '../constants/generos';
+
 export type UsuarioAdmin = {
 	id: number;
 	actividadArcaCodigo: string | null;
@@ -20,7 +22,7 @@ export type UsuarioAdmin = {
 	nombre: string;
 	apellido: string;
 	cuil: string;
-	genero: 'F' | 'M' | 'X';
+	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
 	email: string;

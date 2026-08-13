@@ -107,6 +107,8 @@ export const listarCategoriasAdminQuerySchema = z.strictObject({
 
 export type ListarCategoriasAdminQuery = z.infer<typeof listarCategoriasAdminQuerySchema>;
 
+import { generoUsuarioSchema } from '../auth/auth.schemas.js';
+
 export const usuarioAdminSchema = z.object({
 	id: z.number().int().positive(),
 	actividadArcaCodigo: z.string().nullable(),
@@ -114,7 +116,7 @@ export const usuarioAdminSchema = z.object({
 	nombre: z.string(),
 	apellido: z.string(),
 	cuil: z.string(),
-	genero: z.enum(['F', 'M', 'X']),
+	genero: generoUsuarioSchema,
 	fechaNacimiento: z.string(),
 	nacionalidad: z.string(),
 	email: z.string(),

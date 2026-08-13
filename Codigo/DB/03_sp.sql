@@ -3600,7 +3600,7 @@ END //
 CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
     IN pNombre VARCHAR(45),
     IN pApellido VARCHAR(45),
-    IN pGenero CHAR(1),
+    IN pGenero ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N'),
     IN pFechaNacimiento DATE,
     IN pNacionalidad VARCHAR(45),
     IN pEmail VARCHAR(99),

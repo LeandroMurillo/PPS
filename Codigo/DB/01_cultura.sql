@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Usuarios` (
   `actividadesArcaCodigo` CHAR(6) NULL COMMENT 'Si es NULL, no está registrado.',
   `nombre` VARCHAR(45) NOT NULL,
   `apellido` VARCHAR(45) NOT NULL,
-  `genero` ENUM('F', 'M', 'X') NOT NULL,
+  `genero` ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N') NOT NULL,
   `fechaNacimiento` DATE NOT NULL,
   `nacionalidad` VARCHAR(45) NOT NULL,
   `email` VARCHAR(99) NOT NULL,

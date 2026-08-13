@@ -1,9 +1,10 @@
+import type { GeneroCodigo } from '../constants/generos';
 import { apiRequest } from './client';
 
 export type RegistrarUsuarioPayload = {
 	nombre: string;
 	apellido: string;
-	genero: 'F' | 'M' | 'X';
+	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
 	email: string;
@@ -18,7 +19,7 @@ export type UsuarioSession = {
 	nombre: string;
 	apellido: string;
 	email: string;
-	genero: 'F' | 'M' | 'X';
+	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
 	CUIL: string;

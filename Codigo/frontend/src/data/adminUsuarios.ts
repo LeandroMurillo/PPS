@@ -1,6 +1,7 @@
 import type { DataModel, DataSource } from '@toolpad/core/Crud';
 
 import { obtenerUsuarioAdmin, type UsuarioDetalleAdmin } from '../api/admin';
+import { getGeneroEtiqueta } from '../constants/generos';
 
 export type UsuarioDetalleDataModel = UsuarioDetalleAdmin &
 	DataModel & {
@@ -35,7 +36,7 @@ export const usuarioAdminDataSource: DataSource<UsuarioDetalleDataModel> = {
 		{
 			field: 'genero',
 			headerName: 'Género',
-			valueFormatter: (value) => ({ F: 'Femenino', M: 'Masculino', X: 'No binario' })[String(value)] ?? value,
+			valueFormatter: (value) => getGeneroEtiqueta(value ? String(value) : null),
 		},
 		{
 			field: 'fechaNacimiento',
