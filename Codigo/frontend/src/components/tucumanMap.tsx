@@ -1,17 +1,24 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import L from 'leaflet';
 import * as React from 'react';
-import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
-import { Link, useSearchParams } from 'react-router';
+import { CircleMarker, GeoJSON, MapContainer, Pane, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardActionArea from '@mui/material/CardActionArea';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useColorScheme, useTheme } from '@mui/material/styles';
@@ -44,6 +51,7 @@ type CulturalPoint = {
 	id: number;
 	nombre: string;
 	descripcion: string | null;
+	foto: string | null;
 	categoria: string;
 	categoriaIcono: CategoriaIcono;
 	departamento: string;
@@ -106,13 +114,15 @@ function MapBoundsUpdater({
 function SelectedPointFocuser({
 	selectedId,
 	points,
-	markerRefs,
+	filtrosAbiertos,
 }: {
 	selectedId: number | null;
 	points: CulturalPoint[];
-	markerRefs: React.RefObject<Record<number, L.CircleMarker | null>>;
+	filtrosAbiertos: boolean;
 }) {
 	const map = useMap();
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
 	React.useEffect(() => {
 		if (selectedId === null) return;
@@ -120,15 +130,19 @@ function SelectedPointFocuser({
 		const punto = points.find((p) => p.id === selectedId);
 		if (!punto) return;
 
-		map.flyTo(punto.latitudlongitud, 14, { duration: 1.2 });
+		// En pantallas angostas (mobile) el panel flotante ocupa la parte superior de la pantalla.
+		// Aplicamos un margen superior dinámico para centrar el marcador en la zona visible libre.
+		const paddingTop = isMobile ? (filtrosAbiertos ? 500 : 360) : 120;
+		const paddingRight = isMobile ? 20 : 380;
 
-		// Esperamos a que termine el vuelo de la cámara antes de abrir el popup
-		const timeout = setTimeout(() => {
-			markerRefs.current?.[selectedId]?.openPopup();
-		}, 400);
-
-		return () => clearTimeout(timeout);
-	}, [selectedId, points, map, markerRefs]);
+		const bounds = L.latLngBounds([punto.latitudlongitud]);
+		map.flyToBounds(bounds, {
+			maxZoom: 14,
+			paddingTopLeft: [20, paddingTop],
+			paddingBottomRight: [paddingRight, 20],
+			duration: 1.2,
+		});
+	}, [selectedId, points, map, isMobile, filtrosAbiertos]);
 
 	return null;
 }
@@ -171,6 +185,15 @@ function FilteredPointsFocuser({
 	return null;
 }
 
+function MapClickListener({ onMapClick }: { onMapClick: () => void }) {
+	useMapEvents({
+		click: () => {
+			onMapClick();
+		},
+	});
+	return null;
+}
+
 export default function TucumanMap() {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -189,23 +212,53 @@ export default function TucumanMap() {
 	const [busqueda, setBusqueda] = React.useState<string>('');
 	const debouncedBusqueda = useDebouncedValue(busqueda);
 	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
-
-	// En pantallas pequeñas (mobile) los filtros inician colapsados por defecto
-	const [filtrosAbiertos, setFiltrosAbiertos] = React.useState<boolean>(!isMobile);
-
-	// Actualizar colapso si cambia el tamaño de pantalla inicialmente
-	React.useEffect(() => {
-		setFiltrosAbiertos(!isMobile);
-	}, [isMobile]);
+	const [filtrosAbiertos, setFiltrosAbiertos] = React.useState<boolean>(false);
 
 	const [cargandoPuntos, setCargandoPuntos] = React.useState<boolean>(false);
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
 	const [error, setError] = React.useState<string | null>(null);
 
-	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const selectedIdParam = searchParams.get('selected');
 	const selectedId = selectedIdParam !== null ? Number(selectedIdParam) : null;
-	const markerRefs = React.useRef<Record<number, L.CircleMarker | null>>({});
+	const [activeId, setActiveId] = React.useState<number | null>(selectedId);
+	const [isLocked, setIsLocked] = React.useState<boolean>(selectedId !== null);
+
+	React.useEffect(() => {
+		if (selectedIdParam !== null) {
+			const id = Number(selectedIdParam);
+			setActiveId(id);
+			setIsLocked(true);
+		}
+	}, [selectedIdParam]);
+
+	const handleSelectPoint = React.useCallback(
+		(id: number | null, shouldLockAndFly = true) => {
+			setActiveId(id);
+			if (shouldLockAndFly) {
+				setIsLocked(id !== null);
+				setSearchParams(
+					(prev) => {
+						const next = new URLSearchParams(prev);
+						if (id !== null) {
+							next.set('selected', String(id));
+						} else {
+							next.delete('selected');
+						}
+						return next;
+					},
+					{ replace: true },
+				);
+			}
+		},
+		[setSearchParams],
+	);
+
+	const activeActor = React.useMemo(() => {
+		if (activeId === null) return null;
+		return puntosProcesados.find((p) => p.id === activeId) || null;
+	}, [activeId, puntosProcesados]);
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -260,6 +313,7 @@ export default function TucumanMap() {
 						id: actor.id,
 						nombre: actor.nombre,
 						descripcion: actor.descripcion,
+						foto: actor.foto,
 						categoria: actor.categoria,
 						categoriaIcono: actor.categoriaIcono,
 						departamento: actor.departamento,
@@ -303,13 +357,6 @@ export default function TucumanMap() {
 				'& .leaflet-tile-pane': {
 					filter: isDarkMode ? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)' : 'none',
 					transition: 'filter 0.3s ease',
-				},
-				// Aplicar colores del tema actual a los popups (el contenedor y la flecha)
-				'& .leaflet-popup-content-wrapper, & .leaflet-popup-tip': {
-					backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
-					color: isDarkMode ? '#ffffff' : '#333333',
-					transition: 'background-color 0.3s ease, color 0.3s ease',
-					boxShadow: isDarkMode ? '0 3px 14px rgba(0,0,0,0.6)' : '0 3px 14px rgba(0,0,0,0.4)',
 				},
 				// Aplicar colores a los botones de control (Zoom)
 				'& .leaflet-bar': {
@@ -411,6 +458,101 @@ export default function TucumanMap() {
 						totalResultados={puntosProcesados.length}
 					/>
 				</Collapse>
+
+				{/* Tarjeta de Actor Cultural Seleccionado / Activo */}
+				<Collapse in={Boolean(activeActor)} timeout="auto">
+					{activeActor && (
+						<Card
+							sx={{
+								borderTop: '1px solid',
+								borderColor: 'divider',
+								borderRadius: 0,
+								boxShadow: 'none',
+								maxHeight: { xs: 300, sm: 380 },
+								overflowY: 'auto',
+							}}
+						>
+							<CardActionArea
+								component={Link}
+								to={`/actores/${activeActor.id}?from=${encodeURIComponent(`/?selected=${activeActor.id}`)}`}
+								sx={{
+									height: '100%',
+									display: 'flex',
+									flexDirection: 'column',
+									alignItems: 'stretch',
+									justifyContent: 'flex-start',
+								}}
+							>
+								{activeActor.foto ? (
+									<CardMedia
+										component="img"
+										height="160"
+										image={activeActor.foto}
+										alt={`Foto de ${activeActor.nombre}`}
+										sx={{ objectFit: 'cover' }}
+									/>
+								) : null}
+
+								<CardContent sx={{ p: 2, width: '100%', flexGrow: 1, '&:last-child': { pb: 2 } }}>
+									<Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 1 }}>
+										{activeActor.nombre}
+									</Typography>
+
+									<Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5} sx={{ mb: 1.5 }}>
+										<Chip
+											icon={<CategoryIcon icono={activeActor.categoriaIcono} fontSize="small" />}
+											label={activeActor.categoria}
+											size="small"
+											color="primary"
+											sx={{ height: 24, fontSize: '0.725rem' }}
+										/>
+										<Chip
+											icon={<LocationOnIcon fontSize="small" />}
+											label={activeActor.departamento}
+											size="small"
+											color="secondary"
+											sx={{ height: 24, fontSize: '0.725rem' }}
+										/>
+									</Stack>
+
+									{activeActor.descripcion && (
+										<Typography
+											variant="body2"
+											color="text.secondary"
+											sx={{
+												fontSize: '0.825rem',
+												mb: 1.5,
+												overflow: 'hidden',
+												textOverflow: 'ellipsis',
+												display: '-webkit-box',
+												WebkitLineClamp: 3,
+												WebkitBoxOrient: 'vertical',
+											}}
+										>
+											{activeActor.descripcion}
+										</Typography>
+									)}
+
+									<Box sx={{ mt: 1 }}>
+										<Button
+											variant="contained"
+											fullWidth
+											size="small"
+											sx={{
+												fontWeight: 600,
+												fontSize: '0.8125rem',
+												textTransform: 'none',
+												pointerEvents: 'none',
+											}}
+										>
+											Ver portafolio
+										</Button>
+									</Box>
+								</CardContent>
+							</CardActionArea>
+						</Card>
+					)}
+				</Collapse>
 			</Box>
 
 			{error && (
@@ -442,14 +584,21 @@ export default function TucumanMap() {
 					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 				/>
 
+				{/* Escuchador de clicks en zona libre del mapa para deseleccionar */}
+				<MapClickListener onMapClick={() => handleSelectPoint(null, true)} />
+
 				{/* Componente invisible que actualiza la cámara al cambiar de departamento */}
 				<MapBoundsUpdater
 					departamentoSeleccionado={departamentoSeleccionado}
 					departamentosGeoJson={departamentosGeoJson}
 				/>
 
-				{/* Componente invisible que enfoca y abre el popup del punto pasado por ?selected= */}
-				<SelectedPointFocuser selectedId={selectedId} points={puntosProcesados} markerRefs={markerRefs} />
+				{/* Componente invisible que enfoca el punto pasado por ?selected= */}
+				<SelectedPointFocuser
+					selectedId={selectedId}
+					points={puntosProcesados}
+					filtrosAbiertos={filtrosAbiertos}
+				/>
 
 				{/* Componente invisible que ajusta la cámara a los resultados filtrados */}
 				<FilteredPointsFocuser
@@ -479,70 +628,40 @@ export default function TucumanMap() {
 					</Pane>
 				)}
 
-				{puntosProcesados.map((point) => (
-					<CircleMarker
-						key={point.id}
-						ref={(instance) => {
-							markerRefs.current[point.id] = instance;
-						}}
-						center={point.latitudlongitud}
-						fillColor="#1976d2"
-						fillOpacity={0.85}
-						radius={11}
-						stroke
-						color="#ffffff"
-						weight={2}
-						eventHandlers={{
-							mouseover: (event) => {
-								event.target.openPopup();
-							},
-							click: (event) => {
-								event.target.openPopup();
-							},
-						}}
-					>
-						<Popup
-							autoPanPaddingTopLeft={L.point(20, isMobile ? 80 : 110)}
-							autoPanPaddingBottomRight={L.point(20, 20)}
-						>
-							<Box sx={{ minWidth: 160, maxWidth: 240, maxHeight: 220, overflowY: 'auto' }}>
-								<Typography
-									variant="subtitle2"
-									component="strong"
-									sx={{ display: 'block', fontWeight: 700 }}
-								>
-									{point.nombre}
-								</Typography>
-								{point.descripcion && (
-									<Typography variant="body2" sx={{ mt: 0.5 }}>
-										{point.descripcion}
-									</Typography>
-								)}
-								<Box
-									sx={{
-										display: 'flex',
-										alignItems: 'center',
-										gap: 0.5,
-										mt: 1,
-										color: 'text.secondary',
-									}}
-								>
-									<CategoryIcon icono={point.categoriaIcono} fontSize="small" />
-									<Typography variant="caption" sx={{ lineHeight: 1 }}>
-										{point.categoria}
-									</Typography>
-								</Box>
-								<Box sx={{ mt: 1 }}>
-									<Link
-										to={`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`}
-									>
-										Ver portafolio
-									</Link>
-								</Box>
-							</Box>
-						</Popup>
-					</CircleMarker>
-				))}
+				{/* Puntos Culturales */}
+				{puntosProcesados.map((point) => {
+					const isActive = point.id === activeId;
+
+					return (
+						<CircleMarker
+							key={point.id}
+							center={point.latitudlongitud}
+							fillColor={isActive ? '#e91e63' : '#1976d2'}
+							fillOpacity={isActive ? 1 : 0.85}
+							radius={isActive ? 14 : 11}
+							stroke
+							color="#ffffff"
+							weight={isActive ? 3 : 2}
+							eventHandlers={{
+								mouseover: () => {
+									if (!isLocked) {
+										handleSelectPoint(point.id, false);
+									}
+								},
+								click: (e) => {
+									L.DomEvent.stopPropagation(e);
+									handleSelectPoint(point.id, true);
+								},
+								dblclick: (e) => {
+									L.DomEvent.stopPropagation(e);
+									navigate(
+										`/actores/${point.id}?from=${encodeURIComponent(`/?selected=${point.id}`)}`,
+									);
+								},
+							}}
+						/>
+					);
+				})}
 			</MapContainer>
 		</Box>
 	);
