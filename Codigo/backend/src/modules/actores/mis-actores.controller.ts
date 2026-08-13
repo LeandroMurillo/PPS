@@ -15,6 +15,7 @@ import {
 	listarEventosService,
 	listarIntegrantesService,
 	listarMisActoresService,
+	listarPortafolioService,
 	obtenerFormulariosAplicablesService,
 	obtenerOpcionesRegistroService,
 } from './mis-actores.service.js';
@@ -297,6 +298,30 @@ export async function eliminarItemPortafolioController(req: Request, res: Respon
 			error: {
 				code: 'BAD_REQUEST',
 				message: error instanceof Error ? error.message : 'Error al eliminar elemento del portafolio.',
+			},
+		});
+	}
+}
+
+export async function listarPortafolioController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = z.coerce.number().int().positive().parse(req.params.id);
+		const items = await listarPortafolioService({ idUsuario: user.idUsuario, idActor });
+
+		res.json({
+			data: items.map((item) => ({
+				id: item.idItem,
+				tipo: item.tipo,
+				descripcion: item.descripcion,
+				url: item.url,
+			})),
+		});
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: error instanceof Error ? error.message : 'Error al listar los elementos del portafolio.',
 			},
 		});
 	}

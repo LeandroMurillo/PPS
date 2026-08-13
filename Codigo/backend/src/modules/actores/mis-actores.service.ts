@@ -12,6 +12,7 @@ import {
 	listarEventosRepository,
 	listarIntegrantesRepository,
 	listarMisActoresRepository,
+	listarPortafolioRepository,
 	obtenerFormulariosAplicablesRepository,
 	obtenerOpcionesRegistroRepository,
 } from './mis-actores.repository.js';
@@ -455,6 +456,10 @@ export async function agregarItemPortafolioService(input: {
 
 export async function eliminarItemPortafolioService(input: { idUsuario: number; idItem: number }) {
 	await eliminarItemPortafolioRepository(input);
+}
+
+export async function listarPortafolioService(input: { idUsuario: number; idActor: number }) {
+	return listarPortafolioRepository(input);
 }
 
 export async function agregarEventoService(input: {

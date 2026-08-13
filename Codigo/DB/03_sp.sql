@@ -4089,6 +4089,32 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_actor_listar_portafolio
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_listar_portafolio`(
+    IN pIdUsuario INT,
+    IN pIdActor INT
+)
+READS SQL DATA
+COMMENT 'Lista los ítems del portafolio de un actor para sus integrantes.'
+BEGIN
+    DECLARE vEsIntegrante INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsIntegrante
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor;
+
+    IF vEsIntegrante = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para ver el portafolio de este actor.';
+    END IF;
+
+    SELECT idItem, tipo, descripcion, url
+    FROM `ItemsPortafolio`
+    WHERE idActor = pIdActor
+    ORDER BY idItem DESC;
+END //
+
+-- -----------------------------------------------------
 -- sp_actor_listar_eventos
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_actor_listar_eventos`(

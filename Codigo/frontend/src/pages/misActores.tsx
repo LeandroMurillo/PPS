@@ -74,6 +74,7 @@ import {
 	listarIntegrantesApi,
 	listarEventosApi,
 	listarMisActoresApi,
+	listarPortafolioApi,
 	obtenerOpcionesRegistroApi,
 	type IntegranteApiItem,
 	type OpcionCategoriaRegistro,
@@ -235,6 +236,10 @@ export default function MisActoresPage() {
 	const [newPortfolioType, setNewPortfolioType] = React.useState<'IMAGEN' | 'LINK' | 'RRSS'>('IMAGEN');
 	const [newPortfolioUrl, setNewPortfolioUrl] = React.useState('');
 	const [newPortfolioDesc, setNewPortfolioDesc] = React.useState('');
+	const [portfolioLoading, setPortfolioLoading] = React.useState(false);
+	const [portfolioError, setPortfolioError] = React.useState<string | null>(null);
+	const [portfolioSubmitting, setPortfolioSubmitting] = React.useState(false);
+	const [deletingPortfolioItemId, setDeletingPortfolioItemId] = React.useState<number | null>(null);
 
 	// Events Management Modal
 	const [eventsModalOpen, setEventsModalOpen] = React.useState(false);
@@ -554,69 +559,94 @@ export default function MisActoresPage() {
 	};
 
 	// Open Portfolio Modal
-	const handleOpenPortfolioModal = (actor: MyActor) => {
+	const handleOpenPortfolioModal = async (actor: MyActor) => {
 		setTargetPortfolioActor(actor);
 		setNewPortfolioType('IMAGEN');
 		setNewPortfolioUrl('');
 		setNewPortfolioDesc('');
+		setPortfolioError(null);
 		setPortfolioModalOpen(true);
+		setPortfolioLoading(true);
+
+		try {
+			const res = await listarPortafolioApi(actor.id);
+			const portafolio = (res.data ?? []).map((item) => ({
+				id: item.id,
+				tipo: item.tipo,
+				descripcion: item.descripcion,
+				url: item.url,
+			}));
+			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, portafolio } : item)));
+			setTargetPortfolioActor((prev) => (prev?.id === actor.id ? { ...prev, portafolio } : prev));
+		} catch (err) {
+			setPortfolioError(
+				err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.',
+			);
+		} finally {
+			setPortfolioLoading(false);
+		}
 	};
 
 	// Add Item to Portfolio
 	const handleAddPortfolioItem = async () => {
 		if (!targetPortfolioActor || !newPortfolioUrl.trim()) return;
 
-		let createdId = Date.now();
+		setPortfolioSubmitting(true);
+		setPortfolioError(null);
 		try {
 			const res = await agregarItemPortafolioApi(targetPortfolioActor.id, {
 				tipo: newPortfolioType,
 				descripcion: newPortfolioDesc.trim() || 'Sin descripción',
 				url: newPortfolioUrl.trim(),
 			});
-			if (res?.data?.idItem) {
-				createdId = res.data.idItem;
-			}
+
+			const createdId = res?.data?.idItem ?? Date.now();
+			const newItem: MyActorPortfolioItem = {
+				id: createdId,
+				tipo: newPortfolioType,
+				url: newPortfolioUrl.trim(),
+				descripcion: newPortfolioDesc.trim() || 'Sin descripción',
+			};
+
+			const updatedItems = [newItem, ...(targetPortfolioActor.portafolio || [])];
+
+			setActores((prev) =>
+				prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
+			);
+			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
+
+			setNewPortfolioUrl('');
+			setNewPortfolioDesc('');
+			setSnackbarMessage('Elemento agregado al portafolio.');
 		} catch (err) {
-			console.log('Error API agregar portafolio:', err);
+			setPortfolioError(err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.');
+		} finally {
+			setPortfolioSubmitting(false);
 		}
-
-		const newItem: MyActorPortfolioItem = {
-			id: createdId,
-			tipo: newPortfolioType,
-			url: newPortfolioUrl.trim(),
-			descripcion: newPortfolioDesc.trim() || 'Sin descripción',
-		};
-
-		const updatedItems = [...(targetPortfolioActor.portafolio || []), newItem];
-
-		setActores((prev) =>
-			prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
-		);
-		setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
-
-		setNewPortfolioUrl('');
-		setNewPortfolioDesc('');
-		setSnackbarMessage('Elemento agregado al portafolio.');
 	};
 
 	// Delete Item from Portfolio
 	const handleDeletePortfolioItem = async (itemId: number) => {
 		if (!targetPortfolioActor) return;
 
+		setDeletingPortfolioItemId(itemId);
+		setPortfolioError(null);
 		try {
 			await eliminarItemPortafolioApi(targetPortfolioActor.id, itemId);
+
+			const updatedItems = (targetPortfolioActor.portafolio || []).filter((item) => item.id !== itemId);
+
+			setActores((prev) =>
+				prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
+			);
+			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
+
+			setSnackbarMessage('Elemento eliminado del portafolio.');
 		} catch (err) {
-			console.log('Error API eliminar portafolio:', err);
+			setPortfolioError(err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.');
+		} finally {
+			setDeletingPortfolioItemId(null);
 		}
-
-		const updatedItems = (targetPortfolioActor.portafolio || []).filter((item) => item.id !== itemId);
-
-		setActores((prev) =>
-			prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
-		);
-		setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
-
-		setSnackbarMessage('Elemento eliminado del portafolio.');
 	};
 
 	// Open Events Modal
@@ -1759,6 +1789,8 @@ export default function MisActoresPage() {
 							redes sociales).
 						</Typography>
 
+						{portfolioError && <Alert severity="error">{portfolioError}</Alert>}
+
 						{/* Form to add portfolio item */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -1805,11 +1837,17 @@ export default function MisActoresPage() {
 									<Button
 										variant="contained"
 										size="small"
-										startIcon={<AddIcon />}
+										startIcon={
+											portfolioSubmitting ? (
+												<CircularProgress size={16} color="inherit" />
+											) : (
+												<AddIcon />
+											)
+										}
 										onClick={handleAddPortfolioItem}
-										disabled={!newPortfolioUrl.trim()}
+										disabled={!newPortfolioUrl.trim() || portfolioSubmitting}
 									>
-										Agregar elemento
+										{portfolioSubmitting ? 'Agregando...' : 'Agregar elemento'}
 									</Button>
 								</Grid>
 							</Grid>
@@ -1820,7 +1858,11 @@ export default function MisActoresPage() {
 							Elementos actuales ({(targetPortfolioActor?.portafolio || []).length})
 						</Typography>
 
-						{(targetPortfolioActor?.portafolio || []).length === 0 ? (
+						{portfolioLoading ? (
+							<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+								<CircularProgress size={32} />
+							</Box>
+						) : (targetPortfolioActor?.portafolio || []).length === 0 ? (
 							<Alert severity="info">Este actor todavía no tiene elementos en su portafolio.</Alert>
 						) : (
 							<Stack spacing={1.5} divider={<Divider />}>
@@ -1859,9 +1901,14 @@ export default function MisActoresPage() {
 										<IconButton
 											size="small"
 											color="error"
+											disabled={deletingPortfolioItemId === item.id}
 											onClick={() => handleDeletePortfolioItem(item.id)}
 										>
-											<DeleteOutlineIcon fontSize="small" />
+											{deletingPortfolioItemId === item.id ? (
+												<CircularProgress size={16} color="inherit" />
+											) : (
+												<DeleteOutlineIcon fontSize="small" />
+											)}
 										</IconButton>
 									</Stack>
 								))}

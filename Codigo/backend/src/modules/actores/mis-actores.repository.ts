@@ -23,6 +23,13 @@ const idItemRowSchema = z.object({
 	idItem: databaseIntegerSchema,
 });
 
+const portafolioRowSchema = z.object({
+	idItem: databaseIntegerSchema,
+	tipo: z.enum(['IMAGEN', 'LINK', 'RRSS']),
+	descripcion: z.string(),
+	url: z.string(),
+});
+
 const idEventoRowSchema = z.object({
 	idEvento: databaseIntegerSchema,
 });
@@ -449,6 +456,16 @@ export async function agregarItemPortafolioRepository(input: {
 
 export async function eliminarItemPortafolioRepository(input: { idUsuario: number; idItem: number }) {
 	await pool.query('CALL sp_actor_eliminar_item_portafolio(?, ?)', [input.idUsuario, input.idItem]);
+}
+
+export async function listarPortafolioRepository(input: { idUsuario: number; idActor: number }) {
+	const procedureResult: unknown = await pool.query('CALL sp_actor_listar_portafolio(?, ?)', [
+		input.idUsuario,
+		input.idActor,
+	]);
+
+	const resultSet = getResultSet(procedureResult, 0, 'sp_actor_listar_portafolio');
+	return z.array(portafolioRowSchema).parse(resultSet);
 }
 
 export async function agregarEventoRepository(input: {

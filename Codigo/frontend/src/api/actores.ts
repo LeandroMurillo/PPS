@@ -338,6 +338,17 @@ export async function eliminarMiActorApi(idActor: number) {
 	});
 }
 
+export type MiActorPortafolioApiItem = {
+	id: number;
+	tipo: 'IMAGEN' | 'LINK' | 'RRSS';
+	descripcion: string;
+	url: string;
+};
+
+export async function listarPortafolioApi(idActor: number) {
+	return apiFetch<{ data: MiActorPortafolioApiItem[] }>(`/api/mis-actores/${idActor}/portafolio`);
+}
+
 export async function agregarItemPortafolioApi(
 	idActor: number,
 	input: { tipo: 'IMAGEN' | 'LINK' | 'RRSS'; descripcion: string; url: string },
