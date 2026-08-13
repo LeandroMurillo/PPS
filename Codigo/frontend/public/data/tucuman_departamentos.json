@@ -1,199 +1,301 @@
 {
-  "Burruyacú": [
-    "7 de Abril",
-    "Barrio San Jorge",
-    "Benjamín Aráoz y El Tajamar",
-    "Burruyacú",
-    "El Chañar",
-    "El Naranjo",
-    "El Naranjo y El Sunchal",
-    "El Puestito",
-    "El Timbó",
-    "Garmendia",
-    "Gobernador Piedrabuena",
-    "La Ramada",
-    "La Ramada y La Cruz",
-    "Macomitas",
-    "Piedrabuena",
-    "Villa Benjamín Aráoz",
-    "Villa Burruyacú",
-    "Villa Padre Monti"
-  ],
-  "Capital": [
-    "San Miguel de Tucumán"
-  ],
-  "Chicligasta": [
-    "Alpachiri",
-    "Alpachiri y El Molino",
-    "Alto Verde",
-    "Alto Verde y Los Guchea",
-    "Arcadia",
-    "Concepción",
-    "Gastona y Belicha",
-    "Iltico",
-    "La Trinidad",
-    "Medina"
-  ],
-  "Cruz Alta": [
-    "Alderetes",
-    "Banda del Río Salí",
-    "Barrio Aeropuerto",
-    "Colombres",
-    "Colonia Mayo - Barrio La Milagrosa",
-    "Delfín Gallo",
-    "El Bracho",
-    "El Bracho y El Cevilar",
-    "El Corte",
-    "El Naranjito",
-    "El Paraíso",
-    "Ex Ingenio Esperanza",
-    "Ex Ingenio Los Ralos",
-    "Ex Ingenio Luján",
-    "Ingenio La Florida",
-    "La Florida",
-    "La Florida y Luisiana",
-    "Las Cejas",
-    "Lastenia",
-    "Los Bulacio y Los Villagra",
-    "Los Gutiérrez",
-    "Los Pereyra",
-    "Los Pérez",
-    "Los Ralos",
-    "Pacará",
-    "Ranchillos",
-    "Ranchillos y San Miguel",
-    "San Andrés",
-    "Villa Recaste",
-    "Villa Tercera"
-  ],
-  "Famaillá": [
-    "Campo de Herrera",
-    "Ex Ingenio Nueva Baviera",
-    "Famaillá",
-    "Ingenio Fronterita"
-  ],
-  "Graneros": [
-    "Graneros",
-    "Lamadrid",
-    "Taco Ralo"
-  ],
-  "Juan Bautista Alberdi": [
-    "Escaba",
-    "Juan Bautista Alberdi",
-    "Villa Belgrano"
-  ],
-  "La Cocha": [
-    "El Sacrificio",
-    "Huasa Pampa",
-    "La Cocha",
-    "Rumi Punco",
-    "San Ignacio",
-    "San José de La Cocha",
-    "San José de la Cocha",
-    "Yánima y El Corralito"
-  ],
-  "Leales": [
-    "Agua Dulce y La Soledad",
-    "Bella Vista",
-    "El Mojón",
-    "Esquina y Mancopa",
-    "Estación Aráoz",
-    "Estación Aráoz y Tacanas",
-    "Las Talas",
-    "Los Gómez",
-    "Los Puestos",
-    "Manuel García Fernández",
-    "Quilmes y Los Sueldos",
-    "Río Colorado",
-    "Santa Rosa de Leales",
-    "Santa Rosa de Leales y Laguna Blanca",
-    "Villa Fiad - Ingenio Leales",
-    "Villa de Leales"
-  ],
-  "Lules": [
-    "Barrio Araujo",
-    "Barrio San Felipe",
-    "El Manantial",
-    "Ingenio San Pablo",
-    "La Reducción",
-    "Lules",
-    "San Felipe y Santa Bárbara",
-    "San Isidro de Lules",
-    "San Pablo y Villa Nougués"
-  ],
-  "Monteros": [
-    "Acheral",
-    "Amberes",
-    "Capitán Cáceres",
-    "El Cercado",
-    "León Rouges y Santa Rosa",
-    "Los Sosa",
-    "Monteros",
-    "Pueblo Independencia",
-    "Río Seco",
-    "Santa Lucía",
-    "Sargento Moya",
-    "Soldado Maldonado",
-    "Teniente Berdina",
-    "Villa Quinteros"
-  ],
-  "Río Chico": [
-    "Aguilares",
-    "El Polear y Los Córdoba",
-    "Ingenio Santa Bárbara",
-    "Los Sarmiento y La Tipa",
-    "Los Sarmientos",
-    "Monte Bello",
-    "Río Chico",
-    "Santa Ana",
-    "Villa Clodomiro Hileret"
-  ],
-  "Simoca": [
-    "Atahona",
-    "Buena Vista",
-    "Ciudacita",
-    "Manuela Pedraza",
-    "Monteagudo",
-    "Nueva Trinidad",
-    "Pampa Mayo",
-    "Río Chico y Nueva Trinidad",
-    "San Pedro y San Antonio",
-    "Santa Cruz",
-    "Santa Cruz y La Tuna",
-    "Simoca",
-    "Villa Chicligasta",
-    "Yerba Buena"
-  ],
-  "Tafí Viejo": [
-    "Anca Juli",
-    "Barrio Mutual San Martín",
-    "El Cadillal",
-    "La Esperanza",
-    "Las Talitas",
-    "Los Nogales",
-    "Raco",
-    "Tafí Viejo",
-    "Villa Mariano Moreno - El Colmenar"
-  ],
-  "Tafí del Valle": [
-    "Amaicha del Valle",
-    "Colalao del Valle",
-    "El Mollar",
-    "Tafí del Valle"
-  ],
-  "Trancas": [
-    "Choromoro",
-    "San Pedro de Colalao",
-    "Tapia",
-    "Trancas",
-    "Villa de Trancas"
-  ],
-  "Yerba Buena": [
-    "Cevil Redondo",
-    "Ex Ingenio San José",
-    "San Javier",
-    "Villa Carmela",
-    "Yerba Buena",
-    "Yerba Buena - Marcos Paz"
-  ]
+  "Burruyacú": {
+    "centroide": {
+      "lat": -26.5305481465544,
+      "lon": -64.8195981132229
+    },
+    "localidades": [
+      "7 de Abril",
+      "Barrio San Jorge",
+      "Benjamín Aráoz y El Tajamar",
+      "Burruyacú",
+      "El Chañar",
+      "El Naranjo",
+      "El Naranjo y El Sunchal",
+      "El Puestito",
+      "El Timbó",
+      "Garmendia",
+      "Gobernador Piedrabuena",
+      "La Ramada",
+      "La Ramada y La Cruz",
+      "Macomitas",
+      "Piedrabuena",
+      "Villa Benjamín Aráoz",
+      "Villa Burruyacú",
+      "Villa Padre Monti"
+    ]
+  },
+  "Capital": {
+    "centroide": {
+      "lat": -26.8332209186353,
+      "lon": -65.2170208037282
+    },
+    "localidades": [
+      "San Miguel de Tucumán"
+    ]
+  },
+  "Chicligasta": {
+    "centroide": {
+      "lat": -27.2696018679715,
+      "lon": -65.8110637206058
+    },
+    "localidades": [
+      "Alpachiri",
+      "Alpachiri y El Molino",
+      "Alto Verde",
+      "Alto Verde y Los Guchea",
+      "Arcadia",
+      "Concepción",
+      "Gastona y Belicha",
+      "Iltico",
+      "La Trinidad",
+      "Medina"
+    ]
+  },
+  "Cruz Alta": {
+    "centroide": {
+      "lat": -26.9180036848972,
+      "lon": -64.9738642266054
+    },
+    "localidades": [
+      "Alderetes",
+      "Banda del Río Salí",
+      "Barrio Aeropuerto",
+      "Colombres",
+      "Colonia Mayo - Barrio La Milagrosa",
+      "Delfín Gallo",
+      "El Bracho",
+      "El Bracho y El Cevilar",
+      "El Corte",
+      "El Naranjito",
+      "El Paraíso",
+      "Ex Ingenio Esperanza",
+      "Ex Ingenio Los Ralos",
+      "Ex Ingenio Luján",
+      "Ingenio La Florida",
+      "La Florida",
+      "La Florida y Luisiana",
+      "Las Cejas",
+      "Lastenia",
+      "Los Bulacio y Los Villagra",
+      "Los Gutiérrez",
+      "Los Pereyra",
+      "Los Pérez",
+      "Los Ralos",
+      "Pacará",
+      "Ranchillos",
+      "Ranchillos y San Miguel",
+      "San Andrés",
+      "Villa Recaste",
+      "Villa Tercera"
+    ]
+  },
+  "Famaillá": {
+    "centroide": {
+      "lat": -26.9759689777425,
+      "lon": -65.4789084982894
+    },
+    "localidades": [
+      "Campo de Herrera",
+      "Ex Ingenio Nueva Baviera",
+      "Famaillá",
+      "Ingenio Fronterita"
+    ]
+  },
+  "Graneros": {
+    "centroide": {
+      "lat": -27.7132775964524,
+      "lon": -65.2550360276541
+    },
+    "localidades": [
+      "Graneros",
+      "Lamadrid",
+      "Taco Ralo"
+    ]
+  },
+  "Juan Bautista Alberdi": {
+    "centroide": {
+      "lat": -27.6060757021473,
+      "lon": -65.7831912587906
+    },
+    "localidades": [
+      "Escaba",
+      "Juan Bautista Alberdi",
+      "Villa Belgrano"
+    ]
+  },
+  "La Cocha": {
+    "centroide": {
+      "lat": -27.7940604809292,
+      "lon": -65.5977877083311
+    },
+    "localidades": [
+      "El Sacrificio",
+      "Huasa Pampa",
+      "La Cocha",
+      "Rumi Punco",
+      "San Ignacio",
+      "San José de La Cocha",
+      "San José de la Cocha",
+      "Yánima y El Corralito"
+    ]
+  },
+  "Leales": {
+    "centroide": {
+      "lat": -27.1918831757327,
+      "lon": -65.0848647351414
+    },
+    "localidades": [
+      "Agua Dulce y La Soledad",
+      "Bella Vista",
+      "El Mojón",
+      "Esquina y Mancopa",
+      "Estación Aráoz",
+      "Estación Aráoz y Tacanas",
+      "Las Talas",
+      "Los Gómez",
+      "Los Puestos",
+      "Manuel García Fernández",
+      "Quilmes y Los Sueldos",
+      "Río Colorado",
+      "Santa Rosa de Leales",
+      "Santa Rosa de Leales y Laguna Blanca",
+      "Villa Fiad - Ingenio Leales",
+      "Villa de Leales"
+    ]
+  },
+  "Lules": {
+    "centroide": {
+      "lat": -26.8622353459017,
+      "lon": -65.4310245938907
+    },
+    "localidades": [
+      "Barrio Araujo",
+      "Barrio San Felipe",
+      "El Manantial",
+      "Ingenio San Pablo",
+      "La Reducción",
+      "Lules",
+      "San Felipe y Santa Bárbara",
+      "San Isidro de Lules",
+      "San Pablo y Villa Nougués"
+    ]
+  },
+  "Monteros": {
+    "centroide": {
+      "lat": -27.1106201705702,
+      "lon": -65.6430768814482
+    },
+    "localidades": [
+      "Acheral",
+      "Amberes",
+      "Capitán Cáceres",
+      "El Cercado",
+      "León Rouges y Santa Rosa",
+      "Los Sosa",
+      "Monteros",
+      "Pueblo Independencia",
+      "Río Seco",
+      "Santa Lucía",
+      "Sargento Moya",
+      "Soldado Maldonado",
+      "Teniente Berdina",
+      "Villa Quinteros"
+    ]
+  },
+  "Río Chico": {
+    "centroide": {
+      "lat": -27.4501203542874,
+      "lon": -65.7518266389415
+    },
+    "localidades": [
+      "Aguilares",
+      "El Polear y Los Córdoba",
+      "Ingenio Santa Bárbara",
+      "Los Sarmiento y La Tipa",
+      "Los Sarmientos",
+      "Monte Bello",
+      "Río Chico",
+      "Santa Ana",
+      "Villa Clodomiro Hileret"
+    ]
+  },
+  "Simoca": {
+    "centroide": {
+      "lat": -27.4238370613532,
+      "lon": -65.2924847788807
+    },
+    "localidades": [
+      "Atahona",
+      "Buena Vista",
+      "Ciudacita",
+      "Manuela Pedraza",
+      "Monteagudo",
+      "Nueva Trinidad",
+      "Pampa Mayo",
+      "Río Chico y Nueva Trinidad",
+      "San Pedro y San Antonio",
+      "Santa Cruz",
+      "Santa Cruz y La Tuna",
+      "Simoca",
+      "Villa Chicligasta",
+      "Yerba Buena"
+    ]
+  },
+  "Tafí Viejo": {
+    "centroide": {
+      "lat": -26.6601491447319,
+      "lon": -65.4640739296384
+    },
+    "localidades": [
+      "Anca Juli",
+      "Barrio Mutual San Martín",
+      "El Cadillal",
+      "La Esperanza",
+      "Las Talitas",
+      "Los Nogales",
+      "Raco",
+      "Tafí Viejo",
+      "Villa Mariano Moreno - El Colmenar"
+    ]
+  },
+  "Tafí del Valle": {
+    "centroide": {
+      "lat": -26.5914686020616,
+      "lon": -65.8893504834043
+    },
+    "localidades": [
+      "Amaicha del Valle",
+      "Colalao del Valle",
+      "El Mollar",
+      "Tafí del Valle"
+    ]
+  },
+  "Trancas": {
+    "centroide": {
+      "lat": -26.3434123363847,
+      "lon": -65.4058207897255
+    },
+    "localidades": [
+      "Choromoro",
+      "San Pedro de Colalao",
+      "Tapia",
+      "Trancas",
+      "Villa de Trancas"
+    ]
+  },
+  "Yerba Buena": {
+    "centroide": {
+      "lat": -26.7839244723358,
+      "lon": -65.3411739273315
+    },
+    "localidades": [
+      "Cevil Redondo",
+      "Ex Ingenio San José",
+      "San Javier",
+      "Villa Carmela",
+      "Yerba Buena",
+      "Yerba Buena - Marcos Paz"
+    ]
+  }
 }

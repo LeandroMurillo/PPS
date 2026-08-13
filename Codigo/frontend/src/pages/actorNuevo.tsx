@@ -5,14 +5,17 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import BusinessIcon from '@mui/icons-material/Business';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
 import GroupsIcon from '@mui/icons-material/Groups';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import MapIcon from '@mui/icons-material/Map';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PersonIcon from '@mui/icons-material/Person';
-import SearchIcon from '@mui/icons-material/Search';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import type { LeafletMouseEvent } from 'leaflet';
 import PublicIcon from '@mui/icons-material/Public';
-import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
+import SearchIcon from '@mui/icons-material/Search';
+import L, { type LeafletMouseEvent } from 'leaflet';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import {
 	Alert,
 	Autocomplete,
@@ -58,6 +61,13 @@ const STEP_DESCRIPTIONS = ['Contanos los datos principales de tu actividad, proy
 type ActorType = 'persona' | 'colectivo' | 'institucion';
 
 type FormAnswer = string | string[];
+
+type TucumanDepartmentInfo = {
+	centroide?: { lat: number; lon: number };
+	localidades: string[];
+};
+
+type TucumanDataMap = Record<string, TucumanDepartmentInfo>;
 
 type MapPoint = { lat: number; lng: number };
 
@@ -133,7 +143,7 @@ export default function ActorNuevoPage() {
 	const [categories, setCategories] = useState<OpcionCategoriaRegistro[]>([]);
 	const [categoryId, setCategoryId] = useState<number | null>(null);
 	const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
-	const [tucumanData, setTucumanData] = useState<Record<string, string[]>>({});
+	const [tucumanData, setTucumanData] = useState<TucumanDataMap>({});
 	const [catalogLoading, setCatalogLoading] = useState(true);
 	const [catalogError, setCatalogError] = useState('');
 	const [forms, setForms] = useState<FormularioAplicable[]>([]);
@@ -149,7 +159,7 @@ export default function ActorNuevoPage() {
 
 		void fetch('/data/tucuman_departamentos.json', { signal: controller.signal })
 			.then((res) => res.json())
-			.then((data: Record<string, string[]>) => {
+			.then((data: TucumanDataMap) => {
 				setTucumanData(data);
 			})
 			.catch(() => {});
@@ -398,7 +408,7 @@ function GeneralActorFields({
 	categoryId: number | null;
 	subcategoryId: number | null;
 	departmentList: string[];
-	tucumanData: Record<string, string[]>;
+	tucumanData: TucumanDataMap;
 	catalogLoading: boolean;
 	value: GeneralActorData;
 	errors: GeneralFieldErrors;
@@ -634,7 +644,7 @@ function GeneralActorFields({
 			<Grid size={{ xs: 12, md: 6 }}>
 				<Autocomplete
 					freeSolo
-					options={tucumanData[value.departamento] ?? []}
+					options={tucumanData[value.departamento]?.localidades ?? []}
 					value={value.localidad}
 					onInputChange={(_, newValue) => onChange({ localidad: newValue, ubicacion: null })}
 					renderInput={(params) => (
@@ -659,6 +669,7 @@ function GeneralActorFields({
 					point={value.ubicacion}
 					addressError={errors.direccion}
 					pointError={errors.ubicacion}
+					tucumanData={tucumanData}
 					onAddressChange={(direccion) => onChange({ direccion })}
 					onPointChange={(ubicacion) => onChange({ ubicacion })}
 				/>
@@ -904,6 +915,61 @@ function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }
 	);
 }
 
+const customPinIcon = L.divIcon({
+	className: 'custom-map-pin',
+	html: `<div style="
+		background-color: #d32f2f;
+		width: 32px;
+		height: 32px;
+		border-radius: 50% 50% 50% 0;
+		transform: rotate(-45deg);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 3px solid #ffffff;
+		box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+		cursor: grab;
+	">
+		<div style="
+			width: 10px;
+			height: 10px;
+			background-color: #ffffff;
+			border-radius: 50%;
+			transform: rotate(45deg);
+		"></div>
+	</div>`,
+	iconSize: [32, 32],
+	iconAnchor: [16, 32],
+	popupAnchor: [0, -32],
+});
+
+function MapDepartmentCenterer({
+	department,
+	locality,
+	point,
+	tucumanData,
+}: {
+	department: string;
+	locality: string;
+	point: MapPoint | null;
+	tucumanData: TucumanDataMap;
+}) {
+	const map = useMap();
+
+	useEffect(() => {
+		if (point) return;
+
+		const deptInfo = tucumanData[department];
+		if (deptInfo?.centroide) {
+			const coords: [number, number] = [deptInfo.centroide.lat, deptInfo.centroide.lon];
+			const targetZoom = locality ? 13 : 11;
+			map.flyTo(coords, targetZoom, { duration: 0.8 });
+		}
+	}, [map, department, locality, point, tucumanData]);
+
+	return null;
+}
+
 function MapClickHandler({ onPointChange }: { onPointChange: (point: MapPoint) => void }) {
 	useMapEvents({
 		click: (event: LeafletMouseEvent) => {
@@ -933,6 +999,7 @@ function LocationPicker({
 	point,
 	addressError,
 	pointError,
+	tucumanData,
 	onAddressChange,
 	onPointChange,
 }: {
@@ -942,6 +1009,7 @@ function LocationPicker({
 	point: MapPoint | null;
 	addressError: boolean;
 	pointError: boolean;
+	tucumanData: TucumanDataMap;
 	onAddressChange: (address: string) => void;
 	onPointChange: (point: MapPoint | null) => void;
 }) {
@@ -950,6 +1018,12 @@ function LocationPicker({
 	const [isLocating, setIsLocating] = useState(false);
 	const [searchError, setSearchError] = useState('');
 	const [locationError, setLocationError] = useState('');
+	const [mapLayer, setMapLayer] = useState<'streets' | 'satellite'>('streets');
+
+	const deptCentroide = tucumanData[department]?.centroide;
+	const initialCenter: [number, number] = deptCentroide
+		? [deptCentroide.lat, deptCentroide.lon]
+		: [-26.8241, -65.2226];
 
 	const searchAddress = async () => {
 		const trimmedAddress = address.trim();
@@ -1042,6 +1116,13 @@ function LocationPicker({
 		setLocationError('');
 	};
 
+	const clearPoint = () => {
+		onPointChange(null);
+		setResolvedAddress('');
+		setSearchError('');
+		setLocationError('');
+	};
+
 	return (
 		<Stack spacing={1}>
 			<Box>
@@ -1096,6 +1177,11 @@ function LocationPicker({
 				>
 					{isLocating ? 'Obteniendo ubicación…' : 'Usar mi ubicación actual'}
 				</Button>
+				{point && (
+					<Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={clearPoint}>
+						Limpiar punto
+					</Button>
+				)}
 			</Stack>
 
 			{locationError && (
@@ -1106,7 +1192,8 @@ function LocationPicker({
 
 			<Box
 				sx={{
-					height: { xs: 300, md: 380 },
+					position: 'relative',
+					height: { xs: 320, md: 400 },
 					border: '1px solid',
 					borderColor: pointError ? 'error.main' : point ? 'success.main' : 'divider',
 					borderWidth: pointError ? 2 : 1,
@@ -1115,9 +1202,43 @@ function LocationPicker({
 					'& .leaflet-container': { cursor: 'crosshair' },
 				}}
 			>
+				<Stack
+					direction="row"
+					spacing={0.5}
+					sx={{
+						position: 'absolute',
+						top: 10,
+						right: 10,
+						zIndex: 1000,
+						bgcolor: 'background.paper',
+						borderRadius: 1,
+						p: 0.5,
+						boxShadow: 2,
+					}}
+				>
+					<Button
+						size="small"
+						variant={mapLayer === 'streets' ? 'contained' : 'text'}
+						onClick={() => setMapLayer('streets')}
+						startIcon={<MapIcon />}
+						sx={{ py: 0.25, px: 1, fontSize: '0.75rem' }}
+					>
+						Mapa
+					</Button>
+					<Button
+						size="small"
+						variant={mapLayer === 'satellite' ? 'contained' : 'text'}
+						onClick={() => setMapLayer('satellite')}
+						startIcon={<SatelliteAltIcon />}
+						sx={{ py: 0.25, px: 1, fontSize: '0.75rem' }}
+					>
+						Satelital
+					</Button>
+				</Stack>
+
 				<MapContainer
-					center={[-26.8241, -65.2226]}
-					zoom={8}
+					center={initialCenter}
+					zoom={locality ? 13 : department ? 11 : 8}
 					minZoom={7}
 					maxBounds={[
 						[-27.95, -66.35],
@@ -1126,17 +1247,37 @@ function LocationPicker({
 					maxBoundsViscosity={0.8}
 					style={{ height: '100%', width: '100%' }}
 				>
-					<TileLayer
-						attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-						url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+					{mapLayer === 'streets' ? (
+						<TileLayer
+							attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+							url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+						/>
+					) : (
+						<TileLayer
+							attribution="Esri, TomTom, Garmin, FAO, NOAA, USGS, and the GIS User Community"
+							url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+						/>
+					)}
+					<MapDepartmentCenterer
+						department={department}
+						locality={locality}
+						point={point}
+						tucumanData={tucumanData}
 					/>
 					<MapClickHandler onPointChange={handleManualPointChange} />
 					<MapPointFocuser point={point} />
 					{point && (
-						<CircleMarker
-							center={[point.lat, point.lng]}
-							radius={10}
-							pathOptions={{ color: '#ffffff', fillColor: '#1976d2', fillOpacity: 1, weight: 3 }}
+						<Marker
+							position={[point.lat, point.lng]}
+							icon={customPinIcon}
+							draggable={true}
+							eventHandlers={{
+								dragend: (event) => {
+									const marker = event.target as L.Marker;
+									const pos = marker.getLatLng();
+									handleManualPointChange({ lat: pos.lat, lng: pos.lng });
+								},
+							}}
 						/>
 					)}
 				</MapContainer>
@@ -1148,7 +1289,7 @@ function LocationPicker({
 				icon={<LocationOnIcon />}
 			>
 				{point
-					? `${address.trim() ? 'Ubicación lista. Se guardarán la dirección o referencia, la latitud y la longitud.' : 'El punto está seleccionado. Completá una dirección o referencia para poder guardar.'}${resolvedAddress ? ` Resultado encontrado: ${resolvedAddress}` : ''}`
+					? `${address.trim() ? 'Ubicación lista. Se guardarán la dirección o referencia, la latitud y la longitud. Podés arrastrar el marcador para afinar la ubicación.' : 'El punto está seleccionado. Completá una dirección o referencia para poder guardar.'}${resolvedAddress ? ` Resultado encontrado: ${resolvedAddress}` : ''}`
 					: pointError
 						? 'Seleccioná una ubicación buscando una referencia, usando tu ubicación actual o señalando el punto en el mapa.'
 						: 'Buscá una dirección o referencia, usá tu ubicación actual o señalá el punto en el mapa.'}
