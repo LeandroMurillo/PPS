@@ -4,10 +4,17 @@ import * as React from 'react';
 import { CircleMarker, GeoJSON, MapContainer, Pane, Popup, TileLayer, useMap } from 'react-leaflet';
 import { Link, useSearchParams } from 'react-router';
 
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { useColorScheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useColorScheme, useTheme } from '@mui/material/styles';
 
 import {
 	obtenerActoresMapa,
@@ -51,11 +58,18 @@ function MapBoundsUpdater({
 	departamentosGeoJson: FeatureCollection<Geometry, DepartmentProperties> | null;
 }) {
 	const map = useMap();
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
 	React.useEffect(() => {
+		const paddingTop = isMobile ? 80 : 120;
 		// Si no hay departamento seleccionado (se limpió el filtro), volvemos a la vista general
 		if (!departamentoSeleccionado) {
-			map.flyToBounds(TUCUMAN_BOUNDS, { padding: [24, 24], duration: 1.2 });
+			map.flyToBounds(TUCUMAN_BOUNDS, {
+				paddingTopLeft: [24, paddingTop],
+				paddingBottomRight: [24, 24],
+				duration: 1.2,
+			});
 			return;
 		}
 
@@ -76,11 +90,15 @@ function MapBoundsUpdater({
 				const bounds = L.geoJSON(feature).getBounds();
 				if (bounds.isValid()) {
 					// Hacemos que la cámara vuele hacia esos límites con un margen
-					map.flyToBounds(bounds, { padding: [24, 24], duration: 1.2 });
+					map.flyToBounds(bounds, {
+						paddingTopLeft: [24, paddingTop],
+						paddingBottomRight: [24, 24],
+						duration: 1.2,
+					});
 				}
 			}
 		}
-	}, [departamentoSeleccionado, departamentosGeoJson, map]);
+	}, [departamentoSeleccionado, departamentosGeoJson, map, isMobile]);
 
 	return null;
 }
@@ -127,6 +145,8 @@ function FilteredPointsFocuser({
 	categoriasSeleccionadas: number[];
 }) {
 	const map = useMap();
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
 	React.useEffect(() => {
 		const hayFiltrosActivos = Boolean(
@@ -140,13 +160,21 @@ function FilteredPointsFocuser({
 		}
 
 		const bounds = L.latLngBounds(points.map((point) => point.latitudlongitud));
-		map.flyToBounds(bounds, { padding: [48, 48], maxZoom: 14, duration: 1.2 });
-	}, [busqueda, departamentoSeleccionado, categoriasSeleccionadas, map, points]);
+		map.flyToBounds(bounds, {
+			paddingTopLeft: [20, isMobile ? 80 : 120],
+			paddingBottomRight: [20, 20],
+			maxZoom: 14,
+			duration: 1.2,
+		});
+	}, [busqueda, departamentoSeleccionado, categoriasSeleccionadas, map, points, isMobile]);
 
 	return null;
 }
 
 export default function TucumanMap() {
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 
@@ -161,6 +189,14 @@ export default function TucumanMap() {
 	const [busqueda, setBusqueda] = React.useState<string>('');
 	const debouncedBusqueda = useDebouncedValue(busqueda);
 	const [departamentoSeleccionado, setDepartamentoSeleccionado] = React.useState<string>('');
+
+	// En pantallas pequeñas (mobile) los filtros inician colapsados por defecto
+	const [filtrosAbiertos, setFiltrosAbiertos] = React.useState<boolean>(!isMobile);
+
+	// Actualizar colapso si cambia el tamaño de pantalla inicialmente
+	React.useEffect(() => {
+		setFiltrosAbiertos(!isMobile);
+	}, [isMobile]);
 
 	const [cargandoPuntos, setCargandoPuntos] = React.useState<boolean>(false);
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
@@ -246,6 +282,10 @@ export default function TucumanMap() {
 		return () => controller.abort();
 	}, [debouncedBusqueda, departamentoSeleccionado, categoriasSeleccionadas]);
 
+	const hayFiltrosActivos = Boolean(
+		busqueda.trim() || departamentoSeleccionado || categoriasSeleccionadas.length > 0,
+	);
+
 	return (
 		<Box
 			sx={{
@@ -300,31 +340,77 @@ export default function TucumanMap() {
 				},
 			}}
 		>
+			{/* Panel flotante de búsqueda y filtros */}
 			<Box
 				sx={{
 					position: 'absolute',
-					top: 16,
-					right: 16,
+					top: { xs: 10, sm: 16 },
+					right: { xs: 10, sm: 16 },
 					zIndex: 1000,
-					width: 360,
-					maxWidth: 'calc(100% - 32px)',
+					width: { xs: 'calc(100% - 20px)', sm: 360 },
+					maxWidth: 360,
 					bgcolor: 'background.paper',
 					borderRadius: 2,
-					boxShadow: 4,
+					boxShadow: 6,
+					overflow: 'hidden',
+					transition: 'all 0.25s ease',
 				}}
 			>
-				<FiltroCategoriasCulturales
-					categorias={categorias}
-					departamentos={departamentos}
-					categoriasSeleccionadas={categoriasSeleccionadas}
-					onCambiarCategorias={setCategoriasSeleccionadas}
-					busqueda={busqueda}
-					onCambiarBusqueda={setBusqueda}
-					departamentoSeleccionado={departamentoSeleccionado}
-					onCambiarDepartamento={setDepartamentoSeleccionado}
-					cargando={cargandoPuntos}
-					totalResultados={puntosProcesados.length}
-				/>
+				{/* Cabecera colapsable / Toggle para pantallas pequeñas */}
+				<Box
+					onClick={() => setFiltrosAbiertos((prev) => !prev)}
+					sx={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						px: 2,
+						py: 1.25,
+						cursor: 'pointer',
+						userSelect: 'none',
+						bgcolor: isMobile && !filtrosAbiertos ? 'primary.main' : 'background.paper',
+						color: isMobile && !filtrosAbiertos ? 'primary.contrastText' : 'text.primary',
+						borderBottom: filtrosAbiertos ? '1px solid' : 'none',
+						borderColor: 'divider',
+						transition: 'background-color 0.2s ease',
+					}}
+				>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+						<FilterListIcon fontSize="small" />
+						<Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+							{isMobile && !filtrosAbiertos
+								? busqueda
+									? `Búsqueda: "${busqueda}"`
+									: `Filtros de mapa (${puntosProcesados.length})`
+								: 'Filtros y Búsqueda'}
+						</Typography>
+						{hayFiltrosActivos && isMobile && !filtrosAbiertos && (
+							<Chip
+								label="Activos"
+								size="small"
+								color="secondary"
+								sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
+							/>
+						)}
+					</Box>
+					<IconButton size="small" color="inherit" sx={{ ml: 1, p: 0.5 }}>
+						{filtrosAbiertos ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+					</IconButton>
+				</Box>
+
+				<Collapse in={filtrosAbiertos} timeout="auto">
+					<FiltroCategoriasCulturales
+						categorias={categorias}
+						departamentos={departamentos}
+						categoriasSeleccionadas={categoriasSeleccionadas}
+						onCambiarCategorias={setCategoriasSeleccionadas}
+						busqueda={busqueda}
+						onCambiarBusqueda={setBusqueda}
+						departamentoSeleccionado={departamentoSeleccionado}
+						onCambiarDepartamento={setDepartamentoSeleccionado}
+						cargando={cargandoPuntos}
+						totalResultados={puntosProcesados.length}
+					/>
+				</Collapse>
 			</Box>
 
 			{error && (
@@ -393,7 +479,6 @@ export default function TucumanMap() {
 					</Pane>
 				)}
 
-				{/* Puntos Culturales */}
 				{puntosProcesados.map((point) => (
 					<CircleMarker
 						key={point.id}
@@ -411,10 +496,16 @@ export default function TucumanMap() {
 							mouseover: (event) => {
 								event.target.openPopup();
 							},
+							click: (event) => {
+								event.target.openPopup();
+							},
 						}}
 					>
-						<Popup>
-							<Box sx={{ minWidth: 160 }}>
+						<Popup
+							autoPanPaddingTopLeft={L.point(20, isMobile ? 80 : 110)}
+							autoPanPaddingBottomRight={L.point(20, 20)}
+						>
+							<Box sx={{ minWidth: 160, maxWidth: 240, maxHeight: 220, overflowY: 'auto' }}>
 								<Typography
 									variant="subtitle2"
 									component="strong"
