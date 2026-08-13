@@ -15,6 +15,57 @@ import {
 	obtenerFormulariosAplicablesRepository,
 	obtenerOpcionesRegistroRepository,
 } from './mis-actores.repository.js';
+import { removeSavedActorImages, saveActorImage, type SavedActorImage } from './actor-media.service.js';
+
+function validarValorRespuesta(
+	pregunta: {
+		pregunta: string;
+		tipoDato: string;
+		opciones: string[] | null;
+	},
+	valor: unknown,
+): void {
+	const invalid = () => {
+		throw new Error(`La respuesta a “${pregunta.pregunta}” no tiene el formato esperado.`);
+	};
+
+	switch (pregunta.tipoDato) {
+		case 'NUMERO':
+			if (typeof valor !== 'number' || !Number.isFinite(valor)) invalid();
+			return;
+		case 'BOOLEANO':
+			if (typeof valor !== 'boolean') invalid();
+			return;
+		case 'OPCION_MULTIPLE':
+			if (
+				!Array.isArray(valor) ||
+				valor.some((item) => typeof item !== 'string' || !pregunta.opciones?.includes(item))
+			) {
+				invalid();
+			}
+			return;
+		case 'OPCION_UNICA':
+			if (typeof valor !== 'string' || !pregunta.opciones?.includes(valor)) invalid();
+			return;
+		case 'URL':
+			if (typeof valor !== 'string') invalid();
+			try {
+				const parsed = new URL(String(valor));
+				if (!['http:', 'https:'].includes(parsed.protocol)) invalid();
+			} catch {
+				invalid();
+			}
+			return;
+		case 'EMAIL':
+			if (typeof valor !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) invalid();
+			return;
+		case 'FECHA':
+			if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) invalid();
+			return;
+		default:
+			if (typeof valor !== 'string' || valor.trim() === '') invalid();
+	}
+}
 
 export async function obtenerOpcionesRegistroService() {
 	const rows = await obtenerOpcionesRegistroRepository();
@@ -184,6 +235,7 @@ export async function crearActorService(input: {
 	nombre: string;
 	descripcion: string;
 	fotoPerfilUrl?: string | null | undefined;
+	fotoPerfilBase64?: string | null | undefined;
 	cuit?: string | null | undefined;
 	tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
 	provincia?: string | null | undefined;
@@ -193,8 +245,119 @@ export async function crearActorService(input: {
 	latitud: number;
 	longitud: number;
 	esPublica: boolean;
+	respuestas?: { idFormulario: number; idPregunta: number; valor: unknown }[] | undefined;
+	portafolio?:
+		| {
+				tipo: 'IMAGEN' | 'VIDEO' | 'ENLACE';
+				titulo: string;
+				descripcion?: string | null | undefined;
+				url?: string | null | undefined;
+				imagenBase64?: string | null | undefined;
+		  }[]
+		| undefined;
 }) {
-	return crearActorRepository(input);
+	const formularios = await obtenerFormulariosAplicablesService({
+		idCategoria: input.idCategoria,
+		idSubcategoria: input.idSubcategoria,
+	});
+	const preguntasAplicables = new Map<
+		string,
+		{
+			formulario: (typeof formularios.data)[number];
+			pregunta: (typeof formularios.data)[number]['preguntas'][number];
+		}
+	>(
+		formularios.data.flatMap((formulario) =>
+			formulario.preguntas.map((pregunta) => [
+				`${formulario.id}:${pregunta.id}`,
+				{ formulario, pregunta },
+			] as const),
+		),
+	);
+	const respuestas = input.respuestas ?? [];
+	const respuestasPorPregunta = new Map<string, (typeof respuestas)[number]>();
+
+	for (const respuesta of respuestas) {
+		const key = `${respuesta.idFormulario}:${respuesta.idPregunta}`;
+		const aplicable = preguntasAplicables.get(key);
+		if (!aplicable) {
+			throw new Error('Una de las respuestas no pertenece a los formularios aplicables al actor.');
+		}
+		if (respuestasPorPregunta.has(key)) {
+			throw new Error('No se puede enviar dos veces la respuesta a una misma pregunta.');
+		}
+		validarValorRespuesta(aplicable.pregunta, respuesta.valor);
+		respuestasPorPregunta.set(key, respuesta);
+	}
+
+	for (const [key, { pregunta }] of preguntasAplicables) {
+		if (!pregunta.esObligatorio) continue;
+		const respuesta = respuestasPorPregunta.get(key);
+		const valor = respuesta?.valor;
+		const estaVacia =
+			valor === null ||
+			valor === undefined ||
+			(typeof valor === 'string' && valor.trim() === '') ||
+			(Array.isArray(valor) && valor.length === 0);
+		if (estaVacia) {
+			throw new Error(`Falta responder la pregunta obligatoria: ${pregunta.pregunta}`);
+		}
+	}
+
+	const savedImages: SavedActorImage[] = [];
+	try {
+		let fotoPerfilUrl = input.fotoPerfilUrl ?? null;
+		if (input.fotoPerfilBase64) {
+			const image = saveActorImage(input.fotoPerfilBase64, 'perfil');
+			savedImages.push(image);
+			fotoPerfilUrl = image.url;
+		}
+
+		const portafolio = (input.portafolio ?? []).map((item) => {
+			let url = item.url ?? '';
+			if (item.tipo === 'IMAGEN') {
+				if (!item.imagenBase64) throw new Error(`Falta la imagen del trabajo “${item.titulo}”.`);
+				const image = saveActorImage(item.imagenBase64, 'portafolio');
+				savedImages.push(image);
+				url = image.url;
+			}
+			if (!url) throw new Error(`Falta el enlace del trabajo “${item.titulo}”.`);
+
+			const descripcion = item.descripcion?.trim()
+				? `${item.titulo.trim()}\n${item.descripcion.trim()}`
+				: item.titulo.trim();
+			const esRedSocial = /(?:instagram|facebook|tiktok|x\.com|twitter)\./i.test(url);
+
+			return {
+				tipo: item.tipo === 'IMAGEN' ? ('IMAGEN' as const) : esRedSocial ? ('RRSS' as const) : ('LINK' as const),
+				descripcion,
+				url,
+			};
+		});
+
+		return await crearActorRepository({
+			idUsuario: input.idUsuario,
+			idCategoria: input.idCategoria,
+			idSubcategoria: input.idSubcategoria,
+			nombre: input.nombre,
+			descripcion: input.descripcion,
+			fotoPerfilUrl,
+			cuit: input.cuit,
+			tipoActor: input.tipoActor,
+			provincia: input.provincia,
+			departamento: input.departamento,
+			localidad: input.localidad,
+			direccion: input.direccion,
+			latitud: input.latitud,
+			longitud: input.longitud,
+			esPublica: input.esPublica,
+			respuestas,
+			portafolio,
+		});
+	} catch (error) {
+		removeSavedActorImages(savedImages);
+		throw error;
+	}
 }
 
 export async function editarActorService(input: {
@@ -205,6 +368,7 @@ export async function editarActorService(input: {
 	nombre: string;
 	descripcion: string;
 	fotoPerfilUrl?: string | null | undefined;
+	fotoPerfilBase64?: string | null | undefined;
 	cuit?: string | null | undefined;
 	tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
 	departamento: string;
@@ -213,10 +377,36 @@ export async function editarActorService(input: {
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }) {
 	const esAdmin = input.userRol === 'ADMIN' || input.userRol === 'MODERADOR';
-	await editarActorRepository({
-		...input,
-		esAdmin,
-	});
+	const savedImages: SavedActorImage[] = [];
+	try {
+		let fotoPerfilUrl = input.fotoPerfilUrl ?? null;
+		if (input.fotoPerfilBase64) {
+			const image = saveActorImage(input.fotoPerfilBase64, 'perfil');
+			savedImages.push(image);
+			fotoPerfilUrl = image.url;
+		}
+
+		await editarActorRepository({
+			idUsuario: input.idUsuario,
+			idActor: input.idActor,
+			idCategoria: input.idCategoria,
+			idSubcategoria: input.idSubcategoria,
+			nombre: input.nombre,
+			descripcion: input.descripcion,
+			fotoPerfilUrl,
+			cuit: input.cuit,
+			tipoActor: input.tipoActor,
+			departamento: input.departamento,
+			localidad: input.localidad,
+			direccion: input.direccion,
+			esAdmin,
+		});
+
+		return { fotoPerfilUrl };
+	} catch (error) {
+		removeSavedActorImages(savedImages);
+		throw error;
+	}
 }
 
 export async function cambiarEstadoActorService(input: {

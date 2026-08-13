@@ -126,7 +126,7 @@ misActoresRouter.post('/', (req, res) => {
 		idUsuarioDueno: 3,
 		nombre: attrs.nombre,
 		descripcion: attrs.descripcion,
-		foto: attrs.fotoPerfilUrl ?? null,
+		foto: attrs.fotoPerfilBase64 ?? attrs.fotoPerfilUrl ?? null,
 		cuit: attrs.cuit ?? null,
 		tipoActor: attrs.tipoActor ?? 'INDIVIDUO',
 		fechaCreacion: new Date().toISOString(),
@@ -142,11 +142,27 @@ misActoresRouter.post('/', (req, res) => {
 			longitud: attrs.longitud ?? -65.2226,
 			esPublica: attrs.esPublica ?? true,
 		},
+		respuestasFormulario: Object.fromEntries(
+			(attrs.respuestas ?? []).map((respuesta: { idPregunta: number; valor: string | number | boolean | string[] }) => [
+				respuesta.idPregunta,
+				respuesta.valor,
+			]),
+		),
 	};
 
 	db.actores.push(newActor);
+	for (const item of attrs.portafolio ?? []) {
+		db.portafolioItems.push({
+			id: db.portafolioItems.length + 1,
+			idActor: newId,
+			tipo: item.tipo === 'IMAGEN' ? 'IMAGEN' : 'LINK',
+			url: item.tipo === 'IMAGEN' ? item.imagenBase64 : item.url,
+			descripcion: item.descripcion ? `${item.titulo}\n${item.descripcion}` : item.titulo,
+			fechaCreacion: new Date().toISOString(),
+		});
+	}
 
-	return res.json({ data: { idActor: newId } });
+	return res.status(201).json({ data: { idActor: newId } });
 });
 
 // PUT /api/mis-actores/:id
@@ -161,7 +177,7 @@ misActoresRouter.put('/:id', (req, res) => {
 
 	actor.nombre = attrs.nombre;
 	actor.descripcion = attrs.descripcion;
-	actor.foto = attrs.fotoPerfilUrl ?? actor.foto;
+	actor.foto = attrs.fotoPerfilBase64 ?? attrs.fotoPerfilUrl ?? actor.foto;
 	actor.cuit = attrs.cuit ?? actor.cuit;
 	actor.tipoActor = attrs.tipoActor ?? actor.tipoActor;
 	actor.idCategoria = Number(attrs.idCategoria);
@@ -172,7 +188,7 @@ misActoresRouter.put('/:id', (req, res) => {
 		actor.ubicacion.direccion = attrs.direccion;
 	}
 
-	return res.json({ message: 'Actor actualizado correctamente.' });
+	return res.json({ data: { fotoPerfilUrl: actor.foto }, message: 'Actor actualizado correctamente.' });
 });
 
 // PATCH /api/mis-actores/:id/estado

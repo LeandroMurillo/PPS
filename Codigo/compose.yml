@@ -45,6 +45,7 @@ services:
       NODE_ENV: development
       PORT: 3000
       CORS_ORIGIN: http://localhost:5173
+      PUBLIC_BASE_URL: http://localhost:3000
       DB_HOST: db
       DB_PORT: 3306
       DB_USER: ${DB_USER}
@@ -55,6 +56,7 @@ services:
       - "3000:3000"
     volumes:
       - /app/node_modules
+      - actor-uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -102,3 +104,4 @@ services:
 # Define the named volume for database persistence
 volumes:
   mariadb-data:
+  actor-uploads:

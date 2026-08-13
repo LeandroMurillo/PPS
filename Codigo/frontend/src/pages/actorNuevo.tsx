@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router';
 
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import BusinessIcon from '@mui/icons-material/Business';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GroupsIcon from '@mui/icons-material/Groups';
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MapIcon from '@mui/icons-material/Map';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PersonIcon from '@mui/icons-material/Person';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import PublicIcon from '@mui/icons-material/Public';
 import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
 import SearchIcon from '@mui/icons-material/Search';
@@ -21,6 +27,8 @@ import {
 	Autocomplete,
 	Box,
 	Button,
+	Card,
+	CardContent,
 	Checkbox,
 	Chip,
 	CircularProgress,
@@ -30,6 +38,7 @@ import {
 	FormGroup,
 	FormHelperText,
 	Grid,
+	IconButton,
 	InputLabel,
 	MenuItem,
 	Paper,
@@ -37,12 +46,16 @@ import {
 	RadioGroup,
 	Select,
 	Stack,
+	Step,
+	StepLabel,
+	Stepper,
 	TextField,
 	Tooltip,
 	Typography,
 } from '@mui/material';
 
 import {
+	crearMiActorApi,
 	obtenerFormulariosAplicablesApi,
 	obtenerOpcionesRegistroApi,
 	type FormularioAplicable,
@@ -54,13 +67,31 @@ import RequiredAsterisk from '../components/requiredAsterisk';
 
 import 'leaflet/dist/leaflet.css';
 
-const STEPS = ['Sobre tu actividad cultural'];
+const STEPS = ['Sobre tu actividad', 'Categoría', 'Portafolio', 'Vista previa'];
 
-const STEP_DESCRIPTIONS = ['Contanos los datos principales de tu actividad, proyecto o espacio cultural.'];
+const STEP_DESCRIPTIONS = [
+	'Contanos los datos principales de tu actividad, proyecto o espacio cultural.',
+	'Completá la información específica de tu sector cultural.',
+	'Mostrá tus trabajos, proyectos y producciones más representativas.',
+	'Revisá cómo se verá tu perfil antes de enviarlo.',
+];
 
 type ActorType = 'persona' | 'colectivo' | 'institucion';
 
 type FormAnswer = string | string[];
+
+type PortfolioItemType = 'IMAGEN' | 'VIDEO' | 'ENLACE';
+
+type PortfolioItemDraft = {
+	id: number;
+	tipo: PortfolioItemType;
+	titulo: string;
+	descripcion: string;
+	url: string;
+	previewUrl?: string;
+};
+
+const MAX_PORTFOLIO_ITEMS = 6;
 
 type TucumanDepartmentInfo = {
 	centroide?: { lat: number; lon: number };
@@ -137,6 +168,7 @@ const actorTypeOptions: {
 ];
 
 export default function ActorNuevoPage() {
+	const navigate = useNavigate();
 	const pageTopRef = useRef<HTMLDivElement>(null);
 	const [activeStep, setActiveStep] = useState(0);
 	const [actorType, setActorType] = useState<ActorType | null>(null);
@@ -151,8 +183,15 @@ export default function ActorNuevoPage() {
 	const [formsError, setFormsError] = useState('');
 	const [answers, setAnswers] = useState<Record<string, FormAnswer>>({});
 	const [generalData, setGeneralData] = useState<GeneralActorData>(INITIAL_GENERAL_DATA);
+	const [portfolioItems, setPortfolioItems] = useState<PortfolioItemDraft[]>([]);
 	const [validationAttempted, setValidationAttempted] = useState(false);
+	const [formValidationAttempted, setFormValidationAttempted] = useState(false);
+	const [submitted, setSubmitted] = useState(false);
+	const [submitting, setSubmitting] = useState(false);
+	const [submissionError, setSubmissionError] = useState('');
 	const selectedCategory = categories.find((item) => item.id === categoryId) ?? null;
+	const selectedSubcategory =
+		selectedCategory?.subcategorias.find((item) => item.id === subcategoryId) ?? null;
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -261,14 +300,90 @@ export default function ActorNuevoPage() {
 				return;
 			}
 		}
+		if (activeStep === 1) {
+			setFormValidationAttempted(true);
+			const hasMissingRequiredAnswer = forms.some((form) =>
+				form.preguntas.some((question) => {
+					if (!question.esObligatorio) return false;
+					const value = answers[`${form.id}:${question.id}`];
+					return Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim();
+				}),
+			);
+			if (hasMissingRequiredAnswer) {
+				scrollToTop();
+				return;
+			}
+		}
 
-		setActiveStep(1);
+		setActiveStep((step) => Math.min(step + 1, STEPS.length - 1));
 		scrollToTop();
 	};
 
 	const handleBack = () => {
 		setActiveStep((step) => Math.max(step - 1, 0));
 		scrollToTop();
+	};
+
+	const handleSubmit = async () => {
+		if (submitted) {
+			navigate('/mis-actores');
+			return;
+		}
+		if (submitting || categoryId === null || !generalData.ubicacion || actorType === null) return;
+
+		setSubmitting(true);
+		setSubmissionError('');
+		try {
+			const respuestas = forms.flatMap((form) =>
+				form.preguntas.flatMap((question) => {
+					const value = answers[`${form.id}:${question.id}`];
+					const isEmpty = Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim();
+					if (isEmpty) return [];
+
+					let normalizedValue: string | number | boolean | string[] = value;
+					if (question.tipoDato === 'NUMERO') normalizedValue = Number(value);
+					if (question.tipoDato === 'BOOLEANO') normalizedValue = value === 'true';
+
+					return [{ idFormulario: form.id, idPregunta: question.id, valor: normalizedValue }];
+				}),
+			);
+
+			await crearMiActorApi({
+				idCategoria: categoryId,
+				idSubcategoria: subcategoryId,
+				nombre: generalData.nombre.trim(),
+				descripcion: generalData.descripcion.trim(),
+				fotoPerfilBase64: generalData.fotoPreview || null,
+				cuit: generalData.cuit.trim() || null,
+				tipoActor:
+					actorType === 'persona' ? 'INDIVIDUO' : actorType === 'colectivo' ? 'COLECTIVO' : 'ESPACIO',
+				provincia: 'Tucumán',
+				departamento: generalData.departamento,
+				localidad: generalData.localidad.trim(),
+				direccion: generalData.direccion.trim(),
+				latitud: generalData.ubicacion.lat,
+				longitud: generalData.ubicacion.lng,
+				esPublica: generalData.ubicacionPublica,
+				respuestas,
+				portafolio: portfolioItems.map((item) => ({
+					tipo: item.tipo,
+					titulo: item.titulo,
+					descripcion: item.descripcion || null,
+					url: item.tipo === 'IMAGEN' ? null : item.url,
+					imagenBase64: item.tipo === 'IMAGEN' ? item.previewUrl || item.url : null,
+				})),
+			});
+
+			setSubmitted(true);
+			scrollToTop();
+		} catch (error) {
+			setSubmissionError(
+				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.',
+			);
+			scrollToTop();
+		} finally {
+			setSubmitting(false);
+		}
 	};
 
 	return (
@@ -284,36 +399,33 @@ export default function ActorNuevoPage() {
 			}}
 		>
 			<Box sx={{ maxWidth: 1240, mx: 'auto' }}>
-				<Stack
-					direction={{ xs: 'column', md: 'row' }}
-					spacing={2}
-					justifyContent="space-between"
-					alignItems={{ xs: 'stretch', md: 'flex-start' }}
-					sx={{ mb: 3 }}
-				>
-					{activeStep === 0 && (
-						<Box>
-							<Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 0.5 }}>
-								Registrar actor cultural
-							</Typography>
-						</Box>
-					)}
-				</Stack>
+				<Box sx={{ mb: 3 }}>
+					<Typography variant="h4" component="h1" fontWeight={700} sx={{ mb: 2.5 }}>
+						Registrar actor cultural
+					</Typography>
+					<Paper variant="outlined" sx={{ borderRadius: 2, px: { xs: 1, sm: 2 }, py: 2 }}>
+						<Stepper activeStep={activeStep} alternativeLabel>
+							{STEPS.map((label) => (
+								<Step key={label}>
+									<StepLabel>{label}</StepLabel>
+								</Step>
+							))}
+						</Stepper>
+					</Paper>
+				</Box>
 
 				<Grid container spacing={3} alignItems="flex-start">
 					<Grid size={{ xs: 12 }}>
 						<Stack spacing={3}>
 							<Paper variant="outlined" sx={{ borderRadius: 2, p: { xs: 2, md: 3 } }}>
-								{activeStep === 0 && (
-									<Stack spacing={0.5} sx={{ mb: 3 }}>
-										<Typography variant="h5" fontWeight={700}>
-											{STEPS[0]}
-										</Typography>
-										<Typography variant="body2" color="text.secondary">
-											{STEP_DESCRIPTIONS[0]}
-										</Typography>
-									</Stack>
-								)}
+								<Stack spacing={0.5} sx={{ mb: 3 }}>
+									<Typography variant="h5" fontWeight={700}>
+										{STEPS[activeStep]}
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										{STEP_DESCRIPTIONS[activeStep]}
+									</Typography>
+								</Stack>
 
 								{activeStep === 0 && (
 									<Stack spacing={2.5}>
@@ -342,15 +454,46 @@ export default function ActorNuevoPage() {
 									</Stack>
 								)}
 								{activeStep === 1 && (
-									<CategoryForms
-										categoryName={selectedCategory?.nombre ?? 'la categoría seleccionada'}
+									<Stack spacing={2}>
+										{formValidationAttempted &&
+											forms.some((form) =>
+												form.preguntas.some((question) => {
+													const value = answers[`${form.id}:${question.id}`];
+													return (
+														question.esObligatorio &&
+														(Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim())
+													);
+												}),
+											) && (
+												<Alert severity="error" variant="outlined">
+													Completá las preguntas obligatorias para continuar.
+												</Alert>
+											)}
+										<CategoryForms
+											categoryName={selectedCategory?.nombre ?? 'la categoría seleccionada'}
+											forms={forms}
+											loading={formsLoading}
+											error={formsError}
+											answers={answers}
+											onAnswerChange={(key, value) => {
+												setAnswers((current) => ({ ...current, [key]: value }));
+											}}
+										/>
+									</Stack>
+								)}
+								{activeStep === 2 && (
+									<PortfolioStep items={portfolioItems} onChange={setPortfolioItems} />
+								)}
+								{activeStep === 3 && (
+									<PublicProfilePreview
+										generalData={generalData}
+										categoryName={selectedCategory?.nombre ?? 'Sector cultural'}
+										subcategoryName={selectedSubcategory?.nombre ?? ''}
 										forms={forms}
-										loading={formsLoading}
-										error={formsError}
 										answers={answers}
-										onAnswerChange={(key, value) => {
-											setAnswers((current) => ({ ...current, [key]: value }));
-										}}
+										portfolioItems={portfolioItems}
+										submitted={submitted}
+										submissionError={submissionError}
 									/>
 								)}
 							</Paper>
@@ -365,18 +508,35 @@ export default function ActorNuevoPage() {
 									variant="outlined"
 									startIcon={<ArrowBackIcon />}
 									onClick={handleBack}
-									disabled={activeStep === 0}
+									disabled={activeStep === 0 || submitted || submitting}
 								>
 									Atrás
 								</Button>
-								{activeStep === 0 && (
+								{activeStep < STEPS.length - 1 ? (
 									<Button
 										variant="contained"
 										endIcon={<ArrowForwardIcon />}
 										onClick={handleNext}
-										disabled={catalogLoading || Boolean(catalogError)}
+										disabled={
+											(activeStep === 0 && (catalogLoading || Boolean(catalogError))) ||
+											(activeStep === 1 && formsLoading)
+										}
 									>
 										Siguiente
+									</Button>
+								) : (
+									<Button
+										variant="contained"
+										color="success"
+										startIcon={<CheckCircleOutlineIcon />}
+										onClick={() => void handleSubmit()}
+										disabled={submitting}
+									>
+										{submitting
+											? 'Guardando…'
+											: submitted
+												? 'Ir a Mis actores'
+												: 'Enviar a revisión'}
 									</Button>
 								)}
 							</Stack>
@@ -692,6 +852,413 @@ function GeneralActorFields({
 				</Typography>
 			</Grid>
 		</Grid>
+	);
+}
+
+function PortfolioStep({
+	items,
+	onChange,
+}: {
+	items: PortfolioItemDraft[];
+	onChange: (items: PortfolioItemDraft[]) => void;
+}) {
+	const [type, setType] = useState<PortfolioItemType>('IMAGEN');
+	const [title, setTitle] = useState('');
+	const [description, setDescription] = useState('');
+	const [url, setUrl] = useState('');
+	const [imageName, setImageName] = useState('');
+	const [imagePreview, setImagePreview] = useState('');
+
+	const resetDraft = () => {
+		setTitle('');
+		setDescription('');
+		setUrl('');
+		setImageName('');
+		setImagePreview('');
+	};
+
+	const addItem = () => {
+		if (
+			items.length >= MAX_PORTFOLIO_ITEMS ||
+			!title.trim() ||
+			(type === 'IMAGEN' ? !imagePreview : !url.trim())
+		) {
+			return;
+		}
+		onChange([
+			...items,
+			{
+				id: Date.now(),
+				tipo: type,
+				titulo: title.trim(),
+				descripcion: description.trim(),
+				url: type === 'IMAGEN' ? imagePreview : url.trim(),
+				previewUrl: type === 'IMAGEN' ? imagePreview : undefined,
+			},
+		]);
+		resetDraft();
+	};
+
+	return (
+		<Stack spacing={3}>
+			<Alert severity="info" variant="outlined">
+				El portafolio es opcional. Podés sumar contenido ahora o completarlo más adelante desde “Mis
+				actores”.
+			</Alert>
+
+			<Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 2, bgcolor: 'action.hover' }}>
+				<Stack spacing={2}>
+					<Typography variant="h6" fontWeight={700}>
+						Agregar trabajo
+					</Typography>
+					<FormControl fullWidth>
+						<InputLabel>Tipo de contenido</InputLabel>
+						<Select
+							value={type}
+							label="Tipo de contenido"
+							onChange={(event) => {
+								setType(event.target.value as PortfolioItemType);
+								resetDraft();
+							}}
+						>
+							<MenuItem value="IMAGEN">Imagen o fotografía</MenuItem>
+							<MenuItem value="VIDEO">Video</MenuItem>
+							<MenuItem value="ENLACE">Enlace externo o red social</MenuItem>
+						</Select>
+					</FormControl>
+
+					<Grid container spacing={2}>
+						<Grid size={{ xs: 12, md: 5 }}>
+							<TextField
+								fullWidth
+								required
+								label="Título del trabajo"
+								placeholder="Ej. Presentación en Festival del Norte"
+								value={title}
+								onChange={(event) => setTitle(event.target.value)}
+							/>
+						</Grid>
+						<Grid size={{ xs: 12, md: 7 }}>
+							<TextField
+								fullWidth
+								label="Descripción breve"
+								placeholder="Contá de qué se trata, el año o tu participación."
+								value={description}
+								onChange={(event) => setDescription(event.target.value)}
+							/>
+						</Grid>
+					</Grid>
+
+					{type === 'IMAGEN' ? (
+						<UploadBox
+							icon={<ImageOutlinedIcon color="primary" />}
+							title="Seleccioná una imagen"
+							detail="JPG, PNG o WebP"
+							fileName={imageName}
+							previewUrl={imagePreview}
+							onFileSelect={(file) => {
+								if (!file) {
+									setImageName('');
+									setImagePreview('');
+									return;
+								}
+								const reader = new FileReader();
+								reader.addEventListener('load', () => {
+									setImageName(file.name);
+									setImagePreview(String(reader.result ?? ''));
+								});
+								reader.readAsDataURL(file);
+							}}
+						/>
+					) : (
+						<TextField
+							fullWidth
+							required
+							type="url"
+							label={type === 'VIDEO' ? 'Enlace al video' : 'Enlace'}
+							placeholder={
+								type === 'VIDEO' ? 'https://youtube.com/watch?v=…' : 'https://instagram.com/…'
+							}
+							value={url}
+							onChange={(event) => setUrl(event.target.value)}
+							helperText="Pegá una dirección pública que las personas puedan visitar."
+						/>
+					)}
+
+					<Box>
+						<Button
+							variant="contained"
+							startIcon={<AddIcon />}
+							onClick={addItem}
+							disabled={
+								items.length >= MAX_PORTFOLIO_ITEMS ||
+								!title.trim() ||
+								(type === 'IMAGEN' ? !imagePreview : !url.trim())
+							}
+						>
+							Agregar al portafolio
+						</Button>
+						{items.length >= MAX_PORTFOLIO_ITEMS && (
+							<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+								Podés agregar hasta {MAX_PORTFOLIO_ITEMS} trabajos durante el registro.
+							</Typography>
+						)}
+					</Box>
+				</Stack>
+			</Paper>
+
+			<Box>
+				<Typography variant="h6" fontWeight={700} sx={{ mb: 1.5 }}>
+					Trabajos agregados ({items.length})
+				</Typography>
+				{items.length === 0 ? (
+					<Box
+						sx={{
+							border: '1px dashed',
+							borderColor: 'divider',
+							borderRadius: 2,
+							py: 4,
+							textAlign: 'center',
+							color: 'text.secondary',
+						}}
+					>
+						<ImageOutlinedIcon sx={{ fontSize: 40, mb: 0.5 }} />
+						<Typography variant="body2">Todavía no agregaste trabajos.</Typography>
+					</Box>
+				) : (
+					<Grid container spacing={2}>
+						{items.map((item) => (
+							<Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
+								<Card variant="outlined" sx={{ height: '100%', position: 'relative' }}>
+									{item.tipo === 'IMAGEN' ? (
+										<Box
+											component="img"
+											src={item.previewUrl}
+											alt={item.titulo}
+											sx={{ width: '100%', height: 150, objectFit: 'cover' }}
+										/>
+									) : (
+										<Box
+											sx={{ height: 96, display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}
+										>
+											{item.tipo === 'VIDEO' ? (
+												<PlayCircleOutlineIcon color="primary" sx={{ fontSize: 42 }} />
+											) : (
+												<InsertLinkIcon color="primary" sx={{ fontSize: 42 }} />
+											)}
+										</Box>
+									)}
+									<CardContent>
+										<Typography fontWeight={700}>{item.titulo}</Typography>
+										{item.descripcion && (
+											<Typography variant="body2" color="text.secondary">
+												{item.descripcion}
+											</Typography>
+										)}
+									</CardContent>
+									<IconButton
+										aria-label={`Eliminar ${item.titulo}`}
+										onClick={() => onChange(items.filter((current) => current.id !== item.id))}
+										sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'background.paper' }}
+									>
+										<DeleteIcon fontSize="small" />
+									</IconButton>
+								</Card>
+							</Grid>
+						))}
+					</Grid>
+				)}
+			</Box>
+		</Stack>
+	);
+}
+
+function PublicProfilePreview({
+	generalData,
+	categoryName,
+	subcategoryName,
+	forms,
+	answers,
+	portfolioItems,
+	submitted,
+	submissionError,
+}: {
+	generalData: GeneralActorData;
+	categoryName: string;
+	subcategoryName: string;
+	forms: FormularioAplicable[];
+	answers: Record<string, FormAnswer>;
+	portfolioItems: PortfolioItemDraft[];
+	submitted: boolean;
+	submissionError: string;
+}) {
+	const images = [
+		...(generalData.fotoPreview
+			? [{ id: -1, url: generalData.fotoPreview, titulo: `Foto de ${generalData.nombre}` }]
+			: []),
+		...portfolioItems
+			.filter((item) => item.tipo === 'IMAGEN')
+			.map((item) => ({ id: item.id, url: item.url, titulo: item.titulo })),
+	];
+	const publicAnswers = forms.flatMap((form) =>
+		form.preguntas
+			.filter((question) => question.esPublico)
+			.map((question) => ({
+				id: `${form.id}:${question.id}`,
+				question: question.pregunta,
+				answer: answers[`${form.id}:${question.id}`],
+			}))
+			.filter(({ answer }) => (Array.isArray(answer) ? answer.length > 0 : Boolean(String(answer ?? '').trim()))),
+	);
+
+	return (
+		<Stack spacing={3}>
+			{submissionError && (
+				<Alert severity="error" variant="outlined">
+					<strong>No se pudo guardar la solicitud.</strong> {submissionError}
+				</Alert>
+			)}
+			<Alert severity={submitted ? 'success' : 'warning'} variant="outlined">
+				{submitted ? (
+					<>
+						<strong>Solicitud enviada.</strong> El perfil quedó pendiente de revisión antes de publicarse.
+					</>
+				) : (
+					<>
+						<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública.
+					</>
+				)}
+			</Alert>
+
+			<Box sx={{ px: { xs: 0, md: 2 }, py: 1 }}>
+				<Typography variant="h3" component="h2" fontWeight={700} gutterBottom>
+					{generalData.nombre || 'Nombre de tu actividad cultural'}
+				</Typography>
+				<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
+					<Chip label={categoryName} color="primary" />
+					{Boolean(subcategoryName) && <Chip label={subcategoryName} variant="outlined" />}
+					<Chip
+						icon={<LocationOnIcon />}
+						label={[generalData.localidad, generalData.departamento].filter(Boolean).join(', ')}
+						variant="outlined"
+					/>
+				</Stack>
+
+				<Grid container spacing={3} sx={{ mb: 3 }}>
+					<Grid size={{ xs: 12, md: 7 }}>
+						<Paper variant="outlined" sx={{ height: 320, overflow: 'hidden', borderRadius: 2 }}>
+							{images.length > 0 ? (
+								<Box
+									component="img"
+									src={images[0].url}
+									alt={images[0].titulo}
+									sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+								/>
+							) : (
+								<Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}>
+									<Stack alignItems="center" color="text.secondary">
+										<ImageOutlinedIcon sx={{ fontSize: 48 }} />
+										<Typography>Sin imágenes disponibles</Typography>
+									</Stack>
+								</Box>
+							)}
+						</Paper>
+					</Grid>
+					<Grid size={{ xs: 12, md: 5 }}>
+						<Paper variant="outlined" sx={{ height: 320, overflow: 'hidden', borderRadius: 2 }}>
+							{generalData.ubicacionPublica && generalData.ubicacion ? (
+								<MapContainer
+									center={[generalData.ubicacion.lat, generalData.ubicacion.lng]}
+									zoom={14}
+									scrollWheelZoom={false}
+									style={{ height: '100%', width: '100%' }}
+								>
+									<TileLayer
+										attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+										url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+									/>
+									<Marker
+										position={[generalData.ubicacion.lat, generalData.ubicacion.lng]}
+										icon={customPinIcon}
+									/>
+								</MapContainer>
+							) : (
+								<Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: 'action.hover', p: 2 }}>
+									<Typography color="text.secondary" textAlign="center">
+										La ubicación exacta no se mostrará públicamente.
+									</Typography>
+								</Box>
+							)}
+						</Paper>
+					</Grid>
+				</Grid>
+
+				<Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 4 }}>
+					{generalData.descripcion}
+				</Typography>
+
+				{portfolioItems.length > 0 && (
+					<Box sx={{ mb: 4 }}>
+						<Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
+							Portafolio
+						</Typography>
+						<Grid container spacing={2}>
+							{portfolioItems.map((item) => (
+								<Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
+									<Card variant="outlined" sx={{ height: '100%' }}>
+										{item.tipo === 'IMAGEN' && (
+											<Box
+												component="img"
+												src={item.url}
+												alt={item.titulo}
+												sx={{ width: '100%', height: 150, objectFit: 'cover' }}
+											/>
+										)}
+										{item.tipo !== 'IMAGEN' && (
+											<Box sx={{ height: 100, display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}>
+												{item.tipo === 'VIDEO' ? (
+													<PlayCircleOutlineIcon color="primary" sx={{ fontSize: 44 }} />
+												) : (
+													<InsertLinkIcon color="primary" sx={{ fontSize: 44 }} />
+												)}
+											</Box>
+										)}
+										<CardContent>
+											<Typography fontWeight={700}>{item.titulo}</Typography>
+											{item.descripcion && (
+												<Typography variant="body2" color="text.secondary">
+													{item.descripcion}
+												</Typography>
+											)}
+										</CardContent>
+									</Card>
+								</Grid>
+							))}
+						</Grid>
+					</Box>
+				)}
+
+				{publicAnswers.length > 0 && (
+					<Box>
+						<Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
+							Más sobre esta actividad
+						</Typography>
+						<Grid container spacing={2}>
+							{publicAnswers.map((item) => (
+								<Grid key={item.id} size={{ xs: 12, md: 6 }}>
+									<Typography variant="subtitle2" fontWeight={700}>
+										{item.question}
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										{Array.isArray(item.answer) ? item.answer.join(', ') : String(item.answer)}
+									</Typography>
+								</Grid>
+							))}
+						</Grid>
+					</Box>
+				)}
+			</Box>
+		</Stack>
 	);
 }
 

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router';
 
 import AddIcon from '@mui/icons-material/Add';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -73,22 +74,43 @@ import {
 	listarIntegrantesApi,
 	listarEventosApi,
 	listarMisActoresApi,
+	obtenerOpcionesRegistroApi,
 	type IntegranteApiItem,
+	type OpcionCategoriaRegistro,
 } from '../api/actores';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugConId } from '../utils/slug';
 
-function getCategoryIdByName(categoriaNombre: string): number {
-	const idx = CATEGORIAS_OPCIONES.indexOf(categoriaNombre);
-	return idx >= 0 ? idx + 1 : 1;
+function normalizeCatalogName(value: string): string {
+	return value
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.trim()
+		.toLocaleLowerCase('es');
 }
 
-function getSubcategoryIdByName(categoriaNombre: string, subcategoriaNombre?: string | null): number | null {
-	if (!subcategoriaNombre) return null;
-	const subOpts = SUBCATEGORIAS_OPCIONES[categoriaNombre] || [];
-	const idx = subOpts.indexOf(subcategoriaNombre);
-	return idx >= 0 ? idx + 1 : null;
+function findCategoryByName(options: OpcionCategoriaRegistro[], categoryName: string) {
+	const normalizedName = normalizeCatalogName(categoryName);
+	return options.find((category) => normalizeCatalogName(category.nombre) === normalizedName) ?? null;
+}
+
+function getCategoryIdByName(options: OpcionCategoriaRegistro[], categoryName: string): number | undefined {
+	return findCategoryByName(options, categoryName)?.id;
+}
+
+function getSubcategoryIdByName(
+	options: OpcionCategoriaRegistro[],
+	categoryName: string,
+	subcategoryName?: string | null,
+): number | null {
+	if (!subcategoryName) return null;
+	const category = findCategoryByName(options, categoryName);
+	const normalizedName = normalizeCatalogName(subcategoryName);
+	return (
+		category?.subcategorias.find((subcategory) => normalizeCatalogName(subcategory.nombre) === normalizedName)?.id ??
+		null
+	);
 }
 
 export type MyActorPortfolioItem = {
@@ -154,26 +176,6 @@ const departamentos = [
 	'Yerba Buena',
 ] as const;
 
-const CATEGORIAS_OPCIONES = [
-	'Música',
-	'Artes escénicas',
-	'Artes visuales',
-	'Artesanías',
-	'Gestión cultural',
-	'Audiovisual',
-	'Literatura',
-];
-
-const SUBCATEGORIAS_OPCIONES: Record<string, string[]> = {
-	Música: ['Folklore y fusión', 'Música popular', 'Rock/Indie', 'Música académica', 'Cumbia/Tropical'],
-	'Artes escénicas': ['Circo contemporáneo', 'Teatro independiente', 'Danza', 'Títeres', 'Performance'],
-	'Artes visuales': ['Pintura y grabado', 'Escultura', 'Fotografía', 'Arte digital'],
-	Artesanías: ['Alfarería tradicional', 'Textilería', 'Talla en madera', 'Cestería'],
-	'Gestión cultural': ['Producción de eventos', 'Espacio comunitario', 'Formación artística'],
-	Audiovisual: ['Cine independiente', 'Documental', 'Animación'],
-	Literatura: ['Poesía', 'Narrativa', 'Edición independiente'],
-};
-
 export default function MisActoresPage() {
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -182,6 +184,8 @@ export default function MisActoresPage() {
 	const isAdminOrMod = user?.rol === 'ADMIN' || user?.rol === 'MODERADOR';
 
 	const [actores, setActores] = React.useState<MyActor[]>([]);
+	const [categoryOptions, setCategoryOptions] = React.useState<OpcionCategoriaRegistro[]>([]);
+	const [catalogError, setCatalogError] = React.useState<string | null>(null);
 	const [loading, setLoading] = React.useState<boolean>(true);
 	const [error, setError] = React.useState<string | null>(null);
 
@@ -209,8 +213,12 @@ export default function MisActoresPage() {
 		cuit: '',
 		descripcion: '',
 		fotoPerfilUrl: '',
+		fotoPerfilBase64: '',
+		fotoPerfilNombre: '',
 	});
 	const [formError, setFormError] = React.useState<string | null>(null);
+	const [profileImageError, setProfileImageError] = React.useState<string | null>(null);
+	const [profileImageDragging, setProfileImageDragging] = React.useState(false);
 
 	// Status Change Modal
 	const [statusModalOpen, setStatusModalOpen] = React.useState(false);
@@ -262,6 +270,29 @@ export default function MisActoresPage() {
 	const [snackbarMessage, setSnackbarMessage] = React.useState<string | null>(null);
 
 	const debouncedSearch = useDebouncedValue(search);
+	const selectedEditCategory = React.useMemo(
+		() => findCategoryByName(categoryOptions, formValues.categoria),
+		[categoryOptions, formValues.categoria],
+	);
+
+	React.useEffect(() => {
+		const controller = new AbortController();
+		void obtenerOpcionesRegistroApi(controller.signal)
+			.then((response) => {
+				setCategoryOptions(response.data);
+				setCatalogError(null);
+			})
+			.catch((loadError: unknown) => {
+				if (!controller.signal.aborted) {
+					setCatalogError(
+						loadError instanceof Error
+							? loadError.message
+							: 'No se pudo cargar el catálogo de categorías.',
+					);
+				}
+			});
+		return () => controller.abort();
+	}, []);
 
 	// Load actors directly from backend API (database)
 	const fetchMisActores = React.useCallback(async () => {
@@ -271,7 +302,7 @@ export default function MisActoresPage() {
 			const res = await listarMisActoresApi({
 				busqueda: debouncedSearch || undefined,
 				estado: (stateFilter as 'A' | 'P' | 'I') || undefined,
-				idCategoria: categoryFilter ? getCategoryIdByName(categoryFilter) : undefined,
+				idCategoria: categoryFilter ? getCategoryIdByName(categoryOptions, categoryFilter) : undefined,
 			});
 
 			if (res?.data) {
@@ -305,7 +336,7 @@ export default function MisActoresPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, [debouncedSearch, stateFilter, categoryFilter, currentUserId]);
+	}, [debouncedSearch, stateFilter, categoryFilter, currentUserId, categoryOptions]);
 
 	React.useEffect(() => {
 		fetchMisActores();
@@ -336,9 +367,13 @@ export default function MisActoresPage() {
 	// Open Edit Dialog
 	const handleOpenEdit = (actor: MyActor) => {
 		setEditingActor(actor);
-		const cat = CATEGORIAS_OPCIONES.includes(actor.categoria) ? actor.categoria : CATEGORIAS_OPCIONES[0];
-		const subOpts = SUBCATEGORIAS_OPCIONES[cat] || [];
-		const sub = actor.subcategoria && subOpts.includes(actor.subcategoria) ? actor.subcategoria : subOpts[0] || '';
+		const category = findCategoryByName(categoryOptions, actor.categoria);
+		const cat = category?.nombre ?? actor.categoria;
+		const sub = actor.subcategoria
+			? category?.subcategorias.find(
+					(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
+				)?.nombre ?? actor.subcategoria
+			: '';
 
 		setFormValues({
 			nombre: actor.nombre,
@@ -351,9 +386,35 @@ export default function MisActoresPage() {
 			cuit: actor.cuit || '',
 			descripcion: actor.descripcion,
 			fotoPerfilUrl: actor.fotoPerfilUrl || '',
+			fotoPerfilBase64: '',
+			fotoPerfilNombre: '',
 		});
 		setFormError(null);
+		setProfileImageError(null);
 		setEditModalOpen(true);
+	};
+
+	const handleProfileImageFile = (file: File | null) => {
+		if (!file) return;
+		if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+			setProfileImageError('Seleccioná una imagen JPG, PNG o WebP.');
+			return;
+		}
+		if (file.size > 5 * 1024 * 1024) {
+			setProfileImageError('La imagen no puede superar los 5 MB.');
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.addEventListener('load', () => {
+			setFormValues((current) => ({
+				...current,
+				fotoPerfilBase64: String(reader.result ?? ''),
+				fotoPerfilNombre: file.name,
+			}));
+			setProfileImageError(null);
+		});
+		reader.readAsDataURL(file);
 	};
 
 	// Request Edit Save -> Open Edit Confirmation Dialog
@@ -364,6 +425,10 @@ export default function MisActoresPage() {
 		}
 
 		if (!editingActor) return;
+		if (!getCategoryIdByName(categoryOptions, formValues.categoria)) {
+			setFormError('La categoría seleccionada ya no está disponible. Recargá la página e intentá nuevamente.');
+			return;
+		}
 		setFormError(null);
 		setEditConfirmModalOpen(true);
 	};
@@ -374,22 +439,27 @@ export default function MisActoresPage() {
 
 		// If edited by regular user, state automatically changes to 'P' for re-validation.
 		const nextState: 'A' | 'P' | 'I' = isAdminOrMod ? editingActor.estado : 'P';
+		let savedPhotoUrl: string | null = formValues.fotoPerfilUrl.trim() || null;
 
 		try {
-			await editarMiActorApi(editingActor.id, {
-				idCategoria: getCategoryIdByName(formValues.categoria),
-				idSubcategoria: getSubcategoryIdByName(formValues.categoria, formValues.subcategoria),
+			const response = await editarMiActorApi(editingActor.id, {
+				idCategoria: getCategoryIdByName(categoryOptions, formValues.categoria)!,
+				idSubcategoria: getSubcategoryIdByName(categoryOptions, formValues.categoria, formValues.subcategoria),
 				nombre: formValues.nombre.trim(),
 				descripcion: formValues.descripcion.trim(),
 				fotoPerfilUrl: formValues.fotoPerfilUrl.trim() || null,
+				fotoPerfilBase64: formValues.fotoPerfilBase64 || null,
 				cuit: formValues.cuit.trim() || null,
 				tipoActor: formValues.tipoActor,
 				departamento: formValues.departamento,
 				localidad: formValues.localidad.trim(),
 				direccion: formValues.direccion.trim(),
 			});
+			savedPhotoUrl = response.data.fotoPerfilUrl;
 		} catch (err) {
-			console.log('Error API editar actor:', err);
+			setFormError(err instanceof Error ? err.message : 'No se pudo actualizar el actor cultural.');
+			setEditConfirmModalOpen(false);
+			return;
 		}
 
 		setActores((prev) =>
@@ -406,7 +476,7 @@ export default function MisActoresPage() {
 							direccion: formValues.direccion.trim(),
 							cuit: formValues.cuit.trim() || null,
 							descripcion: formValues.descripcion.trim(),
-							fotoPerfilUrl: formValues.fotoPerfilUrl.trim() || null,
+							fotoPerfilUrl: savedPhotoUrl,
 							estado: nextState,
 						}
 					: actor,
@@ -856,6 +926,11 @@ export default function MisActoresPage() {
 						</Stack>
 					</Stack>
 				</Paper>
+				{catalogError && (
+					<Alert severity="warning" variant="outlined">
+						No se pudo cargar el catálogo para filtros y edición. {catalogError}
+					</Alert>
+				)}
 
 				{/* --- Filters & View Controls --- */}
 				<AdminFilters
@@ -876,9 +951,9 @@ export default function MisActoresPage() {
 							onChange={(e) => setCategoryFilter(e.target.value)}
 						>
 							<MenuItem value="">Todas</MenuItem>
-							{CATEGORIAS_OPCIONES.map((cat) => (
-								<MenuItem key={cat} value={cat}>
-									{cat}
+							{categoryOptions.map((category) => (
+								<MenuItem key={category.id} value={category.nombre}>
+									{category.nombre}
 								</MenuItem>
 							))}
 						</Select>
@@ -1186,6 +1261,233 @@ export default function MisActoresPage() {
 				<DialogTitle fontWeight={700}>Editar actor: {editingActor?.nombre}</DialogTitle>
 				<DialogContent dividers>
 					<Stack spacing={2.5} sx={{ pt: 1 }}>
+						<Grid container spacing={2} alignItems="flex-start">
+							<Grid size={{ xs: 12, md: 5 }}>
+								<Box>
+							<Box
+								component="label"
+								title="Cambiar foto de perfil"
+								onDragEnter={(event) => {
+									event.preventDefault();
+									setProfileImageDragging(true);
+								}}
+								onDragOver={(event) => event.preventDefault()}
+								onDragLeave={(event) => {
+									if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+										setProfileImageDragging(false);
+									}
+								}}
+								onDrop={(event) => {
+									event.preventDefault();
+									setProfileImageDragging(false);
+									handleProfileImageFile(event.dataTransfer.files[0] ?? null);
+								}}
+								sx={{
+									position: 'relative',
+									display: 'block',
+									width:
+										formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'fit-content' : '100%',
+									maxWidth: '100%',
+									height: formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'auto' : { xs: 190, sm: 260 },
+									mx: { xs: 'auto', md: 0 },
+									lineHeight: 0,
+									border: '1px solid',
+									borderColor: profileImageError
+										? 'error.main'
+										: profileImageDragging
+											? 'primary.main'
+											: 'divider',
+									borderWidth: profileImageDragging ? 2 : 1,
+									borderRadius: 2,
+									overflow: 'hidden',
+									cursor: 'pointer',
+									bgcolor:
+										formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'transparent' : 'action.hover',
+									transition: 'border-color 160ms ease, box-shadow 160ms ease',
+									boxShadow: profileImageDragging ? 2 : 0,
+									'&:hover': {
+										borderColor: 'primary.main',
+									},
+									'&:hover .profile-photo-overlay': {
+										bgcolor: 'rgba(0, 0, 0, 0.38)',
+									},
+									'&:hover .profile-photo-icon': {
+										transform: 'scale(1.08)',
+									},
+								}}
+							>
+								{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
+									<>
+										<Box
+											component="img"
+											src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
+											alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
+											sx={{
+												width: 'auto',
+												height: 'auto',
+												maxWidth: '100%',
+												maxHeight: { xs: 190, sm: 260 },
+												display: 'block',
+											}}
+										/>
+										<Box
+											className="profile-photo-overlay"
+											sx={{
+												position: 'absolute',
+												inset: 0,
+												display: 'grid',
+												placeItems: 'center',
+												bgcolor: profileImageDragging ? 'rgba(0, 0, 0, 0.42)' : 'rgba(0, 0, 0, 0.24)',
+												transition: 'background-color 160ms ease',
+												pointerEvents: 'none',
+											}}
+										>
+											<Box
+												className="profile-photo-icon"
+												sx={{
+													width: 54,
+													height: 54,
+													borderRadius: '50%',
+													display: 'grid',
+													placeItems: 'center',
+													color: 'common.white',
+													bgcolor: 'rgba(0, 0, 0, 0.58)',
+													border: '1px solid rgba(255, 255, 255, 0.55)',
+													transition: 'transform 160ms ease',
+												}}
+											>
+												<AddPhotoAlternateIcon sx={{ fontSize: 28 }} />
+											</Box>
+										</Box>
+									</>
+								) : (
+									<Stack
+										alignItems="center"
+										justifyContent="center"
+										sx={{ height: '100%', color: 'text.secondary' }}
+									>
+										<AddPhotoAlternateIcon sx={{ fontSize: 46, mb: 0.5 }} />
+										<Typography variant="body2">Sin foto de perfil</Typography>
+									</Stack>
+								)}
+								<input
+									hidden
+									type="file"
+									accept="image/jpeg,image/png,image/webp"
+									onChange={(event) => handleProfileImageFile(event.target.files?.[0] ?? null)}
+								/>
+							</Box>
+							{profileImageError && (
+								<Typography
+									variant="caption"
+									color="error.main"
+									sx={{ display: 'block', mt: 0.75, ml: 0.25 }}
+								>
+									{profileImageError}
+								</Typography>
+							)}
+								</Box>
+							</Grid>
+
+							<Grid size={{ xs: 12, md: 7 }}>
+								<Stack spacing={1.5}>
+									<TextField
+										fullWidth
+										required
+										label="Nombre público del actor"
+										placeholder="Ej. Compañía Circo Fuego"
+										value={formValues.nombre}
+										onChange={(e) => setFormValues((v) => ({ ...v, nombre: e.target.value }))}
+									/>
+
+									<FormControl fullWidth required>
+										<InputLabel>Tipo de actor</InputLabel>
+										<Select
+											value={formValues.tipoActor}
+											label="Tipo de actor"
+											onChange={(e) =>
+												setFormValues((v) => ({
+													...v,
+													tipoActor: e.target.value as MyActor['tipoActor'],
+												}))
+											}
+										>
+											{Object.entries(typeLabels).map(([key, label]) => (
+												<MenuItem key={key} value={key}>
+													{label}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+
+									<Grid container spacing={1.5}>
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<FormControl fullWidth required>
+												<InputLabel>Categoría principal</InputLabel>
+												<Select
+											value={formValues.categoria}
+											label="Categoría principal"
+											onChange={(e) => {
+												const cat = e.target.value;
+												const category = findCategoryByName(categoryOptions, cat);
+												setFormValues((v) => ({
+													...v,
+													categoria: cat,
+													subcategoria: category?.subcategorias[0]?.nombre ?? '',
+												}));
+											}}
+										>
+											{!selectedEditCategory && formValues.categoria && (
+												<MenuItem value={formValues.categoria} disabled>
+													{formValues.categoria} (no disponible)
+												</MenuItem>
+											)}
+											{categoryOptions.map((category) => (
+												<MenuItem key={category.id} value={category.nombre}>
+													{category.nombre}
+												</MenuItem>
+											))}
+												</Select>
+											</FormControl>
+										</Grid>
+
+										<Grid size={{ xs: 12, sm: 6 }}>
+											<FormControl fullWidth>
+												<InputLabel>Subcategoría</InputLabel>
+												<Select
+											value={formValues.subcategoria}
+											label="Subcategoría"
+											onChange={(e) => setFormValues((v) => ({ ...v, subcategoria: e.target.value }))}
+										>
+											{!selectedEditCategory?.subcategorias.some(
+												(option) => option.nombre === formValues.subcategoria,
+											) &&
+												formValues.subcategoria && (
+													<MenuItem value={formValues.subcategoria} disabled>
+														{formValues.subcategoria} (no disponible)
+													</MenuItem>
+												)}
+											{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
+												<MenuItem key={subcategory.id} value={subcategory.nombre}>
+													{subcategory.nombre}
+												</MenuItem>
+											))}
+												</Select>
+											</FormControl>
+										</Grid>
+									</Grid>
+
+									<TextField
+										fullWidth
+										label="CUIT / CUIL (Opcional)"
+										placeholder="Ej. 30712345678"
+										value={formValues.cuit}
+										onChange={(e) => setFormValues((v) => ({ ...v, cuit: e.target.value }))}
+									/>
+								</Stack>
+							</Grid>
+						</Grid>
+
 						{!isAdminOrMod && (
 							<Alert severity="info">
 								Nota: Al guardar cambios en tu actor cultural, su estado pasará automáticamente a{' '}
@@ -1195,80 +1497,6 @@ export default function MisActoresPage() {
 						{formError && <Alert severity="error">{formError}</Alert>}
 
 						<Grid container spacing={2}>
-							<Grid size={{ xs: 12, md: 8 }}>
-								<TextField
-									fullWidth
-									required
-									label="Nombre público del actor"
-									placeholder="Ej. Compañía Circo Fuego"
-									value={formValues.nombre}
-									onChange={(e) => setFormValues((v) => ({ ...v, nombre: e.target.value }))}
-								/>
-							</Grid>
-							<Grid size={{ xs: 12, md: 4 }}>
-								<FormControl fullWidth required>
-									<InputLabel>Tipo de actor</InputLabel>
-									<Select
-										value={formValues.tipoActor}
-										label="Tipo de actor"
-										onChange={(e) =>
-											setFormValues((v) => ({
-												...v,
-												tipoActor: e.target.value as MyActor['tipoActor'],
-											}))
-										}
-									>
-										{Object.entries(typeLabels).map(([key, label]) => (
-											<MenuItem key={key} value={key}>
-												{label}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
-							</Grid>
-
-							<Grid size={{ xs: 12, md: 6 }}>
-								<FormControl fullWidth required>
-									<InputLabel>Categoría principal</InputLabel>
-									<Select
-										value={formValues.categoria}
-										label="Categoría principal"
-										onChange={(e) => {
-											const cat = e.target.value;
-											const subOpts = SUBCATEGORIAS_OPCIONES[cat] || [];
-											setFormValues((v) => ({
-												...v,
-												categoria: cat,
-												subcategoria: subOpts[0] || '',
-											}));
-										}}
-									>
-										{CATEGORIAS_OPCIONES.map((cat) => (
-											<MenuItem key={cat} value={cat}>
-												{cat}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
-							</Grid>
-
-							<Grid size={{ xs: 12, md: 6 }}>
-								<FormControl fullWidth>
-									<InputLabel>Subcategoría</InputLabel>
-									<Select
-										value={formValues.subcategoria}
-										label="Subcategoría"
-										onChange={(e) => setFormValues((v) => ({ ...v, subcategoria: e.target.value }))}
-									>
-										{(SUBCATEGORIAS_OPCIONES[formValues.categoria] || []).map((sub) => (
-											<MenuItem key={sub} value={sub}>
-												{sub}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
-							</Grid>
-
 							<Grid size={{ xs: 12, md: 4 }}>
 								<FormControl fullWidth required>
 									<InputLabel>Departamento</InputLabel>
@@ -1304,26 +1532,6 @@ export default function MisActoresPage() {
 									placeholder="Ej. Av. Mate de Luna 2100"
 									value={formValues.direccion}
 									onChange={(e) => setFormValues((v) => ({ ...v, direccion: e.target.value }))}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, md: 6 }}>
-								<TextField
-									fullWidth
-									label="CUIT / CUIL (Opcional)"
-									placeholder="Ej. 30712345678"
-									value={formValues.cuit}
-									onChange={(e) => setFormValues((v) => ({ ...v, cuit: e.target.value }))}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, md: 6 }}>
-								<TextField
-									fullWidth
-									label="URL de Foto de Perfil (Opcional)"
-									placeholder="https://..."
-									value={formValues.fotoPerfilUrl}
-									onChange={(e) => setFormValues((v) => ({ ...v, fotoPerfilUrl: e.target.value }))}
 								/>
 							</Grid>
 

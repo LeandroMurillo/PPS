@@ -41,12 +41,41 @@ const listarQuerySchema = z.object({
 		.transform((val) => (val ? Number(val) : undefined)),
 });
 
+const actorImageDataUrlSchema = z
+	.string()
+	.max(7_000_000)
+	.regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/);
+
+const respuestaRegistroSchema = z.object({
+	idFormulario: z.number().int().positive(),
+	idPregunta: z.number().int().positive(),
+	valor: z.unknown().refine((value) => value !== null && value !== undefined, 'La respuesta no puede ser nula.'),
+});
+
+const itemPortafolioRegistroSchema = z
+	.object({
+		tipo: z.enum(['IMAGEN', 'VIDEO', 'ENLACE']),
+		titulo: z.string().trim().min(1).max(100),
+		descripcion: z.string().trim().max(140).nullable().optional(),
+		url: z.url().max(245).nullable().optional(),
+		imagenBase64: actorImageDataUrlSchema.nullable().optional(),
+	})
+	.superRefine((item, context) => {
+		if (item.tipo === 'IMAGEN' && !item.imagenBase64) {
+			context.addIssue({ code: 'custom', path: ['imagenBase64'], message: 'La imagen es obligatoria.' });
+		}
+		if (item.tipo !== 'IMAGEN' && !item.url) {
+			context.addIssue({ code: 'custom', path: ['url'], message: 'El enlace es obligatorio.' });
+		}
+	});
+
 const crearBodySchema = z.object({
 	idCategoria: z.number().int().positive(),
 	idSubcategoria: z.number().int().positive().nullable().optional(),
 	nombre: z.string().trim().min(1).max(100),
 	descripcion: z.string().trim().min(1).max(500),
 	fotoPerfilUrl: z.string().trim().nullable().optional(),
+	fotoPerfilBase64: actorImageDataUrlSchema.nullable().optional(),
 	cuit: z.string().trim().nullable().optional(),
 	tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']),
 	provincia: z.string().trim().nullable().optional(),
@@ -56,6 +85,8 @@ const crearBodySchema = z.object({
 	latitud: z.number().min(-27.95).max(-25.75),
 	longitud: z.number().min(-66.35).max(-64.45),
 	esPublica: z.boolean(),
+	respuestas: z.array(respuestaRegistroSchema).max(100).optional(),
+	portafolio: z.array(itemPortafolioRegistroSchema).max(6).optional(),
 });
 
 const editarBodySchema = z.object({
@@ -64,6 +95,7 @@ const editarBodySchema = z.object({
 	nombre: z.string().trim().min(1).max(100),
 	descripcion: z.string().trim().min(1).max(500),
 	fotoPerfilUrl: z.string().trim().nullable().optional(),
+	fotoPerfilBase64: actorImageDataUrlSchema.nullable().optional(),
 	cuit: z.string().trim().nullable().optional(),
 	tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']),
 	departamento: z.string().trim().min(1),
@@ -162,14 +194,14 @@ export async function editarActorController(req: Request, res: Response): Promis
 		const idActor = Number(req.params.id);
 		const body = editarBodySchema.parse(req.body);
 
-		await editarActorService({
+		const result = await editarActorService({
 			idUsuario: user.idUsuario,
 			idActor,
 			userRol: user.rol,
 			...body,
 		});
 
-		res.json({ message: 'Actor cultural actualizado correctamente.' });
+		res.json({ data: result, message: 'Actor cultural actualizado correctamente.' });
 	} catch (error) {
 		res.status(400).json({
 			error: {

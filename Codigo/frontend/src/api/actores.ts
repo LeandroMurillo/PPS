@@ -269,6 +269,7 @@ export type CrearActorInput = {
 	nombre: string;
 	descripcion: string;
 	fotoPerfilUrl?: string | null;
+	fotoPerfilBase64?: string | null;
 	cuit?: string | null;
 	tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
 	provincia?: string;
@@ -278,6 +279,18 @@ export type CrearActorInput = {
 	latitud: number;
 	longitud: number;
 	esPublica: boolean;
+	respuestas?: {
+		idFormulario: number;
+		idPregunta: number;
+		valor: string | number | boolean | string[];
+	}[];
+	portafolio?: {
+		tipo: 'IMAGEN' | 'VIDEO' | 'ENLACE';
+		titulo: string;
+		descripcion?: string | null;
+		url?: string | null;
+		imagenBase64?: string | null;
+	}[];
 };
 
 export async function crearMiActorApi(input: CrearActorInput) {
@@ -296,6 +309,7 @@ export async function editarMiActorApi(
 		nombre: string;
 		descripcion: string;
 		fotoPerfilUrl?: string | null;
+		fotoPerfilBase64?: string | null;
 		cuit?: string | null;
 		tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
 		departamento: string;
@@ -303,7 +317,7 @@ export async function editarMiActorApi(
 		direccion: string;
 	},
 ) {
-	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}`, {
+	return apiRequest<{ data: { fotoPerfilUrl: string | null }; message: string }>(`/api/mis-actores/${idActor}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(input),

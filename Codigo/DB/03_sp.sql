@@ -3386,7 +3386,7 @@ BEGIN
             SET MESSAGE_TEXT = 'El actor no pertenece a la categoría del formulario.';
     END IF;
 
-    IF vSubcategoriaFormulario IS NOT NULL
+    IF vSubcategoriaFormulario <> 0
        AND NOT (vSubcategoriaActor <=> vSubcategoriaFormulario) THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'El actor no pertenece a la subcategoría del formulario.';
@@ -3842,6 +3842,33 @@ COMMENT 'Crea un nuevo actor cultural para el usuario autenticado (con estado Pe
 BEGIN
     DECLARE vIdUbicacion INT;
     DECLARE vIdActor INT;
+    DECLARE vIdUsuarioBloqueado INT;
+    DECLARE vCantidadPendientes INT DEFAULT 0;
+
+    SELECT idUsuario
+      INTO vIdUsuarioBloqueado
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario
+    FOR UPDATE;
+
+    IF vIdUsuarioBloqueado IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El usuario indicado no existe.';
+    END IF;
+
+    SELECT COUNT(*)
+      INTO vCantidadPendientes
+    FROM `Actores` a
+    INNER JOIN `Integrantes` i
+        ON i.idActor = a.idActor
+       AND i.esDueño = 1
+    WHERE i.idUsuario = pIdUsuario
+      AND a.estado = 'P';
+
+    IF vCantidadPendientes > 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Ya tenés un actor cultural pendiente de revisión.';
+    END IF;
 
     INSERT INTO `Ubicaciones` (provincia, departamento, localidad, esPublica, direccion, latitud, longitud)
     VALUES (

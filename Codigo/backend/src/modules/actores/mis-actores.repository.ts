@@ -136,6 +136,18 @@ export const misActoresDatabaseRowSchema = z.object({
 
 export type MisActorRow = z.infer<typeof misActoresDatabaseRowSchema>;
 
+export type RegistroActorRespuesta = {
+	idFormulario: number;
+	idPregunta: number;
+	valor: unknown;
+};
+
+export type RegistroActorPortafolio = {
+	tipo: 'IMAGEN' | 'LINK' | 'RRSS';
+	descripcion: string;
+	url: string;
+};
+
 function getResultSet(procedureResult: unknown, index: number, procedureName: string): unknown[] {
 	if (!Array.isArray(procedureResult)) {
 		throw new Error(`El procedimiento ${procedureName} no devolvió result sets`);
@@ -301,37 +313,68 @@ export async function crearActorRepository(input: {
 	latitud: number;
 	longitud: number;
 	esPublica: boolean;
+	respuestas?: RegistroActorRespuesta[] | undefined;
+	portafolio?: RegistroActorPortafolio[] | undefined;
 }) {
-	const procedureResult: unknown = await pool.query(
-		'CALL sp_actor_crear_actor(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-		[
-			input.idUsuario,
-			input.idCategoria,
-			input.idSubcategoria || null,
-			input.nombre,
-			input.descripcion,
-			input.fotoPerfilUrl || null,
-			input.cuit || null,
-			input.tipoActor,
-			input.provincia || 'Tucumán',
-			input.departamento,
-			input.localidad,
-			input.direccion,
-			input.latitud,
-			input.longitud,
-			input.esPublica ? 1 : 0,
-		],
-	);
+	const connection = await pool.getConnection();
+	try {
+		await connection.beginTransaction();
+		const procedureResult: unknown = await connection.query(
+			'CALL sp_actor_crear_actor(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				input.idUsuario,
+				input.idCategoria,
+				input.idSubcategoria || null,
+				input.nombre,
+				input.descripcion,
+				input.fotoPerfilUrl || null,
+				input.cuit || null,
+				input.tipoActor,
+				input.provincia || 'Tucumán',
+				input.departamento,
+				input.localidad,
+				input.direccion,
+				input.latitud,
+				input.longitud,
+				input.esPublica ? 1 : 0,
+			],
+		);
 
-	const resultSet = getResultSet(procedureResult, 0, 'sp_actor_crear_actor');
-	const idRows = z.array(idRowSchema).parse(resultSet);
-	const createdId = idRows[0]?.idActor;
+		const resultSet = getResultSet(procedureResult, 0, 'sp_actor_crear_actor');
+		const idRows = z.array(idRowSchema).parse(resultSet);
+		const createdId = idRows[0]?.idActor;
 
-	if (!createdId) {
-		throw new Error('No se pudo crear el actor cultural.');
+		if (!createdId) {
+			throw new Error('No se pudo crear el actor cultural.');
+		}
+
+		for (const respuesta of input.respuestas ?? []) {
+			await connection.query('CALL sp_actor_guardar_respuesta(?, ?, ?, ?)', [
+				createdId,
+				respuesta.idFormulario,
+				respuesta.idPregunta,
+				JSON.stringify(respuesta.valor),
+			]);
+		}
+
+		for (const item of input.portafolio ?? []) {
+			await connection.query('CALL sp_actor_agregar_item_portafolio(?, ?, ?, ?, ?)', [
+				input.idUsuario,
+				createdId,
+				item.tipo,
+				item.descripcion,
+				item.url,
+			]);
+		}
+
+		await connection.commit();
+		return { idActor: createdId };
+	} catch (error) {
+		await connection.rollback();
+		throw error;
+	} finally {
+		connection.release();
 	}
-
-	return { idActor: createdId };
 }
 
 export async function editarActorRepository(input: {

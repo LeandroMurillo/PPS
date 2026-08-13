@@ -95,7 +95,7 @@ export type ActorMock = {
 	idCategoria: number;
 	idSubcategoria: number | null;
 	ubicacion: UbicacionMock;
-	respuestasFormulario?: Record<number, string | string[]>;
+	respuestasFormulario?: Record<number, string | number | boolean | string[]>;
 };
 
 export type PreguntaBancoMock = {
