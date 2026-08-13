@@ -94,8 +94,26 @@ services:
           target: /app
           action: sync
 
+  # ----------------------------------------
+  # Ephemeral DB Initializer (Verbose Script)
+  # ----------------------------------------
+  db-init:
+    image: mariadb:lts-noble
+    container_name: cultura-db-init
+    restart: "no"
+    environment:
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-keze}
+      DB_PASSWORD: ${DB_PASSWORD:-eze}
+      DB_NAME: ${DB_NAME:-cultura}
+    volumes:
+      - ./DB:/DB
+    entrypoint: ["/bin/sh", "/DB/init-db.sh"]
+
 volumes:
   mariadb-data:
   actor-uploads:
+
 
 
