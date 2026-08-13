@@ -245,12 +245,15 @@ export default function ActorPortfolio() {
 	}
 
 	const ubicacionMapa =
-		actor.ubicacion.latitud !== null && actor.ubicacion.longitud !== null
+		actor.ubicacion.esPublica && actor.ubicacion.latitud !== null && actor.ubicacion.longitud !== null
 			? ([actor.ubicacion.latitud, actor.ubicacion.longitud] as [number, number])
 			: null;
+	const mostrarImagenes = imagenes.length > 0;
+	const mostrarMultimedia = mostrarImagenes || ubicacionMapa !== null;
+	const mostrarAmbasColumnas = mostrarImagenes && ubicacionMapa !== null;
 
 	return (
-		<Box sx={{ p: 4, maxWidth: 1200, margin: '0 auto' }}>
+		<Box sx={{ width: '100%', maxWidth: 1200, margin: '0 auto', p: 4 }}>
 			{/* --- BARRA SUPERIOR (Botón Volver y Gestión) --- */}
 			<Stack
 				direction={{ xs: 'column', sm: 'row' }}
@@ -282,15 +285,31 @@ export default function ActorPortfolio() {
 			</Typography>
 
 			{/* --- MULTIMEDIA Y MAPA --- */}
-			<Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 4, mb: 4 }}>
-				{/* COLUMNA IZQUIERDA: Carrusel de imágenes */}
-				<Box>
-					<Paper
-						elevation={1}
-						sx={{ position: 'relative', overflow: 'hidden', borderRadius: 2, height: 300 }}
-					>
-						{imagenes.length > 0 ? (
-							<>
+			{mostrarMultimedia && (
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: {
+							xs: 'minmax(0, 1fr)',
+							md: mostrarAmbasColumnas ? 'repeat(2, minmax(0, 1fr))' : 'minmax(0, 1fr)',
+						},
+						gap: 4,
+						mb: 4,
+					}}
+				>
+					{/* COLUMNA IZQUIERDA: Carrusel de imágenes */}
+					{mostrarImagenes && (
+						<Box
+							sx={{
+								width: '100%',
+								maxWidth: mostrarAmbasColumnas ? 'none' : { md: 'calc((100% - 32px) / 2)' },
+								justifySelf: 'center',
+							}}
+						>
+							<Paper
+								elevation={1}
+								sx={{ position: 'relative', overflow: 'hidden', borderRadius: 2, height: 300 }}
+							>
 								<img
 									src={imagenes[currentImageIndex].url}
 									alt={imagenes[currentImageIndex].descripcion}
@@ -330,68 +349,46 @@ export default function ActorPortfolio() {
 										</IconButton>
 									</Box>
 								)}
-							</>
-						) : (
-							<Box
-								sx={{
-									height: '100%',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-									bgcolor: 'action.hover',
-									color: 'text.secondary',
-								}}
-							>
-								Sin imágenes disponibles
-							</Box>
-						)}
-					</Paper>
-				</Box>
+							</Paper>
+						</Box>
+					)}
 
-				{/* COLUMNA DERECHA: Mapa Individual */}
-				<Box>
-					<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2, height: 300 }}>
-						{ubicacionMapa ? (
-							<MapContainer
-								center={ubicacionMapa}
-								zoom={14}
-								minZoom={7}
-								style={{ height: '100%', width: '100%' }}
-								scrollWheelZoom={false}
-							>
-								<TileLayer
-									attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-									url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-								/>
-								<CircleMarker
+					{/* COLUMNA DERECHA: Mapa Individual */}
+					{ubicacionMapa && (
+						<Box
+							sx={{
+								width: '100%',
+								maxWidth: mostrarAmbasColumnas ? 'none' : { md: 'calc((100% - 32px) / 2)' },
+								justifySelf: 'center',
+							}}
+						>
+							<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2, height: 300 }}>
+								<MapContainer
 									center={ubicacionMapa}
-									fillColor="#1976d2"
-									fillOpacity={0.85}
-									radius={10}
-									stroke
-									color="#ffffff"
-									weight={2}
-								/>
-							</MapContainer>
-						) : (
-							<Box
-								sx={{
-									height: '100%',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-									bgcolor: 'action.hover',
-									color: 'text.secondary',
-									textAlign: 'center',
-									p: 2,
-								}}
-							>
-								Ubicación detallada no disponible
-							</Box>
-						)}
-					</Paper>
+									zoom={14}
+									minZoom={7}
+									style={{ height: '100%', width: '100%' }}
+									scrollWheelZoom={false}
+								>
+									<TileLayer
+										attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+										url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+									/>
+									<CircleMarker
+										center={ubicacionMapa}
+										fillColor="#1976d2"
+										fillOpacity={0.85}
+										radius={10}
+										stroke
+										color="#ffffff"
+										weight={2}
+									/>
+								</MapContainer>
+							</Paper>
+						</Box>
+					)}
 				</Box>
-			</Box>
+			)}
 
 			{/* --- DESCRIPCIÓN --- */}
 			<Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 4 }}>
