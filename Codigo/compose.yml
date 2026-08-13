@@ -11,7 +11,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      CORS_ORIGIN: ${CORS_ORIGIN:-${PUBLIC_BASE_URL}}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT:-3306}
@@ -22,6 +22,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
     volumes:
       - actor-uploads:/app/uploads
+    networks:
+      - default
+      - coolify
 
   # ----------------------------------------
   # Frontend Service (Servido por NGINX + Proxy para /api)
@@ -34,6 +37,13 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    networks:
+      - default
 
 volumes:
   actor-uploads:
+
+networks:
+  coolify:
+    external: true
+
