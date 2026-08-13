@@ -73,15 +73,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		setToken(null);
 	};
 
+	const getAvatarConfig = (genero?: string) => {
+		if (genero === 'F' || genero === 'MF') {
+			return {
+				style: 'lorelei',
+				backgroundColor: ['f9d5e5', 'f7c6d9', 'f2d7d5'],
+			};
+		}
+		if (genero === 'M' || genero === 'FM') {
+			return {
+				style: 'micah',
+				backgroundColor: ['dbeafe', 'c7d2fe', 'e0f2fe'],
+			};
+		}
+		return {
+			style: 'initials',
+			backgroundColor: ['e5e7eb', 'd1d5db', 'f3f4f6'],
+		};
+	};
+
+	const avatarConfig = getAvatarConfig(user?.genero);
+
 	const session: Session | null = user
 		? {
 				user: {
 					id: String(user.idUsuario),
 					name: `${user.nombre} ${user.apellido}`,
 					email: user.email,
-					image: `https://avatar.iran.liara.run/username?username=${encodeURIComponent(
-						`${user.nombre}+${user.apellido}`,
-					)}`,
+					image: `https://api.dicebear.com/10.x/${avatarConfig.style}/svg?seed=${encodeURIComponent(
+						`${user.nombre} ${user.apellido}`,
+					)}&backgroundColor=${avatarConfig.backgroundColor.join(',')}`,
 				},
 			}
 		: null;
