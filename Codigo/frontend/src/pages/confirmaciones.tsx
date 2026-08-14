@@ -1,16 +1,9 @@
 import * as React from 'react';
-import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
-import { useNavigate } from 'react-router';
 
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ChecklistIcon from '@mui/icons-material/Checklist';
-import CollectionsIcon from '@mui/icons-material/Collections';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import LanguageIcon from '@mui/icons-material/Language';
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
 	Alert,
@@ -26,12 +19,10 @@ import {
 	DialogContent,
 	DialogContentText,
 	DialogTitle,
-	Divider,
 	FormControl,
 	Grid,
 	IconButton,
 	InputLabel,
-	Link as MuiLink,
 	MenuItem,
 	Paper,
 	Select,
@@ -53,12 +44,12 @@ import {
 	type CategoriaAdmin,
 	type SortDirection,
 } from '../api/admin';
+import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon from '../components/categoryIcon';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { buildSlugConId } from '../utils/slug';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -85,8 +76,6 @@ function optionalPositiveInteger(value: string): number | undefined {
 }
 
 export default function ConfirmacionesPage() {
-	const navigate = useNavigate();
-
 	// Filters and sorting
 	const [search, setSearch] = React.useState('');
 	const [categoryId, setCategoryId] = React.useState('');
@@ -283,6 +272,42 @@ export default function ConfirmacionesPage() {
 			setPreviewLoading(false);
 		}
 	};
+
+	const previewActorViewData: ActorPortfolioViewData | null = React.useMemo(() => {
+		if (!previewActor) return null;
+
+		const respuestasFlat = previewActor.encuestas
+			? previewActor.encuestas.flatMap((enc) =>
+					enc.secciones.flatMap((sec) =>
+						sec.respuestas.map((r) => ({
+							pregunta: r.pregunta,
+							respuesta: r.respuesta,
+						})),
+					),
+				)
+			: [];
+
+		return {
+			id: previewActor.id,
+			nombre: previewActor.nombre,
+			categoria: previewActor.categoria.nombre,
+			subcategoria: previewActor.subcategoria?.nombre ?? null,
+			tipoActor: previewActor.tipoActor,
+			descripcion: previewActor.descripcion,
+			foto: previewActor.foto,
+			estado: previewActor.estado,
+			ubicacion: previewActor.ubicacion,
+			portafolio: previewActor.portafolio ?? [],
+			integrantes:
+				previewActor.integrantes?.map((i) => ({
+					nombre: i.nombre,
+					email: i.email,
+					rol: i.rol,
+				})) ?? [],
+			respuestas: respuestasFlat,
+			dueno: previewActor.dueno,
+		};
+	}, [previewActor]);
 
 	// Columns definition
 	const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
@@ -687,245 +712,68 @@ export default function ConfirmacionesPage() {
 				</DialogActions>
 			</Dialog>
 
-			{/* Modal de Vista Previa Rápida y Moderación */}
+			{/* Modal de Vista Previa Rápida y Ficha Completa */}
 			<Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth scroll="paper">
 				<DialogTitle sx={{ pb: 1 }}>
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
-						<Box>
-							<Typography variant="h6" fontWeight={700}>
-								Vista previa de moderación
-							</Typography>
-							<Typography variant="caption" color="text.secondary">
-								Revisá toda la información antes de aprobar o rechazar
-							</Typography>
-						</Box>
-						{previewActor && (
-							<Button
-								size="small"
-								endIcon={<OpenInNewIcon fontSize="small" />}
-								onClick={() => {
-									const slug = buildSlugConId(previewActor.id, previewActor.nombre);
-									navigate(`/actoresAdmin/${slug}`);
-								}}
-							>
-								Abrir ficha completa
-							</Button>
-						)}
+						<Typography variant="h6" fontWeight={700}>
+							Vista previa de moderación
+						</Typography>
+						<IconButton onClick={() => setPreviewOpen(false)} size="small">
+							<CloseIcon />
+						</IconButton>
 					</Stack>
 				</DialogTitle>
-				<Divider />
-				<DialogContent dividers sx={{ p: { xs: 2, md: 3 } }}>
+				<DialogContent dividers sx={{ p: { xs: 1, md: 2 } }}>
 					{previewLoading ? (
 						<Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
 							<CircularProgress />
 						</Box>
 					) : previewError ? (
 						<Alert severity="error">{previewError}</Alert>
-					) : previewActor ? (
-						<Stack spacing={3}>
-							{/* Header con foto y datos principales */}
-							<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ sm: 'center' }}>
-								<Avatar
-									src={previewActor.foto || undefined}
-									alt={previewActor.nombre}
-									sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.light' }}
-								>
-									{previewActor.nombre.charAt(0).toUpperCase()}
-								</Avatar>
-								<Box sx={{ flexGrow: 1 }}>
+					) : previewActor && previewActorViewData ? (
+						<Stack spacing={0}>
+							{/* Contacto / Solicitante info banner */}
+							{previewActor.dueno && (
+								<Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
 									<Stack
-										direction="row"
-										spacing={1}
-										alignItems="center"
-										flexWrap="wrap"
-										sx={{ mb: 0.5 }}
+										direction={{ xs: 'column', sm: 'row' }}
+										spacing={2}
+										justifyContent="space-between"
 									>
-										<Typography variant="h5" fontWeight={700}>
-											{previewActor.nombre}
-										</Typography>
-										<Chip label="Pendiente de revisión" color="warning" size="small" />
-									</Stack>
-									<Typography variant="body2" color="text.secondary">
-										{previewActor.categoria.nombre}{' '}
-										{previewActor.subcategoria ? `· ${previewActor.subcategoria.nombre}` : ''} |{' '}
-										{typeLabels[previewActor.tipoActor]}
-									</Typography>
-									<Typography variant="caption" color="text.secondary">
-										Registrado el {formatDate(previewActor.fechaCreacion)}
-									</Typography>
-								</Box>
-							</Stack>
-
-							<Divider />
-
-							{/* Datos de contacto y ubicación */}
-							<Grid container spacing={2}>
-								<Grid size={{ xs: 12, sm: 6 }}>
-									<Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-										<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-											<LocationOnOutlinedIcon color="primary" fontSize="small" />
-											<Typography variant="subtitle2" fontWeight={700}>
-												Ubicación
+										<Box>
+											<Typography variant="caption" color="text.secondary" fontWeight={700}>
+												SOLICITANTE / CONTACTO
 											</Typography>
-										</Stack>
-										<Typography variant="body2">
-											<strong>Departamento:</strong> {previewActor.ubicacion.departamento}
-										</Typography>
-										<Typography variant="body2">
-											<strong>Localidad:</strong> {previewActor.ubicacion.localidad}
-										</Typography>
-										<Typography variant="body2">
-											<strong>Dirección:</strong> {previewActor.ubicacion.direccion}
-										</Typography>
-									</Paper>
-								</Grid>
-								<Grid size={{ xs: 12, sm: 6 }}>
-									<Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-										<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-											<PersonOutlineIcon color="primary" fontSize="small" />
-											<Typography variant="subtitle2" fontWeight={700}>
-												Contacto / Solicitante
+											<Typography variant="body2" fontWeight={600}>
+												{previewActor.dueno.nombre} ({previewActor.dueno.email})
 											</Typography>
-										</Stack>
-										<Typography variant="body2">
-											<strong>Nombre:</strong> {previewActor.dueno?.nombre || 'No informado'}
-										</Typography>
-										<Typography variant="body2">
-											<strong>Email:</strong> {previewActor.dueno?.email || 'No informado'}
-										</Typography>
+										</Box>
 										{previewActor.cuit && (
-											<Typography variant="body2">
-												<strong>CUIT:</strong> {previewActor.cuit}
+											<Box>
+												<Typography variant="caption" color="text.secondary" fontWeight={700}>
+													CUIT
+												</Typography>
+												<Typography variant="body2">{previewActor.cuit}</Typography>
+											</Box>
+										)}
+										<Box>
+											<Typography variant="caption" color="text.secondary" fontWeight={700}>
+												FECHA DE SOLICITUD
 											</Typography>
-										)}
-									</Paper>
-								</Grid>
-							</Grid>
-
-							{/* Descripción / Biografía */}
-							<Box>
-								<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-									Descripción / Biografía
-								</Typography>
-								<Typography variant="body2" sx={{ whiteSpace: 'pre-line', color: 'text.secondary' }}>
-									{previewActor.descripcion || 'Sin descripción proporcionada.'}
-								</Typography>
-							</Box>
-
-							{/* Portafolio */}
-							{previewActor.portafolio && previewActor.portafolio.length > 0 && (
-								<Box>
-									<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-										Portafolio ({previewActor.portafolio.length})
-									</Typography>
-									<Stack spacing={1}>
-										{previewActor.portafolio.map((item) => (
-											<Stack
-												key={item.id}
-												direction="row"
-												spacing={1.5}
-												alignItems="center"
-												sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}
-											>
-												{item.tipo === 'RRSS' ? (
-													<InstagramIcon color="primary" fontSize="small" />
-												) : item.tipo === 'IMAGEN' ? (
-													<CollectionsIcon color="secondary" fontSize="small" />
-												) : (
-													<LanguageIcon color="action" fontSize="small" />
-												)}
-												<Box sx={{ minWidth: 0 }}>
-													<Typography variant="body2" fontWeight={600} noWrap>
-														{item.descripcion}
-													</Typography>
-													<MuiLink
-														href={item.url}
-														target="_blank"
-														rel="noopener"
-														variant="caption"
-														color="primary"
-													>
-														{item.url}
-													</MuiLink>
-												</Box>
-											</Stack>
-										))}
+											<Typography variant="body2">
+												{formatDate(previewActor.fechaCreacion)}
+											</Typography>
+										</Box>
 									</Stack>
-								</Box>
+								</Paper>
 							)}
 
-							{/* Respuestas a formularios / preguntas */}
-							{previewActor.encuestas && previewActor.encuestas.length > 0 && (
-								<Box>
-									<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-										Respuestas al formulario
-									</Typography>
-									<Stack spacing={2}>
-										{previewActor.encuestas.map((enc) =>
-											enc.secciones.map((sec, secIdx) => (
-												<Paper key={secIdx} variant="outlined" sx={{ p: 2 }}>
-													<Typography variant="caption" fontWeight={700} color="primary">
-														{sec.titulo.toUpperCase()}
-													</Typography>
-													<Stack spacing={1.5} sx={{ mt: 1 }}>
-														{sec.respuestas.map((resp) => (
-															<Box key={resp.id}>
-																<Typography variant="body2" fontWeight={600}>
-																	{resp.pregunta}
-																</Typography>
-																<Typography variant="body2" color="text.secondary">
-																	{Array.isArray(resp.respuesta)
-																		? resp.respuesta.join(', ')
-																		: resp.respuesta || 'Sin respuesta'}
-																</Typography>
-															</Box>
-														))}
-													</Stack>
-												</Paper>
-											)),
-										)}
-									</Stack>
-								</Box>
-							)}
-
-							{/* Mapa de ubicación */}
-							{previewActor.ubicacion.latitud && previewActor.ubicacion.longitud && (
-								<Box>
-									<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-										Ubicación geográfica
-									</Typography>
-									<Paper variant="outlined" sx={{ height: 220, overflow: 'hidden', borderRadius: 2 }}>
-										<MapContainer
-											center={[previewActor.ubicacion.latitud, previewActor.ubicacion.longitud]}
-											zoom={14}
-											style={{ height: '100%', width: '100%' }}
-											scrollWheelZoom={false}
-										>
-											<TileLayer
-												attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-												url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-											/>
-											<CircleMarker
-												center={[
-													previewActor.ubicacion.latitud,
-													previewActor.ubicacion.longitud,
-												]}
-												fillColor="#1976d2"
-												fillOpacity={0.85}
-												radius={8}
-												stroke
-												color="#ffffff"
-												weight={2}
-											/>
-										</MapContainer>
-									</Paper>
-								</Box>
-							)}
+							<ActorPortfolioView actor={previewActorViewData} hideHeaderNav showStatusAlert={false} />
 						</Stack>
 					) : null}
 				</DialogContent>
-				<DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-					<Button onClick={() => setPreviewOpen(false)}>Cerrar</Button>
+				<DialogActions sx={{ p: 2, justifyContent: 'right' }}>
 					{previewActor && (
 						<Stack direction="row" spacing={1.5}>
 							<Button

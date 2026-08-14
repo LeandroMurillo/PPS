@@ -53,6 +53,7 @@ import {
 	Tooltip,
 	Typography,
 } from '@mui/material';
+import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
 
 import {
 	crearMiActorApi,
@@ -194,8 +195,7 @@ export default function ActorNuevoPage() {
 	const [pendingActorCheckError, setPendingActorCheckError] = useState('');
 	const [pendingActorCheckAttempt, setPendingActorCheckAttempt] = useState(0);
 	const selectedCategory = categories.find((item) => item.id === categoryId) ?? null;
-	const selectedSubcategory =
-		selectedCategory?.subcategorias.find((item) => item.id === subcategoryId) ?? null;
+	const selectedSubcategory = selectedCategory?.subcategorias.find((item) => item.id === subcategoryId) ?? null;
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -381,8 +381,7 @@ export default function ActorNuevoPage() {
 				descripcion: generalData.descripcion.trim(),
 				fotoPerfilBase64: generalData.fotoPreview || null,
 				cuit: generalData.cuit.trim() || null,
-				tipoActor:
-					actorType === 'persona' ? 'INDIVIDUO' : actorType === 'colectivo' ? 'COLECTIVO' : 'ESPACIO',
+				tipoActor: actorType === 'persona' ? 'INDIVIDUO' : actorType === 'colectivo' ? 'COLECTIVO' : 'ESPACIO',
 				provincia: 'Tucumán',
 				departamento: generalData.departamento,
 				localidad: generalData.localidad.trim(),
@@ -442,7 +441,10 @@ export default function ActorNuevoPage() {
 									<strong>No se pudo comprobar si podés registrar un nuevo actor.</strong>{' '}
 									{pendingActorCheckError}
 								</Alert>
-								<Button variant="contained" onClick={() => setPendingActorCheckAttempt((value) => value + 1)}>
+								<Button
+									variant="contained"
+									onClick={() => setPendingActorCheckAttempt((value) => value + 1)}
+								>
 									Reintentar
 								</Button>
 							</Stack>
@@ -541,7 +543,9 @@ export default function ActorNuevoPage() {
 													const value = answers[`${form.id}:${question.id}`];
 													return (
 														question.esObligatorio &&
-														(Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim())
+														(Array.isArray(value)
+															? value.length === 0
+															: !String(value ?? '').trim())
 													);
 												}),
 											) && (
@@ -567,6 +571,7 @@ export default function ActorNuevoPage() {
 								{activeStep === 3 && (
 									<PublicProfilePreview
 										generalData={generalData}
+										actorType={actorType}
 										categoryName={selectedCategory?.nombre ?? 'Sector cultural'}
 										subcategoryName={selectedSubcategory?.nombre ?? ''}
 										forms={forms}
@@ -953,11 +958,7 @@ function PortfolioStep({
 	};
 
 	const addItem = () => {
-		if (
-			items.length >= MAX_PORTFOLIO_ITEMS ||
-			!title.trim() ||
-			(type === 'IMAGEN' ? !imagePreview : !url.trim())
-		) {
+		if (items.length >= MAX_PORTFOLIO_ITEMS || !title.trim() || (type === 'IMAGEN' ? !imagePreview : !url.trim())) {
 			return;
 		}
 		onChange([
@@ -977,8 +978,7 @@ function PortfolioStep({
 	return (
 		<Stack spacing={3}>
 			<Alert severity="info" variant="outlined">
-				El portafolio es opcional. Podés sumar contenido ahora o completarlo más adelante desde “Mis
-				actores”.
+				El portafolio es opcional. Podés sumar contenido ahora o completarlo más adelante desde “Mis actores”.
 			</Alert>
 
 			<Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 2, bgcolor: 'action.hover' }}>
@@ -1051,9 +1051,7 @@ function PortfolioStep({
 							required
 							type="url"
 							label={type === 'VIDEO' ? 'Enlace al video' : 'Enlace'}
-							placeholder={
-								type === 'VIDEO' ? 'https://youtube.com/watch?v=…' : 'https://instagram.com/…'
-							}
+							placeholder={type === 'VIDEO' ? 'https://youtube.com/watch?v=…' : 'https://instagram.com/…'}
 							value={url}
 							onChange={(event) => setUrl(event.target.value)}
 							helperText="Pegá una dirección pública que las personas puedan visitar."
@@ -1114,7 +1112,12 @@ function PortfolioStep({
 										/>
 									) : (
 										<Box
-											sx={{ height: 96, display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}
+											sx={{
+												height: 96,
+												display: 'grid',
+												placeItems: 'center',
+												bgcolor: 'action.hover',
+											}}
 										>
 											{item.tipo === 'VIDEO' ? (
 												<PlayCircleOutlineIcon color="primary" sx={{ fontSize: 42 }} />
@@ -1150,6 +1153,7 @@ function PortfolioStep({
 
 function PublicProfilePreview({
 	generalData,
+	actorType,
 	categoryName,
 	subcategoryName,
 	forms,
@@ -1158,6 +1162,7 @@ function PublicProfilePreview({
 	submissionError,
 }: {
 	generalData: GeneralActorData;
+	actorType: ActorType | null;
 	categoryName: string;
 	subcategoryName: string;
 	forms: FormularioAplicable[];
@@ -1165,24 +1170,51 @@ function PublicProfilePreview({
 	portfolioItems: PortfolioItemDraft[];
 	submissionError: string;
 }) {
-	const images = [
-		...(generalData.fotoPreview
-			? [{ id: -1, url: generalData.fotoPreview, titulo: `Foto de ${generalData.nombre}` }]
-			: []),
-		...portfolioItems
-			.filter((item) => item.tipo === 'IMAGEN')
-			.map((item) => ({ id: item.id, url: item.url, titulo: item.titulo })),
-	];
 	const publicAnswers = forms.flatMap((form) =>
 		form.preguntas
 			.filter((question) => question.esPublico)
 			.map((question) => ({
-				id: `${form.id}:${question.id}`,
-				question: question.pregunta,
-				answer: answers[`${form.id}:${question.id}`],
+				pregunta: question.pregunta,
+				respuesta: answers[`${form.id}:${question.id}`],
 			}))
-			.filter(({ answer }) => (Array.isArray(answer) ? answer.length > 0 : Boolean(String(answer ?? '').trim()))),
+			.filter(({ respuesta }) =>
+				Array.isArray(respuesta) ? respuesta.length > 0 : Boolean(String(respuesta ?? '').trim()),
+			),
 	);
+
+	const mappedPortafolio = portfolioItems.map((item) => ({
+		id: typeof item.id === 'number' ? item.id : undefined,
+		tipo: item.tipo,
+		url: item.previewUrl || item.url,
+		titulo: item.titulo,
+		descripcion: item.descripcion,
+	}));
+
+	const actorPreviewData: ActorPortfolioViewData = {
+		nombre: generalData.nombre || 'Nombre de tu actividad cultural',
+		categoria: categoryName,
+		subcategoria: subcategoryName || null,
+		tipoActor:
+			actorType === 'persona'
+				? 'INDIVIDUO'
+				: actorType === 'colectivo'
+					? 'COLECTIVO'
+					: actorType === 'institucion'
+						? 'ESPACIO'
+						: null,
+		descripcion: generalData.descripcion,
+		foto: generalData.fotoPreview || null,
+		ubicacion: {
+			departamento: generalData.departamento,
+			localidad: generalData.localidad,
+			direccion: generalData.direccion,
+			latitud: generalData.ubicacion?.lat ?? null,
+			longitud: generalData.ubicacion?.lng ?? null,
+			esPublica: generalData.ubicacionPublica,
+		},
+		portafolio: mappedPortafolio,
+		respuestas: publicAnswers,
+	};
 
 	return (
 		<Stack spacing={3}>
@@ -1192,137 +1224,11 @@ function PublicProfilePreview({
 				</Alert>
 			)}
 			<Alert severity="warning" variant="outlined">
-				<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública.
+				<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública tal como la
+				verán los visitantes.
 			</Alert>
 
-			<Box sx={{ px: { xs: 0, md: 2 }, py: 1 }}>
-				<Typography variant="h3" component="h2" fontWeight={700} gutterBottom>
-					{generalData.nombre || 'Nombre de tu actividad cultural'}
-				</Typography>
-				<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-					<Chip label={categoryName} color="primary" />
-					{Boolean(subcategoryName) && <Chip label={subcategoryName} variant="outlined" />}
-					<Chip
-						icon={<LocationOnIcon />}
-						label={[generalData.localidad, generalData.departamento].filter(Boolean).join(', ')}
-						variant="outlined"
-					/>
-				</Stack>
-
-				<Grid container spacing={3} sx={{ mb: 3 }}>
-					<Grid size={{ xs: 12, md: 7 }}>
-						<Paper variant="outlined" sx={{ height: 320, overflow: 'hidden', borderRadius: 2 }}>
-							{images.length > 0 ? (
-								<Box
-									component="img"
-									src={images[0].url}
-									alt={images[0].titulo}
-									sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-								/>
-							) : (
-								<Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}>
-									<Stack alignItems="center" color="text.secondary">
-										<ImageOutlinedIcon sx={{ fontSize: 48 }} />
-										<Typography>Sin imágenes disponibles</Typography>
-									</Stack>
-								</Box>
-							)}
-						</Paper>
-					</Grid>
-					<Grid size={{ xs: 12, md: 5 }}>
-						<Paper variant="outlined" sx={{ height: 320, overflow: 'hidden', borderRadius: 2 }}>
-							{generalData.ubicacionPublica && generalData.ubicacion ? (
-								<MapContainer
-									center={[generalData.ubicacion.lat, generalData.ubicacion.lng]}
-									zoom={14}
-									scrollWheelZoom={false}
-									style={{ height: '100%', width: '100%' }}
-								>
-									<TileLayer
-										attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-										url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-									/>
-									<Marker
-										position={[generalData.ubicacion.lat, generalData.ubicacion.lng]}
-										icon={customPinIcon}
-									/>
-								</MapContainer>
-							) : (
-								<Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: 'action.hover', p: 2 }}>
-									<Typography color="text.secondary" textAlign="center">
-										La ubicación exacta no se mostrará públicamente.
-									</Typography>
-								</Box>
-							)}
-						</Paper>
-					</Grid>
-				</Grid>
-
-				<Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 4 }}>
-					{generalData.descripcion}
-				</Typography>
-
-				{portfolioItems.length > 0 && (
-					<Box sx={{ mb: 4 }}>
-						<Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-							Portafolio
-						</Typography>
-						<Grid container spacing={2}>
-							{portfolioItems.map((item) => (
-								<Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
-									<Card variant="outlined" sx={{ height: '100%' }}>
-										{item.tipo === 'IMAGEN' && (
-											<Box
-												component="img"
-												src={item.url}
-												alt={item.titulo}
-												sx={{ width: '100%', height: 150, objectFit: 'cover' }}
-											/>
-										)}
-										{item.tipo !== 'IMAGEN' && (
-											<Box sx={{ height: 100, display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}>
-												{item.tipo === 'VIDEO' ? (
-													<PlayCircleOutlineIcon color="primary" sx={{ fontSize: 44 }} />
-												) : (
-													<InsertLinkIcon color="primary" sx={{ fontSize: 44 }} />
-												)}
-											</Box>
-										)}
-										<CardContent>
-											<Typography fontWeight={700}>{item.titulo}</Typography>
-											{item.descripcion && (
-												<Typography variant="body2" color="text.secondary">
-													{item.descripcion}
-												</Typography>
-											)}
-										</CardContent>
-									</Card>
-								</Grid>
-							))}
-						</Grid>
-					</Box>
-				)}
-
-				{publicAnswers.length > 0 && (
-					<Box>
-						<Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-							Más sobre esta actividad
-						</Typography>
-						<Grid container spacing={2}>
-							{publicAnswers.map((item) => (
-								<Grid key={item.id} size={{ xs: 12, md: 6 }}>
-									<Typography variant="subtitle2" fontWeight={700}>
-										{item.question}
-									</Typography>
-									<Typography variant="body2" color="text.secondary">
-										{Array.isArray(item.answer) ? item.answer.join(', ') : String(item.answer)}
-									</Typography>
-								</Grid>
-							))}
-						</Grid>
-					</Box>
-				)}
-			</Box>
+			<ActorPortfolioView actor={actorPreviewData} hideHeaderNav showStatusAlert={false} />
 		</Stack>
 	);
 }
