@@ -23,6 +23,7 @@ import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminUsuariosPage from './pages/adminUsuarios';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
+import ConfirmacionesPage from './pages/confirmaciones';
 import MisActoresPage from './pages/misActores';
 import EmployeesCrudPage from './pages/employees';
 import Licencia from './pages/licencia';
@@ -116,7 +117,7 @@ const router = createBrowserRouter([
 						path: 'confirmaciones',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
-								<EmployeesCrudPage />
+								<ConfirmacionesPage />
 							</ProtectedRoute>
 						),
 					},
