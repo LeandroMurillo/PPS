@@ -198,16 +198,18 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 	const actor = db.actores.find((a) => a.id === id);
 
 	if (!actor) {
-		return res.status(404).json({ error: { message: 'No se encontró un actor público con el identificador solicitado.' } });
+		return res
+			.status(404)
+			.json({ error: { message: 'No se encontró un actor público con el identificador solicitado.' } });
 	}
 
 	const user = getAuthUser(req);
 	const isPrivileged = Boolean(
 		user &&
-			(user.rol === 'ADMIN' ||
-				user.rol === 'MODERADOR' ||
-				actor.idUsuarioDueno === user.id ||
-				db.integrantes.some((i) => i.idActor === id && i.idUsuario === user.id)),
+		(user.rol === 'ADMIN' ||
+			user.rol === 'MODERADOR' ||
+			actor.idUsuarioDueno === user.id ||
+			db.integrantes.some((i) => i.idActor === id && i.idUsuario === user.id)),
 	);
 
 	// Si el actor no está activo (P o I), solo es visible para admin, moderador o sus integrantes
@@ -266,7 +268,7 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 				const qId = Number(idPreguntaStr);
 				const question = allQuestions.find((q) => q.id === qId);
 				const preguntaText = question ? question.pregunta : `Pregunta ${qId}`;
-				const isPublic = question ? question.esPublico : true;
+				const isPublic = question ? question.esPublico : false; // Por defecto privada si no se encuentra
 				const valorStr = Array.isArray(val) ? val.join(', ') : String(val ?? '');
 				return {
 					pregunta: preguntaText,

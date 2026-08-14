@@ -351,7 +351,7 @@ class MockDatabase {
 					direccion: `Av. San Martín ${100 + i * 15}`,
 					latitud: lat,
 					longitud: lng,
-					esPublica: true,
+					esPublica: i % 5 !== 0, // Algunos actores tienen dirección privada
 				},
 				respuestasFormulario: {
 					1: i % 2 === 0,
@@ -367,7 +367,7 @@ class MockDatabase {
 					idActor: i,
 					tipo: 'LINK',
 					descripcion: `Video oficial y muestra de ${actorName}`,
-					url: 'https://youtube.com/watch?v=culturatucuman',
+					url: 'https://www.youtube.com/watch?v=nAwCcBMQBrc',
 					fechaCreacion,
 				});
 				this.portafolioItems.push({
@@ -460,7 +460,7 @@ class MockDatabase {
 						preguntaReemplazada: null,
 						orden: 1,
 						esObligatorio: false,
-						esPublico: true,
+						esPublico: false, // Pregunta privada
 						fechaIncorporacion: '2025-01-05T09:00:00Z',
 						fechaDesactivacion: null,
 						estado: 'A',
@@ -495,7 +495,7 @@ class MockDatabase {
 						preguntaReemplazada: null,
 						orden: 3,
 						esObligatorio: false,
-						esPublico: true,
+						esPublico: false, // Pregunta privada
 						fechaIncorporacion: '2025-01-05T09:00:00Z',
 						fechaDesactivacion: null,
 						estado: 'A',
