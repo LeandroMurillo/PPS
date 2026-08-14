@@ -51,13 +51,14 @@ misActoresRouter.get('/formularios-aplicables', (req, res) => {
 
 // GET /api/mis-actores
 misActoresRouter.get('/', (req, res) => {
+	const user = getAuthUser(req);
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase() : undefined;
 	const idCategoria = req.query.idCategoria ? Number(req.query.idCategoria) : null;
 	const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
 	const limit = req.query.limit ? Number(req.query.limit) : 100;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
 
-	let result = db.actores;
+	let result = user ? db.actores.filter((a) => a.idUsuarioDueno === user.id) : db.actores;
 
 	if (idCategoria) {
 		result = result.filter((a) => a.idCategoria === idCategoria);
@@ -192,6 +193,15 @@ misActoresRouter.post('/', (req, res) => {
 	const attrs = req.body || {};
 	const user = getAuthUser(req);
 	const ownerUser = user || db.usuarios.find((u) => u.id === 3) || db.usuarios[0];
+	const pendingActorCount = db.actores.filter(
+		(actor) => actor.idUsuarioDueno === ownerUser.id && actor.estado === 'P',
+	).length;
+
+	if (pendingActorCount >= 5) {
+		return res.status(400).json({
+			error: { message: 'Ya alcanzaste el límite de 5 actores culturales pendientes de revisión.' },
+		});
+	}
 
 	const newId = db.actores.length + 1;
 	const newActor: ActorMock = {

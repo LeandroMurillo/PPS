@@ -724,13 +724,11 @@ export default function RegistroPage() {
 								paragraph
 								sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
 							>
-								{registroExitoso ||
-									`Se ha enviado un correo electrónico de confirmación a ${formData.email}. Por favor, revisá tu casilla para activar la cuenta. Tu cuenta permanecerá en estado Pendiente hasta su activación.`}
+								{registroExitoso || 'Tu cuenta ya está activa y podés iniciar sesión.'}
 							</Typography>
 
-							<Alert severity="warning" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
-								Una vez activada la cuenta, podrás iniciar sesión para gestionar tus perfiles de actor
-								cultural y publicar en el mapa.
+							<Alert severity="success" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
+								Ya podés iniciar sesión para gestionar tus perfiles de actor cultural y publicar en el mapa.
 							</Alert>
 
 							<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>

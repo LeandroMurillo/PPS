@@ -3681,7 +3681,7 @@ CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
     IN pFotoDniUrl VARCHAR(255)
 )
 MODIFIES SQL DATA
-COMMENT 'Registra un nuevo usuario en la plataforma en estado Pendiente (P) con rol USUARIO.'
+COMMENT 'Registra un nuevo usuario en la plataforma en estado Activo (A) con rol USUARIO.'
 BEGIN
     DECLARE vEmailExistente INT DEFAULT 0;
     DECLARE vCUILExistente INT DEFAULT 0;
@@ -3738,7 +3738,7 @@ BEGIN
         pActividadesArcaCodigo,
         pFotoDniUrl,
         'USUARIO',
-        'P'
+        'A'
     );
 
     SET vNuevoId = LAST_INSERT_ID();
@@ -3936,9 +3936,9 @@ BEGIN
     WHERE i.idUsuario = pIdUsuario
       AND a.estado = 'P';
 
-    IF vCantidadPendientes > 0 THEN
+    IF vCantidadPendientes >= 5 THEN
         SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Ya tenés un actor cultural pendiente de revisión.';
+            SET MESSAGE_TEXT = 'Ya alcanzaste el límite de 5 actores culturales pendientes de revisión.';
     END IF;
 
     INSERT INTO `Ubicaciones` (provincia, departamento, localidad, esPublica, direccion, latitud, longitud)

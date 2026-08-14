@@ -192,7 +192,7 @@ export default function ActorNuevoPage() {
 	const [formValidationAttempted, setFormValidationAttempted] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState('');
-	const [pendingActorName, setPendingActorName] = useState<string | null>(null);
+	const [pendingActorCount, setPendingActorCount] = useState(0);
 	const [pendingActorCheckLoading, setPendingActorCheckLoading] = useState(true);
 	const [pendingActorCheckError, setPendingActorCheckError] = useState('');
 	const [pendingActorCheckAttempt, setPendingActorCheckAttempt] = useState(0);
@@ -206,11 +206,11 @@ export default function ActorNuevoPage() {
 
 		void listarMisActoresApi({ estado: 'P', limit: 1 }, controller.signal)
 			.then((response) => {
-				setPendingActorName(response.data[0]?.nombre ?? null);
+				setPendingActorCount(response.pagination.total);
 			})
 			.catch((error: unknown) => {
 				if (!controller.signal.aborted) {
-					setPendingActorName(null);
+					setPendingActorCount(0);
 					setPendingActorCheckError(
 						error instanceof Error
 							? error.message
@@ -413,7 +413,7 @@ export default function ActorNuevoPage() {
 		}
 	};
 
-	if (pendingActorCheckLoading || pendingActorCheckError || pendingActorName) {
+	if (pendingActorCheckLoading || pendingActorCheckError || pendingActorCount >= 5) {
 		return (
 			<Box
 				sx={{
@@ -454,8 +454,8 @@ export default function ActorNuevoPage() {
 									<Typography fontWeight={700} sx={{ mb: 0.5 }}>
 										No podés agregar un nuevo actor cultural
 									</Typography>
-									Ya tenés a <strong>“{pendingActorName}”</strong> pendiente de revisión. Vas a poder
-									registrar otro actor cuando finalice esa revisión.
+									Ya tenés muchos actores culturales pendientes de revisión. Vas a poder registrar otro
+									cuando finalice alguna de esas revisiones.
 								</Alert>
 								<Button variant="contained" onClick={() => navigate('/mis-actores')}>
 									Ir a Mis actores
