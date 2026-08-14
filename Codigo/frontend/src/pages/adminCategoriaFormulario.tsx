@@ -39,6 +39,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { notify } from '../utils/toast';
 
 import {
 	asociarPreguntaFormularioAdmin,
@@ -89,12 +90,10 @@ export default function AdminCategoriaFormularioPage() {
 	const [subcategoria, setSubcategoria] = React.useState<SubcategoriaAdmin | null>(null);
 	const [formulario, setFormulario] = React.useState<FormularioAdmin | null>(null);
 	const [loading, setLoading] = React.useState(true);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const [titulo, setTitulo] = React.useState('');
 	const [descripcion, setDescripcion] = React.useState('');
 	const [saving, setSaving] = React.useState(false);
-	const [saveMessage, setSaveMessage] = React.useState<string | null>(null);
 	const [questionTab, setQuestionTab] = React.useState<'activas' | 'historial'>('activas');
 
 	const [questionDialogOpen, setQuestionDialogOpen] = React.useState(false);
@@ -265,13 +264,12 @@ export default function AdminCategoriaFormularioPage() {
 
 		async function load() {
 			if (!categoriaSlug) {
-				setError('La ruta del formulario no es válida.');
+				notify.error('La ruta del formulario no es válida.');
 				setLoading(false);
 				return;
 			}
 
 			setLoading(true);
-			setError(null);
 
 			try {
 				let resolvedCat: CategoriaAdmin | null = null;
@@ -298,7 +296,7 @@ export default function AdminCategoriaFormularioPage() {
 				}
 
 				if (!resolvedCat) {
-					setError('No se encontró la categoría solicitada.');
+					notify.error('No se encontró la categoría solicitada.');
 					setLoading(false);
 					return;
 				}
@@ -334,7 +332,7 @@ export default function AdminCategoriaFormularioPage() {
 					}
 
 					if (!resolvedSub) {
-						setError('No se encontró la subcategoría solicitada.');
+						notify.error('No se encontró la subcategoría solicitada.');
 						setLoading(false);
 						return;
 					}
@@ -372,7 +370,7 @@ export default function AdminCategoriaFormularioPage() {
 				}
 			} catch (loadError) {
 				if (!controller.signal.aborted) {
-					setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar el formulario.');
+					notify.error(loadError instanceof Error ? loadError.message : 'No se pudo cargar el formulario.');
 				}
 			} finally {
 				if (!controller.signal.aborted) setLoading(false);
@@ -406,8 +404,6 @@ export default function AdminCategoriaFormularioPage() {
 		if (!categoria || !titulo.trim()) return;
 
 		setSaving(true);
-		setError(null);
-		setSaveMessage(null);
 
 		try {
 			const data = { titulo: titulo.trim(), descripcion: descripcion.trim() || null };
@@ -417,9 +413,13 @@ export default function AdminCategoriaFormularioPage() {
 			setFormulario(response.data);
 			setTitulo(response.data.titulo);
 			setDescripcion(response.data.descripcion ?? '');
-			setSaveMessage(formulario ? 'Formulario actualizado.' : 'Formulario creado. Ya podés agregar preguntas.');
+			const msg = formulario
+				? 'Formulario actualizado correctamente.'
+				: 'Formulario creado. Ya podés agregar preguntas.';
+			notify.success(msg);
 		} catch (saveError) {
-			setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el formulario.');
+			const errMsg = saveError instanceof Error ? saveError.message : 'No se pudo guardar el formulario.';
+			notify.error(errMsg);
 		} finally {
 			setSaving(false);
 		}
@@ -462,12 +462,14 @@ export default function AdminCategoriaFormularioPage() {
 					esPublico: questionPublic,
 				});
 				setFormulario(response.data);
+				notify.success('Pregunta asociada correctamente.');
 				setQuestionDialogOpen(false);
 				setQuestionTab('activas');
 			} catch (submitError) {
-				setQuestionError(
-					submitError instanceof Error ? submitError.message : 'No se pudo incorporar la pregunta.',
-				);
+				const errMsg =
+					submitError instanceof Error ? submitError.message : 'No se pudo incorporar la pregunta.';
+				setQuestionError(errMsg);
+				notify.error(errMsg);
 			} finally {
 				setQuestionSubmitting(false);
 			}
@@ -502,10 +504,13 @@ export default function AdminCategoriaFormularioPage() {
 				esPublico: questionPublic,
 			});
 			setFormulario(response.data);
+			notify.success('Pregunta agregada correctamente.');
 			setQuestionDialogOpen(false);
 			setQuestionTab('activas');
 		} catch (submitError) {
-			setQuestionError(submitError instanceof Error ? submitError.message : 'No se pudo agregar la pregunta.');
+			const errMsg = submitError instanceof Error ? submitError.message : 'No se pudo agregar la pregunta.';
+			setQuestionError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setQuestionSubmitting(false);
 		}
@@ -518,9 +523,11 @@ export default function AdminCategoriaFormularioPage() {
 		try {
 			const response = await desactivarPreguntaFormularioAdmin(formulario.id, deletingQuestion.id);
 			setFormulario(response.data);
+			notify.info('Pregunta dada de baja del formulario.');
 			setDeletingQuestion(null);
 		} catch (deleteError) {
-			setError(deleteError instanceof Error ? deleteError.message : 'No se pudo dar de baja la pregunta.');
+			const errMsg = deleteError instanceof Error ? deleteError.message : 'No se pudo dar de baja la pregunta.';
+			notify.error(errMsg);
 		} finally {
 			setQuestionSubmitting(false);
 		}
@@ -565,9 +572,6 @@ export default function AdminCategoriaFormularioPage() {
 							</Stack>
 						)}
 					</Stack>
-
-					{error && <Alert severity="error">{error}</Alert>}
-					{saveMessage && <Alert severity="success">{saveMessage}</Alert>}
 
 					<Paper variant="outlined" sx={{ p: 3, borderRadius: 1 }}>
 						<Stack spacing={2.5}>

@@ -1,31 +1,14 @@
 import type { DataModel, DataSource } from '@toolpad/core/Crud';
 
 import { obtenerUsuarioAdmin, type UsuarioDetalleAdmin } from '../api/admin';
+import { getEstadoEtiqueta, getRolEtiqueta } from '../constants/estados';
 import { getGeneroEtiqueta } from '../constants/generos';
+import { formatDate, formatDateTime } from '../utils/date';
 
 export type UsuarioDetalleDataModel = UsuarioDetalleAdmin &
 	DataModel & {
 		categoriasModeradas: string;
 	};
-
-const formatDate = (value: unknown) => {
-	if (typeof value !== 'string') {
-		return '—';
-	}
-
-	const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-	return dateOnly
-		? `${dateOnly[3]}/${dateOnly[2]}/${dateOnly[1]}`
-		: new Intl.DateTimeFormat('es-AR', { dateStyle: 'medium' }).format(new Date(value));
-};
-
-const formatDateTime = (value: unknown) =>
-	typeof value === 'string'
-		? new Intl.DateTimeFormat('es-AR', {
-				dateStyle: 'medium',
-				timeStyle: 'short',
-			}).format(new Date(value))
-		: '—';
 
 export const usuarioAdminDataSource: DataSource<UsuarioDetalleDataModel> = {
 	fields: [
@@ -54,13 +37,12 @@ export const usuarioAdminDataSource: DataSource<UsuarioDetalleDataModel> = {
 		{
 			field: 'rol',
 			headerName: 'Rol',
-			valueFormatter: (value) =>
-				({ USUARIO: 'Usuario', MODERADOR: 'Moderador', ADMIN: 'Administrador' })[String(value)] ?? value,
+			valueFormatter: (value) => getRolEtiqueta(value ? String(value) : null),
 		},
 		{
 			field: 'estado',
 			headerName: 'Estado',
-			valueFormatter: (value) => ({ A: 'Activo', P: 'Pendiente', I: 'Inactivo' })[String(value)] ?? value,
+			valueFormatter: (value) => getEstadoEtiqueta(value ? String(value) : null),
 		},
 		{ field: 'categoriasModeradas', headerName: 'Categorías que modera' },
 	],

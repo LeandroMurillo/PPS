@@ -53,6 +53,9 @@ import {
 	Tooltip,
 	Typography,
 } from '@mui/material';
+import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
+import { fileToBase64 } from '../utils/file';
+import { notify } from '../utils/toast';
 
 import {
 	crearMiActorApi,
@@ -189,13 +192,12 @@ export default function ActorNuevoPage() {
 	const [formValidationAttempted, setFormValidationAttempted] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [submissionError, setSubmissionError] = useState('');
-	const [pendingActorName, setPendingActorName] = useState<string | null>(null);
+	const [pendingActorCount, setPendingActorCount] = useState(0);
 	const [pendingActorCheckLoading, setPendingActorCheckLoading] = useState(true);
 	const [pendingActorCheckError, setPendingActorCheckError] = useState('');
 	const [pendingActorCheckAttempt, setPendingActorCheckAttempt] = useState(0);
 	const selectedCategory = categories.find((item) => item.id === categoryId) ?? null;
-	const selectedSubcategory =
-		selectedCategory?.subcategorias.find((item) => item.id === subcategoryId) ?? null;
+	const selectedSubcategory = selectedCategory?.subcategorias.find((item) => item.id === subcategoryId) ?? null;
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -204,11 +206,11 @@ export default function ActorNuevoPage() {
 
 		void listarMisActoresApi({ estado: 'P', limit: 1 }, controller.signal)
 			.then((response) => {
-				setPendingActorName(response.data[0]?.nombre ?? null);
+				setPendingActorCount(response.pagination.total);
 			})
 			.catch((error: unknown) => {
 				if (!controller.signal.aborted) {
-					setPendingActorName(null);
+					setPendingActorCount(0);
 					setPendingActorCheckError(
 						error instanceof Error
 							? error.message
@@ -298,9 +300,8 @@ export default function ActorNuevoPage() {
 	};
 
 	const handleCategoryChange = (newCategoryId: number) => {
-		const nextCategory = categories.find((item) => item.id === newCategoryId) ?? null;
 		setCategoryId(newCategoryId);
-		setSubcategoryId(nextCategory?.subcategorias[0]?.id ?? null);
+		setSubcategoryId(null);
 		setForms([]);
 		setAnswers({});
 	};
@@ -381,8 +382,7 @@ export default function ActorNuevoPage() {
 				descripcion: generalData.descripcion.trim(),
 				fotoPerfilBase64: generalData.fotoPreview || null,
 				cuit: generalData.cuit.trim() || null,
-				tipoActor:
-					actorType === 'persona' ? 'INDIVIDUO' : actorType === 'colectivo' ? 'COLECTIVO' : 'ESPACIO',
+				tipoActor: actorType === 'persona' ? 'INDIVIDUO' : actorType === 'colectivo' ? 'COLECTIVO' : 'ESPACIO',
 				provincia: 'Tucumán',
 				departamento: generalData.departamento,
 				localidad: generalData.localidad.trim(),
@@ -400,21 +400,20 @@ export default function ActorNuevoPage() {
 				})),
 			});
 
-			navigate('/mis-actores', {
-				replace: true,
-				state: { toastMessage: 'El actor fue enviado a revisión correctamente.' },
-			});
+			notify.success('¡El actor fue enviado a revisión correctamente!');
+			navigate('/mis-actores', { replace: true });
 		} catch (error) {
-			setSubmissionError(
-				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.',
-			);
+			const errMsg =
+				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.';
+			setSubmissionError(errMsg);
+			notify.error(errMsg);
 			scrollToTop();
 		} finally {
 			setSubmitting(false);
 		}
 	};
 
-	if (pendingActorCheckLoading || pendingActorCheckError || pendingActorName) {
+	if (pendingActorCheckLoading || pendingActorCheckError || pendingActorCount >= 5) {
 		return (
 			<Box
 				sx={{
@@ -442,7 +441,10 @@ export default function ActorNuevoPage() {
 									<strong>No se pudo comprobar si podés registrar un nuevo actor.</strong>{' '}
 									{pendingActorCheckError}
 								</Alert>
-								<Button variant="contained" onClick={() => setPendingActorCheckAttempt((value) => value + 1)}>
+								<Button
+									variant="contained"
+									onClick={() => setPendingActorCheckAttempt((value) => value + 1)}
+								>
 									Reintentar
 								</Button>
 							</Stack>
@@ -452,8 +454,8 @@ export default function ActorNuevoPage() {
 									<Typography fontWeight={700} sx={{ mb: 0.5 }}>
 										No podés agregar un nuevo actor cultural
 									</Typography>
-									Ya tenés a <strong>“{pendingActorName}”</strong> pendiente de revisión. Vas a poder
-									registrar otro actor cuando finalice esa revisión.
+									Ya tenés muchos actores culturales pendientes de revisión. Vas a poder registrar otro
+									cuando finalice alguna de esas revisiones.
 								</Alert>
 								<Button variant="contained" onClick={() => navigate('/mis-actores')}>
 									Ir a Mis actores
@@ -541,7 +543,9 @@ export default function ActorNuevoPage() {
 													const value = answers[`${form.id}:${question.id}`];
 													return (
 														question.esObligatorio &&
-														(Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim())
+														(Array.isArray(value)
+															? value.length === 0
+															: !String(value ?? '').trim())
 													);
 												}),
 											) && (
@@ -555,6 +559,7 @@ export default function ActorNuevoPage() {
 											loading={formsLoading}
 											error={formsError}
 											answers={answers}
+											validationAttempted={formValidationAttempted}
 											onAnswerChange={(key, value) => {
 												setAnswers((current) => ({ ...current, [key]: value }));
 											}}
@@ -567,6 +572,7 @@ export default function ActorNuevoPage() {
 								{activeStep === 3 && (
 									<PublicProfilePreview
 										generalData={generalData}
+										actorType={actorType}
 										categoryName={selectedCategory?.nombre ?? 'Sector cultural'}
 										subcategoryName={selectedSubcategory?.nombre ?? ''}
 										forms={forms}
@@ -835,17 +841,18 @@ function GeneralActorFields({
 					detail="Puede ser una foto tuya, de tu grupo, espacio, trabajo o logotipo."
 					fileName={value.fotoNombre}
 					previewUrl={value.fotoPreview}
-					onFileSelect={(file) => {
+					onFileSelect={async (file) => {
 						if (!file) {
 							onChange({ fotoNombre: '', fotoPreview: '' });
 							return;
 						}
 
-						const reader = new FileReader();
-						reader.addEventListener('load', () => {
-							onChange({ fotoNombre: file.name, fotoPreview: String(reader.result ?? '') });
-						});
-						reader.readAsDataURL(file);
+						try {
+							const base64 = await fileToBase64(file);
+							onChange({ fotoNombre: file.name, fotoPreview: base64 });
+						} catch {
+							onChange({ fotoNombre: '', fotoPreview: '' });
+						}
 					}}
 				/>
 			</Grid>
@@ -953,11 +960,7 @@ function PortfolioStep({
 	};
 
 	const addItem = () => {
-		if (
-			items.length >= MAX_PORTFOLIO_ITEMS ||
-			!title.trim() ||
-			(type === 'IMAGEN' ? !imagePreview : !url.trim())
-		) {
+		if (items.length >= MAX_PORTFOLIO_ITEMS || !title.trim() || (type === 'IMAGEN' ? !imagePreview : !url.trim())) {
 			return;
 		}
 		onChange([
@@ -977,8 +980,7 @@ function PortfolioStep({
 	return (
 		<Stack spacing={3}>
 			<Alert severity="info" variant="outlined">
-				El portafolio es opcional. Podés sumar contenido ahora o completarlo más adelante desde “Mis
-				actores”.
+				El portafolio es opcional. Podés sumar contenido ahora o completarlo más adelante desde “Mis actores”.
 			</Alert>
 
 			<Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 2, bgcolor: 'action.hover' }}>
@@ -1031,18 +1033,20 @@ function PortfolioStep({
 							detail="JPG, PNG o WebP"
 							fileName={imageName}
 							previewUrl={imagePreview}
-							onFileSelect={(file) => {
+							onFileSelect={async (file) => {
 								if (!file) {
 									setImageName('');
 									setImagePreview('');
 									return;
 								}
-								const reader = new FileReader();
-								reader.addEventListener('load', () => {
+								try {
+									const base64 = await fileToBase64(file);
 									setImageName(file.name);
-									setImagePreview(String(reader.result ?? ''));
-								});
-								reader.readAsDataURL(file);
+									setImagePreview(base64);
+								} catch {
+									setImageName('');
+									setImagePreview('');
+								}
 							}}
 						/>
 					) : (
@@ -1051,9 +1055,7 @@ function PortfolioStep({
 							required
 							type="url"
 							label={type === 'VIDEO' ? 'Enlace al video' : 'Enlace'}
-							placeholder={
-								type === 'VIDEO' ? 'https://youtube.com/watch?v=…' : 'https://instagram.com/…'
-							}
+							placeholder={type === 'VIDEO' ? 'https://youtube.com/watch?v=…' : 'https://instagram.com/…'}
 							value={url}
 							onChange={(event) => setUrl(event.target.value)}
 							helperText="Pegá una dirección pública que las personas puedan visitar."
@@ -1114,7 +1116,12 @@ function PortfolioStep({
 										/>
 									) : (
 										<Box
-											sx={{ height: 96, display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}
+											sx={{
+												height: 96,
+												display: 'grid',
+												placeItems: 'center',
+												bgcolor: 'action.hover',
+											}}
 										>
 											{item.tipo === 'VIDEO' ? (
 												<PlayCircleOutlineIcon color="primary" sx={{ fontSize: 42 }} />
@@ -1150,14 +1157,15 @@ function PortfolioStep({
 
 function PublicProfilePreview({
 	generalData,
+	actorType,
 	categoryName,
 	subcategoryName,
 	forms,
 	answers,
 	portfolioItems,
-	submissionError,
 }: {
 	generalData: GeneralActorData;
+	actorType: ActorType | null;
 	categoryName: string;
 	subcategoryName: string;
 	forms: FormularioAplicable[];
@@ -1165,164 +1173,62 @@ function PublicProfilePreview({
 	portfolioItems: PortfolioItemDraft[];
 	submissionError: string;
 }) {
-	const images = [
-		...(generalData.fotoPreview
-			? [{ id: -1, url: generalData.fotoPreview, titulo: `Foto de ${generalData.nombre}` }]
-			: []),
-		...portfolioItems
-			.filter((item) => item.tipo === 'IMAGEN')
-			.map((item) => ({ id: item.id, url: item.url, titulo: item.titulo })),
-	];
-	const publicAnswers = forms.flatMap((form) =>
+	const allAnswers = forms.flatMap((form) =>
 		form.preguntas
-			.filter((question) => question.esPublico)
 			.map((question) => ({
-				id: `${form.id}:${question.id}`,
-				question: question.pregunta,
-				answer: answers[`${form.id}:${question.id}`],
+				pregunta: question.pregunta,
+				respuesta: answers[`${form.id}:${question.id}`],
+				publica: question.esPublico,
 			}))
-			.filter(({ answer }) => (Array.isArray(answer) ? answer.length > 0 : Boolean(String(answer ?? '').trim()))),
+			.filter(({ respuesta }) =>
+				Array.isArray(respuesta) ? respuesta.length > 0 : Boolean(String(respuesta ?? '').trim()),
+			),
 	);
+
+	const mappedPortafolio = portfolioItems.map((item) => ({
+		id: typeof item.id === 'number' ? item.id : undefined,
+		tipo: item.tipo,
+		url: item.previewUrl || item.url,
+		titulo: item.titulo,
+		descripcion: item.descripcion,
+	}));
+
+	const actorPreviewData: ActorPortfolioViewData = {
+		nombre: generalData.nombre || 'Nombre de tu actividad cultural',
+		categoria: categoryName,
+		subcategoria: subcategoryName || null,
+		tipoActor:
+			actorType === 'persona'
+				? 'INDIVIDUO'
+				: actorType === 'colectivo'
+					? 'COLECTIVO'
+					: actorType === 'institucion'
+						? 'ESPACIO'
+						: null,
+		descripcion: generalData.descripcion,
+		foto: generalData.fotoPreview || null,
+		cuit: generalData.cuit || null,
+		ubicacion: {
+			departamento: generalData.departamento,
+			localidad: generalData.localidad,
+			direccion: generalData.direccion,
+			latitud: generalData.ubicacion?.lat ?? null,
+			longitud: generalData.ubicacion?.lng ?? null,
+			esPublica: generalData.ubicacionPublica,
+		},
+		portafolio: mappedPortafolio,
+		respuestas: allAnswers,
+	};
 
 	return (
 		<Stack spacing={3}>
-			{submissionError && (
-				<Alert severity="error" variant="outlined">
-					<strong>No se pudo guardar la solicitud.</strong> {submissionError}
-				</Alert>
-			)}
-			<Alert severity="warning" variant="outlined">
-				<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública.
-			</Alert>
-
-			<Box sx={{ px: { xs: 0, md: 2 }, py: 1 }}>
-				<Typography variant="h3" component="h2" fontWeight={700} gutterBottom>
-					{generalData.nombre || 'Nombre de tu actividad cultural'}
-				</Typography>
-				<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-					<Chip label={categoryName} color="primary" />
-					{Boolean(subcategoryName) && <Chip label={subcategoryName} variant="outlined" />}
-					<Chip
-						icon={<LocationOnIcon />}
-						label={[generalData.localidad, generalData.departamento].filter(Boolean).join(', ')}
-						variant="outlined"
-					/>
-				</Stack>
-
-				<Grid container spacing={3} sx={{ mb: 3 }}>
-					<Grid size={{ xs: 12, md: 7 }}>
-						<Paper variant="outlined" sx={{ height: 320, overflow: 'hidden', borderRadius: 2 }}>
-							{images.length > 0 ? (
-								<Box
-									component="img"
-									src={images[0].url}
-									alt={images[0].titulo}
-									sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-								/>
-							) : (
-								<Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}>
-									<Stack alignItems="center" color="text.secondary">
-										<ImageOutlinedIcon sx={{ fontSize: 48 }} />
-										<Typography>Sin imágenes disponibles</Typography>
-									</Stack>
-								</Box>
-							)}
-						</Paper>
-					</Grid>
-					<Grid size={{ xs: 12, md: 5 }}>
-						<Paper variant="outlined" sx={{ height: 320, overflow: 'hidden', borderRadius: 2 }}>
-							{generalData.ubicacionPublica && generalData.ubicacion ? (
-								<MapContainer
-									center={[generalData.ubicacion.lat, generalData.ubicacion.lng]}
-									zoom={14}
-									scrollWheelZoom={false}
-									style={{ height: '100%', width: '100%' }}
-								>
-									<TileLayer
-										attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-										url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-									/>
-									<Marker
-										position={[generalData.ubicacion.lat, generalData.ubicacion.lng]}
-										icon={customPinIcon}
-									/>
-								</MapContainer>
-							) : (
-								<Box sx={{ height: '100%', display: 'grid', placeItems: 'center', bgcolor: 'action.hover', p: 2 }}>
-									<Typography color="text.secondary" textAlign="center">
-										La ubicación exacta no se mostrará públicamente.
-									</Typography>
-								</Box>
-							)}
-						</Paper>
-					</Grid>
-				</Grid>
-
-				<Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 4 }}>
-					{generalData.descripcion}
-				</Typography>
-
-				{portfolioItems.length > 0 && (
-					<Box sx={{ mb: 4 }}>
-						<Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-							Portafolio
-						</Typography>
-						<Grid container spacing={2}>
-							{portfolioItems.map((item) => (
-								<Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
-									<Card variant="outlined" sx={{ height: '100%' }}>
-										{item.tipo === 'IMAGEN' && (
-											<Box
-												component="img"
-												src={item.url}
-												alt={item.titulo}
-												sx={{ width: '100%', height: 150, objectFit: 'cover' }}
-											/>
-										)}
-										{item.tipo !== 'IMAGEN' && (
-											<Box sx={{ height: 100, display: 'grid', placeItems: 'center', bgcolor: 'action.hover' }}>
-												{item.tipo === 'VIDEO' ? (
-													<PlayCircleOutlineIcon color="primary" sx={{ fontSize: 44 }} />
-												) : (
-													<InsertLinkIcon color="primary" sx={{ fontSize: 44 }} />
-												)}
-											</Box>
-										)}
-										<CardContent>
-											<Typography fontWeight={700}>{item.titulo}</Typography>
-											{item.descripcion && (
-												<Typography variant="body2" color="text.secondary">
-													{item.descripcion}
-												</Typography>
-											)}
-										</CardContent>
-									</Card>
-								</Grid>
-							))}
-						</Grid>
-					</Box>
-				)}
-
-				{publicAnswers.length > 0 && (
-					<Box>
-						<Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-							Más sobre esta actividad
-						</Typography>
-						<Grid container spacing={2}>
-							{publicAnswers.map((item) => (
-								<Grid key={item.id} size={{ xs: 12, md: 6 }}>
-									<Typography variant="subtitle2" fontWeight={700}>
-										{item.question}
-									</Typography>
-									<Typography variant="body2" color="text.secondary">
-										{Array.isArray(item.answer) ? item.answer.join(', ') : String(item.answer)}
-									</Typography>
-								</Grid>
-							))}
-						</Grid>
-					</Box>
-				)}
-			</Box>
+			<ActorPortfolioView
+				actor={actorPreviewData}
+				hideHeaderNav
+				showStatusAlert={false}
+				canViewPrivateInfo={true}
+				initialShowAllInfo={false}
+			/>
 		</Stack>
 	);
 }
@@ -1333,13 +1239,15 @@ function CategoryForms({
 	loading,
 	error,
 	answers,
+	validationAttempted = false,
 	onAnswerChange,
 }: {
 	categoryName: string;
 	forms: FormularioAplicable[];
 	loading: boolean;
-	error: string;
+	error: string | null;
 	answers: Record<string, FormAnswer>;
+	validationAttempted?: boolean;
 	onAnswerChange: (key: string, value: FormAnswer) => void;
 }) {
 	const orderedForms = [...forms].sort((left, right) => {
@@ -1395,12 +1303,19 @@ function CategoryForms({
 						<Stack spacing={2.5}>
 							{form.preguntas.map((question) => {
 								const key = `${form.id}:${question.id}`;
+								const value = answers[key] ?? (question.tipoDato === 'OPCION_MULTIPLE' ? [] : '');
+								const isMissing =
+									question.esObligatorio &&
+									(Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim());
+								const hasError = validationAttempted && isMissing;
+
 								return (
 									<QuestionField
 										key={key}
 										question={question}
-										value={answers[key] ?? (question.tipoDato === 'OPCION_MULTIPLE' ? [] : '')}
-										onChange={(value) => onAnswerChange(key, value)}
+										value={value}
+										hasError={hasError}
+										onChange={(val) => onAnswerChange(key, val)}
 									/>
 								);
 							})}
@@ -1415,38 +1330,52 @@ function CategoryForms({
 function QuestionField({
 	question,
 	value,
+	hasError = false,
 	onChange,
 }: {
 	question: PreguntaFormularioAplicable;
 	value: FormAnswer;
+	hasError?: boolean;
 	onChange: (value: FormAnswer) => void;
 }) {
 	const label = question.pregunta;
 
 	if (question.tipoDato === 'BOOLEANO') {
 		return (
-			<Stack spacing={1}>
-				<QuestionHeading question={question} />
-				<RadioGroup
-					row
-					aria-label={label}
-					value={typeof value === 'string' ? value : ''}
-					onChange={(event) => onChange(event.target.value)}
-				>
-					<FormControlLabel value="true" control={<Radio size="small" />} label="Sí" />
-					<FormControlLabel value="false" control={<Radio size="small" />} label="No" />
-				</RadioGroup>
-			</Stack>
+			<FormControl error={hasError} component="fieldset" fullWidth>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} />
+					<RadioGroup
+						row
+						aria-label={label}
+						value={typeof value === 'string' ? value : ''}
+						onChange={(event) => onChange(event.target.value)}
+					>
+						<FormControlLabel
+							value="true"
+							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
+							label="Sí"
+						/>
+						<FormControlLabel
+							value="false"
+							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
+							label="No"
+						/>
+					</RadioGroup>
+					{hasError && <FormHelperText error>Esta pregunta es obligatoria.</FormHelperText>}
+				</Stack>
+			</FormControl>
 		);
 	}
 
 	if (question.tipoDato === 'OPCION_UNICA') {
 		return (
-			<Stack spacing={1}>
-				<QuestionHeading question={question} />
-				<FormControl fullWidth required={question.esObligatorio}>
+			<FormControl fullWidth required={question.esObligatorio} error={hasError}>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} />
 					<Select
 						displayEmpty
+						error={hasError}
 						value={typeof value === 'string' ? value : ''}
 						onChange={(event) => onChange(event.target.value)}
 						inputProps={{ 'aria-label': label }}
@@ -1460,37 +1389,42 @@ function QuestionField({
 							</MenuItem>
 						))}
 					</Select>
-				</FormControl>
-			</Stack>
+					{hasError && <FormHelperText error>Seleccioná una opción.</FormHelperText>}
+				</Stack>
+			</FormControl>
 		);
 	}
 
 	if (question.tipoDato === 'OPCION_MULTIPLE') {
 		const selected = Array.isArray(value) ? value : [];
 		return (
-			<Stack spacing={1}>
-				<QuestionHeading question={question} />
-				<FormGroup aria-label={label}>
-					{question.opciones?.map((option) => (
-						<FormControlLabel
-							key={option}
-							label={option}
-							control={
-								<Checkbox
-									checked={selected.includes(option)}
-									onChange={(event) =>
-										onChange(
-											event.target.checked
-												? [...selected, option]
-												: selected.filter((item) => item !== option),
-										)
-									}
-								/>
-							}
-						/>
-					))}
-				</FormGroup>
-			</Stack>
+			<FormControl error={hasError} component="fieldset" fullWidth>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} />
+					<FormGroup aria-label={label}>
+						{question.opciones?.map((option) => (
+							<FormControlLabel
+								key={option}
+								label={option}
+								control={
+									<Checkbox
+										checked={selected.includes(option)}
+										color={hasError ? 'error' : 'primary'}
+										onChange={(event) =>
+											onChange(
+												event.target.checked
+													? [...selected, option]
+													: selected.filter((item) => item !== option),
+											)
+										}
+									/>
+								}
+							/>
+						))}
+					</FormGroup>
+					{hasError && <FormHelperText error>Seleccioná al menos una opción.</FormHelperText>}
+				</Stack>
+			</FormControl>
 		);
 	}
 
@@ -1504,10 +1438,12 @@ function QuestionField({
 
 	return (
 		<Stack spacing={1}>
-			<QuestionHeading question={question} />
+			<QuestionHeading question={question} hasError={hasError} />
 			<TextField
 				fullWidth
 				required={question.esObligatorio}
+				error={hasError}
+				helperText={hasError ? 'Esta pregunta es obligatoria.' : undefined}
 				type={inputType[question.tipoDato] ?? 'text'}
 				placeholder={question.tipoDato === 'FECHA' ? undefined : 'Ingresá tu respuesta'}
 				value={typeof value === 'string' ? value : ''}
@@ -1518,7 +1454,13 @@ function QuestionField({
 	);
 }
 
-function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }) {
+function QuestionHeading({
+	question,
+	hasError = false,
+}: {
+	question: PreguntaFormularioAplicable;
+	hasError?: boolean;
+}) {
 	return (
 		<Stack
 			direction={{ xs: 'column', sm: 'row' }}
@@ -1526,7 +1468,12 @@ function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }
 			alignItems={{ xs: 'flex-start', sm: 'center' }}
 			justifyContent="space-between"
 		>
-			<Typography variant="subtitle2" fontWeight={700}>
+			<Typography
+				variant="subtitle2"
+				fontWeight={700}
+				color={hasError ? 'error.main' : 'text.primary'}
+				sx={{ transition: 'color 0.2s ease' }}
+			>
 				{question.pregunta}
 				{question.esObligatorio && <RequiredAsterisk tooltipTitle="Pregunta obligatoria" />}
 			</Typography>

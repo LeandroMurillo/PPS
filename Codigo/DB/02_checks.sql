@@ -106,6 +106,23 @@ ALTER TABLE `cultura`.`Integrantes`
   ADD CONSTRAINT `chk_Integrantes_esDueno`
     CHECK (`esDueño` IN (0, 1));
 
+ALTER TABLE `cultura`.`IntegrantesNoRegistrados`
+  ADD CONSTRAINT `chk_IntegrantesNoRegistrados_nombre`
+    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
+  ADD CONSTRAINT `chk_IntegrantesNoRegistrados_apellido`
+    CHECK (`apellido` = TRIM(`apellido`) AND `apellido` <> ''),
+  ADD CONSTRAINT `chk_IntegrantesNoRegistrados_email`
+    CHECK (
+      `email` IS NULL
+      OR (
+        `email` = TRIM(`email`)
+        AND `email` = LOWER(`email`)
+        AND `email` REGEXP '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
+      )
+    ),
+  ADD CONSTRAINT `chk_IntegrantesNoRegistrados_rol`
+    CHECK (`rol` = TRIM(`rol`) AND `rol` <> '');
+
 ALTER TABLE `cultura`.`Convocatorias`
   ADD CONSTRAINT `chk_Convocatorias_titulo`
     CHECK (`titulo` = TRIM(`titulo`) AND `titulo` <> ''),

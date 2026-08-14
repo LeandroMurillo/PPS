@@ -22,6 +22,16 @@ const envSchema = z.object({
 	DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(50).default(10),
 
 	JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
+}).superRefine((data, ctx) => {
+	if (data.NODE_ENV === 'production') {
+		if (!process.env.JWT_SECRET || data.JWT_SECRET === 'mosaico_cultural_jwt_secret_key_dev_mode_2026') {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ['JWT_SECRET'],
+				message: 'En producción se debe configurar una variable JWT_SECRET segura y diferente al valor por defecto.',
+			});
+		}
+	}
 });
 
 const result = envSchema.safeParse(process.env);

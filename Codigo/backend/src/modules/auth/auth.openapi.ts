@@ -18,7 +18,7 @@ export function registerAuthOpenApi(): void {
 		summary: 'Registrar un nuevo usuario',
 
 		description:
-			'Permite a un nuevo usuario registrarse en la plataforma ingresando sus datos personales, credenciales y adjuntando una imagen de su documento de identidad. El usuario se crea en estado Pendiente (P).',
+			'Permite a un nuevo usuario registrarse en la plataforma ingresando sus datos personales, credenciales y adjuntando una imagen de su documento de identidad. El usuario se crea en estado Activo (A).',
 
 		request: {
 			body: {

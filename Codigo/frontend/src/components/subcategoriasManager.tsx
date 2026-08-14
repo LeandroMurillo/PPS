@@ -31,13 +31,16 @@ import {
 	type SubcategoriaAdmin,
 	type SubcategoriaAdminSortBy,
 } from '../api/admin';
+import {
+	ESTADO_CATEGORIA_LABELS as stateLabels,
+	ESTADO_COLORS as stateColors,
+} from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
+import { notify } from '../utils/toast';
 import AdminFilters from './adminFilters';
 import AdminTable, { type AdminColumn } from './adminTable';
 
-const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
-const stateColors = { A: 'success', I: 'default' } as const;
 const pageSize = 25;
 
 interface SubcategoriasManagerProps {
@@ -149,17 +152,21 @@ export default function SubcategoriasManager({
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
+				notify.success(`Subcategoría "${trimmedNombre}" modificada correctamente.`);
 			} else {
 				await crearSubcategoriaAdmin(categoryId, {
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
+				notify.success(`Subcategoría "${trimmedNombre}" creada correctamente.`);
 			}
 
 			setDialogOpen(false);
 			void fetchSubcategorias();
 		} catch (err) {
-			setFormError(err instanceof Error ? err.message : 'Ocurrió un error al guardar la subcategoría.');
+			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la subcategoría.';
+			setFormError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setFormSubmitting(false);
 		}
@@ -177,11 +184,14 @@ export default function SubcategoriasManager({
 
 		try {
 			await eliminarSubcategoriaAdmin(categoryId, deletingSubcategoria.id);
+			notify.info(`Subcategoría "${deletingSubcategoria.nombre}" dada de baja correctamente.`);
 			setDeleteDialogOpen(false);
 			setDeletingSubcategoria(null);
 			void fetchSubcategorias();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'No se pudo dar de baja la subcategoría');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo dar de baja la subcategoría';
+			setError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setDeleteSubmitting(false);
 		}

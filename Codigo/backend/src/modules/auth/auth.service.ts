@@ -104,8 +104,7 @@ export async function registrarUsuarioService(input: RegistrarUsuarioBody): Prom
 
 	return {
 		usuario,
-		mensaje:
-			'Usuario registrado correctamente. Se ha enviado un correo electrónico para la activación de la cuenta.',
+		mensaje: 'Usuario registrado correctamente. Ya podés iniciar sesión.',
 	};
 }
 

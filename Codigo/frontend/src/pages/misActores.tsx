@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
+import { Link as RouterLink, useNavigate } from 'react-router';
 
 import AddIcon from '@mui/icons-material/Add';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -47,7 +47,6 @@ import {
 	Radio,
 	RadioGroup,
 	Select,
-	Snackbar,
 	Stack,
 	TextField,
 	ToggleButton,
@@ -56,6 +55,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { notify } from '../utils/toast';
 
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
@@ -64,22 +64,35 @@ import DatePickerSpanish from '../components/datePickerSpanish';
 import {
 	agregarEventoApi,
 	agregarIntegranteApi,
+	agregarIntegranteNoRegistradoApi,
 	agregarItemPortafolioApi,
 	cambiarEstadoMiActorApi,
 	editarMiActorApi,
 	eliminarEventoApi,
 	eliminarIntegranteApi,
+	eliminarIntegranteNoRegistradoApi,
+	editarIntegranteApi,
+	editarIntegranteNoRegistradoApi,
 	eliminarItemPortafolioApi,
 	eliminarMiActorApi,
 	listarIntegrantesApi,
 	listarEventosApi,
 	listarMisActoresApi,
+	listarPortafolioApi,
 	obtenerOpcionesRegistroApi,
 	type IntegranteApiItem,
 	type OpcionCategoriaRegistro,
 } from '../api/actores';
+import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
+import {
+	ESTADO_COLORS as stateColors,
+	ESTADO_LABELS as stateLabels,
+	TIPO_ACTOR_LABELS as typeLabels,
+} from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { formatEventDate } from '../utils/date';
+import { fileToBase64, validateImageFile } from '../utils/file';
 import { buildSlugConId } from '../utils/slug';
 
 function normalizeCatalogName(value: string): string {
@@ -108,8 +121,8 @@ function getSubcategoryIdByName(
 	const category = findCategoryByName(options, categoryName);
 	const normalizedName = normalizeCatalogName(subcategoryName);
 	return (
-		category?.subcategorias.find((subcategory) => normalizeCatalogName(subcategory.nombre) === normalizedName)?.id ??
-		null
+		category?.subcategorias.find((subcategory) => normalizeCatalogName(subcategory.nombre) === normalizedName)
+			?.id ?? null
 	);
 }
 
@@ -147,41 +160,17 @@ export type MyActor = {
 	eventos?: MyActorEvent[];
 };
 
-const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
-const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
-const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
-
-function formatEventDate(value: string): string {
-	const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-	return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+function getMemberKey(member: IntegranteApiItem): string {
+	return member.tipo === 'REGISTRADO'
+		? `usuario-${member.idUsuario}`
+		: `sin-cuenta-${member.idIntegranteNoRegistrado}`;
 }
-
-const departamentos = [
-	'Burruyacú',
-	'Capital',
-	'Chicligasta',
-	'Cruz Alta',
-	'Famaillá',
-	'Graneros',
-	'Juan Bautista Alberdi',
-	'La Cocha',
-	'Leales',
-	'Lules',
-	'Monteros',
-	'Río Chico',
-	'Simoca',
-	'Tafí del Valle',
-	'Tafí Viejo',
-	'Trancas',
-	'Yerba Buena',
-] as const;
 
 export default function MisActoresPage() {
 	const navigate = useNavigate();
-	const location = useLocation();
 	const { user } = useAuth();
 
-	const currentUserId = user?.idUsuario ?? 1;
+	const userId = user?.idUsuario;
 	const isAdminOrMod = user?.rol === 'ADMIN' || user?.rol === 'MODERADOR';
 
 	const [actores, setActores] = React.useState<MyActor[]>([]);
@@ -206,9 +195,9 @@ export default function MisActoresPage() {
 	const [formValues, setFormValues] = React.useState({
 		nombre: '',
 		tipoActor: 'COLECTIVO' as MyActor['tipoActor'],
-		categoria: 'Música',
-		subcategoria: 'Folklore y fusión',
-		departamento: 'Capital',
+		categoria: '',
+		subcategoria: '',
+		departamento: '',
 		localidad: '',
 		direccion: '',
 		cuit: '',
@@ -235,6 +224,10 @@ export default function MisActoresPage() {
 	const [newPortfolioType, setNewPortfolioType] = React.useState<'IMAGEN' | 'LINK' | 'RRSS'>('IMAGEN');
 	const [newPortfolioUrl, setNewPortfolioUrl] = React.useState('');
 	const [newPortfolioDesc, setNewPortfolioDesc] = React.useState('');
+	const [portfolioLoading, setPortfolioLoading] = React.useState(false);
+	const [portfolioError, setPortfolioError] = React.useState<string | null>(null);
+	const [portfolioSubmitting, setPortfolioSubmitting] = React.useState(false);
+	const [deletingPortfolioItemId, setDeletingPortfolioItemId] = React.useState<number | null>(null);
 
 	// Events Management Modal
 	const [eventsModalOpen, setEventsModalOpen] = React.useState(false);
@@ -251,8 +244,18 @@ export default function MisActoresPage() {
 	const [membersModalOpen, setMembersModalOpen] = React.useState(false);
 	const [targetMembersActor, setTargetMembersActor] = React.useState<MyActor | null>(null);
 	const [integrantesList, setIntegrantesList] = React.useState<IntegranteApiItem[]>([]);
+	const [newMemberType, setNewMemberType] = React.useState<'REGISTRADO' | 'NO_REGISTRADO'>('REGISTRADO');
+	const [newMemberNombre, setNewMemberNombre] = React.useState('');
+	const [newMemberApellido, setNewMemberApellido] = React.useState('');
 	const [newMemberEmail, setNewMemberEmail] = React.useState('');
 	const [newMemberRol, setNewMemberRol] = React.useState('Integrante');
+	const [editingMember, setEditingMember] = React.useState<IntegranteApiItem | null>(null);
+	const [editMemberNombre, setEditMemberNombre] = React.useState('');
+	const [editMemberApellido, setEditMemberApellido] = React.useState('');
+	const [editMemberEmail, setEditMemberEmail] = React.useState('');
+	const [editMemberRol, setEditMemberRol] = React.useState('');
+	const [memberSubmitting, setMemberSubmitting] = React.useState(false);
+	const [deletingMemberKey, setDeletingMemberKey] = React.useState<string | null>(null);
 	const [membersLoading, setMembersLoading] = React.useState(false);
 	const [membersError, setMembersError] = React.useState<string | null>(null);
 
@@ -266,20 +269,6 @@ export default function MisActoresPage() {
 		const cleanInput = deleteConfirmInput.trim().toUpperCase();
 		return cleanInput === 'BORRAR' || cleanInput === 'ELIMINAR';
 	}, [deleteConfirmInput, targetDeleteActor]);
-
-	// Toast notification
-	const [snackbarMessage, setSnackbarMessage] = React.useState<string | null>(null);
-
-	React.useEffect(() => {
-		const navigationState = location.state as { toastMessage?: unknown } | null;
-		if (typeof navigationState?.toastMessage !== 'string') return;
-
-		setSnackbarMessage(navigationState.toastMessage);
-		navigate(`${location.pathname}${location.search}${location.hash}`, {
-			replace: true,
-			state: null,
-		});
-	}, [location.hash, location.pathname, location.search, location.state, navigate]);
 
 	const debouncedSearch = useDebouncedValue(search);
 	const selectedEditCategory = React.useMemo(
@@ -297,9 +286,7 @@ export default function MisActoresPage() {
 			.catch((loadError: unknown) => {
 				if (!controller.signal.aborted) {
 					setCatalogError(
-						loadError instanceof Error
-							? loadError.message
-							: 'No se pudo cargar el catálogo de categorías.',
+						loadError instanceof Error ? loadError.message : 'No se pudo cargar el catálogo de categorías.',
 					);
 				}
 			});
@@ -320,7 +307,7 @@ export default function MisActoresPage() {
 			if (res?.data) {
 				const mapApiActores: MyActor[] = res.data.map((item) => ({
 					id: item.id,
-					idUsuarioDueno: currentUserId,
+					idUsuarioDueno: userId ?? 0,
 					nombre: item.nombre,
 					tipoActor: item.tipoActor,
 					categoria: item.categoria,
@@ -348,20 +335,15 @@ export default function MisActoresPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, [debouncedSearch, stateFilter, categoryFilter, currentUserId, categoryOptions]);
+	}, [debouncedSearch, stateFilter, categoryFilter, userId, categoryOptions]);
 
 	React.useEffect(() => {
 		fetchMisActores();
 	}, [fetchMisActores]);
 
-	// STRICT OWNER FILTERING: Only actors owned by the logged-in user
-	const misActoresPropios = React.useMemo(() => {
-		return actores.filter((actor) => actor.idUsuarioDueno === currentUserId);
-	}, [actores, currentUserId]);
-
 	// Filtered list based on search, category, and state
 	const filteredActores = React.useMemo(() => {
-		return misActoresPropios.filter((actor) => {
+		return actores.filter((actor) => {
 			const matchesSearch =
 				!debouncedSearch ||
 				actor.nombre.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -374,7 +356,7 @@ export default function MisActoresPage() {
 
 			return matchesSearch && matchesCategory && matchesState;
 		});
-	}, [misActoresPropios, debouncedSearch, categoryFilter, stateFilter]);
+	}, [actores, debouncedSearch, categoryFilter, stateFilter]);
 
 	// Open Edit Dialog
 	const handleOpenEdit = (actor: MyActor) => {
@@ -382,9 +364,9 @@ export default function MisActoresPage() {
 		const category = findCategoryByName(categoryOptions, actor.categoria);
 		const cat = category?.nombre ?? actor.categoria;
 		const sub = actor.subcategoria
-			? category?.subcategorias.find(
+			? (category?.subcategorias.find(
 					(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
-				)?.nombre ?? actor.subcategoria
+				)?.nombre ?? actor.subcategoria)
 			: '';
 
 		setFormValues({
@@ -406,27 +388,29 @@ export default function MisActoresPage() {
 		setEditModalOpen(true);
 	};
 
-	const handleProfileImageFile = (file: File | null) => {
+	const handleProfileImageFile = async (file: File | null) => {
 		if (!file) return;
 		if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
 			setProfileImageError('Seleccioná una imagen JPG, PNG o WebP.');
 			return;
 		}
-		if (file.size > 5 * 1024 * 1024) {
-			setProfileImageError('La imagen no puede superar los 5 MB.');
+		const sizeValidation = validateImageFile(file, 5);
+		if (!sizeValidation.valid) {
+			setProfileImageError(sizeValidation.error ?? 'La imagen supera el límite permitido.');
 			return;
 		}
 
-		const reader = new FileReader();
-		reader.addEventListener('load', () => {
+		try {
+			const base64 = await fileToBase64(file);
 			setFormValues((current) => ({
 				...current,
-				fotoPerfilBase64: String(reader.result ?? ''),
+				fotoPerfilBase64: base64,
 				fotoPerfilNombre: file.name,
 			}));
 			setProfileImageError(null);
-		});
-		reader.readAsDataURL(file);
+		} catch {
+			setProfileImageError('No se pudo procesar la imagen seleccionada.');
+		}
 	};
 
 	// Request Edit Save -> Open Edit Confirmation Dialog
@@ -499,7 +483,7 @@ export default function MisActoresPage() {
 			? `Se actualizaron los datos de "${formValues.nombre.trim()}". La ficha pasó a estado Pendiente para su revisión.`
 			: `Se actualizó "${formValues.nombre.trim()}" correctamente.`;
 
-		setSnackbarMessage(msg);
+		notify.success(msg);
 		setEditConfirmModalOpen(false);
 		setEditModalOpen(false);
 	};
@@ -530,7 +514,7 @@ export default function MisActoresPage() {
 		if (!targetStatusActor) return;
 
 		if (nextSt === 'A' && !isAdminOrMod) {
-			setSnackbarMessage('Solo un administrador o moderador puede activar un actor cultural.');
+			notify.warning('Solo un administrador o moderador puede activar un actor cultural.');
 			return;
 		}
 
@@ -547,76 +531,105 @@ export default function MisActoresPage() {
 		else if (nextSt === 'P') actionText = 'pasó a estado Pendiente de revisión';
 		else if (nextSt === 'A') actionText = 'fue activado correctamente';
 
-		setSnackbarMessage(`"${targetStatusActor.nombre}" ${actionText}.`);
+		notify.info(`"${targetStatusActor.nombre}" ${actionText}.`);
 		setDeactivateConfirmModalOpen(false);
 		setStatusModalOpen(false);
 		setTargetStatusActor(null);
 	};
 
 	// Open Portfolio Modal
-	const handleOpenPortfolioModal = (actor: MyActor) => {
+	const handleOpenPortfolioModal = async (actor: MyActor) => {
 		setTargetPortfolioActor(actor);
 		setNewPortfolioType('IMAGEN');
 		setNewPortfolioUrl('');
 		setNewPortfolioDesc('');
+		setPortfolioError(null);
 		setPortfolioModalOpen(true);
+		setPortfolioLoading(true);
+
+		try {
+			const res = await listarPortafolioApi(actor.id);
+			const portafolio = (res.data ?? []).map((item) => ({
+				id: item.id,
+				tipo: item.tipo,
+				descripcion: item.descripcion,
+				url: item.url,
+			}));
+			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, portafolio } : item)));
+			setTargetPortfolioActor((prev) => (prev?.id === actor.id ? { ...prev, portafolio } : prev));
+		} catch (err) {
+			setPortfolioError(
+				err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.',
+			);
+		} finally {
+			setPortfolioLoading(false);
+		}
 	};
 
 	// Add Item to Portfolio
 	const handleAddPortfolioItem = async () => {
 		if (!targetPortfolioActor || !newPortfolioUrl.trim()) return;
 
-		let createdId = Date.now();
+		setPortfolioSubmitting(true);
+		setPortfolioError(null);
 		try {
 			const res = await agregarItemPortafolioApi(targetPortfolioActor.id, {
 				tipo: newPortfolioType,
 				descripcion: newPortfolioDesc.trim() || 'Sin descripción',
 				url: newPortfolioUrl.trim(),
 			});
-			if (res?.data?.idItem) {
-				createdId = res.data.idItem;
-			}
+
+			const createdId = res?.data?.idItem ?? Date.now();
+			const newItem: MyActorPortfolioItem = {
+				id: createdId,
+				tipo: newPortfolioType,
+				url: newPortfolioUrl.trim(),
+				descripcion: newPortfolioDesc.trim() || 'Sin descripción',
+			};
+
+			const updatedItems = [newItem, ...(targetPortfolioActor.portafolio || [])];
+
+			setActores((prev) =>
+				prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
+			);
+			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
+
+			setNewPortfolioUrl('');
+			setNewPortfolioDesc('');
+			notify.success('Elemento agregado al portafolio.');
 		} catch (err) {
-			console.log('Error API agregar portafolio:', err);
+			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.';
+			setPortfolioError(errMsg);
+			notify.error(errMsg);
+		} finally {
+			setPortfolioSubmitting(false);
 		}
-
-		const newItem: MyActorPortfolioItem = {
-			id: createdId,
-			tipo: newPortfolioType,
-			url: newPortfolioUrl.trim(),
-			descripcion: newPortfolioDesc.trim() || 'Sin descripción',
-		};
-
-		const updatedItems = [...(targetPortfolioActor.portafolio || []), newItem];
-
-		setActores((prev) =>
-			prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
-		);
-		setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
-
-		setNewPortfolioUrl('');
-		setNewPortfolioDesc('');
-		setSnackbarMessage('Elemento agregado al portafolio.');
 	};
 
 	// Delete Item from Portfolio
 	const handleDeletePortfolioItem = async (itemId: number) => {
 		if (!targetPortfolioActor) return;
 
+		setDeletingPortfolioItemId(itemId);
+		setPortfolioError(null);
 		try {
 			await eliminarItemPortafolioApi(targetPortfolioActor.id, itemId);
+
+			const updatedItems = (targetPortfolioActor.portafolio || []).filter((item) => item.id !== itemId);
+
+			setActores((prev) =>
+				prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
+			);
+			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
+
+			notify.success('Elemento eliminado del portafolio.');
 		} catch (err) {
-			console.log('Error API eliminar portafolio:', err);
+			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.';
+			setPortfolioError(errMsg);
+			notify.error(errMsg);
+		} finally {
+			setDeletingPortfolioItemId(null);
 		}
-
-		const updatedItems = (targetPortfolioActor.portafolio || []).filter((item) => item.id !== itemId);
-
-		setActores((prev) =>
-			prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
-		);
-		setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
-
-		setSnackbarMessage('Elemento eliminado del portafolio.');
 	};
 
 	// Open Events Modal
@@ -674,9 +687,11 @@ export default function MisActoresPage() {
 			setNewEventNombre('');
 			setNewEventFecha('');
 			setNewEventDesc('');
-			setSnackbarMessage('Evento agregado correctamente.');
+			notify.success('Evento agregado correctamente.');
 		} catch (err) {
-			setEventsError(err instanceof Error ? err.message : 'No se pudo agregar el evento.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el evento.';
+			setEventsError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setEventCreating(false);
 		}
@@ -698,9 +713,11 @@ export default function MisActoresPage() {
 			);
 			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
 
-			setSnackbarMessage('Evento eliminado.');
+			notify.success('Evento eliminado.');
 		} catch (err) {
-			setEventsError(err instanceof Error ? err.message : 'No se pudo eliminar el evento.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el evento.';
+			setEventsError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setDeletingEventId(null);
 		}
@@ -709,8 +726,12 @@ export default function MisActoresPage() {
 	// Open Members Modal
 	const handleOpenMembersModal = async (actor: MyActor) => {
 		setTargetMembersActor(actor);
+		setNewMemberType('REGISTRADO');
+		setNewMemberNombre('');
+		setNewMemberApellido('');
 		setNewMemberEmail('');
 		setNewMemberRol('Integrante');
+		setEditingMember(null);
 		setMembersError(null);
 		setMembersModalOpen(true);
 		setMembersLoading(true);
@@ -723,57 +744,119 @@ export default function MisActoresPage() {
 				setIntegrantesList([]);
 			}
 		} catch (err) {
-			console.log('Error al listar integrantes:', err);
-			setIntegrantesList([
-				{
-					idUsuario: currentUserId,
-					nombre: user?.nombre || 'Contacto',
-					apellido: user?.apellido || 'Principal',
-					email: user?.email || 'usuario@cultura.gob.ar',
-					rol: 'Contacto Principal',
-					esDueño: true,
-				},
-			]);
+			setMembersError(
+				err instanceof Error ? err.message : 'No se pudieron cargar los integrantes del actor cultural.',
+			);
+			setIntegrantesList([]);
 		} finally {
 			setMembersLoading(false);
 		}
 	};
 
-	// Add Member by Email
+	const refreshMembers = async (idActor: number) => {
+		const res = await listarIntegrantesApi(idActor);
+		setIntegrantesList(res?.data ?? []);
+	};
+
+	// Add a registered member or a person without an account.
 	const handleAddMember = async () => {
-		if (!targetMembersActor || !newMemberEmail.trim()) return;
+		if (!targetMembersActor) return;
+		if (newMemberType === 'REGISTRADO' && !newMemberEmail.trim()) return;
+		if (newMemberType === 'NO_REGISTRADO' && (!newMemberNombre.trim() || !newMemberApellido.trim())) return;
 
 		setMembersError(null);
+		setMemberSubmitting(true);
 		try {
-			await agregarIntegranteApi(targetMembersActor.id, {
-				email: newMemberEmail.trim(),
-				rol: newMemberRol.trim() || 'Integrante',
-			});
+			if (newMemberType === 'REGISTRADO') {
+				await agregarIntegranteApi(targetMembersActor.id, {
+					email: newMemberEmail.trim(),
+					rol: newMemberRol.trim() || 'Integrante',
+				});
+			} else {
+				await agregarIntegranteNoRegistradoApi(targetMembersActor.id, {
+					nombre: newMemberNombre.trim(),
+					apellido: newMemberApellido.trim(),
+					email: newMemberEmail.trim() || null,
+					rol: newMemberRol.trim() || 'Integrante',
+				});
+			}
 
-			setSnackbarMessage('Integrante agregado correctamente.');
+			notify.success('Integrante agregado correctamente.');
+			setNewMemberNombre('');
+			setNewMemberApellido('');
 			setNewMemberEmail('');
 			setNewMemberRol('Integrante');
-
-			const res = await listarIntegrantesApi(targetMembersActor.id);
-			if (res?.data) {
-				setIntegrantesList(res.data);
-			}
+			await refreshMembers(targetMembersActor.id);
 		} catch (err) {
-			setMembersError(err instanceof Error ? err.message : 'Error al agregar integrante.');
+			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
+			setMembersError(errMsg);
+			notify.error(errMsg);
+		} finally {
+			setMemberSubmitting(false);
+		}
+	};
+
+	const handleStartEditMember = (member: IntegranteApiItem) => {
+		setEditingMember(member);
+		setEditMemberNombre(member.nombre);
+		setEditMemberApellido(member.apellido);
+		setEditMemberEmail(member.email ?? '');
+		setEditMemberRol(member.rol);
+		setMembersError(null);
+	};
+
+	const handleSaveMember = async () => {
+		if (!targetMembersActor || !editingMember || !editMemberRol.trim()) return;
+
+		setMembersError(null);
+		setMemberSubmitting(true);
+		try {
+			if (editingMember.tipo === 'REGISTRADO' && editingMember.idUsuario) {
+				await editarIntegranteApi(targetMembersActor.id, editingMember.idUsuario, {
+					rol: editMemberRol.trim(),
+				});
+			} else if (editingMember.idIntegranteNoRegistrado) {
+				await editarIntegranteNoRegistradoApi(targetMembersActor.id, editingMember.idIntegranteNoRegistrado, {
+					nombre: editMemberNombre.trim(),
+					apellido: editMemberApellido.trim(),
+					email: editMemberEmail.trim() || null,
+					rol: editMemberRol.trim(),
+				});
+			}
+
+			notify.success('Integrante modificado correctamente.');
+			setEditingMember(null);
+			await refreshMembers(targetMembersActor.id);
+		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Error al modificar integrante.';
+			setMembersError(errMsg);
+			notify.error(errMsg);
+		} finally {
+			setMemberSubmitting(false);
 		}
 	};
 
 	// Delete Member
-	const handleDeleteMember = async (idUsuarioAEliminar: number) => {
+	const handleDeleteMember = async (member: IntegranteApiItem) => {
 		if (!targetMembersActor) return;
 
+		const memberKey = getMemberKey(member);
 		setMembersError(null);
+		setDeletingMemberKey(memberKey);
 		try {
-			await eliminarIntegranteApi(targetMembersActor.id, idUsuarioAEliminar);
-			setSnackbarMessage('Integrante eliminado.');
-			setIntegrantesList((prev) => prev.filter((m) => m.idUsuario !== idUsuarioAEliminar));
+			if (member.tipo === 'REGISTRADO' && member.idUsuario) {
+				await eliminarIntegranteApi(targetMembersActor.id, member.idUsuario);
+			} else if (member.idIntegranteNoRegistrado) {
+				await eliminarIntegranteNoRegistradoApi(targetMembersActor.id, member.idIntegranteNoRegistrado);
+			}
+			notify.success('Integrante eliminado.');
+			setIntegrantesList((prev) => prev.filter((item) => getMemberKey(item) !== memberKey));
 		} catch (err) {
-			setMembersError(err instanceof Error ? err.message : 'Error al eliminar integrante.');
+			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
+			setMembersError(errMsg);
+			notify.error(errMsg);
+		} finally {
+			setDeletingMemberKey(null);
 		}
 	};
 
@@ -795,7 +878,7 @@ export default function MisActoresPage() {
 		}
 
 		setActores((prev) => prev.filter((a) => a.id !== targetDeleteActor.id));
-		setSnackbarMessage(`"${targetDeleteActor.nombre}" fue eliminado permanentemente.`);
+		notify.info(`"${targetDeleteActor.nombre}" fue eliminado permanentemente.`);
 		setDeleteModalOpen(false);
 		setTargetDeleteActor(null);
 	};
@@ -854,7 +937,11 @@ export default function MisActoresPage() {
 						<IconButton
 							size="small"
 							color="info"
-							onClick={() => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)}
+							onClick={() =>
+								navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`, {
+									state: { isMyActor: true },
+								})
+							}
 						>
 							<VisibilityIcon fontSize="small" />
 						</IconButton>
@@ -1028,7 +1115,7 @@ export default function MisActoresPage() {
 							No tenés actores registrados con estos criterios
 						</Typography>
 						<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-							{misActoresPropios.length === 0
+							{actores.length === 0
 								? 'Todavía no registraste ningún actor cultural propio en tu cuenta.'
 								: 'Modificá los filtros de búsqueda para volver a ver tus actores.'}
 						</Typography>
@@ -1062,6 +1149,7 @@ export default function MisActoresPage() {
 									<Box
 										component={RouterLink}
 										to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=/mis-actores`}
+										state={{ isMyActor: true }}
 										aria-label={`Ver perfil público de ${actor.nombre}`}
 										sx={{ display: 'block', textDecoration: 'none' }}
 									>
@@ -1173,6 +1261,7 @@ export default function MisActoresPage() {
 											startIcon={<VisibilityIcon />}
 											component={RouterLink}
 											to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=/mis-actores`}
+											state={{ isMyActor: true }}
 										>
 											Ver perfil
 										</Button>
@@ -1260,7 +1349,9 @@ export default function MisActoresPage() {
 						onPageChange={() => {}}
 						onSortChange={() => {}}
 						onRowClick={(row) =>
-							navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)
+							navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`, {
+								state: { isMyActor: true },
+							})
 						}
 					/>
 				)}
@@ -1275,130 +1366,137 @@ export default function MisActoresPage() {
 					<Stack spacing={2.5} sx={{ pt: 1 }}>
 						<Grid container spacing={2} alignItems="flex-start">
 							<Grid size={{ xs: 12, md: 5 }}>
-								<Box>
-							<Box
-								component="label"
-								title="Cambiar foto de perfil"
-								onDragEnter={(event) => {
-									event.preventDefault();
-									setProfileImageDragging(true);
-								}}
-								onDragOver={(event) => event.preventDefault()}
-								onDragLeave={(event) => {
-									if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+								<Box
+									component="label"
+									title="Cambiar foto de perfil"
+									onDragEnter={(event) => {
+										event.preventDefault();
+										setProfileImageDragging(true);
+									}}
+									onDragOver={(event) => event.preventDefault()}
+									onDragLeave={(event) => {
+										if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+											setProfileImageDragging(false);
+										}
+									}}
+									onDrop={(event) => {
+										event.preventDefault();
 										setProfileImageDragging(false);
-									}
-								}}
-								onDrop={(event) => {
-									event.preventDefault();
-									setProfileImageDragging(false);
-									handleProfileImageFile(event.dataTransfer.files[0] ?? null);
-								}}
-								sx={{
-									position: 'relative',
-									display: 'block',
-									width:
-										formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'fit-content' : '100%',
-									maxWidth: '100%',
-									height: formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'auto' : { xs: 190, sm: 260 },
-									mx: { xs: 'auto', md: 0 },
-									lineHeight: 0,
-									border: '1px solid',
-									borderColor: profileImageError
-										? 'error.main'
-										: profileImageDragging
-											? 'primary.main'
-											: 'divider',
-									borderWidth: profileImageDragging ? 2 : 1,
-									borderRadius: 2,
-									overflow: 'hidden',
-									cursor: 'pointer',
-									bgcolor:
-										formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'transparent' : 'action.hover',
-									transition: 'border-color 160ms ease, box-shadow 160ms ease',
-									boxShadow: profileImageDragging ? 2 : 0,
-									'&:hover': {
-										borderColor: 'primary.main',
-									},
-									'&:hover .profile-photo-overlay': {
-										bgcolor: 'rgba(0, 0, 0, 0.38)',
-									},
-									'&:hover .profile-photo-icon': {
-										transform: 'scale(1.08)',
-									},
-								}}
-							>
-								{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
-									<>
-										<Box
-											component="img"
-											src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
-											alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
-											sx={{
-												width: 'auto',
-												height: 'auto',
-												maxWidth: '100%',
-												maxHeight: { xs: 190, sm: 260 },
-												display: 'block',
-											}}
-										/>
-										<Box
-											className="profile-photo-overlay"
-											sx={{
-												position: 'absolute',
-												inset: 0,
-												display: 'grid',
-												placeItems: 'center',
-												bgcolor: profileImageDragging ? 'rgba(0, 0, 0, 0.42)' : 'rgba(0, 0, 0, 0.24)',
-												transition: 'background-color 160ms ease',
-												pointerEvents: 'none',
-											}}
-										>
+										handleProfileImageFile(event.dataTransfer.files[0] ?? null);
+									}}
+									sx={{
+										position: 'relative',
+										display: 'block',
+										width:
+											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+												? 'fit-content'
+												: '100%',
+										maxWidth: '100%',
+										height:
+											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+												? 'auto'
+												: { xs: 190, sm: 260 },
+										mx: { xs: 'auto', md: 0 },
+										lineHeight: 0,
+										border: '1px solid',
+										borderColor: profileImageError
+											? 'error.main'
+											: profileImageDragging
+												? 'primary.main'
+												: 'divider',
+										borderWidth: profileImageDragging ? 2 : 1,
+										borderRadius: 2,
+										overflow: 'hidden',
+										cursor: 'pointer',
+										bgcolor:
+											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+												? 'transparent'
+												: 'action.hover',
+										transition: 'border-color 160ms ease, box-shadow 160ms ease',
+										boxShadow: profileImageDragging ? 2 : 0,
+										'&:hover': {
+											borderColor: 'primary.main',
+										},
+										'&:hover .profile-photo-overlay': {
+											bgcolor: 'rgba(0, 0, 0, 0.38)',
+										},
+										'&:hover .profile-photo-icon': {
+											transform: 'scale(1.08)',
+										},
+									}}
+								>
+									{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
+										<>
 											<Box
-												className="profile-photo-icon"
+												component="img"
+												src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
+												alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
 												sx={{
-													width: 54,
-													height: 54,
-													borderRadius: '50%',
+													width: 'auto',
+													height: 'auto',
+													maxWidth: '100%',
+													maxHeight: { xs: 190, sm: 260 },
+													display: 'block',
+												}}
+											/>
+											<Box
+												className="profile-photo-overlay"
+												sx={{
+													position: 'absolute',
+													inset: 0,
 													display: 'grid',
 													placeItems: 'center',
-													color: 'common.white',
-													bgcolor: 'rgba(0, 0, 0, 0.58)',
-													border: '1px solid rgba(255, 255, 255, 0.55)',
-													transition: 'transform 160ms ease',
+													bgcolor: profileImageDragging
+														? 'rgba(0, 0, 0, 0.42)'
+														: 'rgba(0, 0, 0, 0.24)',
+													transition: 'background-color 160ms ease',
+													pointerEvents: 'none',
 												}}
 											>
-												<AddPhotoAlternateIcon sx={{ fontSize: 28 }} />
+												<Box
+													className="profile-photo-icon"
+													sx={{
+														width: 54,
+														height: 54,
+														borderRadius: '50%',
+														display: 'grid',
+														placeItems: 'center',
+														color: 'common.white',
+														bgcolor: 'rgba(0, 0, 0, 0.58)',
+														border: '1px solid rgba(255, 255, 255, 0.55)',
+														transition: 'transform 160ms ease',
+													}}
+												>
+													<AddPhotoAlternateIcon sx={{ fontSize: 28 }} />
+												</Box>
 											</Box>
-										</Box>
-									</>
-								) : (
-									<Stack
-										alignItems="center"
-										justifyContent="center"
-										sx={{ height: '100%', color: 'text.secondary' }}
-									>
-										<AddPhotoAlternateIcon sx={{ fontSize: 46, mb: 0.5 }} />
-										<Typography variant="body2">Sin foto de perfil</Typography>
-									</Stack>
-								)}
-								<input
-									hidden
-									type="file"
-									accept="image/jpeg,image/png,image/webp"
-									onChange={(event) => handleProfileImageFile(event.target.files?.[0] ?? null)}
-								/>
-							</Box>
-							{profileImageError && (
-								<Typography
-									variant="caption"
-									color="error.main"
-									sx={{ display: 'block', mt: 0.75, ml: 0.25 }}
-								>
-									{profileImageError}
-								</Typography>
-							)}
+										</>
+									) : (
+										<Stack
+											alignItems="center"
+											justifyContent="center"
+											sx={{ height: '100%', color: 'text.secondary' }}
+										>
+											<AddPhotoAlternateIcon sx={{ fontSize: 46, mb: 0.5 }} />
+											<Typography variant="body2">Sin foto de perfil</Typography>
+										</Stack>
+									)}
+									<input
+										hidden
+										type="file"
+										accept="image/jpeg,image/png,image/webp"
+										onChange={(event) => handleProfileImageFile(event.target.files?.[0] ?? null)}
+									/>
 								</Box>
+								{profileImageError && (
+									<Typography
+										variant="caption"
+										color="error.main"
+										sx={{ display: 'block', mt: 0.75, ml: 0.25 }}
+									>
+										{profileImageError}
+									</Typography>
+								)}
 							</Grid>
 
 							<Grid size={{ xs: 12, md: 7 }}>
@@ -1437,28 +1535,28 @@ export default function MisActoresPage() {
 											<FormControl fullWidth required>
 												<InputLabel>Categoría principal</InputLabel>
 												<Select
-											value={formValues.categoria}
-											label="Categoría principal"
-											onChange={(e) => {
-												const cat = e.target.value;
-												const category = findCategoryByName(categoryOptions, cat);
-												setFormValues((v) => ({
-													...v,
-													categoria: cat,
-													subcategoria: category?.subcategorias[0]?.nombre ?? '',
-												}));
-											}}
-										>
-											{!selectedEditCategory && formValues.categoria && (
-												<MenuItem value={formValues.categoria} disabled>
-													{formValues.categoria} (no disponible)
-												</MenuItem>
-											)}
-											{categoryOptions.map((category) => (
-												<MenuItem key={category.id} value={category.nombre}>
-													{category.nombre}
-												</MenuItem>
-											))}
+													value={formValues.categoria}
+													label="Categoría principal"
+													onChange={(e) => {
+														const cat = e.target.value;
+														const category = findCategoryByName(categoryOptions, cat);
+														setFormValues((v) => ({
+															...v,
+															categoria: cat,
+															subcategoria: category?.subcategorias[0]?.nombre ?? '',
+														}));
+													}}
+												>
+													{!selectedEditCategory && formValues.categoria && (
+														<MenuItem value={formValues.categoria} disabled>
+															{formValues.categoria} (no disponible)
+														</MenuItem>
+													)}
+													{categoryOptions.map((category) => (
+														<MenuItem key={category.id} value={category.nombre}>
+															{category.nombre}
+														</MenuItem>
+													))}
 												</Select>
 											</FormControl>
 										</Grid>
@@ -1467,23 +1565,25 @@ export default function MisActoresPage() {
 											<FormControl fullWidth>
 												<InputLabel>Subcategoría</InputLabel>
 												<Select
-											value={formValues.subcategoria}
-											label="Subcategoría"
-											onChange={(e) => setFormValues((v) => ({ ...v, subcategoria: e.target.value }))}
-										>
-											{!selectedEditCategory?.subcategorias.some(
-												(option) => option.nombre === formValues.subcategoria,
-											) &&
-												formValues.subcategoria && (
-													<MenuItem value={formValues.subcategoria} disabled>
-														{formValues.subcategoria} (no disponible)
-													</MenuItem>
-												)}
-											{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
-												<MenuItem key={subcategory.id} value={subcategory.nombre}>
-													{subcategory.nombre}
-												</MenuItem>
-											))}
+													value={formValues.subcategoria}
+													label="Subcategoría"
+													onChange={(e) =>
+														setFormValues((v) => ({ ...v, subcategoria: e.target.value }))
+													}
+												>
+													{!selectedEditCategory?.subcategorias.some(
+														(option) => option.nombre === formValues.subcategoria,
+													) &&
+														formValues.subcategoria && (
+															<MenuItem value={formValues.subcategoria} disabled>
+																{formValues.subcategoria} (no disponible)
+															</MenuItem>
+														)}
+													{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
+														<MenuItem key={subcategory.id} value={subcategory.nombre}>
+															{subcategory.nombre}
+														</MenuItem>
+													))}
 												</Select>
 											</FormControl>
 										</Grid>
@@ -1517,7 +1617,7 @@ export default function MisActoresPage() {
 										label="Departamento"
 										onChange={(e) => setFormValues((v) => ({ ...v, departamento: e.target.value }))}
 									>
-										{departamentos.map((dep) => (
+										{DEPARTAMENTOS_TUCUMAN.map((dep) => (
 											<MenuItem key={dep} value={dep}>
 												{dep}
 											</MenuItem>
@@ -1759,6 +1859,8 @@ export default function MisActoresPage() {
 							redes sociales).
 						</Typography>
 
+						{portfolioError && <Alert severity="error">{portfolioError}</Alert>}
+
 						{/* Form to add portfolio item */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -1805,11 +1907,17 @@ export default function MisActoresPage() {
 									<Button
 										variant="contained"
 										size="small"
-										startIcon={<AddIcon />}
+										startIcon={
+											portfolioSubmitting ? (
+												<CircularProgress size={16} color="inherit" />
+											) : (
+												<AddIcon />
+											)
+										}
 										onClick={handleAddPortfolioItem}
-										disabled={!newPortfolioUrl.trim()}
+										disabled={!newPortfolioUrl.trim() || portfolioSubmitting}
 									>
-										Agregar elemento
+										{portfolioSubmitting ? 'Agregando...' : 'Agregar elemento'}
 									</Button>
 								</Grid>
 							</Grid>
@@ -1820,7 +1928,11 @@ export default function MisActoresPage() {
 							Elementos actuales ({(targetPortfolioActor?.portafolio || []).length})
 						</Typography>
 
-						{(targetPortfolioActor?.portafolio || []).length === 0 ? (
+						{portfolioLoading ? (
+							<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+								<CircularProgress size={32} />
+							</Box>
+						) : (targetPortfolioActor?.portafolio || []).length === 0 ? (
 							<Alert severity="info">Este actor todavía no tiene elementos en su portafolio.</Alert>
 						) : (
 							<Stack spacing={1.5} divider={<Divider />}>
@@ -1859,9 +1971,14 @@ export default function MisActoresPage() {
 										<IconButton
 											size="small"
 											color="error"
+											disabled={deletingPortfolioItemId === item.id}
 											onClick={() => handleDeletePortfolioItem(item.id)}
 										>
-											<DeleteOutlineIcon fontSize="small" />
+											{deletingPortfolioItemId === item.id ? (
+												<CircularProgress size={16} color="inherit" />
+											) : (
+												<DeleteOutlineIcon fontSize="small" />
+											)}
 										</IconButton>
 									</Stack>
 								))}
@@ -2003,7 +2120,7 @@ export default function MisActoresPage() {
 				<DialogContent dividers>
 					<Stack spacing={3}>
 						<Typography variant="body2" color="text.secondary">
-							Administrá los usuarios que forman parte de este colectivo, espacio o proyecto artístico.
+							Administrá las personas que forman parte del actor, tengan o no una cuenta en la plataforma.
 						</Typography>
 
 						{membersError && <Alert severity="error">{membersError}</Alert>}
@@ -2011,16 +2128,56 @@ export default function MisActoresPage() {
 						{/* Form to add member */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-								Agregar nuevo integrante por correo electrónico
+								Agregar integrante
 							</Typography>
+							<ToggleButtonGroup
+								exclusive
+								size="small"
+								value={newMemberType}
+								onChange={(_event, value: 'REGISTRADO' | 'NO_REGISTRADO' | null) => {
+									if (value) setNewMemberType(value);
+								}}
+								sx={{ mt: 1, mb: 1 }}
+							>
+								<ToggleButton value="REGISTRADO">Usuario registrado</ToggleButton>
+								<ToggleButton value="NO_REGISTRADO">Persona sin cuenta</ToggleButton>
+							</ToggleButtonGroup>
 							<Grid container spacing={2} sx={{ mt: 0.5 }}>
+								{newMemberType === 'NO_REGISTRADO' && (
+									<>
+										<Grid size={{ xs: 12, md: 6 }}>
+											<TextField
+												fullWidth
+												size="small"
+												required
+												label="Nombre"
+												value={newMemberNombre}
+												onChange={(e) => setNewMemberNombre(e.target.value)}
+											/>
+										</Grid>
+										<Grid size={{ xs: 12, md: 6 }}>
+											<TextField
+												fullWidth
+												size="small"
+												required
+												label="Apellido"
+												value={newMemberApellido}
+												onChange={(e) => setNewMemberApellido(e.target.value)}
+											/>
+										</Grid>
+									</>
+								)}
 								<Grid size={{ xs: 12, md: 6 }}>
 									<TextField
 										fullWidth
 										size="small"
-										required
+										required={newMemberType === 'REGISTRADO'}
 										type="email"
-										label="Correo electrónico del usuario"
+										label={
+											newMemberType === 'REGISTRADO'
+												? 'Correo del usuario registrado'
+												: 'Correo electrónico (opcional)'
+										}
 										placeholder="ejemplo@correo.com"
 										value={newMemberEmail}
 										onChange={(e) => setNewMemberEmail(e.target.value)}
@@ -2042,9 +2199,15 @@ export default function MisActoresPage() {
 										size="small"
 										startIcon={<GroupIcon />}
 										onClick={handleAddMember}
-										disabled={!newMemberEmail.trim()}
+										disabled={
+											memberSubmitting ||
+											!newMemberRol.trim() ||
+											(newMemberType === 'REGISTRADO'
+												? !newMemberEmail.trim()
+												: !newMemberNombre.trim() || !newMemberApellido.trim())
+										}
 									>
-										Agregar integrante
+										{memberSubmitting ? <CircularProgress size={18} /> : 'Agregar integrante'}
 									</Button>
 								</Grid>
 							</Grid>
@@ -2060,60 +2223,168 @@ export default function MisActoresPage() {
 								<CircularProgress size={32} />
 							</Box>
 						) : integrantesList.length === 0 ? (
-							<Alert severity="info">No se encontraron integrantes registrados para este actor.</Alert>
+							<Alert severity="info">No se encontraron integrantes para este actor.</Alert>
 						) : (
 							<Stack spacing={1.5} divider={<Divider />}>
-								{integrantesList.map((member) => (
-									<Stack
-										key={member.idUsuario}
-										direction="row"
-										justifyContent="space-between"
-										alignItems="center"
-										spacing={2}
-									>
-										<Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-											<Avatar
-												sx={{
-													bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
-													width: 36,
-													height: 36,
-													fontSize: 14,
-												}}
-											>
-												{member.nombre.charAt(0)}
-												{member.apellido?.charAt(0) || ''}
-											</Avatar>
-											<Box sx={{ minWidth: 0 }}>
-												<Stack direction="row" spacing={1} alignItems="center">
-													<Typography variant="body2" fontWeight={600}>
-														{member.nombre} {member.apellido}
-													</Typography>
-													{member.esDueño && (
-														<Chip
-															label="Dueño Principal"
-															size="small"
-															color="primary"
-															sx={{ height: 20, fontSize: 10 }}
-														/>
-													)}
-												</Stack>
-												<Typography variant="caption" color="text.secondary">
-													📧 {member.email} · Rol: {member.rol}
-												</Typography>
-											</Box>
-										</Stack>
+								{integrantesList.map((member) => {
+									const memberKey = getMemberKey(member);
+									const isEditing = editingMember && getMemberKey(editingMember) === memberKey;
 
-										{!member.esDueño && (
-											<IconButton
-												size="small"
-												color="error"
-												onClick={() => handleDeleteMember(member.idUsuario)}
+									return isEditing ? (
+										<Paper key={memberKey} variant="outlined" sx={{ p: 2 }}>
+											<Grid container spacing={2}>
+												{member.tipo === 'NO_REGISTRADO' && (
+													<>
+														<Grid size={{ xs: 12, sm: 6 }}>
+															<TextField
+																fullWidth
+																required
+																size="small"
+																label="Nombre"
+																value={editMemberNombre}
+																onChange={(e) => setEditMemberNombre(e.target.value)}
+															/>
+														</Grid>
+														<Grid size={{ xs: 12, sm: 6 }}>
+															<TextField
+																fullWidth
+																required
+																size="small"
+																label="Apellido"
+																value={editMemberApellido}
+																onChange={(e) => setEditMemberApellido(e.target.value)}
+															/>
+														</Grid>
+														<Grid size={{ xs: 12, sm: 6 }}>
+															<TextField
+																fullWidth
+																size="small"
+																type="email"
+																label="Correo (opcional)"
+																value={editMemberEmail}
+																onChange={(e) => setEditMemberEmail(e.target.value)}
+															/>
+														</Grid>
+													</>
+												)}
+												<Grid size={{ xs: 12, sm: 6 }}>
+													<TextField
+														fullWidth
+														required
+														size="small"
+														label="Rol o función"
+														value={editMemberRol}
+														onChange={(e) => setEditMemberRol(e.target.value)}
+													/>
+												</Grid>
+												<Grid size={{ xs: 12 }}>
+													<Stack direction="row" spacing={1} justifyContent="flex-end">
+														<Button
+															size="small"
+															onClick={() => setEditingMember(null)}
+															disabled={memberSubmitting}
+														>
+															Cancelar
+														</Button>
+														<Button
+															variant="contained"
+															size="small"
+															onClick={handleSaveMember}
+															disabled={
+																memberSubmitting ||
+																!editMemberRol.trim() ||
+																(member.tipo === 'NO_REGISTRADO' &&
+																	(!editMemberNombre.trim() ||
+																		!editMemberApellido.trim()))
+															}
+														>
+															Guardar cambios
+														</Button>
+													</Stack>
+												</Grid>
+											</Grid>
+										</Paper>
+									) : (
+										<Stack
+											key={memberKey}
+											direction="row"
+											justifyContent="space-between"
+											alignItems="center"
+											spacing={2}
+										>
+											<Stack
+												direction="row"
+												spacing={1.5}
+												alignItems="center"
+												sx={{ minWidth: 0 }}
 											>
-												<DeleteOutlineIcon fontSize="small" />
-											</IconButton>
-										)}
-									</Stack>
-								))}
+												<Avatar
+													sx={{
+														bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
+														width: 36,
+														height: 36,
+														fontSize: 14,
+													}}
+												>
+													{member.nombre.charAt(0)}
+													{member.apellido?.charAt(0) || ''}
+												</Avatar>
+												<Box sx={{ minWidth: 0 }}>
+													<Stack direction="row" spacing={1} alignItems="center">
+														<Typography variant="body2" fontWeight={600}>
+															{member.nombre} {member.apellido}
+														</Typography>
+														{member.esDueño && (
+															<Chip
+																label="Dueño Principal"
+																size="small"
+																color="primary"
+																sx={{ height: 20, fontSize: 10 }}
+															/>
+														)}
+														{member.tipo === 'NO_REGISTRADO' && (
+															<Chip
+																label="Sin cuenta"
+																size="small"
+																variant="outlined"
+																sx={{ height: 20, fontSize: 10 }}
+															/>
+														)}
+													</Stack>
+													<Typography variant="caption" color="text.secondary">
+														{member.email ? `📧 ${member.email} · ` : ''}Rol: {member.rol}
+													</Typography>
+												</Box>
+											</Stack>
+
+											<Stack direction="row" spacing={0.5}>
+												<IconButton
+													size="small"
+													color="primary"
+													onClick={() => handleStartEditMember(member)}
+													aria-label={`Editar a ${member.nombre} ${member.apellido}`}
+												>
+													<EditIcon fontSize="small" />
+												</IconButton>
+												{!member.esDueño && (
+													<IconButton
+														size="small"
+														color="error"
+														onClick={() => handleDeleteMember(member)}
+														disabled={deletingMemberKey !== null}
+														aria-label={`Eliminar a ${member.nombre} ${member.apellido}`}
+													>
+														{deletingMemberKey === memberKey ? (
+															<CircularProgress size={18} />
+														) : (
+															<DeleteOutlineIcon fontSize="small" />
+														)}
+													</IconButton>
+												)}
+											</Stack>
+										</Stack>
+									);
+								})}
 							</Stack>
 						)}
 					</Stack>
@@ -2168,15 +2439,6 @@ export default function MisActoresPage() {
 					</Button>
 				</DialogActions>
 			</Dialog>
-
-			{/* Toast notification */}
-			<Snackbar
-				open={Boolean(snackbarMessage)}
-				autoHideDuration={4000}
-				onClose={() => setSnackbarMessage(null)}
-				message={snackbarMessage}
-				anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-			/>
 		</PageContainer>
 	);
 }

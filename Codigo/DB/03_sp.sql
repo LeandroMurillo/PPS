@@ -656,22 +656,38 @@ BEGIN
         ON ub.idUbicacion = a.idUbicacion
     WHERE a.idActor = pIdActor;
 
-    -- RESULTADO 2: todos los usuarios integrantes del actor.
-    SELECT
-        u.idUsuario,
-        CONCAT(u.nombre, ' ', u.apellido) AS nombreUsuario,
-        u.email,
-        i.rol,
-        i.esDueño AS esDueno
-    FROM `Integrantes` i
-    INNER JOIN `Usuarios` u
-        ON u.idUsuario = i.idUsuario
-    WHERE i.idActor = pIdActor
+    -- RESULTADO 2: integrantes con cuenta y sin cuenta registrada.
+    SELECT integrantes.*
+    FROM (
+        SELECT
+            'REGISTRADO' AS tipo,
+            u.idUsuario,
+            NULL AS idIntegranteNoRegistrado,
+            CONCAT(u.nombre, ' ', u.apellido) AS nombreUsuario,
+            u.email,
+            i.rol,
+            i.esDueño AS esDueno
+        FROM `Integrantes` i
+        INNER JOIN `Usuarios` u
+            ON u.idUsuario = i.idUsuario
+        WHERE i.idActor = pIdActor
+
+        UNION ALL
+
+        SELECT
+            'NO_REGISTRADO' AS tipo,
+            NULL AS idUsuario,
+            nr.idIntegranteNoRegistrado,
+            CONCAT(nr.nombre, ' ', nr.apellido) AS nombreUsuario,
+            nr.email,
+            nr.rol,
+            0 AS esDueno
+        FROM `IntegrantesNoRegistrados` nr
+        WHERE nr.idActor = pIdActor
+    ) integrantes
     ORDER BY
-        i.esDueño DESC,
-        u.apellido ASC,
-        u.nombre ASC,
-        u.idUsuario ASC;
+        integrantes.esDueno DESC,
+        integrantes.nombreUsuario ASC;
 
     -- RESULTADO 3: imágenes, enlaces y redes sociales del portafolio.
     SELECT
@@ -1721,6 +1737,11 @@ BEGIN
         a.descripcion,
         a.fotoPerfilUrl,
         a.estado,
+        a.tipoActor,
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN a.cuit
+            ELSE NULL
+        END AS cuit,
         c.nombre AS categoria,
         c.icono AS categoriaIcono,
         s.nombre AS subcategoria,
@@ -1730,19 +1751,52 @@ BEGIN
         u.esPublica AS esUbicacionPublica,
 
         CASE
-            WHEN u.esPublica = 1 THEN u.direccion
+            WHEN u.esPublica = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.direccion
             ELSE NULL
         END AS direccion,
 
         CASE
-            WHEN u.esPublica = 1 THEN u.latitud
+            WHEN u.esPublica = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.latitud
             ELSE NULL
         END AS latitud,
 
         CASE
-            WHEN u.esPublica = 1 THEN u.longitud
+            WHEN u.esPublica = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.longitud
             ELSE NULL
-        END AS longitud
+        END AS longitud,
+
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN (
+                SELECT ud.idUsuario
+                FROM `Integrantes` AS idu
+                INNER JOIN `Usuarios` AS ud ON ud.idUsuario = idu.idUsuario
+                WHERE idu.idActor = a.idActor AND idu.`esDueño` = 1
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS idDueno,
+
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN (
+                SELECT CONCAT(ud.nombre, ' ', ud.apellido)
+                FROM `Integrantes` AS idu
+                INNER JOIN `Usuarios` AS ud ON ud.idUsuario = idu.idUsuario
+                WHERE idu.idActor = a.idActor AND idu.`esDueño` = 1
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS nombreDueno,
+
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN (
+                SELECT ud.email
+                FROM `Integrantes` AS idu
+                INNER JOIN `Usuarios` AS ud ON ud.idUsuario = idu.idUsuario
+                WHERE idu.idActor = a.idActor AND idu.`esDueño` = 1
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS emailDueno
 
     FROM `Actores` AS a
 
@@ -1851,15 +1905,16 @@ BEGIN
     -- =====================================================
     -- RESULTADO 4: preguntas y respuestas públicas
     --
-    -- Se incluyen solamente:
+    -- Se incluyen:
     --   - preguntas activas;
-    --   - preguntas marcadas como públicas;
+    --   - preguntas públicas (o privadas si es integrante/admin);
     --   - formularios aplicables a la categoría actual;
     --   - formularios aplicables a la subcategoría actual.
     -- =====================================================
     SELECT
         p.pregunta,
-        r.valor AS respuesta
+        r.valor AS respuesta,
+        pf.esPublico AS publica
     FROM `Respuestas` AS r
 
     INNER JOIN `Actores` AS a
@@ -1902,7 +1957,7 @@ BEGIN
           )
 
       AND pf.estado = 'A'
-      AND pf.esPublico = 1
+      AND (pf.esPublico = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0)
 
     ORDER BY
         CASE
@@ -1918,41 +1973,57 @@ BEGIN
     -- =====================================================
     -- RESULTADO 5: integrantes
     --
-    -- Solo se muestran integrantes cuyo usuario se
-    -- encuentre activo.
+    -- Los integrantes registrados se muestran únicamente
+    -- si su usuario está activo. También se incluyen las
+    -- personas cargadas sin una cuenta en la plataforma.
     -- =====================================================
-    SELECT
-        u.nombre,
-        u.apellido,
-        i.rol
+    SELECT integrantes.*
+    FROM (
+        SELECT
+            u.idUsuario AS id,
+            'REGISTRADO' AS tipo,
+            u.nombre,
+            u.apellido,
+            CASE
+                WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.email
+                ELSE NULL
+            END AS email,
+            i.rol,
+            i.`esDueño` AS esDueno
+        FROM `Integrantes` AS i
+        INNER JOIN `Usuarios` AS u ON u.idUsuario = i.idUsuario
+        WHERE i.idActor = pIdActor
+          AND u.estado = 'A'
 
-    FROM `Integrantes` AS i
+        UNION ALL
 
-    INNER JOIN `Usuarios` AS u
-        ON u.idUsuario = i.idUsuario
-
-    INNER JOIN `Actores` AS a
-        ON a.idActor = i.idActor
-
-    INNER JOIN `Categorias` AS c
-        ON c.idCategoria = a.idCategoria
-
-    LEFT JOIN `Subcategorias` AS s
-        ON s.idCategoria = a.idCategoria
-       AND s.idSubcategoria = a.idSubcategoria
-
-    WHERE a.idActor = pIdActor
-      AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
-      AND c.estado = 'A'
-      AND (
-            a.idSubcategoria IS NULL
-            OR s.estado = 'A'
-          )
-      AND u.estado = 'A'
-
-    ORDER BY
-        u.apellido ASC,
-        u.nombre ASC;
+        SELECT
+            NULL AS id,
+            'NO_REGISTRADO' AS tipo,
+            nr.nombre,
+            nr.apellido,
+            CASE
+                WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN nr.email
+                ELSE NULL
+            END AS email,
+            nr.rol,
+            0 AS esDueno
+        FROM `IntegrantesNoRegistrados` AS nr
+        WHERE nr.idActor = pIdActor
+    ) integrantes
+    WHERE EXISTS (
+        SELECT 1
+        FROM `Actores` a
+        INNER JOIN `Categorias` c ON c.idCategoria = a.idCategoria
+        LEFT JOIN `Subcategorias` s
+            ON s.idCategoria = a.idCategoria
+           AND s.idSubcategoria = a.idSubcategoria
+        WHERE a.idActor = pIdActor
+          AND (a.estado = 'A' OR vEsIntegrante > 0 OR vEsAdmin > 0)
+          AND c.estado = 'A'
+          AND (a.idSubcategoria IS NULL OR s.estado = 'A')
+    )
+    ORDER BY integrantes.apellido ASC, integrantes.nombre ASC;
 
 END //
 
@@ -3610,7 +3681,7 @@ CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
     IN pFotoDniUrl VARCHAR(255)
 )
 MODIFIES SQL DATA
-COMMENT 'Registra un nuevo usuario en la plataforma en estado Pendiente (P) con rol USUARIO.'
+COMMENT 'Registra un nuevo usuario en la plataforma en estado Activo (A) con rol USUARIO.'
 BEGIN
     DECLARE vEmailExistente INT DEFAULT 0;
     DECLARE vCUILExistente INT DEFAULT 0;
@@ -3667,7 +3738,7 @@ BEGIN
         pActividadesArcaCodigo,
         pFotoDniUrl,
         'USUARIO',
-        'P'
+        'A'
     );
 
     SET vNuevoId = LAST_INSERT_ID();
@@ -3865,9 +3936,9 @@ BEGIN
     WHERE i.idUsuario = pIdUsuario
       AND a.estado = 'P';
 
-    IF vCantidadPendientes > 0 THEN
+    IF vCantidadPendientes >= 5 THEN
         SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Ya tenés un actor cultural pendiente de revisión.';
+            SET MESSAGE_TEXT = 'Ya alcanzaste el límite de 5 actores culturales pendientes de revisión.';
     END IF;
 
     INSERT INTO `Ubicaciones` (provincia, departamento, localidad, esPublica, direccion, latitud, longitud)
@@ -4089,6 +4160,32 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_actor_listar_portafolio
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_listar_portafolio`(
+    IN pIdUsuario INT,
+    IN pIdActor INT
+)
+READS SQL DATA
+COMMENT 'Lista los ítems del portafolio de un actor para sus integrantes.'
+BEGIN
+    DECLARE vEsIntegrante INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsIntegrante
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor;
+
+    IF vEsIntegrante = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para ver el portafolio de este actor.';
+    END IF;
+
+    SELECT idItem, tipo, descripcion, url
+    FROM `ItemsPortafolio`
+    WHERE idActor = pIdActor
+    ORDER BY idItem DESC;
+END //
+
+-- -----------------------------------------------------
 -- sp_actor_listar_eventos
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_actor_listar_eventos`(
@@ -4196,17 +4293,36 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para ver los integrantes de este actor.';
     END IF;
 
-    SELECT
-        i.idUsuario,
-        u.nombre,
-        u.apellido,
-        u.email,
-        i.rol,
-        i.esDueño
-    FROM `Integrantes` i
-    JOIN `Usuarios` u ON i.idUsuario = u.idUsuario
-    WHERE i.idActor = pIdActor
-    ORDER BY i.esDueño DESC, u.nombre ASC;
+    SELECT integrantes.*
+    FROM (
+        SELECT
+            'REGISTRADO' AS tipo,
+            i.idUsuario,
+            NULL AS idIntegranteNoRegistrado,
+            u.nombre,
+            u.apellido,
+            u.email,
+            i.rol,
+            i.esDueño
+        FROM `Integrantes` i
+        JOIN `Usuarios` u ON i.idUsuario = u.idUsuario
+        WHERE i.idActor = pIdActor
+
+        UNION ALL
+
+        SELECT
+            'NO_REGISTRADO' AS tipo,
+            NULL AS idUsuario,
+            nr.idIntegranteNoRegistrado,
+            nr.nombre,
+            nr.apellido,
+            nr.email,
+            nr.rol,
+            0 AS esDueño
+        FROM `IntegrantesNoRegistrados` nr
+        WHERE nr.idActor = pIdActor
+    ) integrantes
+    ORDER BY integrantes.esDueño DESC, integrantes.nombre ASC, integrantes.apellido ASC;
 END //
 
 -- -----------------------------------------------------
@@ -4285,6 +4401,157 @@ BEGIN
 
     DELETE FROM `Integrantes`
     WHERE idActor = pIdActor AND idUsuario = pIdUsuarioAEliminar;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_editar_integrante
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_editar_integrante`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pIdUsuarioAEditar INT,
+    IN pRol VARCHAR(45)
+)
+MODIFIES SQL DATA
+COMMENT 'Modifica el rol de un usuario integrante de un actor cultural.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para modificar integrantes de este actor.';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM `Integrantes`
+        WHERE idActor = pIdActor AND idUsuario = pIdUsuarioAEditar
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El integrante solicitado no existe.';
+    END IF;
+
+    UPDATE `Integrantes`
+    SET rol = TRIM(pRol)
+    WHERE idActor = pIdActor AND idUsuario = pIdUsuarioAEditar;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_agregar_integrante_no_registrado
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_agregar_integrante_no_registrado`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pNombre VARCHAR(45),
+    IN pApellido VARCHAR(45),
+    IN pEmail VARCHAR(99),
+    IN pRol VARCHAR(45)
+)
+MODIFIES SQL DATA
+COMMENT 'Agrega a un actor cultural una persona que no posee cuenta de usuario.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+    DECLARE vEmail VARCHAR(99);
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para agregar integrantes a este actor.';
+    END IF;
+
+    SET vEmail = NULLIF(LOWER(TRIM(pEmail)), '');
+
+    IF vEmail IS NOT NULL AND EXISTS (
+        SELECT 1 FROM `Usuarios` WHERE email = vEmail
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese correo pertenece a un usuario registrado; agregalo como usuario de la plataforma.';
+    END IF;
+
+    INSERT INTO `IntegrantesNoRegistrados` (idActor, nombre, apellido, email, rol)
+    VALUES (pIdActor, TRIM(pNombre), TRIM(pApellido), vEmail, TRIM(pRol));
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_editar_integrante_no_registrado
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_editar_integrante_no_registrado`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pIdIntegranteNoRegistrado INT,
+    IN pNombre VARCHAR(45),
+    IN pApellido VARCHAR(45),
+    IN pEmail VARCHAR(99),
+    IN pRol VARCHAR(45)
+)
+MODIFIES SQL DATA
+COMMENT 'Modifica los datos de un integrante sin cuenta de usuario.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+    DECLARE vEmail VARCHAR(99);
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para modificar integrantes de este actor.';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM `IntegrantesNoRegistrados`
+        WHERE idActor = pIdActor AND idIntegranteNoRegistrado = pIdIntegranteNoRegistrado
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El integrante solicitado no existe.';
+    END IF;
+
+    SET vEmail = NULLIF(LOWER(TRIM(pEmail)), '');
+
+    IF vEmail IS NOT NULL AND EXISTS (
+        SELECT 1 FROM `Usuarios` WHERE email = vEmail
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ese correo pertenece a un usuario registrado; agregalo como usuario de la plataforma.';
+    END IF;
+
+    UPDATE `IntegrantesNoRegistrados`
+    SET nombre = TRIM(pNombre),
+        apellido = TRIM(pApellido),
+        email = vEmail,
+        rol = TRIM(pRol)
+    WHERE idActor = pIdActor
+      AND idIntegranteNoRegistrado = pIdIntegranteNoRegistrado;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_eliminar_integrante_no_registrado
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_eliminar_integrante_no_registrado`(
+    IN pIdUsuario INT,
+    IN pIdActor INT,
+    IN pIdIntegranteNoRegistrado INT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina de un actor cultural a un integrante sin cuenta de usuario.'
+BEGIN
+    DECLARE vEsDueno INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vEsDueno
+    FROM `Integrantes`
+    WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
+
+    IF vEsDueno = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para eliminar integrantes de este actor.';
+    END IF;
+
+    DELETE FROM `IntegrantesNoRegistrados`
+    WHERE idActor = pIdActor
+      AND idIntegranteNoRegistrado = pIdIntegranteNoRegistrado;
+
+    IF ROW_COUNT() = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El integrante solicitado no existe.';
+    END IF;
 END //
 
 DELIMITER ;

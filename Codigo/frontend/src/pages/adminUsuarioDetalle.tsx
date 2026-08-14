@@ -21,7 +21,7 @@ import Stack from '@mui/material/Stack';
 import { Show, type DataSource } from '@toolpad/core/Crud';
 import { PageContainer, type PageContainerProps } from '@toolpad/core/PageContainer';
 import { useDialogs } from '@toolpad/core/useDialogs';
-import { useNotifications } from '@toolpad/core/useNotifications';
+import { notify } from '../utils/toast';
 
 import { asignarModeradorAdmin, cambiarEstadoUsuarioAdmin, type UsuarioDetalleAdmin } from '../api/admin';
 import { usuarioAdminDataSource, type UsuarioDetalleDataModel } from '../data/adminUsuarios';
@@ -45,7 +45,6 @@ export default function AdminUsuarioDetallePage() {
 	const { usuarioId = '' } = useParams();
 	const navigate = useNavigate();
 	const dialogs = useDialogs();
-	const notifications = useNotifications();
 	const [usuario, setUsuario] = React.useState<UsuarioDetalleDataModel | null>(null);
 	const [reloadKey, setReloadKey] = React.useState(0);
 	const [actionLoading, setActionLoading] = React.useState(false);
@@ -95,15 +94,10 @@ export default function AdminUsuarioDetallePage() {
 		try {
 			const result = await cambiarEstadoUsuarioAdmin(usuario.id, activating ? 'A' : 'I');
 			reload(result.data);
-			notifications.show(activating ? 'Usuario reactivado.' : 'Usuario dado de baja.', {
-				severity: 'success',
-				autoHideDuration: 3000,
-			});
+			notify.success(activating ? 'Usuario reactivado correctamente.' : 'Usuario dado de baja.');
 		} catch (error) {
-			notifications.show(error instanceof Error ? error.message : 'No se pudo actualizar el estado.', {
-				severity: 'error',
-				autoHideDuration: 4000,
-			});
+			const errMsg = error instanceof Error ? error.message : 'No se pudo actualizar el estado.';
+			notify.error(errMsg);
 		} finally {
 			setActionLoading(false);
 		}
@@ -130,20 +124,14 @@ export default function AdminUsuarioDetallePage() {
 			const result = await asignarModeradorAdmin(usuario.id, selectedCategories);
 			reload(result.data);
 			setModerationDialogOpen(false);
-			notifications.show(
+			notify.success(
 				selectedCategories.length === 0
 					? 'Se quitaron las categorías y el usuario dejó de ser moderador.'
-					: 'Rol y categorías de moderación actualizados.',
-				{
-					severity: 'success',
-					autoHideDuration: 3000,
-				},
+					: 'Rol y categorías de moderación actualizados correctamente.',
 			);
 		} catch (error) {
-			notifications.show(error instanceof Error ? error.message : 'No se pudo asignar la moderación.', {
-				severity: 'error',
-				autoHideDuration: 4000,
-			});
+			const errMsg = error instanceof Error ? error.message : 'No se pudo asignar la moderación.';
+			notify.error(errMsg);
 		} finally {
 			setActionLoading(false);
 		}

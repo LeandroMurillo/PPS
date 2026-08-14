@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { db } from '../db';
-import type { CategoriaMock, SubcategoriaMock, PreguntaBancoMock } from '../types';
+import type { CategoriaMock, SubcategoriaMock, PreguntaBancoMock, ConvocatoriaMock } from '../types';
 
 export const adminRouter = Router();
 
@@ -179,7 +179,7 @@ adminRouter.get('/actores', (req, res) => {
 	const departamento = typeof req.query.departamento === 'string' ? req.query.departamento : undefined;
 	const tipoActor = typeof req.query.tipoActor === 'string' ? req.query.tipoActor : undefined;
 	const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
-	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const limit = req.query.limit ? Number(req.query.limit) : 25;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
 
 	let result = db.actores;
@@ -193,7 +193,9 @@ adminRouter.get('/actores', (req, res) => {
 		result = result.filter(
 			(a) =>
 				a.nombre.toLowerCase().includes(busqueda) ||
-				(a.descripcion && a.descripcion.toLowerCase().includes(busqueda)),
+				(a.descripcion && a.descripcion.toLowerCase().includes(busqueda)) ||
+				(a.ubicacion && a.ubicacion.localidad.toLowerCase().includes(busqueda)) ||
+				(a.ubicacion && a.ubicacion.departamento.toLowerCase().includes(busqueda)),
 		);
 	}
 
@@ -217,7 +219,7 @@ adminRouter.get('/actores', (req, res) => {
 			categoria: {
 				id: a.idCategoria,
 				nombre: cat ? cat.nombre : 'Música',
-				icono: cat ? cat.icono : 'MUSICA',
+				icono: cat ? cat.icono : 'MusicNote',
 				estado: cat ? cat.estado : 'A',
 			},
 			subcategoria: subcat ? { id: subcat.id, nombre: subcat.nombre, estado: subcat.estado } : null,
@@ -268,6 +270,8 @@ adminRouter.get('/actores/:id', (req, res) => {
 		.filter((i) => i.idActor === id)
 		.map((i) => ({
 			id: i.idUsuario,
+			idIntegranteNoRegistrado: i.idIntegranteNoRegistrado,
+			tipo: i.tipo,
 			nombre: `${i.nombre} ${i.apellido}`,
 			email: i.email,
 			rol: i.rol,
@@ -286,7 +290,7 @@ adminRouter.get('/actores/:id', (req, res) => {
 		categoria: {
 			id: a.idCategoria,
 			nombre: cat ? cat.nombre : 'Música',
-			icono: cat ? cat.icono : 'MUSICA',
+			icono: cat ? cat.icono : 'MusicNote',
 			estado: cat ? cat.estado : 'A',
 		},
 		subcategoria: subcat ? { id: subcat.id, nombre: subcat.nombre, estado: subcat.estado } : null,
@@ -331,7 +335,7 @@ adminRouter.patch('/actores/estado', (req, res) => {
 adminRouter.get('/categorias', (req, res) => {
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase() : undefined;
 	const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
-	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const limit = req.query.limit ? Number(req.query.limit) : 50;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
 
 	let result = db.categorias;
@@ -391,7 +395,7 @@ adminRouter.post('/categorias', (req, res) => {
 	const newCat: CategoriaMock = {
 		id: newId,
 		nombre: attrs.nombre,
-		icono: attrs.icono,
+		icono: attrs.icono ?? 'Category',
 		estado: attrs.estado ?? 'A',
 	};
 
@@ -416,9 +420,9 @@ adminRouter.put('/categorias/:id', (req, res) => {
 	if (!c) return res.status(404).json({ error: { message: 'Categoría no encontrada.' } });
 
 	const attrs = req.body || {};
-	c.nombre = attrs.nombre;
-	c.icono = attrs.icono;
-	c.estado = attrs.estado;
+	c.nombre = attrs.nombre ?? c.nombre;
+	c.icono = attrs.icono ?? c.icono;
+	c.estado = attrs.estado ?? c.estado;
 
 	return res.json({
 		data: {
@@ -426,8 +430,8 @@ adminRouter.put('/categorias/:id', (req, res) => {
 			nombre: c.nombre,
 			icono: c.icono,
 			estado: c.estado,
-			cantidadSubcategorias: 0,
-			cantidadActores: 0,
+			cantidadSubcategorias: db.subcategorias.filter((s) => s.idCategoria === c.id).length,
+			cantidadActores: db.actores.filter((a) => a.idCategoria === c.id).length,
 		},
 	});
 });
@@ -445,7 +449,7 @@ adminRouter.get('/categorias/:idCategoria/subcategorias', (req, res) => {
 	const idCategoria = Number(req.params.idCategoria);
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase() : undefined;
 	const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
-	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const limit = req.query.limit ? Number(req.query.limit) : 50;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
 
 	let result = db.subcategorias.filter((s) => s.idCategoria === idCategoria);
@@ -496,6 +500,53 @@ adminRouter.post('/categorias/:idCategoria/subcategorias', (req, res) => {
 	});
 });
 
+// GET /api/admin/categorias/:idCategoria/subcategorias/:id
+adminRouter.get('/categorias/:idCategoria/subcategorias/:id', (req, res) => {
+	const id = Number(req.params.id);
+	const s = db.subcategorias.find((item) => item.id === id);
+
+	if (!s) return res.status(404).json({ error: { message: 'Subcategoría no encontrada.' } });
+
+	return res.json({
+		data: {
+			id: s.id,
+			idCategoria: s.idCategoria,
+			nombre: s.nombre,
+			estado: s.estado,
+			cantidadActores: db.actores.filter((a) => a.idSubcategoria === s.id).length,
+		},
+	});
+});
+
+// PUT /api/admin/categorias/:idCategoria/subcategorias/:id
+adminRouter.put('/categorias/:idCategoria/subcategorias/:id', (req, res) => {
+	const id = Number(req.params.id);
+	const s = db.subcategorias.find((item) => item.id === id);
+	if (!s) return res.status(404).json({ error: { message: 'Subcategoría no encontrada.' } });
+
+	const attrs = req.body || {};
+	s.nombre = attrs.nombre ?? s.nombre;
+	s.estado = attrs.estado ?? s.estado;
+
+	return res.json({
+		data: {
+			id: s.id,
+			idCategoria: s.idCategoria,
+			nombre: s.nombre,
+			estado: s.estado,
+			cantidadActores: db.actores.filter((a) => a.idSubcategoria === s.id).length,
+		},
+	});
+});
+
+// DELETE /api/admin/categorias/:idCategoria/subcategorias/:id
+adminRouter.delete('/categorias/:idCategoria/subcategorias/:id', (req, res) => {
+	const id = Number(req.params.id);
+	db.subcategorias = db.subcategorias.filter((s) => s.id !== id);
+
+	return res.json({ data: { id } });
+});
+
 // GET /api/admin/categorias/:idCategoria/formulario
 adminRouter.get('/categorias/:idCategoria/formulario', (req, res) => {
 	const idCategoria = Number(req.params.idCategoria);
@@ -542,6 +593,54 @@ const handleGuardarFormCat = (req: Request, res: Response) => {
 adminRouter.post('/categorias/:idCategoria/formulario', handleGuardarFormCat);
 adminRouter.put('/categorias/:idCategoria/formulario', handleGuardarFormCat);
 
+// GET /api/admin/categorias/:idCategoria/subcategorias/:idSubcategoria/formulario
+adminRouter.get('/categorias/:idCategoria/subcategorias/:idSubcategoria/formulario', (req, res) => {
+	const idSubcategoria = Number(req.params.idSubcategoria);
+	const form = db.formularios.find((f) => f.idSubcategoria === idSubcategoria && f.ambito === 'SUBCATEGORIA');
+
+	return res.json({ data: form ?? null });
+});
+
+// POST/PUT /api/admin/categorias/:idCategoria/subcategorias/:idSubcategoria/formulario
+const handleGuardarFormSubcat = (req: Request, res: Response) => {
+	const idCategoria = Number(req.params.idCategoria);
+	const idSubcategoria = Number(req.params.idSubcategoria);
+	const cat = db.categorias.find((c) => c.id === idCategoria);
+	const subcat = db.subcategorias.find((s) => s.id === idSubcategoria);
+	const attrs = req.body || {};
+
+	let form = db.formularios.find((f) => f.idSubcategoria === idSubcategoria && f.ambito === 'SUBCATEGORIA');
+
+	if (!form) {
+		form = {
+			id: db.formularios.length + 1,
+			idCategoria,
+			categoria: cat ? cat.nombre : 'Música',
+			estadoCategoria: cat ? cat.estado : 'A',
+			idSubcategoria,
+			subcategoria: subcat ? subcat.nombre : 'General',
+			estadoSubcategoria: subcat ? subcat.estado : 'A',
+			ambito: 'SUBCATEGORIA',
+			titulo: attrs.titulo,
+			descripcion: attrs.descripcion ?? null,
+			fechaCreacion: new Date().toISOString(),
+			cantidadPreguntasHistoricas: 0,
+			cantidadPreguntasActivas: 0,
+			cantidadActoresConRespuestas: 0,
+			preguntas: [],
+		};
+		db.formularios.push(form);
+	} else {
+		form.titulo = attrs.titulo;
+		form.descripcion = attrs.descripcion ?? null;
+	}
+
+	return res.json({ data: form });
+};
+
+adminRouter.post('/categorias/:idCategoria/subcategorias/:idSubcategoria/formulario', handleGuardarFormSubcat);
+adminRouter.put('/categorias/:idCategoria/subcategorias/:idSubcategoria/formulario', handleGuardarFormSubcat);
+
 // GET /api/admin/preguntas
 adminRouter.get('/preguntas', (req, res) => {
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase() : undefined;
@@ -575,4 +674,123 @@ adminRouter.post('/preguntas', (req, res) => {
 	db.preguntasBanco.push(p);
 
 	return res.json({ data: p });
+});
+
+// PUT /api/admin/preguntas/:idPregunta
+adminRouter.put('/preguntas/:idPregunta', (req, res) => {
+	const idPregunta = Number(req.params.idPregunta);
+	const p = db.preguntasBanco.find((item) => item.id === idPregunta);
+
+	if (!p) return res.status(404).json({ error: { message: 'Pregunta no encontrada.' } });
+
+	const attrs = req.body || {};
+	p.pregunta = attrs.pregunta ?? p.pregunta;
+	p.tipoDato = attrs.tipoDato ?? p.tipoDato;
+	p.opciones = attrs.opciones ?? p.opciones;
+
+	return res.json({ data: p });
+});
+
+// POST /api/admin/formularios/:idFormulario/preguntas
+adminRouter.post('/formularios/:idFormulario/preguntas', (req, res) => {
+	const idFormulario = Number(req.params.idFormulario);
+	const form = db.formularios.find((f) => f.id === idFormulario);
+	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
+
+	const attrs = req.body || {};
+	const newQId = db.preguntasBanco.length + 1;
+	const bankQ: PreguntaBancoMock = {
+		id: newQId,
+		pregunta: attrs.pregunta,
+		tipoDato: attrs.tipoDato,
+		opciones: attrs.opciones ?? null,
+	};
+	db.preguntasBanco.push(bankQ);
+
+	const formQ = {
+		...bankQ,
+		idPreguntaReemplazada: null,
+		preguntaReemplazada: null,
+		orden: (form.preguntas.length || 0) + 1,
+		esObligatorio: Boolean(attrs.esObligatorio),
+		esPublico: Boolean(attrs.esPublico),
+		fechaIncorporacion: new Date().toISOString(),
+		fechaDesactivacion: null,
+		estado: 'A' as const,
+		cantidadActoresQueRespondieron: 0,
+	};
+
+	form.preguntas.push(formQ);
+	form.cantidadPreguntasActivas++;
+	form.cantidadPreguntasHistoricas++;
+
+	return res.json({ data: formQ });
+});
+
+// POST /api/admin/formularios/:idFormulario/preguntas/existente
+adminRouter.post('/formularios/:idFormulario/preguntas/existente', (req, res) => {
+	const idFormulario = Number(req.params.idFormulario);
+	const form = db.formularios.find((f) => f.id === idFormulario);
+	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
+
+	const attrs = req.body || {};
+	const bankQ = db.preguntasBanco.find((p) => p.id === Number(attrs.idPregunta));
+	if (!bankQ) return res.status(404).json({ error: { message: 'Pregunta del banco no encontrada.' } });
+
+	const formQ = {
+		...bankQ,
+		idPreguntaReemplazada: null,
+		preguntaReemplazada: null,
+		orden: (form.preguntas.length || 0) + 1,
+		esObligatorio: Boolean(attrs.esObligatorio),
+		esPublico: Boolean(attrs.esPublico),
+		fechaIncorporacion: new Date().toISOString(),
+		fechaDesactivacion: null,
+		estado: 'A' as const,
+		cantidadActoresQueRespondieron: 0,
+	};
+
+	form.preguntas.push(formQ);
+	form.cantidadPreguntasActivas++;
+	form.cantidadPreguntasHistoricas++;
+
+	return res.json({ data: formQ });
+});
+
+// DELETE /api/admin/formularios/:idFormulario/preguntas/:idPregunta
+adminRouter.delete('/formularios/:idFormulario/preguntas/:idPregunta', (req, res) => {
+	const idFormulario = Number(req.params.idFormulario);
+	const idPregunta = Number(req.params.idPregunta);
+	const form = db.formularios.find((f) => f.id === idFormulario);
+	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
+
+	form.preguntas = form.preguntas.filter((p) => p.id !== idPregunta);
+	form.cantidadPreguntasActivas = form.preguntas.length;
+
+	return res.json({ message: 'Pregunta eliminada del formulario.' });
+});
+
+// GET /api/admin/convocatorias
+adminRouter.get('/convocatorias', (req, res) => {
+	return res.json({ data: db.convocatorias });
+});
+
+// POST /api/admin/convocatorias
+adminRouter.post('/convocatorias', (req, res) => {
+	const attrs = req.body || {};
+	const newId = db.convocatorias.length + 1;
+	const c: ConvocatoriaMock = {
+		id: newId,
+		titulo: attrs.titulo,
+		descripcion: attrs.descripcion,
+		requisitos: attrs.requisitos,
+		fechaInicio: attrs.fechaInicio ?? new Date().toISOString().split('T')[0],
+		fechaCierre: attrs.fechaCierre,
+		estado: attrs.estado ?? 'ABIERTA',
+		idCategoria: attrs.idCategoria ? Number(attrs.idCategoria) : null,
+		categoria: attrs.categoria ?? null,
+	};
+
+	db.convocatorias.push(c);
+	return res.status(201).json({ data: c });
 });

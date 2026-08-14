@@ -1,9 +1,12 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 
+import { getPublicErrorMessage } from '../../shared/public-error.js';
+
 import {
 	agregarEventoService,
 	agregarIntegranteService,
+	agregarIntegranteNoRegistradoService,
 	agregarItemPortafolioService,
 	cambiarEstadoActorService,
 	crearActorService,
@@ -11,10 +14,14 @@ import {
 	eliminarActorService,
 	eliminarEventoService,
 	eliminarIntegranteService,
+	eliminarIntegranteNoRegistradoService,
+	editarIntegranteService,
+	editarIntegranteNoRegistradoService,
 	eliminarItemPortafolioService,
 	listarEventosService,
 	listarIntegrantesService,
 	listarMisActoresService,
+	listarPortafolioService,
 	obtenerFormulariosAplicablesService,
 	obtenerOpcionesRegistroService,
 } from './mis-actores.service.js';
@@ -134,7 +141,7 @@ export async function listarMisActoresController(req: Request, res: Response): P
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al listar los actores del usuario.',
+				message: getPublicErrorMessage(error, 'No se pudieron listar tus actores culturales.'),
 			},
 		});
 	}
@@ -147,7 +154,7 @@ export async function obtenerOpcionesRegistroController(_req: Request, res: Resp
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al obtener las opciones de registro.',
+				message: getPublicErrorMessage(error, 'No se pudieron obtener las opciones de registro.'),
 			},
 		});
 	}
@@ -161,7 +168,7 @@ export async function obtenerFormulariosAplicablesController(req: Request, res: 
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al obtener los formularios aplicables.',
+				message: getPublicErrorMessage(error, 'No se pudieron obtener los formularios aplicables.'),
 			},
 		});
 	}
@@ -182,7 +189,7 @@ export async function crearActorController(req: Request, res: Response): Promise
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al crear el actor cultural.',
+				message: getPublicErrorMessage(error, 'No se pudo crear el actor cultural.'),
 			},
 		});
 	}
@@ -206,7 +213,7 @@ export async function editarActorController(req: Request, res: Response): Promis
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al editar el actor cultural.',
+				message: getPublicErrorMessage(error, 'No se pudo modificar el actor cultural.'),
 			},
 		});
 	}
@@ -230,7 +237,7 @@ export async function cambiarEstadoActorController(req: Request, res: Response):
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al cambiar el estado del actor.',
+				message: getPublicErrorMessage(error, 'No se pudo cambiar el estado del actor.'),
 			},
 		});
 	}
@@ -252,7 +259,7 @@ export async function eliminarActorController(req: Request, res: Response): Prom
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al eliminar el actor cultural.',
+				message: getPublicErrorMessage(error, 'No se pudo eliminar el actor cultural.'),
 			},
 		});
 	}
@@ -275,7 +282,7 @@ export async function agregarItemPortafolioController(req: Request, res: Respons
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al agregar elemento al portafolio.',
+				message: getPublicErrorMessage(error, 'No se pudo agregar el elemento al portafolio.'),
 			},
 		});
 	}
@@ -296,7 +303,31 @@ export async function eliminarItemPortafolioController(req: Request, res: Respon
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al eliminar elemento del portafolio.',
+				message: getPublicErrorMessage(error, 'No se pudo eliminar el elemento del portafolio.'),
+			},
+		});
+	}
+}
+
+export async function listarPortafolioController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = z.coerce.number().int().positive().parse(req.params.id);
+		const items = await listarPortafolioService({ idUsuario: user.idUsuario, idActor });
+
+		res.json({
+			data: items.map((item) => ({
+				id: item.idItem,
+				tipo: item.tipo,
+				descripcion: item.descripcion,
+				url: item.url,
+			})),
+		});
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudieron listar los elementos del portafolio.'),
 			},
 		});
 	}
@@ -319,7 +350,7 @@ export async function agregarEventoController(req: Request, res: Response): Prom
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al agregar evento.',
+				message: getPublicErrorMessage(error, 'No se pudo agregar el evento.'),
 			},
 		});
 	}
@@ -343,7 +374,7 @@ export async function listarEventosController(req: Request, res: Response): Prom
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al listar los eventos.',
+				message: getPublicErrorMessage(error, 'No se pudieron listar los eventos.'),
 			},
 		});
 	}
@@ -366,7 +397,7 @@ export async function eliminarEventoController(req: Request, res: Response): Pro
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al eliminar el evento.',
+				message: getPublicErrorMessage(error, 'No se pudo eliminar el evento.'),
 			},
 		});
 	}
@@ -374,6 +405,22 @@ export async function eliminarEventoController(req: Request, res: Response): Pro
 
 const integranteBodySchema = z.object({
 	email: z.string().trim().email('Correo electrónico inválido'),
+	rol: z.string().trim().min(1).max(45),
+});
+
+const editarIntegranteBodySchema = z.object({
+	rol: z.string().trim().min(1).max(45),
+});
+
+const emailIntegranteOpcionalSchema = z.preprocess(
+	(value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+	z.string().trim().email('Correo electrónico inválido').max(99).nullable(),
+);
+
+const integranteNoRegistradoBodySchema = z.object({
+	nombre: z.string().trim().min(1).max(45),
+	apellido: z.string().trim().min(1).max(45),
+	email: emailIntegranteOpcionalSchema,
 	rol: z.string().trim().min(1).max(45),
 });
 
@@ -392,7 +439,7 @@ export async function listarIntegrantesController(req: Request, res: Response): 
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al listar los integrantes.',
+				message: getPublicErrorMessage(error, 'No se pudieron listar los integrantes.'),
 			},
 		});
 	}
@@ -416,7 +463,7 @@ export async function agregarIntegranteController(req: Request, res: Response): 
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al agregar integrante.',
+				message: getPublicErrorMessage(error, 'No se pudo agregar el integrante.'),
 			},
 		});
 	}
@@ -439,7 +486,103 @@ export async function eliminarIntegranteController(req: Request, res: Response):
 		res.status(400).json({
 			error: {
 				code: 'BAD_REQUEST',
-				message: error instanceof Error ? error.message : 'Error al eliminar el integrante.',
+				message: getPublicErrorMessage(error, 'No se pudo eliminar el integrante.'),
+			},
+		});
+	}
+}
+
+export async function editarIntegranteController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const idUsuarioAEditar = Number(req.params.idUsuario);
+		const body = editarIntegranteBodySchema.parse(req.body);
+
+		await editarIntegranteService({
+			idUsuario: user.idUsuario,
+			idActor,
+			idUsuarioAEditar,
+			rol: body.rol,
+		});
+
+		res.json({ message: 'Integrante modificado correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudo modificar el integrante.'),
+			},
+		});
+	}
+}
+
+export async function agregarIntegranteNoRegistradoController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const body = integranteNoRegistradoBodySchema.parse(req.body);
+
+		await agregarIntegranteNoRegistradoService({
+			idUsuario: user.idUsuario,
+			idActor,
+			...body,
+		});
+
+		res.status(201).json({ message: 'Integrante sin cuenta agregado correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudo agregar el integrante.'),
+			},
+		});
+	}
+}
+
+export async function editarIntegranteNoRegistradoController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const idIntegranteNoRegistrado = Number(req.params.idIntegranteNoRegistrado);
+		const body = integranteNoRegistradoBodySchema.parse(req.body);
+
+		await editarIntegranteNoRegistradoService({
+			idUsuario: user.idUsuario,
+			idActor,
+			idIntegranteNoRegistrado,
+			...body,
+		});
+
+		res.json({ message: 'Integrante modificado correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudo modificar el integrante.'),
+			},
+		});
+	}
+}
+
+export async function eliminarIntegranteNoRegistradoController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const idIntegranteNoRegistrado = Number(req.params.idIntegranteNoRegistrado);
+
+		await eliminarIntegranteNoRegistradoService({
+			idUsuario: user.idUsuario,
+			idActor,
+			idIntegranteNoRegistrado,
+		});
+
+		res.json({ message: 'Integrante eliminado correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudo eliminar el integrante.'),
 			},
 		});
 	}

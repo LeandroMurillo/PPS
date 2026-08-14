@@ -1,12 +1,28 @@
-# ---- Build Stage ----
-FROM node:22-alpine AS build
+# ---- Base Stage ----
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
 COPY package*.json ./
+
+# ---- Development Stage ----
+FROM base AS development
+
 RUN npm ci
 
 COPY . .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# ---- Build Stage ----
+FROM base AS build
+
+RUN npm ci
+
+COPY . .
+
 RUN npm run build
 
 # ---- Production Stage ----

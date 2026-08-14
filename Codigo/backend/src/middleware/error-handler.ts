@@ -2,6 +2,7 @@ import type { ErrorRequestHandler } from 'express';
 
 import { env } from '../config/env.js';
 import { logger } from '../shared/logger.js';
+import { getPublicErrorMessage } from '../shared/public-error.js';
 
 export const errorHandler: ErrorRequestHandler = (error, request, response, next) => {
 	logger.error(
@@ -24,9 +25,7 @@ export const errorHandler: ErrorRequestHandler = (error, request, response, next
 			message:
 				env.NODE_ENV === 'production'
 					? 'Se produjo un error interno'
-					: error instanceof Error
-						? error.message
-						: 'Error desconocido',
+					: getPublicErrorMessage(error, 'Se produjo un error interno'),
 		},
 	});
 };

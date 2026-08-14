@@ -41,11 +41,11 @@ import {
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { CATEGORY_ICON_OPTIONS, categoryIcons, isCategoriaIcono } from '../components/categoryIcon';
+import { ESTADO_CATEGORIA_LABELS as stateLabels, ESTADO_COLORS as stateColors } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
+import { notify } from '../utils/toast';
 
-const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
-const stateColors = { A: 'success', I: 'default' } as const;
 const pageSize = 25;
 
 export default function AdminCategoriasPage() {
@@ -179,18 +179,22 @@ export default function AdminCategoriasPage() {
 					icono: formIcono,
 					estado: formEstado,
 				});
+				notify.success(`Categoría "${trimmedNombre}" modificada correctamente.`);
 			} else {
 				await crearCategoriaAdmin({
 					nombre: trimmedNombre,
 					icono: formIcono,
 					estado: formEstado,
 				});
+				notify.success(`Categoría "${trimmedNombre}" creada correctamente.`);
 			}
 
 			handleCloseDialog();
 			void fetchCategorias();
 		} catch (err) {
-			setFormError(err instanceof Error ? err.message : 'Ocurrió un error al guardar la categoría.');
+			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la categoría.';
+			setFormError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setFormSubmitting(false);
 		}
@@ -208,11 +212,14 @@ export default function AdminCategoriasPage() {
 
 		try {
 			await eliminarCategoriaAdmin(deletingCategoria.id);
+			notify.info(`Categoría "${deletingCategoria.nombre}" dada de baja correctamente.`);
 			setDeleteDialogOpen(false);
 			setDeletingCategoria(null);
 			void fetchCategorias();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'No se pudo dar de baja la categoría');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo dar de baja la categoría';
+			setError(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setDeleteSubmitting(false);
 		}

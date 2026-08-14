@@ -67,12 +67,19 @@ export type ActorDetalle = {
 	nombre: string;
 	descripcion: string | null;
 	foto: string | null;
+	cuit?: string | null;
+	tipoActor?: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO' | null;
 	estado?: 'A' | 'P' | 'I';
 	categoria: string;
 	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;
+	dueno?: {
+		id: number;
+		nombre: string;
+		email: string;
+	} | null;
 	ubicacion: {
-		provincia: string;
+		provincia?: string;
 		departamento: string;
 		localidad: string | null;
 		esPublica: boolean;
@@ -81,6 +88,7 @@ export type ActorDetalle = {
 		longitud: number | null;
 	};
 	portafolio: {
+		id?: number;
 		tipo: string;
 		descripcion: string | null;
 		url: string;
@@ -93,11 +101,15 @@ export type ActorDetalle = {
 	respuestas: {
 		pregunta: string;
 		respuesta: string | null;
+		publica?: boolean;
 	}[];
 	integrantes: {
+		id?: number;
 		nombre: string;
-		apellido: string;
+		apellido?: string;
+		email?: string;
 		rol: string | null;
+		esDueno?: boolean;
 	}[];
 };
 
@@ -338,6 +350,17 @@ export async function eliminarMiActorApi(idActor: number) {
 	});
 }
 
+export type MiActorPortafolioApiItem = {
+	id: number;
+	tipo: 'IMAGEN' | 'LINK' | 'RRSS';
+	descripcion: string;
+	url: string;
+};
+
+export async function listarPortafolioApi(idActor: number) {
+	return apiFetch<{ data: MiActorPortafolioApiItem[] }>(`/api/mis-actores/${idActor}/portafolio`);
+}
+
 export async function agregarItemPortafolioApi(
 	idActor: number,
 	input: { tipo: 'IMAGEN' | 'LINK' | 'RRSS'; descripcion: string; url: string },
@@ -384,12 +407,21 @@ export async function eliminarEventoApi(idActor: number, idEvento: number) {
 }
 
 export type IntegranteApiItem = {
-	idUsuario: number;
+	tipo: 'REGISTRADO' | 'NO_REGISTRADO';
+	idUsuario: number | null;
+	idIntegranteNoRegistrado: number | null;
 	nombre: string;
 	apellido: string;
-	email: string;
+	email: string | null;
 	rol: string;
 	esDueño: boolean;
+};
+
+export type IntegranteNoRegistradoInput = {
+	nombre: string;
+	apellido: string;
+	email: string | null;
+	rol: string;
 };
 
 export async function listarIntegrantesApi(idActor: number) {
@@ -408,4 +440,42 @@ export async function eliminarIntegranteApi(idActor: number, idUsuario: number) 
 	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes/${idUsuario}`, {
 		method: 'DELETE',
 	});
+}
+
+export async function editarIntegranteApi(idActor: number, idUsuario: number, input: { rol: string }) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes/${idUsuario}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(input),
+	});
+}
+
+export async function agregarIntegranteNoRegistradoApi(idActor: number, input: IntegranteNoRegistradoInput) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes-no-registrados`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(input),
+	});
+}
+
+export async function editarIntegranteNoRegistradoApi(
+	idActor: number,
+	idIntegranteNoRegistrado: number,
+	input: IntegranteNoRegistradoInput,
+) {
+	return apiRequest<{ message: string }>(
+		`/api/mis-actores/${idActor}/integrantes-no-registrados/${idIntegranteNoRegistrado}`,
+		{
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(input),
+		},
+	);
+}
+
+export async function eliminarIntegranteNoRegistradoApi(idActor: number, idIntegranteNoRegistrado: number) {
+	return apiRequest<{ message: string }>(
+		`/api/mis-actores/${idActor}/integrantes-no-registrados/${idIntegranteNoRegistrado}`,
+		{ method: 'DELETE' },
+	);
 }

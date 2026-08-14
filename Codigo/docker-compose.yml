@@ -1,0 +1,51 @@
+services:
+  # ----------------------------------------
+  # Backend Service
+  # ----------------------------------------
+  backend:
+    container_name: cultura-backend
+    build:
+      context: ./backend
+      target: production
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-${PUBLIC_BASE_URL}}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-10}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - actor-uploads:/app/uploads
+    networks:
+      - default
+      - coolify
+
+  # ----------------------------------------
+  # Frontend Service (Servido por NGINX + Proxy para /api)
+  # ----------------------------------------
+  frontend:
+    container_name: cultura-frontend
+    build:
+      context: ./frontend
+      target: production
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - default
+
+volumes:
+  actor-uploads:
+
+networks:
+  coolify:
+    external: true
+

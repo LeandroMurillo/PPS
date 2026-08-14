@@ -1,6 +1,28 @@
 export type GeneroCodigo = 'M' | 'F' | 'MF' | 'FM' | 'B' | 'O' | 'N';
 
 export type CategoriaIcono =
+	| 'Category'
+	| 'MusicNote'
+	| 'Handyman'
+	| 'TheaterComedy'
+	| 'Movie'
+	| 'MenuBook'
+	| 'Palette'
+	| 'AccountBalance'
+	| 'Museum'
+	| 'DirectionsRun'
+	| 'CameraAlt'
+	| 'DesignServices'
+	| 'Restaurant'
+	| 'Architecture'
+	| 'School'
+	| 'Celebration'
+	| 'Storefront'
+	| 'SportsEsports'
+	| 'Radio'
+	| 'Checkroom'
+	| 'Park'
+	| 'LocalLibrary'
 	| 'TEATRO'
 	| 'MUSICA'
 	| 'DANZA'
@@ -73,11 +95,13 @@ export type EventoMock = {
 };
 
 export type IntegranteMock = {
+	tipo: 'REGISTRADO' | 'NO_REGISTRADO';
 	idActor: number;
-	idUsuario: number;
+	idUsuario: number | null;
+	idIntegranteNoRegistrado: number | null;
 	nombre: string;
 	apellido: string;
-	email: string;
+	email: string | null;
 	rol: string;
 	esDueno: boolean;
 };
@@ -139,4 +163,26 @@ export type FormularioMock = {
 export type ActividadArcaMock = {
 	codigo: string;
 	descripcion: string;
+};
+
+export type ConvocatoriaMock = {
+	id: number;
+	titulo: string;
+	descripcion: string;
+	requisitos?: string;
+	fechaInicio: string;
+	fechaCierre: string;
+	estado: 'ABIERTA' | 'CERRADA' | 'EVALUACION' | 'FINALIZADA';
+	idCategoria?: number | null;
+	categoria?: string | null;
+};
+
+export type PostulacionMock = {
+	id: number;
+	idConvocatoria: number;
+	idActor: number;
+	idUsuario: number;
+	fechaPostulacion: string;
+	estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+	notas?: string | null;
 };

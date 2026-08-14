@@ -41,6 +41,8 @@ import {
 	type ActividadArca,
 	type RegistrarUsuarioPayload,
 } from '../api/auth';
+import { fileToBase64, validateImageFile } from '../utils/file';
+import { notify } from '../utils/toast';
 
 function validarCUIL(cuil: string): boolean {
 	const cleaned = cuil.trim().replace(/\D/g, '');
@@ -94,7 +96,6 @@ export default function RegistroPage() {
 	const [documentoFileName, setDocumentoFileName] = useState('');
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [registroExitoso, setRegistroExitoso] = useState<string | null>(null);
 
 	const handleChange =
@@ -114,7 +115,7 @@ export default function RegistroPage() {
 			}
 		};
 
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
@@ -126,29 +127,34 @@ export default function RegistroPage() {
 			return;
 		}
 
-		if (file.size > 5 * 1024 * 1024) {
+		const sizeValidation = validateImageFile(file, 5);
+		if (!sizeValidation.valid) {
 			setFormErrors((prev) => ({
 				...prev,
-				documentoIdentidad: 'La imagen no debe superar los 5 MB',
+				documentoIdentidad: sizeValidation.error ?? 'La imagen no debe superar los 5 MB',
 			}));
 			return;
 		}
 
 		setDocumentoFileName(file.name);
 
-		const reader = new FileReader();
-		reader.onload = () => {
+		try {
+			const base64 = await fileToBase64(file);
 			setFormData((prev) => ({
 				...prev,
-				documentoIdentidad: reader.result as string,
+				documentoIdentidad: base64,
 			}));
 			setFormErrors((prev) => {
 				const updated = { ...prev };
 				delete updated.documentoIdentidad;
 				return updated;
 			});
-		};
-		reader.readAsDataURL(file);
+		} catch {
+			setFormErrors((prev) => ({
+				...prev,
+				documentoIdentidad: 'Error al procesar la imagen seleccionada.',
+			}));
+		}
 	};
 
 	const validateStep1 = (): boolean => {
@@ -224,7 +230,6 @@ export default function RegistroPage() {
 	};
 
 	const handleNext = () => {
-		setErrorMessage(null);
 		if (activeStep === 0) {
 			if (validateStep1()) {
 				setActiveStep(1);
@@ -233,13 +238,11 @@ export default function RegistroPage() {
 	};
 
 	const handleBack = () => {
-		setErrorMessage(null);
 		setActiveStep((prev) => prev - 1);
 	};
 
 	const handleConfirmAndSubmit = async () => {
 		setLoading(true);
-		setErrorMessage(null);
 
 		const payload: RegistrarUsuarioPayload = {
 			nombre: formData.nombre.trim(),
@@ -257,9 +260,11 @@ export default function RegistroPage() {
 		try {
 			const res = await registrarUsuarioApi(payload);
 			setRegistroExitoso(res.mensaje);
+			notify.success('¡Cuenta registrada exitosamente!');
 			setActiveStep(2);
 		} catch (err) {
-			setErrorMessage(err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.');
+			const msg = err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.';
+			notify.error(msg);
 		} finally {
 			setLoading(false);
 		}
@@ -308,12 +313,6 @@ export default function RegistroPage() {
 							</Step>
 						))}
 					</Stepper>
-
-					{errorMessage && (
-						<Alert severity="error" sx={{ mb: 2.5 }} onClose={() => setErrorMessage(null)}>
-							{errorMessage}
-						</Alert>
-					)}
 
 					{/* PASO 1: Formulario de Datos Personales */}
 					{activeStep === 0 && (
@@ -725,13 +724,11 @@ export default function RegistroPage() {
 								paragraph
 								sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
 							>
-								{registroExitoso ||
-									`Se ha enviado un correo electrónico de confirmación a ${formData.email}. Por favor, revisá tu casilla para activar la cuenta. Tu cuenta permanecerá en estado Pendiente hasta su activación.`}
+								{registroExitoso || 'Tu cuenta ya está activa y podés iniciar sesión.'}
 							</Typography>
 
-							<Alert severity="warning" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
-								Una vez activada la cuenta, podrás iniciar sesión para gestionar tus perfiles de actor
-								cultural y publicar en el mapa.
+							<Alert severity="success" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
+								Ya podés iniciar sesión para gestionar tus perfiles de actor cultural y publicar en el mapa.
 							</Alert>
 
 							<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
