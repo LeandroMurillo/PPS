@@ -54,7 +54,7 @@ misActoresRouter.get('/', (req, res) => {
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase() : undefined;
 	const idCategoria = req.query.idCategoria ? Number(req.query.idCategoria) : null;
 	const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
-	const limit = req.query.limit ? Number(req.query.limit) : 10;
+	const limit = req.query.limit ? Number(req.query.limit) : 100;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
 
 	let result = db.actores;
@@ -92,7 +92,7 @@ misActoresRouter.get('/', (req, res) => {
 			fechaCreacion: a.fechaCreacion,
 			estado: a.estado,
 			categoria: cat ? cat.nombre : 'Música',
-			categoriaIcono: cat ? cat.icono : 'MUSICA',
+			categoriaIcono: cat ? cat.icono : 'MusicNote',
 			subcategoria: subcat ? subcat.nombre : null,
 			ubicacion: {
 				provincia: a.ubicacion?.provincia ?? 'Tucumán',
@@ -114,6 +114,63 @@ misActoresRouter.get('/', (req, res) => {
 			hasNext: offset + limit < total,
 		},
 	});
+});
+
+// GET /api/mis-actores/:id
+misActoresRouter.get('/:id', (req, res) => {
+	const id = Number(req.params.id);
+	const a = db.actores.find((item) => item.id === id);
+
+	if (!a) {
+		return res.status(404).json({ error: { message: 'Actor cultural no encontrado.' } });
+	}
+
+	const cat = db.categorias.find((c) => c.id === a.idCategoria);
+	const subcat = a.idSubcategoria ? db.subcategorias.find((s) => s.id === a.idSubcategoria) : null;
+
+	const portafolio = db.portafolioItems
+		.filter((p) => p.idActor === id)
+		.map((p) => ({
+			idItem: p.id,
+			tipo: p.tipo,
+			descripcion: p.descripcion,
+			url: p.url,
+		}));
+
+	const eventos = db.eventos
+		.filter((e) => e.idActor === id)
+		.map((e) => ({
+			idEvento: e.id,
+			nombre: e.nombre,
+			descripcion: e.descripcion,
+			fecha: e.fecha,
+		}));
+
+	const data = {
+		id: a.id,
+		nombre: a.nombre,
+		descripcion: a.descripcion,
+		foto: a.foto,
+		cuit: a.cuit,
+		tipoActor: a.tipoActor,
+		fechaCreacion: a.fechaCreacion,
+		estado: a.estado,
+		categoria: cat ? cat.nombre : 'Música',
+		categoriaIcono: cat ? cat.icono : 'MusicNote',
+		subcategoria: subcat ? subcat.nombre : null,
+		ubicacion: {
+			provincia: a.ubicacion?.provincia ?? 'Tucumán',
+			departamento: a.ubicacion?.departamento ?? 'Capital',
+			localidad: a.ubicacion?.localidad ?? 'San Miguel de Tucumán',
+			direccion: a.ubicacion?.direccion ?? '',
+			latitud: a.ubicacion?.latitud ?? -26.8241,
+			longitud: a.ubicacion?.longitud ?? -65.2226,
+		},
+		portafolio,
+		eventos,
+	};
+
+	return res.json({ data });
 });
 
 // POST /api/mis-actores
@@ -213,6 +270,21 @@ misActoresRouter.delete('/:id', (req, res) => {
 	return res.json({ message: 'Actor eliminado correctamente.' });
 });
 
+// GET /api/mis-actores/:id/portafolio
+misActoresRouter.get('/:id/portafolio', (req, res) => {
+	const idActor = Number(req.params.id);
+	const data = db.portafolioItems
+		.filter((p) => p.idActor === idActor)
+		.map((p) => ({
+			idItem: p.id,
+			tipo: p.tipo,
+			descripcion: p.descripcion,
+			url: p.url,
+		}));
+
+	return res.json({ data });
+});
+
 // POST /api/mis-actores/:id/portafolio
 misActoresRouter.post('/:id/portafolio', (req, res) => {
 	const idActor = Number(req.params.id);
@@ -239,6 +311,16 @@ misActoresRouter.delete('/:id/portafolio/:idItem', (req, res) => {
 	return res.json({ message: 'Elemento eliminado del portafolio.' });
 });
 
+// GET /api/mis-actores/:id/eventos
+misActoresRouter.get('/:id/eventos', (req, res) => {
+	const idActor = Number(req.params.id);
+	const data = db.eventos
+		.filter((e) => e.idActor === idActor)
+		.map((e) => ({ id: e.id, nombre: e.nombre, descripcion: e.descripcion, fecha: e.fecha }));
+
+	return res.json({ data });
+});
+
 // POST /api/mis-actores/:id/eventos
 misActoresRouter.post('/:id/eventos', (req, res) => {
 	const idActor = Number(req.params.id);
@@ -254,16 +336,6 @@ misActoresRouter.post('/:id/eventos', (req, res) => {
 	});
 
 	return res.json({ data: { idEvento: newId } });
-});
-
-// GET /api/mis-actores/:id/eventos
-misActoresRouter.get('/:id/eventos', (req, res) => {
-	const idActor = Number(req.params.id);
-	const data = db.eventos
-		.filter((e) => e.idActor === idActor)
-		.map((e) => ({ id: e.id, nombre: e.nombre, descripcion: e.descripcion, fecha: e.fecha }));
-
-	return res.json({ data });
 });
 
 // DELETE /api/mis-actores/:id/eventos/:idEvento

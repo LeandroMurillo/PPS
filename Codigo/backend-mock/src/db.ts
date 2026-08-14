@@ -10,6 +10,8 @@ import type {
 	PreguntaBancoMock,
 	FormularioMock,
 	CategoriaIcono,
+	ConvocatoriaMock,
+	PostulacionMock,
 } from './types';
 
 const DEPARTAMENTOS_TUCUMAN = [
@@ -49,6 +51,10 @@ const PREFIJOS_NOMBRES = [
 	'Taller Cultural',
 	'Asociación',
 	'Grupo Independiente',
+	'Centro Artístico',
+	'Laboratorio Escénico',
+	'Fundación Cultural',
+	'Cooperativa de Arte',
 ];
 
 const SUSTANTIVOS_NOMBRES = [
@@ -66,6 +72,12 @@ const SUSTANTIVOS_NOMBRES = [
 	'Simoca Tradición',
 	'Trancas Raíces',
 	'Jardín de la República',
+	'Calchaquí',
+	'de la Quebrada',
+	'del Bicentenario',
+	'de la Caña',
+	'de los Naranjos',
+	'Selva y Monte',
 ];
 
 class MockDatabase {
@@ -79,6 +91,8 @@ class MockDatabase {
 	integrantes: IntegranteMock[] = [];
 	preguntasBanco: PreguntaBancoMock[] = [];
 	formularios: FormularioMock[] = [];
+	convocatorias: ConvocatoriaMock[] = [];
+	postulaciones: PostulacionMock[] = [];
 
 	constructor() {
 		this.initSeeds();
@@ -113,7 +127,7 @@ class MockDatabase {
 				rol: 'ADMIN',
 				estado: 'A',
 				fechaRegistro: '2025-01-10T10:00:00Z',
-				categoriasModeracion: [1, 2, 3, 4, 5, 6],
+				categoriasModeracion: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
 			},
 			{
 				id: 2,
@@ -129,7 +143,7 @@ class MockDatabase {
 				rol: 'MODERADOR',
 				estado: 'A',
 				fechaRegistro: '2025-02-01T14:30:00Z',
-				categoriasModeracion: [1, 2],
+				categoriasModeracion: [1, 2, 3],
 			},
 			{
 				id: 3,
@@ -165,11 +179,11 @@ class MockDatabase {
 			},
 		];
 
-		for (let u = 4; u <= 35; u++) {
+		for (let u = 4; u <= 40; u++) {
 			this.usuarios.push({
 				id: u,
-				nombre: `Usuario${u}`,
-				apellido: `Apellido${u}`,
+				nombre: `Gestor${u}`,
+				apellido: `Tucumano${u}`,
 				email: `usuario${u}@mosaico.com`,
 				genero: u % 2 === 0 ? 'F' : 'M',
 				fechaNacimiento: '1993-06-15',
@@ -189,38 +203,62 @@ class MockDatabase {
 			{
 				id: 1,
 				nombre: 'Música',
-				icono: 'MUSICA',
-				subs: ['Bandas y Conjuntos', 'Solistas Vocalistas/Instrumentistas', 'Orquestas y Coros'],
+				icono: 'MusicNote',
+				subs: ['Folklore y Fusión', 'Rock y Pop', 'Cumbia y Cuarteto', 'Música Clásica y Coral', 'Jazz y Blues'],
 			},
 			{
 				id: 2,
 				nombre: 'Teatro y Artes Escénicas',
-				icono: 'TEATRO',
-				subs: ['Compañías Teatrales', 'Dirección y Dramaturgia', 'Circo y Títeres'],
+				icono: 'TheaterComedy',
+				subs: ['Compañías Teatrales', 'Dirección y Dramaturgia', 'Circo y Títeres', 'Comedia Musical'],
 			},
 			{
 				id: 3,
 				nombre: 'Danza',
-				icono: 'DANZA',
-				subs: ['Ballet Folclórico', 'Danza Contemporánea', 'Tango y Danza Urbana'],
+				icono: 'DirectionsRun',
+				subs: ['Ballet Folclórico', 'Danza Contemporánea', 'Tango y Danza Urbana', 'Danzas Tradicionales'],
 			},
 			{
 				id: 4,
 				nombre: 'Artes Visuales',
-				icono: 'ARTES_VISUALES',
-				subs: ['Pintura y Escultura', 'Fotografía e Ilustración', 'Muralismo y Grabado'],
+				icono: 'Palette',
+				subs: ['Pintura y Escultura', 'Fotografía e Ilustración', 'Muralismo y Grabado', 'Instalaciones y Arte Conceptual'],
 			},
 			{
 				id: 5,
 				nombre: 'Audiovisual y Multimedia',
-				icono: 'AUDIOVISUAL',
-				subs: ['Cine y Cortometrajes', 'Producción de Sonido y Video', 'Arte Digital'],
+				icono: 'Movie',
+				subs: ['Cine y Cortometrajes', 'Producción de Sonido y Video', 'Animación y Arte Digital'],
 			},
 			{
 				id: 6,
 				nombre: 'Artesanía y Tradición',
-				icono: 'ARTESANIA',
-				subs: ['Tejido y Textiles Autóctonos', 'Cerámica y Alfarería', 'Orfebrería y Cuero'],
+				icono: 'Handyman',
+				subs: ['Tejido y Textiles Autóctonos', 'Cerámica y Alfarería', 'Orfebrería, Platería y Cuero', 'Madera y Luthería'],
+			},
+			{
+				id: 7,
+				nombre: 'Literatura y Editorial',
+				icono: 'MenuBook',
+				subs: ['Poesía y Narrativa', 'Editoriales Independientes', 'Dramaturgia y Ensayos'],
+			},
+			{
+				id: 8,
+				nombre: 'Patrimonio y Museos',
+				icono: 'AccountBalance',
+				subs: ['Museos y Colecciones', 'Archivos Históricos', 'Monumentos y Sitios Arqueológicos'],
+			},
+			{
+				id: 9,
+				nombre: 'Diseño y Nuevas Tecnologías',
+				icono: 'DesignServices',
+				subs: ['Diseño Gráfico', 'Diseño de Indumentaria', 'Videojuegos y Multimedia'],
+			},
+			{
+				id: 10,
+				nombre: 'Gastronomía y Fiestas Populares',
+				icono: 'Celebration',
+				subs: ['Cocina Tradicional y Regional', 'Ferias y Festivales Populares', 'Producción Artesanal de Alimentos'],
 			},
 		];
 
@@ -249,10 +287,10 @@ class MockDatabase {
 			}
 		}
 
-		// 4. Generación de 500 Actores
+		// 4. Generación de 500 Actores (incluyendo activos 'A', pendientes 'P' para moderación e inactivos 'I')
 		const totalActores = 500;
 		const tipos: ('INDIVIDUO' | 'COLECTIVO' | 'ESPACIO')[] = ['INDIVIDUO', 'COLECTIVO', 'ESPACIO'];
-		const estados: ('A' | 'P' | 'I')[] = ['A', 'A', 'A', 'A', 'A', 'P', 'I'];
+		const estados: ('A' | 'P' | 'I')[] = ['A', 'A', 'A', 'P', 'P', 'A', 'I', 'P'];
 
 		for (let i = 1; i <= totalActores; i++) {
 			const depInfo = DEPARTAMENTOS_TUCUMAN[i % DEPARTAMENTOS_TUCUMAN.length];
@@ -263,7 +301,7 @@ class MockDatabase {
 			const sust = SUSTANTIVOS_NOMBRES[(i * 3) % SUSTANTIVOS_NOMBRES.length];
 			const tipo = tipos[i % tipos.length];
 			const estado = estados[i % estados.length];
-			const actorName = `${pref} ${sust} N°${i}`;
+			const actorName = `${pref} ${sust} ${i > 10 ? `N°${i}` : ''}`.trim();
 			const foto = buildActorImageUrl(actorName, i);
 
 			const latJitter = Math.sin(i * 1.5) * 0.04 + Math.cos(i * 0.7) * 0.02;
@@ -272,15 +310,17 @@ class MockDatabase {
 			const lat = Number((depInfo.lat + latJitter).toFixed(6));
 			const lng = Number((depInfo.lng + lngJitter).toFixed(6));
 
+			const fechaCreacion = `2025-0${(i % 5) + 1}-${String((i % 27) + 1).padStart(2, '0')}T14:20:00Z`;
+
 			this.actores.push({
 				id: i,
 				idUsuarioDueno: (i % 30) + 1,
 				nombre: actorName,
-				descripcion: `Espacio y agrupación artística de ${cDef.nombre} dedicada al desarrollo de propuestas culturales en el departamento de ${depInfo.departamento}, Tucumán.`,
+				descripcion: `Propuesta artística y cultural de ${cDef.nombre} (${subSel ? subSel.nombre : 'General'}) con base en ${depInfo.localidad}, departamento de ${depInfo.departamento}, Tucumán. Promueve la identidad y la participación comunitaria.`,
 				foto,
 				cuit: `20${30000000 + i}4`,
 				tipoActor: tipo,
-				fechaCreacion: `2025-0${(i % 3) + 1}-15T12:00:00Z`,
+				fechaCreacion,
 				estado,
 				idCategoria: cDef.id,
 				idSubcategoria: subSel ? subSel.id : null,
@@ -288,44 +328,52 @@ class MockDatabase {
 					provincia: 'Tucumán',
 					departamento: depInfo.departamento,
 					localidad: depInfo.localidad,
-					direccion: `Calle Principal ${i * 12}`,
+					direccion: `Av. San Martín ${100 + i * 15}`,
 					latitud: lat,
 					longitud: lng,
 					esPublica: true,
 				},
+				respuestasFormulario: {
+					1: i % 2 === 0,
+					2: (i % 15) + 1,
+					3: ['Redes Sociales', 'Afiches y boca a boca'],
+				},
 			});
 
-			if (i <= 100) {
+			// Portafolio para los primeros 150 actores
+			if (i <= 150) {
 				this.portafolioItems.push({
 					id: i * 2 - 1,
 					idActor: i,
 					tipo: 'LINK',
-					descripcion: `Video oficial del actor ${i}`,
-					url: 'https://youtube.com/watch?v=mock',
-					fechaCreacion: '2025-01-20T10:00:00Z',
+					descripcion: `Video oficial y muestra de ${actorName}`,
+					url: 'https://youtube.com/watch?v=culturatucuman',
+					fechaCreacion,
 				});
 				this.portafolioItems.push({
 					id: i * 2,
 					idActor: i,
 					tipo: 'IMAGEN',
-					descripcion: `Galería fotográfica de ${pref}`,
+					descripcion: `Fotografía representativa de la obra de ${actorName}`,
 					url: foto,
-					fechaCreacion: '2025-02-01T10:00:00Z',
+					fechaCreacion,
 				});
+
 				this.eventos.push({
 					id: i,
 					idActor: i,
-					nombre: `Festival Cultural de ${depInfo.departamento}`,
-					descripcion: `Encuentro abierto de ${cDef.nombre} en ${depInfo.localidad}`,
-					fecha: `2026-0${(i % 8) + 1}-20`,
+					nombre: `Encuentro Cultural en ${depInfo.localidad}`,
+					descripcion: `Presentación abierta de ${cDef.nombre} en ${depInfo.departamento}`,
+					fecha: `2026-0${(i % 8) + 1}-18`,
 				});
+
 				this.integrantes.push({
 					idActor: i,
 					idUsuario: (i % 30) + 1,
-					nombre: 'Integrante',
-					apellido: `${i}`,
-					email: `integrante${i}@mosaico.com`,
-					rol: 'Director / Coordinador',
+					nombre: 'Referente',
+					apellido: `Cultural ${i}`,
+					email: `referente${i}@mosaico.com`,
+					rol: 'Director / Coordinador General',
 					esDueno: true,
 				});
 			}
@@ -351,6 +399,18 @@ class MockDatabase {
 				tipoDato: 'OPCION_MULTIPLE',
 				opciones: ['Redes Sociales', 'Prensa / Radios', 'Afiches y boca a boca', 'Plataformas digitales'],
 			},
+			{
+				id: 4,
+				pregunta: '¿Posee espacio propio o alquilado para ensayos y talleres?',
+				tipoDato: 'BOOLEANO',
+				opciones: null,
+			},
+			{
+				id: 5,
+				pregunta: '¿Ha participado en festivales provinciales o nacionales?',
+				tipoDato: 'TEXTO',
+				opciones: null,
+			},
 		];
 
 		this.formularios = [
@@ -363,8 +423,8 @@ class MockDatabase {
 				subcategoria: null,
 				estadoSubcategoria: null,
 				ambito: 'CATEGORIA',
-				titulo: 'Formulario Específico del Sector Musical',
-				descripcion: 'Relevamiento de necesidades técnicas, rider y trayectoria de grupos musicales tucumanos.',
+				titulo: 'Relevamiento del Sector Musical Tucumano',
+				descripcion: 'Relevamiento de necesidades técnicas, rider, trayectoria y equipamiento de grupos musicales tucumanos.',
 				fechaCreacion: '2025-01-05T09:00:00Z',
 				cantidadPreguntasHistoricas: 3,
 				cantidadPreguntasActivas: 3,
@@ -421,6 +481,65 @@ class MockDatabase {
 						cantidadActoresQueRespondieron: 110,
 					},
 				],
+			},
+		];
+
+		// 6. Convocatorias Mock
+		this.convocatorias = [
+			{
+				id: 1,
+				titulo: 'Festival Nacional del Limón 2026',
+				descripcion: 'Convocatoria oficial para artistas musicales, solistas y ballets de Tafí Viejo y toda la provincia.',
+				requisitos: 'Estar registrado en el Registro Provincial de Actores Culturales con estado Activo.',
+				fechaInicio: '2026-06-01',
+				fechaCierre: '2026-08-30',
+				estado: 'ABIERTA',
+				idCategoria: 1,
+				categoria: 'Música',
+			},
+			{
+				id: 2,
+				titulo: 'Mercado Artesanal Calchaquí - Edición Invierno',
+				descripcion: 'Espacio de exposición, exhibición y venta para artesanos, tejedores y ceramistas de la ruta 307 y los valles.',
+				requisitos: 'Certificado de artesano o ficha técnica de producción local.',
+				fechaInicio: '2026-05-15',
+				fechaCierre: '2026-07-05',
+				estado: 'ABIERTA',
+				idCategoria: 6,
+				categoria: 'Artesanía y Tradición',
+			},
+			{
+				id: 3,
+				titulo: 'Fomento a la Producción Audiovisual Independiente',
+				descripcion: 'Subsidio y estímulo provincial para el desarrollo y postproducción de cortometrajes y documentales regionales.',
+				requisitos: 'Guión preliminar y plan de rodaje en locaciones tucumanas.',
+				fechaInicio: '2026-07-01',
+				fechaCierre: '2026-10-15',
+				estado: 'ABIERTA',
+				idCategoria: 5,
+				categoria: 'Audiovisual y Multimedia',
+			},
+			{
+				id: 4,
+				titulo: 'Fiesta Provincial del Teatro Tucumán 2026',
+				descripcion: 'Selección de obras teatrales independientes para la muestra anual de artes escénicas.',
+				requisitos: 'Elenco radicado en la provincia de Tucumán con al menos 6 meses de estreno.',
+				fechaInicio: '2026-08-01',
+				fechaCierre: '2026-11-20',
+				estado: 'ABIERTA',
+				idCategoria: 2,
+				categoria: 'Teatro y Artes Escénicas',
+			},
+		];
+
+		this.postulaciones = [
+			{
+				id: 1,
+				idConvocatoria: 1,
+				idActor: 1,
+				idUsuario: 3,
+				fechaPostulacion: '2026-06-15T11:00:00Z',
+				estado: 'PENDIENTE',
 			},
 		];
 	}
