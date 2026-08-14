@@ -80,8 +80,15 @@ import {
 	type OpcionCategoriaRegistro,
 } from '../api/actores';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
+import {
+	ESTADO_COLORS as stateColors,
+	ESTADO_LABELS as stateLabels,
+	TIPO_ACTOR_LABELS as typeLabels,
+} from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { formatEventDate } from '../utils/date';
+import { fileToBase64, validateImageFile } from '../utils/file';
 import { buildSlugConId } from '../utils/slug';
 
 function normalizeCatalogName(value: string): string {
@@ -148,15 +155,6 @@ export type MyActor = {
 	portafolio?: MyActorPortfolioItem[];
 	eventos?: MyActorEvent[];
 };
-
-const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
-const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
-const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
-
-function formatEventDate(value: string): string {
-	const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-	return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
-}
 
 export default function MisActoresPage() {
 	const navigate = useNavigate();
@@ -387,27 +385,29 @@ export default function MisActoresPage() {
 		setEditModalOpen(true);
 	};
 
-	const handleProfileImageFile = (file: File | null) => {
+	const handleProfileImageFile = async (file: File | null) => {
 		if (!file) return;
 		if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
 			setProfileImageError('Seleccioná una imagen JPG, PNG o WebP.');
 			return;
 		}
-		if (file.size > 5 * 1024 * 1024) {
-			setProfileImageError('La imagen no puede superar los 5 MB.');
+		const sizeValidation = validateImageFile(file, 5);
+		if (!sizeValidation.valid) {
+			setProfileImageError(sizeValidation.error ?? 'La imagen supera el límite permitido.');
 			return;
 		}
 
-		const reader = new FileReader();
-		reader.addEventListener('load', () => {
+		try {
+			const base64 = await fileToBase64(file);
 			setFormValues((current) => ({
 				...current,
-				fotoPerfilBase64: String(reader.result ?? ''),
+				fotoPerfilBase64: base64,
 				fotoPerfilNombre: file.name,
 			}));
 			setProfileImageError(null);
-		});
-		reader.readAsDataURL(file);
+		} catch {
+			setProfileImageError('No se pudo procesar la imagen seleccionada.');
+		}
 	};
 
 	// Request Edit Save -> Open Edit Confirmation Dialog

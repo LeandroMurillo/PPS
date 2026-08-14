@@ -27,18 +27,16 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 
 import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
+import {
+	ESTADO_COLORS as stateColors,
+	ESTADO_LABELS as stateLabels,
+} from '../constants/estados';
+import { formatDate } from '../utils/date';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
 
 import 'leaflet/dist/leaflet.css';
 
-const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
-const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
-
 type SurveyAnswer = ActorDetalleAdmin['encuestas'][number]['secciones'][number]['respuestas'][number];
-
-function formatDate(value: string) {
-	return new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' }).format(new Date(value));
-}
 
 function formatCuit(value: string | null) {
 	if (!value) return 'No informado';

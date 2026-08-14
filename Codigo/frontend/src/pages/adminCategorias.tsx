@@ -41,11 +41,13 @@ import {
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { CATEGORY_ICON_OPTIONS, categoryIcons, isCategoriaIcono } from '../components/categoryIcon';
+import {
+	ESTADO_CATEGORIA_LABELS as stateLabels,
+	ESTADO_COLORS as stateColors,
+} from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
 
-const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
-const stateColors = { A: 'success', I: 'default' } as const;
 const pageSize = 25;
 
 export default function AdminCategoriasPage() {

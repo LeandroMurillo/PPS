@@ -41,6 +41,7 @@ import {
 	type ActividadArca,
 	type RegistrarUsuarioPayload,
 } from '../api/auth';
+import { fileToBase64, validateImageFile } from '../utils/file';
 
 function validarCUIL(cuil: string): boolean {
 	const cleaned = cuil.trim().replace(/\D/g, '');
@@ -114,7 +115,7 @@ export default function RegistroPage() {
 			}
 		};
 
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
@@ -126,29 +127,34 @@ export default function RegistroPage() {
 			return;
 		}
 
-		if (file.size > 5 * 1024 * 1024) {
+		const sizeValidation = validateImageFile(file, 5);
+		if (!sizeValidation.valid) {
 			setFormErrors((prev) => ({
 				...prev,
-				documentoIdentidad: 'La imagen no debe superar los 5 MB',
+				documentoIdentidad: sizeValidation.error ?? 'La imagen no debe superar los 5 MB',
 			}));
 			return;
 		}
 
 		setDocumentoFileName(file.name);
 
-		const reader = new FileReader();
-		reader.onload = () => {
+		try {
+			const base64 = await fileToBase64(file);
 			setFormData((prev) => ({
 				...prev,
-				documentoIdentidad: reader.result as string,
+				documentoIdentidad: base64,
 			}));
 			setFormErrors((prev) => {
 				const updated = { ...prev };
 				delete updated.documentoIdentidad;
 				return updated;
 			});
-		};
-		reader.readAsDataURL(file);
+		} catch {
+			setFormErrors((prev) => ({
+				...prev,
+				documentoIdentidad: 'Error al procesar la imagen seleccionada.',
+			}));
+		}
 	};
 
 	const validateStep1 = (): boolean => {

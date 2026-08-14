@@ -31,13 +31,15 @@ import {
 	type SubcategoriaAdmin,
 	type SubcategoriaAdminSortBy,
 } from '../api/admin';
+import {
+	ESTADO_CATEGORIA_LABELS as stateLabels,
+	ESTADO_COLORS as stateColors,
+} from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
 import AdminFilters from './adminFilters';
 import AdminTable, { type AdminColumn } from './adminTable';
 
-const stateLabels = { A: 'Activa', I: 'Inactiva' } as const;
-const stateColors = { A: 'success', I: 'default' } as const;
 const pageSize = 25;
 
 interface SubcategoriasManagerProps {

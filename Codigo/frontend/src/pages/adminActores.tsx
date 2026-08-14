@@ -31,12 +31,14 @@ import {
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
+import {
+	ESTADO_COLORS as stateColors,
+	ESTADO_LABELS as stateLabels,
+	TIPO_ACTOR_LABELS as typeLabels,
+} from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugConId } from '../utils/slug';
 
-const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
-const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
-const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
 const pageSize = 25;
 
 function optionalPositiveInteger(value: string): number | undefined {

@@ -25,61 +25,18 @@ import {
 	Typography,
 } from '@mui/material';
 
+import { formatEventDate } from '../utils/date';
+import {
+	detectarTipoEnlace,
+	esImagenPortafolio,
+	obtenerIdYoutube,
+	type TipoEnlace,
+} from '../utils/links';
+
 import 'leaflet/dist/leaflet.css';
 
-export type TipoEnlace = 'youtube' | 'instagram' | 'facebook' | 'whatsapp' | 'otro';
-
-export function detectarTipoEnlace(url: string): TipoEnlace {
-	const u = url.toLowerCase();
-	if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
-	if (u.includes('instagram.com')) return 'instagram';
-	if (u.includes('facebook.com') || u.includes('fb.com')) return 'facebook';
-	if (u.includes('wa.me') || u.includes('whatsapp.com')) return 'whatsapp';
-	return 'otro';
-}
-
-export function obtenerIdYoutube(url: string): string | null {
-	try {
-		const parsed = new URL(url);
-		if (parsed.hostname.includes('youtu.be')) {
-			return parsed.pathname.replace('/', '') || null;
-		}
-		if (parsed.hostname.includes('youtube.com')) {
-			const v = parsed.searchParams.get('v');
-			if (v) return v;
-			const partes = parsed.pathname.split('/').filter(Boolean);
-			if (partes[0] === 'embed' || partes[0] === 'shorts') {
-				return partes[1] || null;
-			}
-		}
-		return null;
-	} catch {
-		return null;
-	}
-}
-
-export function esImagenPortafolio(item: { tipo: string; url: string }) {
-	const tipo = item.tipo.toLowerCase();
-	if (tipo.includes('imagen') || tipo.includes('foto')) {
-		return true;
-	}
-	return /\.(jpe?g|png|webp|gif|avif)(\?.*)?$/i.test(item.url);
-}
-
-export function formatearFechaEvento(fecha: string) {
-	const date = new Date(fecha);
-	if (Number.isNaN(date.getTime())) {
-		return fecha;
-	}
-	return new Intl.DateTimeFormat('es-AR', {
-		weekday: 'long',
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit',
-		hour: '2-digit',
-		minute: '2-digit',
-	}).format(date);
-}
+export { detectarTipoEnlace, esImagenPortafolio, obtenerIdYoutube, type TipoEnlace };
+export const formatearFechaEvento = formatEventDate;
 
 export function YoutubeThumbnailLink({ videoId, titulo }: { videoId: string; titulo: string }) {
 	return (

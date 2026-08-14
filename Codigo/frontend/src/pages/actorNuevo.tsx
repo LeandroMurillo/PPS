@@ -54,6 +54,7 @@ import {
 	Typography,
 } from '@mui/material';
 import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
+import { fileToBase64 } from '../utils/file';
 
 import {
 	crearMiActorApi,
@@ -298,9 +299,8 @@ export default function ActorNuevoPage() {
 	};
 
 	const handleCategoryChange = (newCategoryId: number) => {
-		const nextCategory = categories.find((item) => item.id === newCategoryId) ?? null;
 		setCategoryId(newCategoryId);
-		setSubcategoryId(nextCategory?.subcategorias[0]?.id ?? null);
+		setSubcategoryId(null);
 		setForms([]);
 		setAnswers({});
 	};
@@ -840,17 +840,18 @@ function GeneralActorFields({
 					detail="Puede ser una foto tuya, de tu grupo, espacio, trabajo o logotipo."
 					fileName={value.fotoNombre}
 					previewUrl={value.fotoPreview}
-					onFileSelect={(file) => {
+					onFileSelect={async (file) => {
 						if (!file) {
 							onChange({ fotoNombre: '', fotoPreview: '' });
 							return;
 						}
 
-						const reader = new FileReader();
-						reader.addEventListener('load', () => {
-							onChange({ fotoNombre: file.name, fotoPreview: String(reader.result ?? '') });
-						});
-						reader.readAsDataURL(file);
+						try {
+							const base64 = await fileToBase64(file);
+							onChange({ fotoNombre: file.name, fotoPreview: base64 });
+						} catch {
+							onChange({ fotoNombre: '', fotoPreview: '' });
+						}
 					}}
 				/>
 			</Grid>
@@ -1031,18 +1032,20 @@ function PortfolioStep({
 							detail="JPG, PNG o WebP"
 							fileName={imageName}
 							previewUrl={imagePreview}
-							onFileSelect={(file) => {
+							onFileSelect={async (file) => {
 								if (!file) {
 									setImageName('');
 									setImagePreview('');
 									return;
 								}
-								const reader = new FileReader();
-								reader.addEventListener('load', () => {
+								try {
+									const base64 = await fileToBase64(file);
 									setImageName(file.name);
-									setImagePreview(String(reader.result ?? ''));
-								});
-								reader.readAsDataURL(file);
+									setImagePreview(base64);
+								} catch {
+									setImageName('');
+									setImagePreview('');
+								}
 							}}
 						/>
 					) : (

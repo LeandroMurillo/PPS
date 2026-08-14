@@ -49,26 +49,13 @@ import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon from '../components/categoryIcon';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
+import { TIPO_ACTOR_LABELS as typeLabels } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { formatDateTime as formatDate } from '../utils/date';
 
 import 'leaflet/dist/leaflet.css';
 
-const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
 const pageSize = 25;
-
-function formatDate(value: string) {
-	try {
-		return new Intl.DateTimeFormat('es-AR', {
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-		}).format(new Date(value));
-	} catch {
-		return value;
-	}
-}
 
 function optionalPositiveInteger(value: string): number | undefined {
 	const parsed = Number(value);
