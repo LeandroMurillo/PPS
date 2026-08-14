@@ -31,7 +31,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { PageContainer } from '@toolpad/core/PageContainer';
-import { toast } from 'react-toastify';
+import { notify } from '../utils/toast';
 
 import {
 	cambiarEstadoActoresAdmin,
@@ -214,9 +214,9 @@ export default function ConfirmacionesPage() {
 					: `Se ${isApproved ? 'aprobaron' : 'rechazaron'} ${count} actores culturales correctamente.`;
 
 			if (isApproved) {
-				toast.success(msg);
+				notify.success(msg);
 			} else {
-				toast.info(msg);
+				notify.info(msg);
 			}
 			setActionDialogState({ open: false, targetState: 'A', actors: [] });
 			setSelectedActorIds((prev) => prev.filter((id) => !ids.includes(Number(id))));
@@ -233,7 +233,7 @@ export default function ConfirmacionesPage() {
 			const errorMsg =
 				err instanceof Error ? err.message : 'No se pudo actualizar el estado de los actores seleccionados.';
 			setActionError(errorMsg);
-			toast.error(errorMsg);
+			notify.error(errorMsg);
 		} finally {
 			setActionSubmitting(false);
 		}

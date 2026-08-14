@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
+import { Link as RouterLink, useNavigate } from 'react-router';
 
 import AddIcon from '@mui/icons-material/Add';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
@@ -55,7 +55,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { PageContainer } from '@toolpad/core/PageContainer';
-import { toast } from 'react-toastify';
+import { notify } from '../utils/toast';
 
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
@@ -158,7 +158,6 @@ export type MyActor = {
 
 export default function MisActoresPage() {
 	const navigate = useNavigate();
-	const location = useLocation();
 	const { user } = useAuth();
 
 	const userId = user?.idUsuario;
@@ -250,17 +249,6 @@ export default function MisActoresPage() {
 		const cleanInput = deleteConfirmInput.trim().toUpperCase();
 		return cleanInput === 'BORRAR' || cleanInput === 'ELIMINAR';
 	}, [deleteConfirmInput, targetDeleteActor]);
-
-	React.useEffect(() => {
-		const navigationState = location.state as { toastMessage?: unknown } | null;
-		if (typeof navigationState?.toastMessage !== 'string') return;
-
-		toast.success(navigationState.toastMessage);
-		navigate(`${location.pathname}${location.search}${location.hash}`, {
-			replace: true,
-			state: null,
-		});
-	}, [location.hash, location.pathname, location.search, location.state, navigate]);
 
 	const debouncedSearch = useDebouncedValue(search);
 	const selectedEditCategory = React.useMemo(
@@ -475,7 +463,7 @@ export default function MisActoresPage() {
 			? `Se actualizaron los datos de "${formValues.nombre.trim()}". La ficha pasó a estado Pendiente para su revisión.`
 			: `Se actualizó "${formValues.nombre.trim()}" correctamente.`;
 
-		toast.success(msg);
+		notify.success(msg);
 		setEditConfirmModalOpen(false);
 		setEditModalOpen(false);
 	};
@@ -506,7 +494,7 @@ export default function MisActoresPage() {
 		if (!targetStatusActor) return;
 
 		if (nextSt === 'A' && !isAdminOrMod) {
-			toast.warning('Solo un administrador o moderador puede activar un actor cultural.');
+			notify.warning('Solo un administrador o moderador puede activar un actor cultural.');
 			return;
 		}
 
@@ -523,7 +511,7 @@ export default function MisActoresPage() {
 		else if (nextSt === 'P') actionText = 'pasó a estado Pendiente de revisión';
 		else if (nextSt === 'A') actionText = 'fue activado correctamente';
 
-		toast.info(`"${targetStatusActor.nombre}" ${actionText}.`);
+		notify.info(`"${targetStatusActor.nombre}" ${actionText}.`);
 		setDeactivateConfirmModalOpen(false);
 		setStatusModalOpen(false);
 		setTargetStatusActor(null);
@@ -588,11 +576,11 @@ export default function MisActoresPage() {
 
 			setNewPortfolioUrl('');
 			setNewPortfolioDesc('');
-			toast.success('Elemento agregado al portafolio.');
+			notify.success('Elemento agregado al portafolio.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.';
 			setPortfolioError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setPortfolioSubmitting(false);
 		}
@@ -614,11 +602,11 @@ export default function MisActoresPage() {
 			);
 			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
 
-			toast.success('Elemento eliminado del portafolio.');
+			notify.success('Elemento eliminado del portafolio.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.';
 			setPortfolioError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setDeletingPortfolioItemId(null);
 		}
@@ -679,11 +667,11 @@ export default function MisActoresPage() {
 			setNewEventNombre('');
 			setNewEventFecha('');
 			setNewEventDesc('');
-			toast.success('Evento agregado correctamente.');
+			notify.success('Evento agregado correctamente.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el evento.';
 			setEventsError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setEventCreating(false);
 		}
@@ -705,11 +693,11 @@ export default function MisActoresPage() {
 			);
 			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
 
-			toast.success('Evento eliminado.');
+			notify.success('Evento eliminado.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el evento.';
 			setEventsError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setDeletingEventId(null);
 		}
@@ -752,7 +740,7 @@ export default function MisActoresPage() {
 				rol: newMemberRol.trim() || 'Integrante',
 			});
 
-			toast.success('Integrante agregado correctamente.');
+			notify.success('Integrante agregado correctamente.');
 			setNewMemberEmail('');
 			setNewMemberRol('Integrante');
 
@@ -763,7 +751,7 @@ export default function MisActoresPage() {
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
 			setMembersError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		}
 	};
 
@@ -774,12 +762,12 @@ export default function MisActoresPage() {
 		setMembersError(null);
 		try {
 			await eliminarIntegranteApi(targetMembersActor.id, idUsuarioAEliminar);
-			toast.success('Integrante eliminado.');
+			notify.success('Integrante eliminado.');
 			setIntegrantesList((prev) => prev.filter((m) => m.idUsuario !== idUsuarioAEliminar));
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
 			setMembersError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		}
 	};
 
@@ -801,7 +789,7 @@ export default function MisActoresPage() {
 		}
 
 		setActores((prev) => prev.filter((a) => a.id !== targetDeleteActor.id));
-		toast.info(`"${targetDeleteActor.nombre}" fue eliminado permanentemente.`);
+		notify.info(`"${targetDeleteActor.nombre}" fue eliminado permanentemente.`);
 		setDeleteModalOpen(false);
 		setTargetDeleteActor(null);
 	};

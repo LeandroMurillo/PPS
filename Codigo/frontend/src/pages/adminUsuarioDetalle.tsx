@@ -21,7 +21,7 @@ import Stack from '@mui/material/Stack';
 import { Show, type DataSource } from '@toolpad/core/Crud';
 import { PageContainer, type PageContainerProps } from '@toolpad/core/PageContainer';
 import { useDialogs } from '@toolpad/core/useDialogs';
-import { toast } from 'react-toastify';
+import { notify } from '../utils/toast';
 
 import { asignarModeradorAdmin, cambiarEstadoUsuarioAdmin, type UsuarioDetalleAdmin } from '../api/admin';
 import { usuarioAdminDataSource, type UsuarioDetalleDataModel } from '../data/adminUsuarios';
@@ -94,10 +94,10 @@ export default function AdminUsuarioDetallePage() {
 		try {
 			const result = await cambiarEstadoUsuarioAdmin(usuario.id, activating ? 'A' : 'I');
 			reload(result.data);
-			toast.success(activating ? 'Usuario reactivado correctamente.' : 'Usuario dado de baja.');
+			notify.success(activating ? 'Usuario reactivado correctamente.' : 'Usuario dado de baja.');
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : 'No se pudo actualizar el estado.';
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setActionLoading(false);
 		}
@@ -124,14 +124,14 @@ export default function AdminUsuarioDetallePage() {
 			const result = await asignarModeradorAdmin(usuario.id, selectedCategories);
 			reload(result.data);
 			setModerationDialogOpen(false);
-			toast.success(
+			notify.success(
 				selectedCategories.length === 0
 					? 'Se quitaron las categorías y el usuario dejó de ser moderador.'
 					: 'Rol y categorías de moderación actualizados correctamente.',
 			);
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : 'No se pudo asignar la moderación.';
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setActionLoading(false);
 		}

@@ -54,8 +54,8 @@ import {
 	Typography,
 } from '@mui/material';
 import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
-import { toast } from 'react-toastify';
 import { fileToBase64 } from '../utils/file';
+import { notify } from '../utils/toast';
 
 import {
 	crearMiActorApi,
@@ -400,15 +400,13 @@ export default function ActorNuevoPage() {
 				})),
 			});
 
-			navigate('/mis-actores', {
-				replace: true,
-				state: { toastMessage: '¡El actor fue enviado a revisión correctamente!' },
-			});
+			notify.success('¡El actor fue enviado a revisión correctamente!');
+			navigate('/mis-actores', { replace: true });
 		} catch (error) {
 			const errMsg =
 				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.';
 			setSubmissionError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 			scrollToTop();
 		} finally {
 			setSubmitting(false);
@@ -1164,7 +1162,6 @@ function PublicProfilePreview({
 	forms,
 	answers,
 	portfolioItems,
-	submissionError,
 }: {
 	generalData: GeneralActorData;
 	actorType: ActorType | null;
@@ -1223,11 +1220,6 @@ function PublicProfilePreview({
 
 	return (
 		<Stack spacing={3}>
-			{submissionError && (
-				<Alert severity="error" variant="outlined">
-					<strong>No se pudo guardar la solicitud.</strong> {submissionError}
-				</Alert>
-			)}
 			<Alert severity="warning" variant="outlined">
 				<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública tal como la
 				verán los visitantes.

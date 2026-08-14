@@ -41,10 +41,10 @@ import {
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { CATEGORY_ICON_OPTIONS, categoryIcons, isCategoriaIcono } from '../components/categoryIcon';
-import { toast } from 'react-toastify';
 import { ESTADO_CATEGORIA_LABELS as stateLabels, ESTADO_COLORS as stateColors } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
+import { notify } from '../utils/toast';
 
 const pageSize = 25;
 
@@ -179,14 +179,14 @@ export default function AdminCategoriasPage() {
 					icono: formIcono,
 					estado: formEstado,
 				});
-				toast.success(`Categoría "${trimmedNombre}" modificada correctamente.`);
+				notify.success(`Categoría "${trimmedNombre}" modificada correctamente.`);
 			} else {
 				await crearCategoriaAdmin({
 					nombre: trimmedNombre,
 					icono: formIcono,
 					estado: formEstado,
 				});
-				toast.success(`Categoría "${trimmedNombre}" creada correctamente.`);
+				notify.success(`Categoría "${trimmedNombre}" creada correctamente.`);
 			}
 
 			handleCloseDialog();
@@ -194,7 +194,7 @@ export default function AdminCategoriasPage() {
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la categoría.';
 			setFormError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setFormSubmitting(false);
 		}
@@ -212,14 +212,14 @@ export default function AdminCategoriasPage() {
 
 		try {
 			await eliminarCategoriaAdmin(deletingCategoria.id);
-			toast.info(`Categoría "${deletingCategoria.nombre}" dada de baja correctamente.`);
+			notify.info(`Categoría "${deletingCategoria.nombre}" dada de baja correctamente.`);
 			setDeleteDialogOpen(false);
 			setDeletingCategoria(null);
 			void fetchCategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo dar de baja la categoría';
 			setError(errMsg);
-			toast.error(errMsg);
+			notify.error(errMsg);
 		} finally {
 			setDeleteSubmitting(false);
 		}

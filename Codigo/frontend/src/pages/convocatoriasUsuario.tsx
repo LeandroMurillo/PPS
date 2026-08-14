@@ -60,7 +60,7 @@ const MOCK_MIS_ACTORES = [
 	{ id: 12, nombre: 'Grupo Ráfaga', categoria: 'Música' },
 ];
 
-import { toast } from 'react-toastify';
+import { notify } from '../utils/toast';
 
 export default function ConvocatoriasUsuario() {
 	// Estado: Mapea { idConvocatoria: [idActor1, idActor2] }
@@ -86,13 +86,13 @@ export default function ConvocatoriasUsuario() {
 			const estaPostulado = actoresActuales.includes(actor.id);
 
 			if (estaPostulado) {
-				toast.info(`Se retiró la postulación de "${actor.nombre}".`);
+				notify.info(`Se retiró la postulación de "${actor.nombre}".`);
 				return {
 					...prev,
 					[idConvocatoria]: actoresActuales.filter((id) => id !== actor.id),
 				};
 			} else {
-				toast.success(`¡"${actor.nombre}" postulado correctamente!`);
+				notify.success(`¡"${actor.nombre}" postulado correctamente!`);
 				return {
 					...prev,
 					[idConvocatoria]: [...actoresActuales, actor.id],

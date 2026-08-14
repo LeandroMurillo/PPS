@@ -41,8 +41,8 @@ import {
 	type ActividadArca,
 	type RegistrarUsuarioPayload,
 } from '../api/auth';
-import { toast } from 'react-toastify';
 import { fileToBase64, validateImageFile } from '../utils/file';
+import { notify } from '../utils/toast';
 
 function validarCUIL(cuil: string): boolean {
 	const cleaned = cuil.trim().replace(/\D/g, '');
@@ -96,7 +96,6 @@ export default function RegistroPage() {
 	const [documentoFileName, setDocumentoFileName] = useState('');
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [registroExitoso, setRegistroExitoso] = useState<string | null>(null);
 
 	const handleChange =
@@ -231,7 +230,6 @@ export default function RegistroPage() {
 	};
 
 	const handleNext = () => {
-		setErrorMessage(null);
 		if (activeStep === 0) {
 			if (validateStep1()) {
 				setActiveStep(1);
@@ -240,13 +238,11 @@ export default function RegistroPage() {
 	};
 
 	const handleBack = () => {
-		setErrorMessage(null);
 		setActiveStep((prev) => prev - 1);
 	};
 
 	const handleConfirmAndSubmit = async () => {
 		setLoading(true);
-		setErrorMessage(null);
 
 		const payload: RegistrarUsuarioPayload = {
 			nombre: formData.nombre.trim(),
@@ -264,12 +260,11 @@ export default function RegistroPage() {
 		try {
 			const res = await registrarUsuarioApi(payload);
 			setRegistroExitoso(res.mensaje);
-			toast.success('¡Cuenta registrada exitosamente!');
+			notify.success('¡Cuenta registrada exitosamente!');
 			setActiveStep(2);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.';
-			setErrorMessage(msg);
-			toast.error(msg);
+			notify.error(msg);
 		} finally {
 			setLoading(false);
 		}
@@ -318,12 +313,6 @@ export default function RegistroPage() {
 							</Step>
 						))}
 					</Stepper>
-
-					{errorMessage && (
-						<Alert severity="error" sx={{ mb: 2.5 }} onClose={() => setErrorMessage(null)}>
-							{errorMessage}
-						</Alert>
-					)}
 
 					{/* PASO 1: Formulario de Datos Personales */}
 					{activeStep === 0 && (

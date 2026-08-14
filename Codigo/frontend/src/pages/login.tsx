@@ -18,10 +18,9 @@ import {
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 
-import { toast } from 'react-toastify';
-
 import { loginApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
+import { notify } from '../utils/toast';
 
 export default function LoginPage() {
 	const { mode, systemMode } = useColorScheme();
@@ -33,7 +32,6 @@ export default function LoginPage() {
 	const [emailError, setEmailError] = useState<string | null>(null);
 	const [passwordError, setPasswordError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
-	const [customError, setCustomError] = useState<string | null>(null);
 
 	// Forgot password dialog state
 	const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
@@ -54,13 +52,12 @@ export default function LoginPage() {
 		e.preventDefault();
 		if (forgotEmail.trim()) {
 			setForgotSubmitted(true);
-			toast.info('Si el correo está registrado, recibirás las instrucciones.');
+			notify.info('Si el correo está registrado, recibirás las instrucciones.');
 		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setCustomError(null);
 
 		let hasError = false;
 		setEmailError(null);
@@ -81,7 +78,7 @@ export default function LoginPage() {
 		}
 
 		if (hasError) {
-			setCustomError('Por favor complete correctamente los campos en rojo.');
+			notify.error('Por favor complete correctamente los campos requeridos.');
 			return;
 		}
 
@@ -89,14 +86,13 @@ export default function LoginPage() {
 		try {
 			const response = await loginApi({ email: trimmedEmail, contraseña: password });
 			login(response.usuario, response.token);
-			toast.success(`¡Bienvenido/a, ${response.usuario.nombre || 'usuario'}!`);
+			notify.success(`¡Bienvenido/a, ${response.usuario.nombre || 'usuario'}!`);
 			navigate('/');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
-			setCustomError(msg);
 			setEmailError('Verifique sus credenciales');
 			setPasswordError('Verifique sus credenciales');
-			toast.error(msg);
+			notify.error(msg);
 		} finally {
 			setLoading(false);
 		}
@@ -135,12 +131,6 @@ export default function LoginPage() {
 							Ingresá a tu cuenta para gestionar tu perfil en el Mapa Cultural de Tucumán
 						</Typography>
 					</Box>
-
-					{customError && (
-						<Alert severity="error" sx={{ mb: 2.5 }} onClose={() => setCustomError(null)}>
-							{customError}
-						</Alert>
-					)}
 
 					<Box component="form" onSubmit={handleSubmit} noValidate>
 						<TextField
