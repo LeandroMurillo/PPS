@@ -56,6 +56,7 @@ import {
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon from '../components/categoryIcon';
+import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugConId } from '../utils/slug';
 
@@ -63,26 +64,6 @@ import 'leaflet/dist/leaflet.css';
 
 const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
 const pageSize = 25;
-
-const departamentos = [
-	'Burruyacú',
-	'Capital',
-	'Chicligasta',
-	'Cruz Alta',
-	'Famaillá',
-	'Graneros',
-	'Juan Bautista Alberdi',
-	'La Cocha',
-	'Leales',
-	'Lules',
-	'Monteros',
-	'Río Chico',
-	'Simoca',
-	'Tafí del Valle',
-	'Tafí Viejo',
-	'Trancas',
-	'Yerba Buena',
-] as const;
 
 function formatDate(value: string) {
 	try {
@@ -527,7 +508,7 @@ export default function ConfirmacionesPage() {
 							}}
 						>
 							<MenuItem value="">Todos los deptos.</MenuItem>
-							{departamentos.map((dep) => (
+							{DEPARTAMENTOS_TUCUMAN.map((dep) => (
 								<MenuItem key={dep} value={dep}>
 									{dep}
 								</MenuItem>

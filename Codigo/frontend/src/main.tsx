@@ -22,10 +22,10 @@ import AdminCategoriasPage from './pages/adminCategorias';
 import AdminSubcategoriasPage from './pages/adminSubcategorias';
 import AdminUsuarioDetallePage from './pages/adminUsuarioDetalle';
 import AdminUsuariosPage from './pages/adminUsuarios';
+import ConvocatoriasAdminPage from './pages/convocatoriasAdmin';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 import ConfirmacionesPage from './pages/confirmaciones';
 import MisActoresPage from './pages/misActores';
-import EmployeesCrudPage from './pages/employees';
 import Licencia from './pages/licencia';
 import LoginPage from './pages/login';
 import Mapa from './pages/mapa';
@@ -33,11 +33,16 @@ import RegistroPage from './pages/registro';
 
 function DocsApiRedirect() {
 	React.useEffect(() => {
-		const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-		const protocol = typeof window !== 'undefined' ? window.location.protocol : 'http:';
 		const token = typeof localStorage !== 'undefined' ? localStorage.getItem('mosaico_cultural_token') : null;
 		const query = token ? `?token=${encodeURIComponent(token)}` : '';
-		window.location.href = `${protocol}//${host}:3000/docs${query}`;
+		const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? (
+			typeof window !== 'undefined' && window.location.port === '5173'
+				? `${window.location.protocol}//${window.location.hostname}:3000`
+				: typeof window !== 'undefined'
+					? window.location.origin
+					: 'http://localhost:3000'
+		);
+		window.location.href = `${apiBaseUrl}/docs${query}`;
 	}, []);
 
 	return null;
@@ -157,7 +162,7 @@ const router = createBrowserRouter([
 						path: 'convocatoriasAdmin',
 						element: (
 							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
-								<EmployeesCrudPage />
+								<ConvocatoriasAdminPage />
 							</ProtectedRoute>
 						),
 					},

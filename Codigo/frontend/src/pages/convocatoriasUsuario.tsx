@@ -4,6 +4,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EventIcon from '@mui/icons-material/Event';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import {
+	Alert,
 	Box,
 	Button,
 	Card,
@@ -101,11 +102,14 @@ export default function ConvocatoriasUsuario() {
 	return (
 		<Box sx={{ width: '100%', maxWidth: 1200, margin: '0 auto', p: 3 }}>
 			<Typography variant="h4" sx={{ mb: 1, fontWeight: 'bold' }}>
-				Convocatorias Abiertas
+				Convocatorias abiertas
 			</Typography>
-			{/* <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-				Elegí una convocatoria para postular a tus actores culturales.
-			</Typography> */}
+
+			<Alert severity="error" variant="outlined" sx={{ mb: 3, mt: 2 }}>
+				<strong>Módulo en desarrollo:</strong> La postulación a convocatorias culturales se encuentra en fase de
+				diseño y demostración. Próximamente podrás postular directamente a tus actores culturales registrados a
+				las convocatorias oficiales de la provincia.
+			</Alert>
 
 			<Grid container spacing={3} sx={{ paddingY: 5 }}>
 				{MOCK_CONVOCATORIAS.map((convocatoria) => {

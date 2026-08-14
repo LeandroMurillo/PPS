@@ -79,6 +79,7 @@ import {
 	type IntegranteApiItem,
 	type OpcionCategoriaRegistro,
 } from '../api/actores';
+import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugConId } from '../utils/slug';
@@ -157,32 +158,12 @@ function formatEventDate(value: string): string {
 	return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
 }
 
-const departamentos = [
-	'Burruyacú',
-	'Capital',
-	'Chicligasta',
-	'Cruz Alta',
-	'Famaillá',
-	'Graneros',
-	'Juan Bautista Alberdi',
-	'La Cocha',
-	'Leales',
-	'Lules',
-	'Monteros',
-	'Río Chico',
-	'Simoca',
-	'Tafí del Valle',
-	'Tafí Viejo',
-	'Trancas',
-	'Yerba Buena',
-] as const;
-
 export default function MisActoresPage() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { user } = useAuth();
 
-	const currentUserId = user?.idUsuario ?? 1;
+	const userId = user?.idUsuario;
 	const isAdminOrMod = user?.rol === 'ADMIN' || user?.rol === 'MODERADOR';
 
 	const [actores, setActores] = React.useState<MyActor[]>([]);
@@ -207,9 +188,9 @@ export default function MisActoresPage() {
 	const [formValues, setFormValues] = React.useState({
 		nombre: '',
 		tipoActor: 'COLECTIVO' as MyActor['tipoActor'],
-		categoria: 'Música',
-		subcategoria: 'Folklore y fusión',
-		departamento: 'Capital',
+		categoria: '',
+		subcategoria: '',
+		departamento: '',
 		localidad: '',
 		direccion: '',
 		cuit: '',
@@ -325,7 +306,7 @@ export default function MisActoresPage() {
 			if (res?.data) {
 				const mapApiActores: MyActor[] = res.data.map((item) => ({
 					id: item.id,
-					idUsuarioDueno: currentUserId,
+					idUsuarioDueno: userId ?? 0,
 					nombre: item.nombre,
 					tipoActor: item.tipoActor,
 					categoria: item.categoria,
@@ -353,20 +334,15 @@ export default function MisActoresPage() {
 		} finally {
 			setLoading(false);
 		}
-	}, [debouncedSearch, stateFilter, categoryFilter, currentUserId, categoryOptions]);
+	}, [debouncedSearch, stateFilter, categoryFilter, userId, categoryOptions]);
 
 	React.useEffect(() => {
 		fetchMisActores();
 	}, [fetchMisActores]);
 
-	// STRICT OWNER FILTERING: Only actors owned by the logged-in user
-	const misActoresPropios = React.useMemo(() => {
-		return actores.filter((actor) => actor.idUsuarioDueno === currentUserId);
-	}, [actores, currentUserId]);
-
 	// Filtered list based on search, category, and state
 	const filteredActores = React.useMemo(() => {
-		return misActoresPropios.filter((actor) => {
+		return actores.filter((actor) => {
 			const matchesSearch =
 				!debouncedSearch ||
 				actor.nombre.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -379,7 +355,7 @@ export default function MisActoresPage() {
 
 			return matchesSearch && matchesCategory && matchesState;
 		});
-	}, [misActoresPropios, debouncedSearch, categoryFilter, stateFilter]);
+	}, [actores, debouncedSearch, categoryFilter, stateFilter]);
 
 	// Open Edit Dialog
 	const handleOpenEdit = (actor: MyActor) => {
@@ -753,17 +729,12 @@ export default function MisActoresPage() {
 				setIntegrantesList([]);
 			}
 		} catch (err) {
-			console.log('Error al listar integrantes:', err);
-			setIntegrantesList([
-				{
-					idUsuario: currentUserId,
-					nombre: user?.nombre || 'Contacto',
-					apellido: user?.apellido || 'Principal',
-					email: user?.email || 'usuario@cultura.gob.ar',
-					rol: 'Contacto Principal',
-					esDueño: true,
-				},
-			]);
+			setMembersError(
+				err instanceof Error
+					? err.message
+					: 'No se pudieron cargar los integrantes del actor cultural.',
+			);
+			setIntegrantesList([]);
 		} finally {
 			setMembersLoading(false);
 		}
@@ -1058,7 +1029,7 @@ export default function MisActoresPage() {
 							No tenés actores registrados con estos criterios
 						</Typography>
 						<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-							{misActoresPropios.length === 0
+							{actores.length === 0
 								? 'Todavía no registraste ningún actor cultural propio en tu cuenta.'
 								: 'Modificá los filtros de búsqueda para volver a ver tus actores.'}
 						</Typography>
@@ -1547,7 +1518,7 @@ export default function MisActoresPage() {
 										label="Departamento"
 										onChange={(e) => setFormValues((v) => ({ ...v, departamento: e.target.value }))}
 									>
-										{departamentos.map((dep) => (
+										{DEPARTAMENTOS_TUCUMAN.map((dep) => (
 											<MenuItem key={dep} value={dep}>
 												{dep}
 											</MenuItem>

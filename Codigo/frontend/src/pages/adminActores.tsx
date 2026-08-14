@@ -30,6 +30,7 @@ import {
 } from '../api/admin';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
+import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugConId } from '../utils/slug';
 
@@ -37,26 +38,6 @@ const stateLabels = { A: 'Activo', P: 'Pendiente', I: 'Inactivo' } as const;
 const stateColors = { A: 'success', P: 'warning', I: 'default' } as const;
 const typeLabels = { INDIVIDUO: 'Individuo', COLECTIVO: 'Colectivo', ESPACIO: 'Espacio' } as const;
 const pageSize = 25;
-
-const departamentos = [
-	'Burruyacú',
-	'Capital',
-	'Chicligasta',
-	'Cruz Alta',
-	'Famaillá',
-	'Graneros',
-	'Juan Bautista Alberdi',
-	'La Cocha',
-	'Leales',
-	'Lules',
-	'Monteros',
-	'Río Chico',
-	'Simoca',
-	'Tafí del Valle',
-	'Tafí Viejo',
-	'Trancas',
-	'Yerba Buena',
-] as const;
 
 function optionalPositiveInteger(value: string): number | undefined {
 	const parsed = Number(value);
@@ -300,7 +281,7 @@ export default function AdminActoresPage() {
 							onChange={(event) => changeFilter(setDepartment, event.target.value)}
 						>
 							<MenuItem value="">Todos</MenuItem>
-							{departamentos.map((departmentOption) => (
+							{DEPARTAMENTOS_TUCUMAN.map((departmentOption) => (
 								<MenuItem key={departmentOption} value={departmentOption}>
 									{departmentOption}
 								</MenuItem>
