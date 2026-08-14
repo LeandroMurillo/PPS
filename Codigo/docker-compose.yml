@@ -6,6 +6,7 @@ services:
     container_name: cultura-backend
     build:
       context: ./backend
+      target: production
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
@@ -33,6 +34,7 @@ services:
     container_name: cultura-frontend
     build:
       context: ./frontend
+      target: production
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
