@@ -51,7 +51,6 @@ import CategoryIcon from '../components/categoryIcon';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import { TIPO_ACTOR_LABELS as typeLabels } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { formatDateTime as formatDate } from '../utils/date';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -267,6 +266,7 @@ export default function ConfirmacionesPage() {
 						sec.respuestas.map((r) => ({
 							pregunta: r.pregunta,
 							respuesta: r.respuesta,
+							publica: r.publica,
 						})),
 					),
 				)
@@ -281,13 +281,16 @@ export default function ConfirmacionesPage() {
 			descripcion: previewActor.descripcion,
 			foto: previewActor.foto,
 			estado: previewActor.estado,
+			cuit: previewActor.cuit,
 			ubicacion: previewActor.ubicacion,
 			portafolio: previewActor.portafolio ?? [],
 			integrantes:
 				previewActor.integrantes?.map((i) => ({
+					id: i.id,
 					nombre: i.nombre,
 					email: i.email,
 					rol: i.rol,
+					esDueno: i.esDueno,
 				})) ?? [],
 			respuestas: respuestasFlat,
 			dueno: previewActor.dueno,
@@ -717,45 +720,13 @@ export default function ConfirmacionesPage() {
 					) : previewError ? (
 						<Alert severity="error">{previewError}</Alert>
 					) : previewActor && previewActorViewData ? (
-						<Stack spacing={0}>
-							{/* Contacto / Solicitante info banner */}
-							{previewActor.dueno && (
-								<Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-									<Stack
-										direction={{ xs: 'column', sm: 'row' }}
-										spacing={2}
-										justifyContent="space-between"
-									>
-										<Box>
-											<Typography variant="caption" color="text.secondary" fontWeight={700}>
-												SOLICITANTE / CONTACTO
-											</Typography>
-											<Typography variant="body2" fontWeight={600}>
-												{previewActor.dueno.nombre} ({previewActor.dueno.email})
-											</Typography>
-										</Box>
-										{previewActor.cuit && (
-											<Box>
-												<Typography variant="caption" color="text.secondary" fontWeight={700}>
-													CUIT
-												</Typography>
-												<Typography variant="body2">{previewActor.cuit}</Typography>
-											</Box>
-										)}
-										<Box>
-											<Typography variant="caption" color="text.secondary" fontWeight={700}>
-												FECHA DE SOLICITUD
-											</Typography>
-											<Typography variant="body2">
-												{formatDate(previewActor.fechaCreacion)}
-											</Typography>
-										</Box>
-									</Stack>
-								</Paper>
-							)}
-
-							<ActorPortfolioView actor={previewActorViewData} hideHeaderNav showStatusAlert={false} />
-						</Stack>
+						<ActorPortfolioView
+							actor={previewActorViewData}
+							hideHeaderNav
+							showStatusAlert={false}
+							canViewPrivateInfo={true}
+							initialShowAllInfo={true}
+						/>
 					) : null}
 				</DialogContent>
 				<DialogActions sx={{ p: 2, justifyContent: 'right' }}>

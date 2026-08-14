@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
 import { Link as RouterLink } from 'react-router';
 
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import BadgeIcon from '@mui/icons-material/Badge';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LinkIcon from '@mui/icons-material/Link';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import {
@@ -17,21 +22,20 @@ import {
 	Card,
 	CardContent,
 	Chip,
+	FormControlLabel,
 	Grid,
 	IconButton,
 	Link as MuiLink,
 	Paper,
 	Stack,
+	Switch,
 	Typography,
 } from '@mui/material';
 
+import { ESTADO_COLORS, getEstadoEtiqueta, getTipoActorEtiqueta } from '../constants/estados';
+import { useAuth } from '../context/AuthContext';
 import { formatEventDate } from '../utils/date';
-import {
-	detectarTipoEnlace,
-	esImagenPortafolio,
-	obtenerIdYoutube,
-	type TipoEnlace,
-} from '../utils/links';
+import { detectarTipoEnlace, esImagenPortafolio, obtenerIdYoutube, type TipoEnlace } from '../utils/links';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -105,6 +109,7 @@ export type ActorPortfolioViewData = {
 	descripcion?: string | null;
 	foto?: string | null;
 	estado?: string | null;
+	cuit?: string | null;
 	ubicacion: {
 		provincia?: string | null;
 		departamento?: string | null;
@@ -120,6 +125,7 @@ export type ActorPortfolioViewData = {
 		url: string;
 		descripcion?: string | null;
 		titulo?: string | null;
+		publico?: boolean;
 	}[];
 	eventos?: {
 		id?: number;
@@ -131,6 +137,7 @@ export type ActorPortfolioViewData = {
 	respuestas?: {
 		pregunta: string;
 		respuesta?: string | number | boolean | string[] | null;
+		publica?: boolean;
 	}[];
 	integrantes?: {
 		id?: number;
@@ -139,6 +146,7 @@ export type ActorPortfolioViewData = {
 		apellido?: string | null;
 		email?: string | null;
 		rol?: string | null;
+		esDueno?: boolean;
 	}[];
 	dueno?: {
 		id?: number;
@@ -152,6 +160,8 @@ export type ActorPortfolioViewProps = {
 	volverA?: string;
 	hideHeaderNav?: boolean;
 	showStatusAlert?: boolean;
+	canViewPrivateInfo?: boolean;
+	initialShowAllInfo?: boolean;
 };
 
 export default function ActorPortfolioView({
@@ -159,13 +169,54 @@ export default function ActorPortfolioView({
 	volverA,
 	hideHeaderNav = false,
 	showStatusAlert = true,
+	canViewPrivateInfo,
+	initialShowAllInfo = false,
 }: ActorPortfolioViewProps) {
+	const { user } = useAuth();
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+	// Determinar si el usuario autenticado tiene privilegios para ver la parte privada
+	const isPrivileged = React.useMemo(() => {
+		if (canViewPrivateInfo !== undefined) return canViewPrivateInfo;
+		if (!user) return false;
+		if (user.rol === 'ADMIN' || user.rol === 'MODERADOR') return true;
+
+		const isOwner =
+			(actor.dueno &&
+				(actor.dueno.id === user.idUsuario ||
+					actor.dueno.email?.toLowerCase() === user.email?.toLowerCase())) ||
+			actor.integrantes?.some(
+				(i) =>
+					i.esDueno &&
+					(i.idUsuario === user.idUsuario || i.email?.toLowerCase() === user.email?.toLowerCase()),
+			);
+
+		const isMember = actor.integrantes?.some(
+			(i) => i.idUsuario === user.idUsuario || (i.email && i.email.toLowerCase() === user.email?.toLowerCase()),
+		);
+
+		return Boolean(isOwner || isMember);
+	}, [canViewPrivateInfo, user, actor.dueno, actor.integrantes]);
+
+	// Estado del switch: solo puede activarse si el usuario es privilegiado
+	const [showAllInfo, setShowAllInfo] = useState(Boolean(isPrivileged && initialShowAllInfo));
+
+	// Asegurar que si los permisos cambian, no se muestre información privada
+	const effectiveShowAll = isPrivileged && showAllInfo;
 
 	const portafolioItems = actor.portafolio ?? [];
 	const eventos = actor.eventos ?? [];
-	const respuestas = actor.respuestas ?? [];
+	const allRespuestas = actor.respuestas ?? [];
 	const integrantes = actor.integrantes ?? [];
+
+	// Filtrar preguntas según el modo de visualización
+	const respuestas = React.useMemo(() => {
+		if (effectiveShowAll) {
+			return allRespuestas;
+		}
+		// En modo público, solo preguntas públicas
+		return allRespuestas.filter((r) => r.publica !== false);
+	}, [allRespuestas, effectiveShowAll]);
 
 	const imagenes = React.useMemo(() => {
 		const imagenesPortafolio = portafolioItems.filter(esImagenPortafolio).map((item) => ({
@@ -186,8 +237,10 @@ export default function ActorPortfolioView({
 		setCurrentImageIndex((prev) => (prev === imagenes.length - 1 ? 0 : prev + 1));
 	};
 
+	// Visibilidad del mapa
+	const ubicacionEsVisible = (actor.ubicacion.esPublica ?? true) || effectiveShowAll;
 	const ubicacionMapa =
-		(actor.ubicacion.esPublica ?? true) &&
+		ubicacionEsVisible &&
 		actor.ubicacion.latitud !== null &&
 		actor.ubicacion.latitud !== undefined &&
 		actor.ubicacion.longitud !== null &&
@@ -208,12 +261,68 @@ export default function ActorPortfolioView({
 					justifyContent="space-between"
 					alignItems="center"
 					spacing={2}
-					sx={{ mb: 4 }}
+					sx={{ mb: 3 }}
 				>
 					<Button component={RouterLink} to={volverA} variant="contained" color="inherit">
 						Volver
 					</Button>
 				</Stack>
+			)}
+
+			{/* --- SWITCH DE CONTROL DE VISTA PRIVADA / COMPLETA --- */}
+			{isPrivileged && (
+				<Paper
+					variant="outlined"
+					sx={{
+						p: 2,
+						mb: 3,
+						borderRadius: 2,
+						bgcolor: effectiveShowAll ? 'action.hover' : 'background.paper',
+						borderColor: effectiveShowAll ? 'primary.main' : 'divider',
+						borderWidth: effectiveShowAll ? 2 : 1,
+						display: 'flex',
+						flexDirection: { xs: 'column', sm: 'row' },
+						alignItems: { xs: 'flex-start', sm: 'center' },
+						justifyContent: 'space-between',
+						gap: 2,
+					}}
+				>
+					<Stack direction="row" spacing={1.5} alignItems="center">
+						{effectiveShowAll ? (
+							<LockOpenIcon color="primary" sx={{ fontSize: 28 }} />
+						) : (
+							<VisibilityIcon color="action" sx={{ fontSize: 28 }} />
+						)}
+						<Box>
+							<Typography variant="subtitle1" fontWeight={700}>
+								{effectiveShowAll
+									? 'Visualización Completa (con datos privados)'
+									: 'Visualización Pública'}
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								{effectiveShowAll
+									? 'Estás viendo toda la información cargada.'
+									: 'Estás viendo la ficha tal como la ven los visitantes del portal público.'}
+							</Typography>
+						</Box>
+					</Stack>
+
+					<FormControlLabel
+						control={
+							<Switch
+								checked={showAllInfo}
+								onChange={(e) => setShowAllInfo(e.target.checked)}
+								color="primary"
+							/>
+						}
+						label={
+							<Typography variant="body2" fontWeight={700} sx={{ whiteSpace: 'nowrap' }}>
+								Ver toda la info
+							</Typography>
+						}
+						sx={{ m: 0 }}
+					/>
+				</Paper>
 			)}
 
 			{showStatusAlert && actor.estado && actor.estado !== 'A' && (
@@ -232,13 +341,99 @@ export default function ActorPortfolioView({
 			<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 4 }}>
 				{actor.categoria && <Chip label={actor.categoria} color="primary" />}
 				{Boolean(actor.subcategoria) && <Chip label={actor.subcategoria} variant="outlined" />}
+				{actor.tipoActor && (
+					<Chip label={`Tipo: ${getTipoActorEtiqueta(actor.tipoActor)}`} variant="outlined" />
+				)}
 				{actor.ubicacion.departamento && (
 					<Chip
-						label={[actor.ubicacion.localidad, actor.ubicacion.departamento].filter(Boolean).join(', ')}
+						label={[
+							effectiveShowAll ? actor.ubicacion.direccion : null,
+							actor.ubicacion.localidad,
+							actor.ubicacion.departamento,
+						]
+							.filter(Boolean)
+							.join(', ')}
 						variant="outlined"
 					/>
 				)}
+				{effectiveShowAll && actor.ubicacion.esPublica === false && (
+					<Chip
+						icon={<LockIcon />}
+						label="Ubicación privada"
+						color="warning"
+						variant="outlined"
+						size="small"
+					/>
+				)}
+				{effectiveShowAll && actor.cuit && (
+					<Chip icon={<BadgeIcon />} label={`CUIT: ${actor.cuit}`} color="info" variant="outlined" />
+				)}
+				{effectiveShowAll && actor.estado && (
+					<Chip
+						label={`Estado: ${getEstadoEtiqueta(actor.estado)}`}
+						color={ESTADO_COLORS[actor.estado] ?? 'default'}
+					/>
+				)}
 			</Stack>
+
+			{/* --- DATOS ADMINISTRATIVOS / INTERNOS (Solo en modo completo) --- */}
+			{effectiveShowAll && (
+				<Paper
+					variant="outlined"
+					sx={{
+						p: 2.5,
+						mb: 4,
+						borderRadius: 2,
+						bgcolor: 'background.paper',
+						borderColor: 'divider',
+					}}
+				>
+					<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+						<AdminPanelSettingsIcon color="primary" />
+						<Typography variant="h6" fontWeight={700}>
+							Datos administrativos e internos
+						</Typography>
+					</Stack>
+
+					<Grid container spacing={2}>
+						<Grid size={{ xs: 12, sm: 6, md: 3 }}>
+							<Typography variant="caption" color="text.secondary" display="block">
+								CUIT / Identificación
+							</Typography>
+							<Typography variant="body2" fontWeight={600}>
+								{actor.cuit || 'Sin CUIT informado'}
+							</Typography>
+						</Grid>
+
+						<Grid size={{ xs: 12, sm: 6, md: 3 }}>
+							<Typography variant="caption" color="text.secondary" display="block">
+								Visibilidad de ubicación
+							</Typography>
+							<Typography variant="body2" fontWeight={600}>
+								{actor.ubicacion.esPublica ? 'Pública' : 'Privada (Oculta al público)'}
+							</Typography>
+						</Grid>
+
+						<Grid size={{ xs: 12, sm: 6, md: 3 }}>
+							<Typography variant="caption" color="text.secondary" display="block">
+								Dirección exacta
+							</Typography>
+							<Typography variant="body2" fontWeight={600}>
+								{actor.ubicacion.direccion || 'Sin dirección'}
+							</Typography>
+						</Grid>
+
+						<Grid size={{ xs: 12, sm: 6, md: 3 }}>
+							<Typography variant="caption" color="text.secondary" display="block">
+								Creador / Dueño de la ficha
+							</Typography>
+							<Typography variant="body2" fontWeight={600}>
+								{actor.dueno ? `${actor.dueno.nombre} (${actor.dueno.email})` : 'No informado'}
+							</Typography>
+						</Grid>
+					</Grid>
+				</Paper>
+			)}
 
 			{/* --- MULTIMEDIA Y MAPA --- */}
 			{mostrarMultimedia && (
@@ -318,7 +513,32 @@ export default function ActorPortfolioView({
 								justifySelf: 'center',
 							}}
 						>
-							<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2, height: 300 }}>
+							<Paper
+								elevation={1}
+								sx={{ overflow: 'hidden', borderRadius: 2, height: 300, position: 'relative' }}
+							>
+								{effectiveShowAll && actor.ubicacion.esPublica === false && (
+									<Box
+										sx={{
+											position: 'absolute',
+											top: 8,
+											right: 8,
+											zIndex: 1000,
+											bgcolor: 'warning.main',
+											color: 'warning.contrastText',
+											px: 1,
+											py: 0.25,
+											borderRadius: 1,
+											fontSize: '0.75rem',
+											fontWeight: 700,
+											display: 'flex',
+											alignItems: 'center',
+											gap: 0.5,
+										}}
+									>
+										<LockIcon sx={{ fontSize: 14 }} /> Ubicación privada
+									</Box>
+								)}
 								<MapContainer
 									center={ubicacionMapa}
 									zoom={14}
@@ -448,12 +668,24 @@ export default function ActorPortfolioView({
 							<Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
 								Preguntas y respuestas
 							</Typography>
-							<Stack spacing={2}>
+							<Stack spacing={2.5}>
 								{respuestas.map((p, index) => (
 									<Box key={index}>
-										<Typography variant="body1" fontWeight={600}>
-											{p.pregunta}
-										</Typography>
+										<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+											<Typography variant="body1" fontWeight={600}>
+												{p.pregunta}
+											</Typography>
+											{effectiveShowAll && p.publica === false && (
+												<Chip
+													size="small"
+													icon={<LockIcon sx={{ fontSize: '0.85rem !important' }} />}
+													label="Privada"
+													color="warning"
+													variant="outlined"
+													sx={{ height: 20, fontSize: '0.7rem' }}
+												/>
+											)}
+										</Stack>
 										<Typography variant="body2" color="text.secondary">
 											{Array.isArray(p.respuesta)
 												? p.respuesta.join(', ')
@@ -470,12 +702,36 @@ export default function ActorPortfolioView({
 							<Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
 								Integrantes
 							</Typography>
-							<Stack spacing={1}>
+							<Stack spacing={1.5}>
 								{integrantes.map((integrante, index) => (
-									<Typography key={index} variant="body1">
-										{integrante.nombre} {integrante.apellido || ''}
-										{integrante.rol ? ` - ${integrante.rol}` : ''}
-									</Typography>
+									<Box key={index}>
+										<Stack direction="row" spacing={1} alignItems="center">
+											<Typography variant="body1" fontWeight={500}>
+												{integrante.nombre} {integrante.apellido || ''}
+											</Typography>
+											{integrante.rol && (
+												<Chip
+													size="small"
+													label={integrante.rol}
+													variant="outlined"
+													sx={{ height: 22, fontSize: '0.75rem' }}
+												/>
+											)}
+											{effectiveShowAll && integrante.esDueno && (
+												<Chip
+													size="small"
+													label="Dueño"
+													color="primary"
+													sx={{ height: 20, fontSize: '0.7rem' }}
+												/>
+											)}
+										</Stack>
+										{effectiveShowAll && integrante.email && (
+											<Typography variant="caption" color="text.secondary" display="block">
+												{integrante.email}
+											</Typography>
+										)}
+									</Box>
 								))}
 							</Stack>
 						</Grid>

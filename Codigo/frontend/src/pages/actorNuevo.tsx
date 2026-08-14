@@ -1172,12 +1172,12 @@ function PublicProfilePreview({
 	portfolioItems: PortfolioItemDraft[];
 	submissionError: string;
 }) {
-	const publicAnswers = forms.flatMap((form) =>
+	const allAnswers = forms.flatMap((form) =>
 		form.preguntas
-			.filter((question) => question.esPublico)
 			.map((question) => ({
 				pregunta: question.pregunta,
 				respuesta: answers[`${form.id}:${question.id}`],
+				publica: question.esPublico,
 			}))
 			.filter(({ respuesta }) =>
 				Array.isArray(respuesta) ? respuesta.length > 0 : Boolean(String(respuesta ?? '').trim()),
@@ -1206,6 +1206,7 @@ function PublicProfilePreview({
 						: null,
 		descripcion: generalData.descripcion,
 		foto: generalData.fotoPreview || null,
+		cuit: generalData.cuit || null,
 		ubicacion: {
 			departamento: generalData.departamento,
 			localidad: generalData.localidad,
@@ -1215,17 +1216,18 @@ function PublicProfilePreview({
 			esPublica: generalData.ubicacionPublica,
 		},
 		portafolio: mappedPortafolio,
-		respuestas: publicAnswers,
+		respuestas: allAnswers,
 	};
 
 	return (
 		<Stack spacing={3}>
-			<Alert severity="warning" variant="outlined">
-				<strong>Esta es una vista previa.</strong> Solo se muestra información marcada como pública tal como la
-				verán los visitantes.
-			</Alert>
-
-			<ActorPortfolioView actor={actorPreviewData} hideHeaderNav showStatusAlert={false} />
+			<ActorPortfolioView
+				actor={actorPreviewData}
+				hideHeaderNav
+				showStatusAlert={false}
+				canViewPrivateInfo={true}
+				initialShowAllInfo={false}
+			/>
 		</Stack>
 	);
 }
