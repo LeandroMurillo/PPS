@@ -95,11 +95,13 @@ export type EventoMock = {
 };
 
 export type IntegranteMock = {
+	tipo: 'REGISTRADO' | 'NO_REGISTRADO';
 	idActor: number;
-	idUsuario: number;
+	idUsuario: number | null;
+	idIntegranteNoRegistrado: number | null;
 	nombre: string;
 	apellido: string;
-	email: string;
+	email: string | null;
 	rol: string;
 	esDueno: boolean;
 };
@@ -124,15 +126,7 @@ export type PreguntaBancoMock = {
 	id: number;
 	pregunta: string;
 	tipoDato:
-		| 'TEXTO'
-		| 'NUMERO'
-		| 'BOOLEANO'
-		| 'FECHA'
-		| 'URL'
-		| 'EMAIL'
-		| 'TELEFONO'
-		| 'OPCION_UNICA'
-		| 'OPCION_MULTIPLE';
+		'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
 	opciones: string[] | null;
 };
 

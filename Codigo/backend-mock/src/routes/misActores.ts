@@ -216,10 +216,12 @@ misActoresRouter.post('/', (req, res) => {
 			esPublica: attrs.esPublica ?? true,
 		},
 		respuestasFormulario: Object.fromEntries(
-			(attrs.respuestas ?? []).map((respuesta: { idPregunta: number; valor: string | number | boolean | string[] }) => [
-				respuesta.idPregunta,
-				respuesta.valor,
-			]),
+			(attrs.respuestas ?? []).map(
+				(respuesta: { idPregunta: number; valor: string | number | boolean | string[] }) => [
+					respuesta.idPregunta,
+					respuesta.valor,
+				],
+			),
 		),
 	};
 
@@ -227,8 +229,10 @@ misActoresRouter.post('/', (req, res) => {
 
 	if (ownerUser) {
 		db.integrantes.push({
+			tipo: 'REGISTRADO',
 			idActor: newId,
 			idUsuario: ownerUser.id,
+			idIntegranteNoRegistrado: null,
 			nombre: ownerUser.nombre,
 			apellido: ownerUser.apellido,
 			email: ownerUser.email,
@@ -381,7 +385,9 @@ misActoresRouter.get('/:id/integrantes', (req, res) => {
 	const data = db.integrantes
 		.filter((i) => i.idActor === idActor)
 		.map((i) => ({
+			tipo: i.tipo,
 			idUsuario: i.idUsuario,
+			idIntegranteNoRegistrado: i.idIntegranteNoRegistrado,
 			nombre: i.nombre,
 			apellido: i.apellido,
 			email: i.email,
@@ -396,30 +402,200 @@ misActoresRouter.get('/:id/integrantes', (req, res) => {
 misActoresRouter.post('/:id/integrantes', (req, res) => {
 	const idActor = Number(req.params.id);
 	const { email, rol } = req.body || {};
+	const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
 
-	const user = db.usuarios.find((u) => u.email.toLowerCase() === email?.trim().toLowerCase());
-	const nombre = user ? user.nombre : 'Usuario';
-	const apellido = user ? user.apellido : 'Nuevo';
+	const user = db.usuarios.find((u) => u.email.toLowerCase() === normalizedEmail);
+	if (!user) {
+		return res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: 'No se encontró ningún usuario registrado con ese correo electrónico.',
+			},
+		});
+	}
+
+	if (db.integrantes.some((i) => i.idActor === idActor && i.idUsuario === user.id)) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'Este usuario ya es integrante del actor cultural.' },
+		});
+	}
 
 	db.integrantes.push({
+		tipo: 'REGISTRADO',
 		idActor,
-		idUsuario: user ? user.id : Date.now(),
-		nombre,
-		apellido,
-		email,
-		rol,
+		idUsuario: user.id,
+		idIntegranteNoRegistrado: null,
+		nombre: user.nombre,
+		apellido: user.apellido,
+		email: user.email,
+		rol: typeof rol === 'string' && rol.trim() ? rol.trim() : 'Integrante',
 		esDueno: false,
 	});
 
-	return res.json({ message: 'Integrante agregado correctamente.' });
+	return res.status(201).json({ message: 'Integrante agregado correctamente.' });
+});
+
+// PUT /api/mis-actores/:id/integrantes/:idUsuario
+misActoresRouter.put('/:id/integrantes/:idUsuario', (req, res) => {
+	const idActor = Number(req.params.id);
+	const idUsuario = Number(req.params.idUsuario);
+	const integrante = db.integrantes.find((i) => i.idActor === idActor && i.idUsuario === idUsuario);
+
+	if (!integrante) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El integrante solicitado no existe.' },
+		});
+	}
+
+	if (typeof req.body?.rol !== 'string' || !req.body.rol.trim()) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El rol o función es obligatorio.' },
+		});
+	}
+
+	integrante.rol = req.body.rol.trim();
+	return res.json({ message: 'Integrante modificado correctamente.' });
 });
 
 // DELETE /api/mis-actores/:id/integrantes/:idUsuario
 misActoresRouter.delete('/:id/integrantes/:idUsuario', (req, res) => {
 	const idActor = Number(req.params.id);
 	const idUsuario = Number(req.params.idUsuario);
+	const integrante = db.integrantes.find((i) => i.idActor === idActor && i.idUsuario === idUsuario);
+
+	if (!integrante) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El integrante solicitado no existe.' },
+		});
+	}
+
+	if (integrante.esDueno) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'No se puede eliminar al dueño principal del actor cultural.' },
+		});
+	}
 
 	db.integrantes = db.integrantes.filter((i) => !(i.idActor === idActor && i.idUsuario === idUsuario));
+
+	return res.json({ message: 'Integrante eliminado correctamente.' });
+});
+
+// POST /api/mis-actores/:id/integrantes-no-registrados
+misActoresRouter.post('/:id/integrantes-no-registrados', (req, res) => {
+	const idActor = Number(req.params.id);
+	const { nombre, apellido, email, rol } = req.body || {};
+	const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+
+	if (!nombre?.trim() || !apellido?.trim()) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El nombre y el apellido son obligatorios.' },
+		});
+	}
+
+	if (normalizedEmail && db.usuarios.some((u) => u.email.toLowerCase() === normalizedEmail)) {
+		return res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: 'Ese correo pertenece a un usuario registrado; agregalo como usuario de la plataforma.',
+			},
+		});
+	}
+
+	if (
+		normalizedEmail &&
+		db.integrantes.some((i) => i.idActor === idActor && i.email?.toLowerCase() === normalizedEmail)
+	) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'Ya existe un integrante con ese correo en el actor cultural.' },
+		});
+	}
+
+	const nextId = Math.max(0, ...db.integrantes.map((i) => i.idIntegranteNoRegistrado ?? 0)) + 1;
+	db.integrantes.push({
+		tipo: 'NO_REGISTRADO',
+		idActor,
+		idUsuario: null,
+		idIntegranteNoRegistrado: nextId,
+		nombre: nombre.trim(),
+		apellido: apellido.trim(),
+		email: normalizedEmail,
+		rol: typeof rol === 'string' && rol.trim() ? rol.trim() : 'Integrante',
+		esDueno: false,
+	});
+
+	return res.status(201).json({ message: 'Integrante sin cuenta agregado correctamente.' });
+});
+
+// PUT /api/mis-actores/:id/integrantes-no-registrados/:idIntegranteNoRegistrado
+misActoresRouter.put('/:id/integrantes-no-registrados/:idIntegranteNoRegistrado', (req, res) => {
+	const idActor = Number(req.params.id);
+	const idIntegranteNoRegistrado = Number(req.params.idIntegranteNoRegistrado);
+	const integrante = db.integrantes.find(
+		(i) => i.idActor === idActor && i.idIntegranteNoRegistrado === idIntegranteNoRegistrado,
+	);
+
+	if (!integrante) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El integrante solicitado no existe.' },
+		});
+	}
+
+	const { nombre, apellido, email, rol } = req.body || {};
+	const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
+	if (!nombre?.trim() || !apellido?.trim()) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El nombre y el apellido son obligatorios.' },
+		});
+	}
+
+	if (normalizedEmail && db.usuarios.some((u) => u.email.toLowerCase() === normalizedEmail)) {
+		return res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: 'Ese correo pertenece a un usuario registrado; agregalo como usuario de la plataforma.',
+			},
+		});
+	}
+
+	if (
+		normalizedEmail &&
+		db.integrantes.some(
+			(i) =>
+				i.idActor === idActor &&
+				i.idIntegranteNoRegistrado !== idIntegranteNoRegistrado &&
+				i.email?.toLowerCase() === normalizedEmail,
+		)
+	) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'Ya existe un integrante con ese correo en el actor cultural.' },
+		});
+	}
+
+	integrante.nombre = nombre.trim();
+	integrante.apellido = apellido.trim();
+	integrante.email = normalizedEmail;
+	integrante.rol = typeof rol === 'string' && rol.trim() ? rol.trim() : integrante.rol;
+
+	return res.json({ message: 'Integrante modificado correctamente.' });
+});
+
+// DELETE /api/mis-actores/:id/integrantes-no-registrados/:idIntegranteNoRegistrado
+misActoresRouter.delete('/:id/integrantes-no-registrados/:idIntegranteNoRegistrado', (req, res) => {
+	const idActor = Number(req.params.id);
+	const idIntegranteNoRegistrado = Number(req.params.idIntegranteNoRegistrado);
+	const exists = db.integrantes.some(
+		(i) => i.idActor === idActor && i.idIntegranteNoRegistrado === idIntegranteNoRegistrado,
+	);
+
+	if (!exists) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El integrante solicitado no existe.' },
+		});
+	}
+
+	db.integrantes = db.integrantes.filter(
+		(i) => !(i.idActor === idActor && i.idIntegranteNoRegistrado === idIntegranteNoRegistrado),
+	);
 
 	return res.json({ message: 'Integrante eliminado correctamente.' });
 });

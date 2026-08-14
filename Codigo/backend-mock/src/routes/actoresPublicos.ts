@@ -244,6 +244,7 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 		.filter((i) => i.idActor === id)
 		.map((i) => ({
 			id: i.idUsuario,
+			tipo: i.tipo,
 			nombre: i.nombre,
 			apellido: i.apellido,
 			email: isPrivileged ? i.email : undefined,

@@ -270,6 +270,8 @@ adminRouter.get('/actores/:id', (req, res) => {
 		.filter((i) => i.idActor === id)
 		.map((i) => ({
 			id: i.idUsuario,
+			idIntegranteNoRegistrado: i.idIntegranteNoRegistrado,
+			tipo: i.tipo,
 			nombre: `${i.nombre} ${i.apellido}`,
 			email: i.email,
 			rol: i.rol,

@@ -388,8 +388,10 @@ class MockDatabase {
 				});
 
 				this.integrantes.push({
+					tipo: 'REGISTRADO',
 					idActor: i,
 					idUsuario: (i % 30) + 1,
+					idIntegranteNoRegistrado: null,
 					nombre: 'Referente',
 					apellido: `Cultural ${i}`,
 					email: `referente${i}@mosaico.com`,
@@ -398,6 +400,64 @@ class MockDatabase {
 				});
 			}
 		}
+
+		this.integrantes.push(
+			{
+				tipo: 'NO_REGISTRADO',
+				idActor: 2,
+				idUsuario: null,
+				idIntegranteNoRegistrado: 1,
+				nombre: 'Lucía',
+				apellido: 'Figueroa',
+				email: 'lucia.figueroa@example.com',
+				rol: 'Violín',
+				esDueno: false,
+			},
+			{
+				tipo: 'NO_REGISTRADO',
+				idActor: 2,
+				idUsuario: null,
+				idIntegranteNoRegistrado: 2,
+				nombre: 'Ramiro',
+				apellido: 'Paz',
+				email: null,
+				rol: 'Acordeón',
+				esDueno: false,
+			},
+			{
+				tipo: 'NO_REGISTRADO',
+				idActor: 4,
+				idUsuario: null,
+				idIntegranteNoRegistrado: 3,
+				nombre: 'Martina',
+				apellido: 'Sosa',
+				email: 'martina.sosa@example.com',
+				rol: 'Teclados',
+				esDueno: false,
+			},
+			{
+				tipo: 'NO_REGISTRADO',
+				idActor: 6,
+				idUsuario: null,
+				idIntegranteNoRegistrado: 4,
+				nombre: 'Bruno',
+				apellido: 'Medina',
+				email: null,
+				rol: 'Malabarista',
+				esDueno: false,
+			},
+			{
+				tipo: 'NO_REGISTRADO',
+				idActor: 6,
+				idUsuario: null,
+				idIntegranteNoRegistrado: 5,
+				nombre: 'Camila',
+				apellido: 'Roldán',
+				email: 'camila.roldan@example.com',
+				rol: 'Vestuario',
+				esDueno: false,
+			},
+		);
 
 		// 5. Formularios y Preguntas
 		this.preguntasBanco = [
