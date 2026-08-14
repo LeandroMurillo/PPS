@@ -67,12 +67,19 @@ export type ActorDetalle = {
 	nombre: string;
 	descripcion: string | null;
 	foto: string | null;
+	cuit?: string | null;
+	tipoActor?: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO' | null;
 	estado?: 'A' | 'P' | 'I';
 	categoria: string;
 	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;
+	dueno?: {
+		id: number;
+		nombre: string;
+		email: string;
+	} | null;
 	ubicacion: {
-		provincia: string;
+		provincia?: string;
 		departamento: string;
 		localidad: string | null;
 		esPublica: boolean;
@@ -81,6 +88,7 @@ export type ActorDetalle = {
 		longitud: number | null;
 	};
 	portafolio: {
+		id?: number;
 		tipo: string;
 		descripcion: string | null;
 		url: string;
@@ -93,11 +101,15 @@ export type ActorDetalle = {
 	respuestas: {
 		pregunta: string;
 		respuesta: string | null;
+		publica?: boolean;
 	}[];
 	integrantes: {
+		id?: number;
 		nombre: string;
-		apellido: string;
+		apellido?: string;
+		email?: string;
 		rol: string | null;
+		esDueno?: boolean;
 	}[];
 };
 

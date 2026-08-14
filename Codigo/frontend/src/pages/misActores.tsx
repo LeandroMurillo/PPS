@@ -848,7 +848,11 @@ export default function MisActoresPage() {
 						<IconButton
 							size="small"
 							color="info"
-							onClick={() => navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)}
+							onClick={() =>
+								navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`, {
+									state: { isMyActor: true },
+								})
+							}
 						>
 							<VisibilityIcon fontSize="small" />
 						</IconButton>
@@ -1056,6 +1060,7 @@ export default function MisActoresPage() {
 									<Box
 										component={RouterLink}
 										to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=/mis-actores`}
+										state={{ isMyActor: true }}
 										aria-label={`Ver perfil público de ${actor.nombre}`}
 										sx={{ display: 'block', textDecoration: 'none' }}
 									>
@@ -1167,6 +1172,7 @@ export default function MisActoresPage() {
 											startIcon={<VisibilityIcon />}
 											component={RouterLink}
 											to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=/mis-actores`}
+											state={{ isMyActor: true }}
 										>
 											Ver perfil
 										</Button>
@@ -1254,7 +1260,9 @@ export default function MisActoresPage() {
 						onPageChange={() => {}}
 						onSortChange={() => {}}
 						onRowClick={(row) =>
-							navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`)
+							navigate(`/actores/${buildSlugConId(row.id, row.nombre)}?from=/mis-actores`, {
+								state: { isMyActor: true },
+							})
 						}
 					/>
 				)}

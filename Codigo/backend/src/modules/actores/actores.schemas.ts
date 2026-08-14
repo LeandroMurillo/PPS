@@ -370,14 +370,24 @@ export const actorDetalleRespuestaSchema = z
 			description: 'Respuesta pública del actor.',
 			example: 'Folklore',
 		}),
+
+		publica: z.boolean().optional().meta({
+			description: 'Indica si la respuesta es visible al público general.',
+			example: true,
+		}),
 	})
 	.meta({
 		id: 'ActorDetalleRespuesta',
-		description: 'Pregunta y respuesta pública asociada al actor cultural.',
+		description: 'Pregunta y respuesta asociada al actor cultural.',
 	});
 
 export const actorDetalleIntegranteSchema = z
 	.strictObject({
+		id: z.number().int().positive().optional().meta({
+			description: 'Identificador del usuario integrante.',
+			example: 3,
+		}),
+
 		nombre: z.string().meta({
 			description: 'Nombre del integrante.',
 			example: 'César',
@@ -388,9 +398,19 @@ export const actorDetalleIntegranteSchema = z
 			example: 'López',
 		}),
 
+		email: z.string().email().nullable().optional().meta({
+			description: 'Correo electrónico del integrante (solo visible para usuarios autorizados).',
+			example: 'cesar@ejemplo.com',
+		}),
+
 		rol: z.string().nullable().meta({
 			description: 'Rol del integrante dentro del actor cultural.',
 			example: 'Batería',
+		}),
+
+		esDueno: z.boolean().optional().meta({
+			description: 'Indica si el integrante es el creador/dueño de la ficha.',
+			example: true,
 		}),
 	})
 	.meta({
@@ -420,6 +440,16 @@ export const actorDetallePublicoSchema = z
 			example: 'https://img.com/teatro-alberdi.jpg',
 		}),
 
+		cuit: z.string().nullable().optional().meta({
+			description: 'CUIT del actor cultural (solo visible para usuarios autorizados).',
+			example: '20123456789',
+		}),
+
+		tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']).optional().meta({
+			description: 'Tipo de actor cultural.',
+			example: 'COLECTIVO',
+		}),
+
 		estado: z.enum(['A', 'P', 'I']).optional().meta({
 			description: 'Estado del actor cultural.',
 			example: 'A',
@@ -439,6 +469,18 @@ export const actorDetallePublicoSchema = z
 			description: 'Subcategoría cultural del actor.',
 			example: 'Teatro',
 		}),
+
+		dueno: z
+			.strictObject({
+				id: z.number().int().positive(),
+				nombre: z.string(),
+				email: z.string().email(),
+			})
+			.nullable()
+			.optional()
+			.meta({
+				description: 'Información del dueño / creador del actor cultural (solo visible para autorizados).',
+			}),
 
 		ubicacion: z.strictObject({
 			provincia: z.string().meta({
@@ -462,17 +504,17 @@ export const actorDetallePublicoSchema = z
 			}),
 
 			direccion: z.string().nullable().meta({
-				description: 'Dirección pública del actor. Es null cuando la ubicación no es pública.',
+				description: 'Dirección del actor. Solo visible para autorizados si es privada.',
 				example: 'Jujuy 92',
 			}),
 
 			latitud: z.number().min(-90).max(90).nullable().meta({
-				description: 'Latitud pública del actor. Es null cuando la ubicación no es pública.',
+				description: 'Latitud del actor. Solo visible para autorizados si es privada.',
 				example: -26.816,
 			}),
 
 			longitud: z.number().min(-180).max(180).nullable().meta({
-				description: 'Longitud pública del actor. Es null cuando la ubicación no es pública.',
+				description: 'Longitud del actor. Solo visible para autorizados si es privada.',
 				example: -65.2105,
 			}),
 		}),
@@ -484,7 +526,7 @@ export const actorDetallePublicoSchema = z
 	})
 	.meta({
 		id: 'ActorDetallePublico',
-		description: 'Ficha pública completa de un actor cultural activo.',
+		description: 'Ficha completa de un actor cultural con datos públicos o privados según permisos.',
 	});
 
 export type ActorDetallePublico = z.infer<typeof actorDetallePublicoSchema>;

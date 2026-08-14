@@ -222,10 +222,17 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 
 	const cat = db.categorias.find((c) => c.id === actor.idCategoria);
 	const subcat = actor.idSubcategoria ? db.subcategorias.find((s) => s.id === actor.idSubcategoria) : null;
+	const dueno = db.usuarios.find((u) => u.id === actor.idUsuarioDueno);
 
 	const portafolio = db.portafolioItems
 		.filter((p) => p.idActor === id)
-		.map((p) => ({ tipo: p.tipo, descripcion: p.descripcion, url: p.url }));
+		.map((p) => ({
+			id: p.id,
+			tipo: p.tipo,
+			descripcion: p.descripcion,
+			url: p.url,
+			fechaCreacion: p.fechaCreacion,
+		}));
 
 	const eventos = db.eventos
 		.filter((e) => e.idActor === id)
@@ -233,31 +240,76 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 
 	const integrantes = db.integrantes
 		.filter((i) => i.idActor === id)
-		.map((i) => ({ nombre: i.nombre, apellido: i.apellido, rol: i.rol }));
+		.map((i) => ({
+			id: i.idUsuario,
+			nombre: i.nombre,
+			apellido: i.apellido,
+			email: isPrivileged ? i.email : undefined,
+			rol: i.rol,
+			esDueno: i.esDueno,
+		}));
 
 	const esUbicacionPublica = actor.ubicacion?.esPublica ?? true;
 	const incluirDetalleUbicacion = esUbicacionPublica || isPrivileged;
 
-	// Preguntas y respuestas: solo públicas salvo que sea usuario privilegiado
-	const respuestasBase = [
-		{ pregunta: '¿Cuenta con espacio propio?', respuesta: 'Sí', publica: true },
-		{ pregunta: '¿Años de actividad?', respuesta: '5 años', publica: true },
-		{ pregunta: 'Presupuesto anual estimado', respuesta: '$1.500.000', publica: false },
-	];
+	// Obtener preguntas de los formularios aplicables a esta categoría y subcategoría
+	const relevantForms = db.formularios.filter(
+		(f) => f.idCategoria === actor.idCategoria && (!f.idSubcategoria || f.idSubcategoria === actor.idSubcategoria),
+	);
+	const allQuestions = relevantForms.flatMap((f) => f.preguntas);
 
-	const respuestas = isPrivileged
-		? respuestasBase
-		: respuestasBase.filter((r) => r.publica).map(({ pregunta, respuesta }) => ({ pregunta, respuesta }));
+	let respuestas: { pregunta: string; respuesta: string; publica?: boolean }[] = [];
+
+	if (actor.respuestasFormulario && Object.keys(actor.respuestasFormulario).length > 0) {
+		respuestas = Object.entries(actor.respuestasFormulario)
+			.map(([idPreguntaStr, val]) => {
+				const qId = Number(idPreguntaStr);
+				const question = allQuestions.find((q) => q.id === qId);
+				const preguntaText = question ? question.pregunta : `Pregunta ${qId}`;
+				const isPublic = question ? question.esPublico : true;
+				const valorStr = Array.isArray(val) ? val.join(', ') : String(val ?? '');
+				return {
+					pregunta: preguntaText,
+					respuesta: valorStr,
+					publica: isPublic,
+				};
+			})
+			.filter((r) => Boolean(r.respuesta.trim()));
+	} else {
+		// Respuestas base de fallback
+		const respuestasBase = [
+			{ pregunta: '¿Cuenta con espacio propio?', respuesta: 'Sí', publica: true },
+			{ pregunta: '¿Años de actividad?', respuesta: '5 años', publica: true },
+			{ pregunta: 'Presupuesto anual estimado', respuesta: '$1.500.000', publica: false },
+		];
+		respuestas = respuestasBase;
+	}
+
+	if (!isPrivileged) {
+		respuestas = respuestas
+			.filter((r) => r.publica !== false)
+			.map(({ pregunta, respuesta }) => ({ pregunta, respuesta }));
+	}
 
 	const data = {
 		id: actor.id,
 		nombre: actor.nombre,
 		descripcion: actor.descripcion,
 		foto: actor.foto,
+		cuit: isPrivileged ? (actor.cuit ?? null) : null,
+		tipoActor: actor.tipoActor,
 		estado: actor.estado,
 		categoria: cat ? cat.nombre : 'Música',
 		categoriaIcono: cat ? cat.icono : 'MUSICA',
 		subcategoria: subcat ? subcat.nombre : null,
+		dueno:
+			isPrivileged && dueno
+				? {
+						id: dueno.id,
+						nombre: `${dueno.nombre} ${dueno.apellido}`,
+						email: dueno.email,
+					}
+				: null,
 		ubicacion: {
 			provincia: actor.ubicacion?.provincia ?? 'Tucumán',
 			departamento: actor.ubicacion?.departamento ?? 'Capital',

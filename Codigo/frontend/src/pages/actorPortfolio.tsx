@@ -3,8 +3,9 @@ import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { Alert, Box, CircularProgress } from '@mui/material';
 
-import { obtenerActor, type ActorDetalle } from '../api/actores';
+import { listarMisActoresApi, obtenerActor, type ActorDetalle } from '../api/actores';
 import ActorPortfolioView from '../components/actorPortfolioView';
+import { useAuth } from '../context/AuthContext';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
 
 export default function ActorPortfolio() {
@@ -12,14 +13,17 @@ export default function ActorPortfolio() {
 	const { actorSlug = '' } = useParams<{ actorSlug: string }>();
 	const [searchParams] = useSearchParams();
 	const volverA = searchParams.get('from') || '/actores';
+	const { user } = useAuth();
 
 	const [actor, setActor] = useState<ActorDetalle | null>(null);
 	const [cargando, setCargando] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isMyActor, setIsMyActor] = useState(false);
+
+	const actorId = parseIdDesdeSlug(actorSlug);
 
 	useEffect(() => {
 		const controller = new AbortController();
-		const actorId = parseIdDesdeSlug(actorSlug);
 
 		async function loadActor() {
 			if (!actorId) {
@@ -55,7 +59,40 @@ export default function ActorPortfolio() {
 		loadActor();
 
 		return () => controller.abort();
-	}, [actorSlug, navigate, volverA]);
+	}, [actorId, actorSlug, navigate, volverA]);
+
+	// Verificar pertenencia real del actor consultando la API autenticada del usuario
+	useEffect(() => {
+		if (!user || !actorId) {
+			setIsMyActor(false);
+			return;
+		}
+
+		if (user.rol === 'ADMIN' || user.rol === 'MODERADOR') {
+			setIsMyActor(true);
+			return;
+		}
+
+		let isMounted = true;
+		listarMisActoresApi({ limit: 100 })
+			.then((res) => {
+				if (isMounted) {
+					const belongsToUser = res.data?.some((a) => a.id === actorId);
+					setIsMyActor(Boolean(belongsToUser));
+				}
+			})
+			.catch(() => {
+				if (isMounted) {
+					setIsMyActor(false);
+				}
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [user, actorId]);
+
+	const canViewPrivateInfo = Boolean(isMyActor || (user && (user.rol === 'ADMIN' || user.rol === 'MODERADOR')));
 
 	if (cargando) {
 		return (
@@ -73,5 +110,12 @@ export default function ActorPortfolio() {
 		);
 	}
 
-	return <ActorPortfolioView actor={actor} volverA={volverA} />;
+	return (
+		<ActorPortfolioView
+			actor={actor}
+			volverA={volverA}
+			canViewPrivateInfo={canViewPrivateInfo}
+			initialShowAllInfo={canViewPrivateInfo && searchParams.get('from') === '/mis-actores'}
+		/>
+	);
 }

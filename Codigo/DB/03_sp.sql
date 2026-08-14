@@ -1721,6 +1721,11 @@ BEGIN
         a.descripcion,
         a.fotoPerfilUrl,
         a.estado,
+        a.tipoActor,
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN a.cuit
+            ELSE NULL
+        END AS cuit,
         c.nombre AS categoria,
         c.icono AS categoriaIcono,
         s.nombre AS subcategoria,
@@ -1730,19 +1735,52 @@ BEGIN
         u.esPublica AS esUbicacionPublica,
 
         CASE
-            WHEN u.esPublica = 1 THEN u.direccion
+            WHEN u.esPublica = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.direccion
             ELSE NULL
         END AS direccion,
 
         CASE
-            WHEN u.esPublica = 1 THEN u.latitud
+            WHEN u.esPublica = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.latitud
             ELSE NULL
         END AS latitud,
 
         CASE
-            WHEN u.esPublica = 1 THEN u.longitud
+            WHEN u.esPublica = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.longitud
             ELSE NULL
-        END AS longitud
+        END AS longitud,
+
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN (
+                SELECT ud.idUsuario
+                FROM `Integrantes` AS idu
+                INNER JOIN `Usuarios` AS ud ON ud.idUsuario = idu.idUsuario
+                WHERE idu.idActor = a.idActor AND idu.`esDueño` = 1
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS idDueno,
+
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN (
+                SELECT CONCAT(ud.nombre, ' ', ud.apellido)
+                FROM `Integrantes` AS idu
+                INNER JOIN `Usuarios` AS ud ON ud.idUsuario = idu.idUsuario
+                WHERE idu.idActor = a.idActor AND idu.`esDueño` = 1
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS nombreDueno,
+
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN (
+                SELECT ud.email
+                FROM `Integrantes` AS idu
+                INNER JOIN `Usuarios` AS ud ON ud.idUsuario = idu.idUsuario
+                WHERE idu.idActor = a.idActor AND idu.`esDueño` = 1
+                LIMIT 1
+            )
+            ELSE NULL
+        END AS emailDueno
 
     FROM `Actores` AS a
 
@@ -1851,15 +1889,16 @@ BEGIN
     -- =====================================================
     -- RESULTADO 4: preguntas y respuestas públicas
     --
-    -- Se incluyen solamente:
+    -- Se incluyen:
     --   - preguntas activas;
-    --   - preguntas marcadas como públicas;
+    --   - preguntas públicas (o privadas si es integrante/admin);
     --   - formularios aplicables a la categoría actual;
     --   - formularios aplicables a la subcategoría actual.
     -- =====================================================
     SELECT
         p.pregunta,
-        r.valor AS respuesta
+        r.valor AS respuesta,
+        pf.esPublico AS publica
     FROM `Respuestas` AS r
 
     INNER JOIN `Actores` AS a
@@ -1902,7 +1941,7 @@ BEGIN
           )
 
       AND pf.estado = 'A'
-      AND pf.esPublico = 1
+      AND (pf.esPublico = 1 OR vEsIntegrante > 0 OR vEsAdmin > 0)
 
     ORDER BY
         CASE
@@ -1922,9 +1961,15 @@ BEGIN
     -- encuentre activo.
     -- =====================================================
     SELECT
+        u.idUsuario AS id,
         u.nombre,
         u.apellido,
-        i.rol
+        CASE
+            WHEN vEsIntegrante > 0 OR vEsAdmin > 0 THEN u.email
+            ELSE NULL
+        END AS email,
+        i.rol,
+        i.`esDueño` AS esDueno
 
     FROM `Integrantes` AS i
 

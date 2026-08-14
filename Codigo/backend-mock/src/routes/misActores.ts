@@ -173,14 +173,30 @@ misActoresRouter.get('/:id', (req, res) => {
 	return res.json({ data });
 });
 
+function getAuthUser(req: { headers: { authorization?: string } }) {
+	const auth = req.headers.authorization;
+	if (!auth) return null;
+	const token = auth.replace(/^Bearer\s+/i, '').trim();
+	if (!token) return null;
+
+	const match = token.match(/mock-token-(\d+)/);
+	if (match) {
+		const userId = Number(match[1]);
+		return db.usuarios.find((u) => u.id === userId) || null;
+	}
+	return null;
+}
+
 // POST /api/mis-actores
 misActoresRouter.post('/', (req, res) => {
 	const attrs = req.body || {};
+	const user = getAuthUser(req);
+	const ownerUser = user || db.usuarios.find((u) => u.id === 3) || db.usuarios[0];
 
 	const newId = db.actores.length + 1;
 	const newActor: ActorMock = {
 		id: newId,
-		idUsuarioDueno: 3,
+		idUsuarioDueno: ownerUser.id,
 		nombre: attrs.nombre,
 		descripcion: attrs.descripcion,
 		foto: attrs.fotoPerfilBase64 ?? attrs.fotoPerfilUrl ?? null,
@@ -208,6 +224,19 @@ misActoresRouter.post('/', (req, res) => {
 	};
 
 	db.actores.push(newActor);
+
+	if (ownerUser) {
+		db.integrantes.push({
+			idActor: newId,
+			idUsuario: ownerUser.id,
+			nombre: ownerUser.nombre,
+			apellido: ownerUser.apellido,
+			email: ownerUser.email,
+			rol: 'Contacto Principal',
+			esDueno: true,
+		});
+	}
+
 	for (const item of attrs.portafolio ?? []) {
 		db.portafolioItems.push({
 			id: db.portafolioItems.length + 1,

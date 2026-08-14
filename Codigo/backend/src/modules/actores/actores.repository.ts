@@ -129,6 +129,8 @@ const actorDetalleDatabaseRowSchema = z.object({
 	nombre: z.string(),
 	descripcion: z.string().nullable(),
 	fotoPerfilUrl: z.string().nullable(),
+	cuit: z.string().nullable().optional(),
+	tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']).optional(),
 	estado: z.enum(['A', 'P', 'I']).optional(),
 	categoria: z.string(),
 	categoriaIcono: categoriaIconoSchema,
@@ -140,6 +142,9 @@ const actorDetalleDatabaseRowSchema = z.object({
 	direccion: z.string().nullable(),
 	latitud: nullableDatabaseLatitudeSchema,
 	longitud: nullableDatabaseLongitudeSchema,
+	idDueno: databaseIntegerSchema.nullable().optional(),
+	nombreDueno: z.string().nullable().optional(),
+	emailDueno: z.string().nullable().optional(),
 });
 
 const actorDetallePortafolioDatabaseRowSchema = z.object({
@@ -157,12 +162,16 @@ const actorDetalleEventoDatabaseRowSchema = z.object({
 const actorDetalleRespuestaDatabaseRowSchema = z.object({
 	pregunta: z.string(),
 	respuesta: databaseAnswerValueSchema,
+	publica: databaseBooleanSchema.optional(),
 });
 
 const actorDetalleIntegranteDatabaseRowSchema = z.object({
+	id: databaseIntegerSchema.optional(),
 	nombre: z.string(),
 	apellido: z.string(),
+	email: z.string().nullable().optional(),
 	rol: z.string().nullable(),
+	esDueno: databaseBooleanSchema.optional(),
 });
 
 const listarActoresFiltroCategoriaDatabaseRowSchema = z.object({
@@ -283,15 +292,27 @@ export async function obtenerActorRepository(
 	const respuestas = z.array(actorDetalleRespuestaDatabaseRowSchema).parse(respuestasResultSet);
 	const integrantes = z.array(actorDetalleIntegranteDatabaseRowSchema).parse(integrantesResultSet);
 
+	const dueno =
+		actorRow.idDueno && actorRow.nombreDueno && actorRow.emailDueno
+			? {
+					id: actorRow.idDueno,
+					nombre: actorRow.nombreDueno,
+					email: actorRow.emailDueno,
+				}
+			: null;
+
 	const actor: ActorDetallePublico = {
 		id: actorRow.id,
 		nombre: actorRow.nombre,
 		descripcion: actorRow.descripcion,
 		foto: actorRow.fotoPerfilUrl,
+		cuit: actorRow.cuit ?? null,
+		tipoActor: actorRow.tipoActor,
 		estado: actorRow.estado,
 		categoria: actorRow.categoria,
 		categoriaIcono: actorRow.categoriaIcono,
 		subcategoria: actorRow.subcategoria,
+		dueno,
 		ubicacion: {
 			provincia: actorRow.provincia,
 			departamento: actorRow.departamento,
