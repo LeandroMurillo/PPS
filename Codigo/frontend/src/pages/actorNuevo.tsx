@@ -54,6 +54,7 @@ import {
 	Typography,
 } from '@mui/material';
 import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
+import { toast } from 'react-toastify';
 import { fileToBase64 } from '../utils/file';
 
 import {
@@ -401,12 +402,13 @@ export default function ActorNuevoPage() {
 
 			navigate('/mis-actores', {
 				replace: true,
-				state: { toastMessage: 'El actor fue enviado a revisión correctamente.' },
+				state: { toastMessage: '¡El actor fue enviado a revisión correctamente!' },
 			});
 		} catch (error) {
-			setSubmissionError(
-				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.',
-			);
+			const errMsg =
+				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.';
+			setSubmissionError(errMsg);
+			toast.error(errMsg);
 			scrollToTop();
 		} finally {
 			setSubmitting(false);

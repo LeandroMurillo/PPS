@@ -204,7 +204,13 @@ class MockDatabase {
 				id: 1,
 				nombre: 'Música',
 				icono: 'MusicNote',
-				subs: ['Folklore y Fusión', 'Rock y Pop', 'Cumbia y Cuarteto', 'Música Clásica y Coral', 'Jazz y Blues'],
+				subs: [
+					'Folklore y Fusión',
+					'Rock y Pop',
+					'Cumbia y Cuarteto',
+					'Música Clásica y Coral',
+					'Jazz y Blues',
+				],
 			},
 			{
 				id: 2,
@@ -222,7 +228,12 @@ class MockDatabase {
 				id: 4,
 				nombre: 'Artes Visuales',
 				icono: 'Palette',
-				subs: ['Pintura y Escultura', 'Fotografía e Ilustración', 'Muralismo y Grabado', 'Instalaciones y Arte Conceptual'],
+				subs: [
+					'Pintura y Escultura',
+					'Fotografía e Ilustración',
+					'Muralismo y Grabado',
+					'Instalaciones y Arte Conceptual',
+				],
 			},
 			{
 				id: 5,
@@ -234,7 +245,12 @@ class MockDatabase {
 				id: 6,
 				nombre: 'Artesanía y Tradición',
 				icono: 'Handyman',
-				subs: ['Tejido y Textiles Autóctonos', 'Cerámica y Alfarería', 'Orfebrería, Platería y Cuero', 'Madera y Luthería'],
+				subs: [
+					'Tejido y Textiles Autóctonos',
+					'Cerámica y Alfarería',
+					'Orfebrería, Platería y Cuero',
+					'Madera y Luthería',
+				],
 			},
 			{
 				id: 7,
@@ -258,7 +274,11 @@ class MockDatabase {
 				id: 10,
 				nombre: 'Gastronomía y Fiestas Populares',
 				icono: 'Celebration',
-				subs: ['Cocina Tradicional y Regional', 'Ferias y Festivales Populares', 'Producción Artesanal de Alimentos'],
+				subs: [
+					'Cocina Tradicional y Regional',
+					'Ferias y Festivales Populares',
+					'Producción Artesanal de Alimentos',
+				],
 			},
 		];
 
@@ -424,7 +444,8 @@ class MockDatabase {
 				estadoSubcategoria: null,
 				ambito: 'CATEGORIA',
 				titulo: 'Relevamiento del Sector Musical Tucumano',
-				descripcion: 'Relevamiento de necesidades técnicas, rider, trayectoria y equipamiento de grupos musicales tucumanos.',
+				descripcion:
+					'Relevamiento de necesidades técnicas, rider, trayectoria y equipamiento de grupos musicales tucumanos.',
 				fechaCreacion: '2025-01-05T09:00:00Z',
 				cantidadPreguntasHistoricas: 3,
 				cantidadPreguntasActivas: 3,
@@ -489,7 +510,8 @@ class MockDatabase {
 			{
 				id: 1,
 				titulo: 'Festival Nacional del Limón 2026',
-				descripcion: 'Convocatoria oficial para artistas musicales, solistas y ballets de Tafí Viejo y toda la provincia.',
+				descripcion:
+					'Convocatoria oficial para artistas musicales, solistas y ballets de Tafí Viejo y toda la provincia.',
 				requisitos: 'Estar registrado en el Registro Provincial de Actores Culturales con estado Activo.',
 				fechaInicio: '2026-06-01',
 				fechaCierre: '2026-08-30',
@@ -500,7 +522,8 @@ class MockDatabase {
 			{
 				id: 2,
 				titulo: 'Mercado Artesanal Calchaquí - Edición Invierno',
-				descripcion: 'Espacio de exposición, exhibición y venta para artesanos, tejedores y ceramistas de la ruta 307 y los valles.',
+				descripcion:
+					'Espacio de exposición, exhibición y venta para artesanos, tejedores y ceramistas de la ruta 307 y los valles.',
 				requisitos: 'Certificado de artesano o ficha técnica de producción local.',
 				fechaInicio: '2026-05-15',
 				fechaCierre: '2026-07-05',
@@ -511,7 +534,8 @@ class MockDatabase {
 			{
 				id: 3,
 				titulo: 'Fomento a la Producción Audiovisual Independiente',
-				descripcion: 'Subsidio y estímulo provincial para el desarrollo y postproducción de cortometrajes y documentales regionales.',
+				descripcion:
+					'Subsidio y estímulo provincial para el desarrollo y postproducción de cortometrajes y documentales regionales.',
 				requisitos: 'Guión preliminar y plan de rodaje en locaciones tucumanas.',
 				fechaInicio: '2026-07-01',
 				fechaCierre: '2026-10-15',

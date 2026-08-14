@@ -41,6 +41,7 @@ import {
 	type ActividadArca,
 	type RegistrarUsuarioPayload,
 } from '../api/auth';
+import { toast } from 'react-toastify';
 import { fileToBase64, validateImageFile } from '../utils/file';
 
 function validarCUIL(cuil: string): boolean {
@@ -263,9 +264,12 @@ export default function RegistroPage() {
 		try {
 			const res = await registrarUsuarioApi(payload);
 			setRegistroExitoso(res.mensaje);
+			toast.success('¡Cuenta registrada exitosamente!');
 			setActiveStep(2);
 		} catch (err) {
-			setErrorMessage(err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.');
+			const msg = err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.';
+			setErrorMessage(msg);
+			toast.error(msg);
 		} finally {
 			setLoading(false);
 		}

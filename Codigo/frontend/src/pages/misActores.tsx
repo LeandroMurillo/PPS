@@ -47,7 +47,6 @@ import {
 	Radio,
 	RadioGroup,
 	Select,
-	Snackbar,
 	Stack,
 	TextField,
 	ToggleButton,
@@ -56,6 +55,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { toast } from 'react-toastify';
 
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
@@ -117,8 +117,8 @@ function getSubcategoryIdByName(
 	const category = findCategoryByName(options, categoryName);
 	const normalizedName = normalizeCatalogName(subcategoryName);
 	return (
-		category?.subcategorias.find((subcategory) => normalizeCatalogName(subcategory.nombre) === normalizedName)?.id ??
-		null
+		category?.subcategorias.find((subcategory) => normalizeCatalogName(subcategory.nombre) === normalizedName)
+			?.id ?? null
 	);
 }
 
@@ -251,14 +251,11 @@ export default function MisActoresPage() {
 		return cleanInput === 'BORRAR' || cleanInput === 'ELIMINAR';
 	}, [deleteConfirmInput, targetDeleteActor]);
 
-	// Toast notification
-	const [snackbarMessage, setSnackbarMessage] = React.useState<string | null>(null);
-
 	React.useEffect(() => {
 		const navigationState = location.state as { toastMessage?: unknown } | null;
 		if (typeof navigationState?.toastMessage !== 'string') return;
 
-		setSnackbarMessage(navigationState.toastMessage);
+		toast.success(navigationState.toastMessage);
 		navigate(`${location.pathname}${location.search}${location.hash}`, {
 			replace: true,
 			state: null,
@@ -281,9 +278,7 @@ export default function MisActoresPage() {
 			.catch((loadError: unknown) => {
 				if (!controller.signal.aborted) {
 					setCatalogError(
-						loadError instanceof Error
-							? loadError.message
-							: 'No se pudo cargar el catálogo de categorías.',
+						loadError instanceof Error ? loadError.message : 'No se pudo cargar el catálogo de categorías.',
 					);
 				}
 			});
@@ -361,9 +356,9 @@ export default function MisActoresPage() {
 		const category = findCategoryByName(categoryOptions, actor.categoria);
 		const cat = category?.nombre ?? actor.categoria;
 		const sub = actor.subcategoria
-			? category?.subcategorias.find(
+			? (category?.subcategorias.find(
 					(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
-				)?.nombre ?? actor.subcategoria
+				)?.nombre ?? actor.subcategoria)
 			: '';
 
 		setFormValues({
@@ -480,7 +475,7 @@ export default function MisActoresPage() {
 			? `Se actualizaron los datos de "${formValues.nombre.trim()}". La ficha pasó a estado Pendiente para su revisión.`
 			: `Se actualizó "${formValues.nombre.trim()}" correctamente.`;
 
-		setSnackbarMessage(msg);
+		toast.success(msg);
 		setEditConfirmModalOpen(false);
 		setEditModalOpen(false);
 	};
@@ -511,7 +506,7 @@ export default function MisActoresPage() {
 		if (!targetStatusActor) return;
 
 		if (nextSt === 'A' && !isAdminOrMod) {
-			setSnackbarMessage('Solo un administrador o moderador puede activar un actor cultural.');
+			toast.warning('Solo un administrador o moderador puede activar un actor cultural.');
 			return;
 		}
 
@@ -528,7 +523,7 @@ export default function MisActoresPage() {
 		else if (nextSt === 'P') actionText = 'pasó a estado Pendiente de revisión';
 		else if (nextSt === 'A') actionText = 'fue activado correctamente';
 
-		setSnackbarMessage(`"${targetStatusActor.nombre}" ${actionText}.`);
+		toast.info(`"${targetStatusActor.nombre}" ${actionText}.`);
 		setDeactivateConfirmModalOpen(false);
 		setStatusModalOpen(false);
 		setTargetStatusActor(null);
@@ -593,9 +588,11 @@ export default function MisActoresPage() {
 
 			setNewPortfolioUrl('');
 			setNewPortfolioDesc('');
-			setSnackbarMessage('Elemento agregado al portafolio.');
+			toast.success('Elemento agregado al portafolio.');
 		} catch (err) {
-			setPortfolioError(err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.';
+			setPortfolioError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setPortfolioSubmitting(false);
 		}
@@ -617,9 +614,11 @@ export default function MisActoresPage() {
 			);
 			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
 
-			setSnackbarMessage('Elemento eliminado del portafolio.');
+			toast.success('Elemento eliminado del portafolio.');
 		} catch (err) {
-			setPortfolioError(err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.';
+			setPortfolioError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setDeletingPortfolioItemId(null);
 		}
@@ -680,9 +679,11 @@ export default function MisActoresPage() {
 			setNewEventNombre('');
 			setNewEventFecha('');
 			setNewEventDesc('');
-			setSnackbarMessage('Evento agregado correctamente.');
+			toast.success('Evento agregado correctamente.');
 		} catch (err) {
-			setEventsError(err instanceof Error ? err.message : 'No se pudo agregar el evento.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el evento.';
+			setEventsError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setEventCreating(false);
 		}
@@ -704,9 +705,11 @@ export default function MisActoresPage() {
 			);
 			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
 
-			setSnackbarMessage('Evento eliminado.');
+			toast.success('Evento eliminado.');
 		} catch (err) {
-			setEventsError(err instanceof Error ? err.message : 'No se pudo eliminar el evento.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el evento.';
+			setEventsError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setDeletingEventId(null);
 		}
@@ -730,9 +733,7 @@ export default function MisActoresPage() {
 			}
 		} catch (err) {
 			setMembersError(
-				err instanceof Error
-					? err.message
-					: 'No se pudieron cargar los integrantes del actor cultural.',
+				err instanceof Error ? err.message : 'No se pudieron cargar los integrantes del actor cultural.',
 			);
 			setIntegrantesList([]);
 		} finally {
@@ -751,7 +752,7 @@ export default function MisActoresPage() {
 				rol: newMemberRol.trim() || 'Integrante',
 			});
 
-			setSnackbarMessage('Integrante agregado correctamente.');
+			toast.success('Integrante agregado correctamente.');
 			setNewMemberEmail('');
 			setNewMemberRol('Integrante');
 
@@ -760,7 +761,9 @@ export default function MisActoresPage() {
 				setIntegrantesList(res.data);
 			}
 		} catch (err) {
-			setMembersError(err instanceof Error ? err.message : 'Error al agregar integrante.');
+			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
+			setMembersError(errMsg);
+			toast.error(errMsg);
 		}
 	};
 
@@ -771,10 +774,12 @@ export default function MisActoresPage() {
 		setMembersError(null);
 		try {
 			await eliminarIntegranteApi(targetMembersActor.id, idUsuarioAEliminar);
-			setSnackbarMessage('Integrante eliminado.');
+			toast.success('Integrante eliminado.');
 			setIntegrantesList((prev) => prev.filter((m) => m.idUsuario !== idUsuarioAEliminar));
 		} catch (err) {
-			setMembersError(err instanceof Error ? err.message : 'Error al eliminar integrante.');
+			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
+			setMembersError(errMsg);
+			toast.error(errMsg);
 		}
 	};
 
@@ -796,7 +801,7 @@ export default function MisActoresPage() {
 		}
 
 		setActores((prev) => prev.filter((a) => a.id !== targetDeleteActor.id));
-		setSnackbarMessage(`"${targetDeleteActor.nombre}" fue eliminado permanentemente.`);
+		toast.info(`"${targetDeleteActor.nombre}" fue eliminado permanentemente.`);
 		setDeleteModalOpen(false);
 		setTargetDeleteActor(null);
 	};
@@ -1276,130 +1281,137 @@ export default function MisActoresPage() {
 					<Stack spacing={2.5} sx={{ pt: 1 }}>
 						<Grid container spacing={2} alignItems="flex-start">
 							<Grid size={{ xs: 12, md: 5 }}>
-								<Box>
-							<Box
-								component="label"
-								title="Cambiar foto de perfil"
-								onDragEnter={(event) => {
-									event.preventDefault();
-									setProfileImageDragging(true);
-								}}
-								onDragOver={(event) => event.preventDefault()}
-								onDragLeave={(event) => {
-									if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+								<Box
+									component="label"
+									title="Cambiar foto de perfil"
+									onDragEnter={(event) => {
+										event.preventDefault();
+										setProfileImageDragging(true);
+									}}
+									onDragOver={(event) => event.preventDefault()}
+									onDragLeave={(event) => {
+										if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+											setProfileImageDragging(false);
+										}
+									}}
+									onDrop={(event) => {
+										event.preventDefault();
 										setProfileImageDragging(false);
-									}
-								}}
-								onDrop={(event) => {
-									event.preventDefault();
-									setProfileImageDragging(false);
-									handleProfileImageFile(event.dataTransfer.files[0] ?? null);
-								}}
-								sx={{
-									position: 'relative',
-									display: 'block',
-									width:
-										formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'fit-content' : '100%',
-									maxWidth: '100%',
-									height: formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'auto' : { xs: 190, sm: 260 },
-									mx: { xs: 'auto', md: 0 },
-									lineHeight: 0,
-									border: '1px solid',
-									borderColor: profileImageError
-										? 'error.main'
-										: profileImageDragging
-											? 'primary.main'
-											: 'divider',
-									borderWidth: profileImageDragging ? 2 : 1,
-									borderRadius: 2,
-									overflow: 'hidden',
-									cursor: 'pointer',
-									bgcolor:
-										formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? 'transparent' : 'action.hover',
-									transition: 'border-color 160ms ease, box-shadow 160ms ease',
-									boxShadow: profileImageDragging ? 2 : 0,
-									'&:hover': {
-										borderColor: 'primary.main',
-									},
-									'&:hover .profile-photo-overlay': {
-										bgcolor: 'rgba(0, 0, 0, 0.38)',
-									},
-									'&:hover .profile-photo-icon': {
-										transform: 'scale(1.08)',
-									},
-								}}
-							>
-								{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
-									<>
-										<Box
-											component="img"
-											src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
-											alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
-											sx={{
-												width: 'auto',
-												height: 'auto',
-												maxWidth: '100%',
-												maxHeight: { xs: 190, sm: 260 },
-												display: 'block',
-											}}
-										/>
-										<Box
-											className="profile-photo-overlay"
-											sx={{
-												position: 'absolute',
-												inset: 0,
-												display: 'grid',
-												placeItems: 'center',
-												bgcolor: profileImageDragging ? 'rgba(0, 0, 0, 0.42)' : 'rgba(0, 0, 0, 0.24)',
-												transition: 'background-color 160ms ease',
-												pointerEvents: 'none',
-											}}
-										>
+										handleProfileImageFile(event.dataTransfer.files[0] ?? null);
+									}}
+									sx={{
+										position: 'relative',
+										display: 'block',
+										width:
+											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+												? 'fit-content'
+												: '100%',
+										maxWidth: '100%',
+										height:
+											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+												? 'auto'
+												: { xs: 190, sm: 260 },
+										mx: { xs: 'auto', md: 0 },
+										lineHeight: 0,
+										border: '1px solid',
+										borderColor: profileImageError
+											? 'error.main'
+											: profileImageDragging
+												? 'primary.main'
+												: 'divider',
+										borderWidth: profileImageDragging ? 2 : 1,
+										borderRadius: 2,
+										overflow: 'hidden',
+										cursor: 'pointer',
+										bgcolor:
+											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+												? 'transparent'
+												: 'action.hover',
+										transition: 'border-color 160ms ease, box-shadow 160ms ease',
+										boxShadow: profileImageDragging ? 2 : 0,
+										'&:hover': {
+											borderColor: 'primary.main',
+										},
+										'&:hover .profile-photo-overlay': {
+											bgcolor: 'rgba(0, 0, 0, 0.38)',
+										},
+										'&:hover .profile-photo-icon': {
+											transform: 'scale(1.08)',
+										},
+									}}
+								>
+									{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
+										<>
 											<Box
-												className="profile-photo-icon"
+												component="img"
+												src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
+												alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
 												sx={{
-													width: 54,
-													height: 54,
-													borderRadius: '50%',
+													width: 'auto',
+													height: 'auto',
+													maxWidth: '100%',
+													maxHeight: { xs: 190, sm: 260 },
+													display: 'block',
+												}}
+											/>
+											<Box
+												className="profile-photo-overlay"
+												sx={{
+													position: 'absolute',
+													inset: 0,
 													display: 'grid',
 													placeItems: 'center',
-													color: 'common.white',
-													bgcolor: 'rgba(0, 0, 0, 0.58)',
-													border: '1px solid rgba(255, 255, 255, 0.55)',
-													transition: 'transform 160ms ease',
+													bgcolor: profileImageDragging
+														? 'rgba(0, 0, 0, 0.42)'
+														: 'rgba(0, 0, 0, 0.24)',
+													transition: 'background-color 160ms ease',
+													pointerEvents: 'none',
 												}}
 											>
-												<AddPhotoAlternateIcon sx={{ fontSize: 28 }} />
+												<Box
+													className="profile-photo-icon"
+													sx={{
+														width: 54,
+														height: 54,
+														borderRadius: '50%',
+														display: 'grid',
+														placeItems: 'center',
+														color: 'common.white',
+														bgcolor: 'rgba(0, 0, 0, 0.58)',
+														border: '1px solid rgba(255, 255, 255, 0.55)',
+														transition: 'transform 160ms ease',
+													}}
+												>
+													<AddPhotoAlternateIcon sx={{ fontSize: 28 }} />
+												</Box>
 											</Box>
-										</Box>
-									</>
-								) : (
-									<Stack
-										alignItems="center"
-										justifyContent="center"
-										sx={{ height: '100%', color: 'text.secondary' }}
-									>
-										<AddPhotoAlternateIcon sx={{ fontSize: 46, mb: 0.5 }} />
-										<Typography variant="body2">Sin foto de perfil</Typography>
-									</Stack>
-								)}
-								<input
-									hidden
-									type="file"
-									accept="image/jpeg,image/png,image/webp"
-									onChange={(event) => handleProfileImageFile(event.target.files?.[0] ?? null)}
-								/>
-							</Box>
-							{profileImageError && (
-								<Typography
-									variant="caption"
-									color="error.main"
-									sx={{ display: 'block', mt: 0.75, ml: 0.25 }}
-								>
-									{profileImageError}
-								</Typography>
-							)}
+										</>
+									) : (
+										<Stack
+											alignItems="center"
+											justifyContent="center"
+											sx={{ height: '100%', color: 'text.secondary' }}
+										>
+											<AddPhotoAlternateIcon sx={{ fontSize: 46, mb: 0.5 }} />
+											<Typography variant="body2">Sin foto de perfil</Typography>
+										</Stack>
+									)}
+									<input
+										hidden
+										type="file"
+										accept="image/jpeg,image/png,image/webp"
+										onChange={(event) => handleProfileImageFile(event.target.files?.[0] ?? null)}
+									/>
 								</Box>
+								{profileImageError && (
+									<Typography
+										variant="caption"
+										color="error.main"
+										sx={{ display: 'block', mt: 0.75, ml: 0.25 }}
+									>
+										{profileImageError}
+									</Typography>
+								)}
 							</Grid>
 
 							<Grid size={{ xs: 12, md: 7 }}>
@@ -1438,28 +1450,28 @@ export default function MisActoresPage() {
 											<FormControl fullWidth required>
 												<InputLabel>Categoría principal</InputLabel>
 												<Select
-											value={formValues.categoria}
-											label="Categoría principal"
-											onChange={(e) => {
-												const cat = e.target.value;
-												const category = findCategoryByName(categoryOptions, cat);
-												setFormValues((v) => ({
-													...v,
-													categoria: cat,
-													subcategoria: category?.subcategorias[0]?.nombre ?? '',
-												}));
-											}}
-										>
-											{!selectedEditCategory && formValues.categoria && (
-												<MenuItem value={formValues.categoria} disabled>
-													{formValues.categoria} (no disponible)
-												</MenuItem>
-											)}
-											{categoryOptions.map((category) => (
-												<MenuItem key={category.id} value={category.nombre}>
-													{category.nombre}
-												</MenuItem>
-											))}
+													value={formValues.categoria}
+													label="Categoría principal"
+													onChange={(e) => {
+														const cat = e.target.value;
+														const category = findCategoryByName(categoryOptions, cat);
+														setFormValues((v) => ({
+															...v,
+															categoria: cat,
+															subcategoria: category?.subcategorias[0]?.nombre ?? '',
+														}));
+													}}
+												>
+													{!selectedEditCategory && formValues.categoria && (
+														<MenuItem value={formValues.categoria} disabled>
+															{formValues.categoria} (no disponible)
+														</MenuItem>
+													)}
+													{categoryOptions.map((category) => (
+														<MenuItem key={category.id} value={category.nombre}>
+															{category.nombre}
+														</MenuItem>
+													))}
 												</Select>
 											</FormControl>
 										</Grid>
@@ -1468,23 +1480,25 @@ export default function MisActoresPage() {
 											<FormControl fullWidth>
 												<InputLabel>Subcategoría</InputLabel>
 												<Select
-											value={formValues.subcategoria}
-											label="Subcategoría"
-											onChange={(e) => setFormValues((v) => ({ ...v, subcategoria: e.target.value }))}
-										>
-											{!selectedEditCategory?.subcategorias.some(
-												(option) => option.nombre === formValues.subcategoria,
-											) &&
-												formValues.subcategoria && (
-													<MenuItem value={formValues.subcategoria} disabled>
-														{formValues.subcategoria} (no disponible)
-													</MenuItem>
-												)}
-											{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
-												<MenuItem key={subcategory.id} value={subcategory.nombre}>
-													{subcategory.nombre}
-												</MenuItem>
-											))}
+													value={formValues.subcategoria}
+													label="Subcategoría"
+													onChange={(e) =>
+														setFormValues((v) => ({ ...v, subcategoria: e.target.value }))
+													}
+												>
+													{!selectedEditCategory?.subcategorias.some(
+														(option) => option.nombre === formValues.subcategoria,
+													) &&
+														formValues.subcategoria && (
+															<MenuItem value={formValues.subcategoria} disabled>
+																{formValues.subcategoria} (no disponible)
+															</MenuItem>
+														)}
+													{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
+														<MenuItem key={subcategory.id} value={subcategory.nombre}>
+															{subcategory.nombre}
+														</MenuItem>
+													))}
 												</Select>
 											</FormControl>
 										</Grid>
@@ -2186,15 +2200,6 @@ export default function MisActoresPage() {
 					</Button>
 				</DialogActions>
 			</Dialog>
-
-			{/* Toast notification */}
-			<Snackbar
-				open={Boolean(snackbarMessage)}
-				autoHideDuration={4000}
-				onClose={() => setSnackbarMessage(null)}
-				message={snackbarMessage}
-				anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-			/>
 		</PageContainer>
 	);
 }

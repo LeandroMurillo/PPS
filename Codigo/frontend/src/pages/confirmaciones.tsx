@@ -26,12 +26,12 @@ import {
 	MenuItem,
 	Paper,
 	Select,
-	Snackbar,
 	Stack,
 	Tooltip,
 	Typography,
 } from '@mui/material';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { toast } from 'react-toastify';
 
 import {
 	cambiarEstadoActoresAdmin,
@@ -87,11 +87,7 @@ export default function ConfirmacionesPage() {
 		open: boolean;
 		targetState: 'A' | 'I';
 		actors: ActorAdmin[];
-	}>({
-		open: false,
-		targetState: 'A',
-		actors: [],
-	});
+	}>({ open: false, targetState: 'A', actors: [] });
 	const [actionSubmitting, setActionSubmitting] = React.useState(false);
 	const [actionError, setActionError] = React.useState<string | null>(null);
 
@@ -100,9 +96,6 @@ export default function ConfirmacionesPage() {
 	const [previewLoading, setPreviewLoading] = React.useState(false);
 	const [previewActor, setPreviewActor] = React.useState<ActorDetalleAdmin | null>(null);
 	const [previewError, setPreviewError] = React.useState<string | null>(null);
-
-	// Toast
-	const [snackbarMessage, setSnackbarMessage] = React.useState<string | null>(null);
 
 	const debouncedSearch = useDebouncedValue(search);
 	const debouncedCategoryId = useDebouncedValue(categoryId);
@@ -220,7 +213,11 @@ export default function ConfirmacionesPage() {
 					? `El actor cultural "${actors[0].nombre}" fue ${isApproved ? 'aprobado y publicado' : 'rechazado'}.`
 					: `Se ${isApproved ? 'aprobaron' : 'rechazaron'} ${count} actores culturales correctamente.`;
 
-			setSnackbarMessage(msg);
+			if (isApproved) {
+				toast.success(msg);
+			} else {
+				toast.info(msg);
+			}
 			setActionDialogState({ open: false, targetState: 'A', actors: [] });
 			setSelectedActorIds((prev) => prev.filter((id) => !ids.includes(Number(id))));
 
@@ -233,9 +230,10 @@ export default function ConfirmacionesPage() {
 			setPage(0);
 			await loadPendingActores();
 		} catch (err: unknown) {
-			setActionError(
-				err instanceof Error ? err.message : 'No se pudo actualizar el estado de los actores seleccionados.',
-			);
+			const errorMsg =
+				err instanceof Error ? err.message : 'No se pudo actualizar el estado de los actores seleccionados.';
+			setActionError(errorMsg);
+			toast.error(errorMsg);
 		} finally {
 			setActionSubmitting(false);
 		}
@@ -787,15 +785,6 @@ export default function ConfirmacionesPage() {
 					)}
 				</DialogActions>
 			</Dialog>
-
-			{/* Snackbar Toast notification */}
-			<Snackbar
-				open={Boolean(snackbarMessage)}
-				autoHideDuration={5000}
-				onClose={() => setSnackbarMessage(null)}
-				message={snackbarMessage}
-				anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-			/>
 		</PageContainer>
 	);
 }

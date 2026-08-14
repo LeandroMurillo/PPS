@@ -12,8 +12,12 @@ import PeopleIcon from '@mui/icons-material/People';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 
+import { ToastContainer } from 'react-toastify';
+
 import theme from '../theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const BRANDING = {
 	title: 'Mosaico Cultural',
@@ -164,6 +168,17 @@ export default function App() {
 	return (
 		<AuthProvider>
 			<AppContent />
+			<ToastContainer
+				position="bottom-right"
+				autoClose={5000}
+				hideProgressBar={false}
+				newestOnTop
+				closeOnClick
+				pauseOnFocusLoss
+				draggable
+				pauseOnHover
+				theme="colored"
+			/>
 		</AuthProvider>
 	);
 }

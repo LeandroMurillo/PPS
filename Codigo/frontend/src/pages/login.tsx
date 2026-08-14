@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 
+import { toast } from 'react-toastify';
+
 import { loginApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 
@@ -52,6 +54,7 @@ export default function LoginPage() {
 		e.preventDefault();
 		if (forgotEmail.trim()) {
 			setForgotSubmitted(true);
+			toast.info('Si el correo está registrado, recibirás las instrucciones.');
 		}
 	};
 
@@ -86,12 +89,14 @@ export default function LoginPage() {
 		try {
 			const response = await loginApi({ email: trimmedEmail, contraseña: password });
 			login(response.usuario, response.token);
+			toast.success(`¡Bienvenido/a, ${response.usuario.nombre || 'usuario'}!`);
 			navigate('/');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
 			setCustomError(msg);
 			setEmailError('Verifique sus credenciales');
 			setPasswordError('Verifique sus credenciales');
+			toast.error(msg);
 		} finally {
 			setLoading(false);
 		}

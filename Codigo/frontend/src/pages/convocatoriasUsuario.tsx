@@ -60,6 +60,8 @@ const MOCK_MIS_ACTORES = [
 	{ id: 12, nombre: 'Grupo Ráfaga', categoria: 'Música' },
 ];
 
+import { toast } from 'react-toastify';
+
 export default function ConvocatoriasUsuario() {
 	// Estado: Mapea { idConvocatoria: [idActor1, idActor2] }
 	const [postulaciones, setPostulaciones] = useState<Record<number, number[]>>({});
@@ -78,22 +80,22 @@ export default function ConvocatoriasUsuario() {
 		setConvocatoriaSeleccionada(null);
 	};
 
-	const handleToggleActor = (idConvocatoria: number, idActor: number) => {
+	const handleToggleActor = (idConvocatoria: number, actor: { id: number; nombre: string }) => {
 		setPostulaciones((prev) => {
 			const actoresActuales = prev[idConvocatoria] || [];
-			const estaPostulado = actoresActuales.includes(idActor);
+			const estaPostulado = actoresActuales.includes(actor.id);
 
 			if (estaPostulado) {
-				// Quita al actor de esta convocatoria
+				toast.info(`Se retiró la postulación de "${actor.nombre}".`);
 				return {
 					...prev,
-					[idConvocatoria]: actoresActuales.filter((id) => id !== idActor),
+					[idConvocatoria]: actoresActuales.filter((id) => id !== actor.id),
 				};
 			} else {
-				// Agrega al actor a esta convocatoria
+				toast.success(`¡"${actor.nombre}" postulado correctamente!`);
 				return {
 					...prev,
-					[idConvocatoria]: [...actoresActuales, idActor],
+					[idConvocatoria]: [...actoresActuales, actor.id],
 				};
 			}
 		});
@@ -213,7 +215,7 @@ export default function ConvocatoriasUsuario() {
 										control={
 											<Checkbox
 												checked={isChecked}
-												onChange={() => handleToggleActor(idConv, actor.id)}
+												onChange={() => handleToggleActor(idConv, actor)}
 												color="primary"
 											/>
 										}

@@ -31,10 +31,8 @@ import {
 	type SubcategoriaAdmin,
 	type SubcategoriaAdminSortBy,
 } from '../api/admin';
-import {
-	ESTADO_CATEGORIA_LABELS as stateLabels,
-	ESTADO_COLORS as stateColors,
-} from '../constants/estados';
+import { toast } from 'react-toastify';
+import { ESTADO_CATEGORIA_LABELS as stateLabels, ESTADO_COLORS as stateColors } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
 import AdminFilters from './adminFilters';
@@ -151,17 +149,21 @@ export default function SubcategoriasManager({
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
+				toast.success(`Subcategoría "${trimmedNombre}" modificada correctamente.`);
 			} else {
 				await crearSubcategoriaAdmin(categoryId, {
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
+				toast.success(`Subcategoría "${trimmedNombre}" creada correctamente.`);
 			}
 
 			setDialogOpen(false);
 			void fetchSubcategorias();
 		} catch (err) {
-			setFormError(err instanceof Error ? err.message : 'Ocurrió un error al guardar la subcategoría.');
+			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la subcategoría.';
+			setFormError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setFormSubmitting(false);
 		}
@@ -179,11 +181,14 @@ export default function SubcategoriasManager({
 
 		try {
 			await eliminarSubcategoriaAdmin(categoryId, deletingSubcategoria.id);
+			toast.info(`Subcategoría "${deletingSubcategoria.nombre}" dada de baja correctamente.`);
 			setDeleteDialogOpen(false);
 			setDeletingSubcategoria(null);
 			void fetchSubcategorias();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'No se pudo dar de baja la subcategoría');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo dar de baja la subcategoría';
+			setError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setDeleteSubmitting(false);
 		}

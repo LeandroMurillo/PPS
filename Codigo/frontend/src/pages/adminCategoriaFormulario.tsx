@@ -39,6 +39,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
+import { toast } from 'react-toastify';
 
 import {
 	asociarPreguntaFormularioAdmin,
@@ -417,9 +418,15 @@ export default function AdminCategoriaFormularioPage() {
 			setFormulario(response.data);
 			setTitulo(response.data.titulo);
 			setDescripcion(response.data.descripcion ?? '');
-			setSaveMessage(formulario ? 'Formulario actualizado.' : 'Formulario creado. Ya podés agregar preguntas.');
+			const msg = formulario
+				? 'Formulario actualizado correctamente.'
+				: 'Formulario creado. Ya podés agregar preguntas.';
+			setSaveMessage(msg);
+			toast.success(msg);
 		} catch (saveError) {
-			setError(saveError instanceof Error ? saveError.message : 'No se pudo guardar el formulario.');
+			const errMsg = saveError instanceof Error ? saveError.message : 'No se pudo guardar el formulario.';
+			setError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setSaving(false);
 		}
@@ -462,12 +469,14 @@ export default function AdminCategoriaFormularioPage() {
 					esPublico: questionPublic,
 				});
 				setFormulario(response.data);
+				toast.success('Pregunta asociada correctamente.');
 				setQuestionDialogOpen(false);
 				setQuestionTab('activas');
 			} catch (submitError) {
-				setQuestionError(
-					submitError instanceof Error ? submitError.message : 'No se pudo incorporar la pregunta.',
-				);
+				const errMsg =
+					submitError instanceof Error ? submitError.message : 'No se pudo incorporar la pregunta.';
+				setQuestionError(errMsg);
+				toast.error(errMsg);
 			} finally {
 				setQuestionSubmitting(false);
 			}
@@ -502,10 +511,13 @@ export default function AdminCategoriaFormularioPage() {
 				esPublico: questionPublic,
 			});
 			setFormulario(response.data);
+			toast.success('Pregunta agregada correctamente.');
 			setQuestionDialogOpen(false);
 			setQuestionTab('activas');
 		} catch (submitError) {
-			setQuestionError(submitError instanceof Error ? submitError.message : 'No se pudo agregar la pregunta.');
+			const errMsg = submitError instanceof Error ? submitError.message : 'No se pudo agregar la pregunta.';
+			setQuestionError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setQuestionSubmitting(false);
 		}
@@ -518,9 +530,12 @@ export default function AdminCategoriaFormularioPage() {
 		try {
 			const response = await desactivarPreguntaFormularioAdmin(formulario.id, deletingQuestion.id);
 			setFormulario(response.data);
+			toast.info('Pregunta dada de baja del formulario.');
 			setDeletingQuestion(null);
 		} catch (deleteError) {
-			setError(deleteError instanceof Error ? deleteError.message : 'No se pudo dar de baja la pregunta.');
+			const errMsg = deleteError instanceof Error ? deleteError.message : 'No se pudo dar de baja la pregunta.';
+			setError(errMsg);
+			toast.error(errMsg);
 		} finally {
 			setQuestionSubmitting(false);
 		}
