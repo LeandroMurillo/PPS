@@ -559,6 +559,7 @@ export default function ActorNuevoPage() {
 											loading={formsLoading}
 											error={formsError}
 											answers={answers}
+											validationAttempted={formValidationAttempted}
 											onAnswerChange={(key, value) => {
 												setAnswers((current) => ({ ...current, [key]: value }));
 											}}
@@ -1238,13 +1239,15 @@ function CategoryForms({
 	loading,
 	error,
 	answers,
+	validationAttempted = false,
 	onAnswerChange,
 }: {
 	categoryName: string;
 	forms: FormularioAplicable[];
 	loading: boolean;
-	error: string;
+	error: string | null;
 	answers: Record<string, FormAnswer>;
+	validationAttempted?: boolean;
 	onAnswerChange: (key: string, value: FormAnswer) => void;
 }) {
 	const orderedForms = [...forms].sort((left, right) => {
@@ -1300,12 +1303,19 @@ function CategoryForms({
 						<Stack spacing={2.5}>
 							{form.preguntas.map((question) => {
 								const key = `${form.id}:${question.id}`;
+								const value = answers[key] ?? (question.tipoDato === 'OPCION_MULTIPLE' ? [] : '');
+								const isMissing =
+									question.esObligatorio &&
+									(Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim());
+								const hasError = validationAttempted && isMissing;
+
 								return (
 									<QuestionField
 										key={key}
 										question={question}
-										value={answers[key] ?? (question.tipoDato === 'OPCION_MULTIPLE' ? [] : '')}
-										onChange={(value) => onAnswerChange(key, value)}
+										value={value}
+										hasError={hasError}
+										onChange={(val) => onAnswerChange(key, val)}
 									/>
 								);
 							})}
@@ -1320,38 +1330,52 @@ function CategoryForms({
 function QuestionField({
 	question,
 	value,
+	hasError = false,
 	onChange,
 }: {
 	question: PreguntaFormularioAplicable;
 	value: FormAnswer;
+	hasError?: boolean;
 	onChange: (value: FormAnswer) => void;
 }) {
 	const label = question.pregunta;
 
 	if (question.tipoDato === 'BOOLEANO') {
 		return (
-			<Stack spacing={1}>
-				<QuestionHeading question={question} />
-				<RadioGroup
-					row
-					aria-label={label}
-					value={typeof value === 'string' ? value : ''}
-					onChange={(event) => onChange(event.target.value)}
-				>
-					<FormControlLabel value="true" control={<Radio size="small" />} label="Sí" />
-					<FormControlLabel value="false" control={<Radio size="small" />} label="No" />
-				</RadioGroup>
-			</Stack>
+			<FormControl error={hasError} component="fieldset" fullWidth>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} />
+					<RadioGroup
+						row
+						aria-label={label}
+						value={typeof value === 'string' ? value : ''}
+						onChange={(event) => onChange(event.target.value)}
+					>
+						<FormControlLabel
+							value="true"
+							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
+							label="Sí"
+						/>
+						<FormControlLabel
+							value="false"
+							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
+							label="No"
+						/>
+					</RadioGroup>
+					{hasError && <FormHelperText error>Esta pregunta es obligatoria.</FormHelperText>}
+				</Stack>
+			</FormControl>
 		);
 	}
 
 	if (question.tipoDato === 'OPCION_UNICA') {
 		return (
-			<Stack spacing={1}>
-				<QuestionHeading question={question} />
-				<FormControl fullWidth required={question.esObligatorio}>
+			<FormControl fullWidth required={question.esObligatorio} error={hasError}>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} />
 					<Select
 						displayEmpty
+						error={hasError}
 						value={typeof value === 'string' ? value : ''}
 						onChange={(event) => onChange(event.target.value)}
 						inputProps={{ 'aria-label': label }}
@@ -1365,37 +1389,42 @@ function QuestionField({
 							</MenuItem>
 						))}
 					</Select>
-				</FormControl>
-			</Stack>
+					{hasError && <FormHelperText error>Seleccioná una opción.</FormHelperText>}
+				</Stack>
+			</FormControl>
 		);
 	}
 
 	if (question.tipoDato === 'OPCION_MULTIPLE') {
 		const selected = Array.isArray(value) ? value : [];
 		return (
-			<Stack spacing={1}>
-				<QuestionHeading question={question} />
-				<FormGroup aria-label={label}>
-					{question.opciones?.map((option) => (
-						<FormControlLabel
-							key={option}
-							label={option}
-							control={
-								<Checkbox
-									checked={selected.includes(option)}
-									onChange={(event) =>
-										onChange(
-											event.target.checked
-												? [...selected, option]
-												: selected.filter((item) => item !== option),
-										)
-									}
-								/>
-							}
-						/>
-					))}
-				</FormGroup>
-			</Stack>
+			<FormControl error={hasError} component="fieldset" fullWidth>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} />
+					<FormGroup aria-label={label}>
+						{question.opciones?.map((option) => (
+							<FormControlLabel
+								key={option}
+								label={option}
+								control={
+									<Checkbox
+										checked={selected.includes(option)}
+										color={hasError ? 'error' : 'primary'}
+										onChange={(event) =>
+											onChange(
+												event.target.checked
+													? [...selected, option]
+													: selected.filter((item) => item !== option),
+											)
+										}
+									/>
+								}
+							/>
+						))}
+					</FormGroup>
+					{hasError && <FormHelperText error>Seleccioná al menos una opción.</FormHelperText>}
+				</Stack>
+			</FormControl>
 		);
 	}
 
@@ -1409,10 +1438,12 @@ function QuestionField({
 
 	return (
 		<Stack spacing={1}>
-			<QuestionHeading question={question} />
+			<QuestionHeading question={question} hasError={hasError} />
 			<TextField
 				fullWidth
 				required={question.esObligatorio}
+				error={hasError}
+				helperText={hasError ? 'Esta pregunta es obligatoria.' : undefined}
 				type={inputType[question.tipoDato] ?? 'text'}
 				placeholder={question.tipoDato === 'FECHA' ? undefined : 'Ingresá tu respuesta'}
 				value={typeof value === 'string' ? value : ''}
@@ -1423,7 +1454,13 @@ function QuestionField({
 	);
 }
 
-function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }) {
+function QuestionHeading({
+	question,
+	hasError = false,
+}: {
+	question: PreguntaFormularioAplicable;
+	hasError?: boolean;
+}) {
 	return (
 		<Stack
 			direction={{ xs: 'column', sm: 'row' }}
@@ -1431,7 +1468,12 @@ function QuestionHeading({ question }: { question: PreguntaFormularioAplicable }
 			alignItems={{ xs: 'flex-start', sm: 'center' }}
 			justifyContent="space-between"
 		>
-			<Typography variant="subtitle2" fontWeight={700}>
+			<Typography
+				variant="subtitle2"
+				fontWeight={700}
+				color={hasError ? 'error.main' : 'text.primary'}
+				sx={{ transition: 'color 0.2s ease' }}
+			>
 				{question.pregunta}
 				{question.esObligatorio && <RequiredAsterisk tooltipTitle="Pregunta obligatoria" />}
 			</Typography>
