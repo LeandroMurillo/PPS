@@ -295,9 +295,11 @@ export const actorAdminSchema = z.object({
 export type ActorAdmin = z.infer<typeof actorAdminSchema>;
 
 export const actorDetalleIntegranteAdminSchema = z.object({
-	id: z.number().int().positive(),
+	id: z.number().int().positive().nullable(),
+	idIntegranteNoRegistrado: z.number().int().positive().nullable(),
+	tipo: z.enum(['REGISTRADO', 'NO_REGISTRADO']),
 	nombre: z.string(),
-	email: z.string(),
+	email: z.string().nullable(),
 	rol: z.string(),
 	esDueno: z.boolean(),
 });

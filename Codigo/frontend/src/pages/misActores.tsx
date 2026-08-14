@@ -64,11 +64,15 @@ import DatePickerSpanish from '../components/datePickerSpanish';
 import {
 	agregarEventoApi,
 	agregarIntegranteApi,
+	agregarIntegranteNoRegistradoApi,
 	agregarItemPortafolioApi,
 	cambiarEstadoMiActorApi,
 	editarMiActorApi,
 	eliminarEventoApi,
 	eliminarIntegranteApi,
+	eliminarIntegranteNoRegistradoApi,
+	editarIntegranteApi,
+	editarIntegranteNoRegistradoApi,
 	eliminarItemPortafolioApi,
 	eliminarMiActorApi,
 	listarIntegrantesApi,
@@ -156,6 +160,12 @@ export type MyActor = {
 	eventos?: MyActorEvent[];
 };
 
+function getMemberKey(member: IntegranteApiItem): string {
+	return member.tipo === 'REGISTRADO'
+		? `usuario-${member.idUsuario}`
+		: `sin-cuenta-${member.idIntegranteNoRegistrado}`;
+}
+
 export default function MisActoresPage() {
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -234,8 +244,18 @@ export default function MisActoresPage() {
 	const [membersModalOpen, setMembersModalOpen] = React.useState(false);
 	const [targetMembersActor, setTargetMembersActor] = React.useState<MyActor | null>(null);
 	const [integrantesList, setIntegrantesList] = React.useState<IntegranteApiItem[]>([]);
+	const [newMemberType, setNewMemberType] = React.useState<'REGISTRADO' | 'NO_REGISTRADO'>('REGISTRADO');
+	const [newMemberNombre, setNewMemberNombre] = React.useState('');
+	const [newMemberApellido, setNewMemberApellido] = React.useState('');
 	const [newMemberEmail, setNewMemberEmail] = React.useState('');
 	const [newMemberRol, setNewMemberRol] = React.useState('Integrante');
+	const [editingMember, setEditingMember] = React.useState<IntegranteApiItem | null>(null);
+	const [editMemberNombre, setEditMemberNombre] = React.useState('');
+	const [editMemberApellido, setEditMemberApellido] = React.useState('');
+	const [editMemberEmail, setEditMemberEmail] = React.useState('');
+	const [editMemberRol, setEditMemberRol] = React.useState('');
+	const [memberSubmitting, setMemberSubmitting] = React.useState(false);
+	const [deletingMemberKey, setDeletingMemberKey] = React.useState<string | null>(null);
 	const [membersLoading, setMembersLoading] = React.useState(false);
 	const [membersError, setMembersError] = React.useState<string | null>(null);
 
@@ -706,8 +726,12 @@ export default function MisActoresPage() {
 	// Open Members Modal
 	const handleOpenMembersModal = async (actor: MyActor) => {
 		setTargetMembersActor(actor);
+		setNewMemberType('REGISTRADO');
+		setNewMemberNombre('');
+		setNewMemberApellido('');
 		setNewMemberEmail('');
 		setNewMemberRol('Integrante');
+		setEditingMember(null);
 		setMembersError(null);
 		setMembersModalOpen(true);
 		setMembersLoading(true);
@@ -729,45 +753,110 @@ export default function MisActoresPage() {
 		}
 	};
 
-	// Add Member by Email
+	const refreshMembers = async (idActor: number) => {
+		const res = await listarIntegrantesApi(idActor);
+		setIntegrantesList(res?.data ?? []);
+	};
+
+	// Add a registered member or a person without an account.
 	const handleAddMember = async () => {
-		if (!targetMembersActor || !newMemberEmail.trim()) return;
+		if (!targetMembersActor) return;
+		if (newMemberType === 'REGISTRADO' && !newMemberEmail.trim()) return;
+		if (newMemberType === 'NO_REGISTRADO' && (!newMemberNombre.trim() || !newMemberApellido.trim())) return;
 
 		setMembersError(null);
+		setMemberSubmitting(true);
 		try {
-			await agregarIntegranteApi(targetMembersActor.id, {
-				email: newMemberEmail.trim(),
-				rol: newMemberRol.trim() || 'Integrante',
-			});
+			if (newMemberType === 'REGISTRADO') {
+				await agregarIntegranteApi(targetMembersActor.id, {
+					email: newMemberEmail.trim(),
+					rol: newMemberRol.trim() || 'Integrante',
+				});
+			} else {
+				await agregarIntegranteNoRegistradoApi(targetMembersActor.id, {
+					nombre: newMemberNombre.trim(),
+					apellido: newMemberApellido.trim(),
+					email: newMemberEmail.trim() || null,
+					rol: newMemberRol.trim() || 'Integrante',
+				});
+			}
 
 			notify.success('Integrante agregado correctamente.');
+			setNewMemberNombre('');
+			setNewMemberApellido('');
 			setNewMemberEmail('');
 			setNewMemberRol('Integrante');
-
-			const res = await listarIntegrantesApi(targetMembersActor.id);
-			if (res?.data) {
-				setIntegrantesList(res.data);
-			}
+			await refreshMembers(targetMembersActor.id);
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
 			setMembersError(errMsg);
 			notify.error(errMsg);
+		} finally {
+			setMemberSubmitting(false);
+		}
+	};
+
+	const handleStartEditMember = (member: IntegranteApiItem) => {
+		setEditingMember(member);
+		setEditMemberNombre(member.nombre);
+		setEditMemberApellido(member.apellido);
+		setEditMemberEmail(member.email ?? '');
+		setEditMemberRol(member.rol);
+		setMembersError(null);
+	};
+
+	const handleSaveMember = async () => {
+		if (!targetMembersActor || !editingMember || !editMemberRol.trim()) return;
+
+		setMembersError(null);
+		setMemberSubmitting(true);
+		try {
+			if (editingMember.tipo === 'REGISTRADO' && editingMember.idUsuario) {
+				await editarIntegranteApi(targetMembersActor.id, editingMember.idUsuario, {
+					rol: editMemberRol.trim(),
+				});
+			} else if (editingMember.idIntegranteNoRegistrado) {
+				await editarIntegranteNoRegistradoApi(targetMembersActor.id, editingMember.idIntegranteNoRegistrado, {
+					nombre: editMemberNombre.trim(),
+					apellido: editMemberApellido.trim(),
+					email: editMemberEmail.trim() || null,
+					rol: editMemberRol.trim(),
+				});
+			}
+
+			notify.success('Integrante modificado correctamente.');
+			setEditingMember(null);
+			await refreshMembers(targetMembersActor.id);
+		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Error al modificar integrante.';
+			setMembersError(errMsg);
+			notify.error(errMsg);
+		} finally {
+			setMemberSubmitting(false);
 		}
 	};
 
 	// Delete Member
-	const handleDeleteMember = async (idUsuarioAEliminar: number) => {
+	const handleDeleteMember = async (member: IntegranteApiItem) => {
 		if (!targetMembersActor) return;
 
+		const memberKey = getMemberKey(member);
 		setMembersError(null);
+		setDeletingMemberKey(memberKey);
 		try {
-			await eliminarIntegranteApi(targetMembersActor.id, idUsuarioAEliminar);
+			if (member.tipo === 'REGISTRADO' && member.idUsuario) {
+				await eliminarIntegranteApi(targetMembersActor.id, member.idUsuario);
+			} else if (member.idIntegranteNoRegistrado) {
+				await eliminarIntegranteNoRegistradoApi(targetMembersActor.id, member.idIntegranteNoRegistrado);
+			}
 			notify.success('Integrante eliminado.');
-			setIntegrantesList((prev) => prev.filter((m) => m.idUsuario !== idUsuarioAEliminar));
+			setIntegrantesList((prev) => prev.filter((item) => getMemberKey(item) !== memberKey));
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
 			setMembersError(errMsg);
 			notify.error(errMsg);
+		} finally {
+			setDeletingMemberKey(null);
 		}
 	};
 
@@ -2031,7 +2120,7 @@ export default function MisActoresPage() {
 				<DialogContent dividers>
 					<Stack spacing={3}>
 						<Typography variant="body2" color="text.secondary">
-							Administrá los usuarios que forman parte de este colectivo, espacio o proyecto artístico.
+							Administrá las personas que forman parte del actor, tengan o no una cuenta en la plataforma.
 						</Typography>
 
 						{membersError && <Alert severity="error">{membersError}</Alert>}
@@ -2039,16 +2128,56 @@ export default function MisActoresPage() {
 						{/* Form to add member */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-								Agregar nuevo integrante por correo electrónico
+								Agregar integrante
 							</Typography>
+							<ToggleButtonGroup
+								exclusive
+								size="small"
+								value={newMemberType}
+								onChange={(_event, value: 'REGISTRADO' | 'NO_REGISTRADO' | null) => {
+									if (value) setNewMemberType(value);
+								}}
+								sx={{ mt: 1, mb: 1 }}
+							>
+								<ToggleButton value="REGISTRADO">Usuario registrado</ToggleButton>
+								<ToggleButton value="NO_REGISTRADO">Persona sin cuenta</ToggleButton>
+							</ToggleButtonGroup>
 							<Grid container spacing={2} sx={{ mt: 0.5 }}>
+								{newMemberType === 'NO_REGISTRADO' && (
+									<>
+										<Grid size={{ xs: 12, md: 6 }}>
+											<TextField
+												fullWidth
+												size="small"
+												required
+												label="Nombre"
+												value={newMemberNombre}
+												onChange={(e) => setNewMemberNombre(e.target.value)}
+											/>
+										</Grid>
+										<Grid size={{ xs: 12, md: 6 }}>
+											<TextField
+												fullWidth
+												size="small"
+												required
+												label="Apellido"
+												value={newMemberApellido}
+												onChange={(e) => setNewMemberApellido(e.target.value)}
+											/>
+										</Grid>
+									</>
+								)}
 								<Grid size={{ xs: 12, md: 6 }}>
 									<TextField
 										fullWidth
 										size="small"
-										required
+										required={newMemberType === 'REGISTRADO'}
 										type="email"
-										label="Correo electrónico del usuario"
+										label={
+											newMemberType === 'REGISTRADO'
+												? 'Correo del usuario registrado'
+												: 'Correo electrónico (opcional)'
+										}
 										placeholder="ejemplo@correo.com"
 										value={newMemberEmail}
 										onChange={(e) => setNewMemberEmail(e.target.value)}
@@ -2070,9 +2199,15 @@ export default function MisActoresPage() {
 										size="small"
 										startIcon={<GroupIcon />}
 										onClick={handleAddMember}
-										disabled={!newMemberEmail.trim()}
+										disabled={
+											memberSubmitting ||
+											!newMemberRol.trim() ||
+											(newMemberType === 'REGISTRADO'
+												? !newMemberEmail.trim()
+												: !newMemberNombre.trim() || !newMemberApellido.trim())
+										}
 									>
-										Agregar integrante
+										{memberSubmitting ? <CircularProgress size={18} /> : 'Agregar integrante'}
 									</Button>
 								</Grid>
 							</Grid>
@@ -2088,60 +2223,168 @@ export default function MisActoresPage() {
 								<CircularProgress size={32} />
 							</Box>
 						) : integrantesList.length === 0 ? (
-							<Alert severity="info">No se encontraron integrantes registrados para este actor.</Alert>
+							<Alert severity="info">No se encontraron integrantes para este actor.</Alert>
 						) : (
 							<Stack spacing={1.5} divider={<Divider />}>
-								{integrantesList.map((member) => (
-									<Stack
-										key={member.idUsuario}
-										direction="row"
-										justifyContent="space-between"
-										alignItems="center"
-										spacing={2}
-									>
-										<Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-											<Avatar
-												sx={{
-													bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
-													width: 36,
-													height: 36,
-													fontSize: 14,
-												}}
-											>
-												{member.nombre.charAt(0)}
-												{member.apellido?.charAt(0) || ''}
-											</Avatar>
-											<Box sx={{ minWidth: 0 }}>
-												<Stack direction="row" spacing={1} alignItems="center">
-													<Typography variant="body2" fontWeight={600}>
-														{member.nombre} {member.apellido}
-													</Typography>
-													{member.esDueño && (
-														<Chip
-															label="Dueño Principal"
-															size="small"
-															color="primary"
-															sx={{ height: 20, fontSize: 10 }}
-														/>
-													)}
-												</Stack>
-												<Typography variant="caption" color="text.secondary">
-													📧 {member.email} · Rol: {member.rol}
-												</Typography>
-											</Box>
-										</Stack>
+								{integrantesList.map((member) => {
+									const memberKey = getMemberKey(member);
+									const isEditing = editingMember && getMemberKey(editingMember) === memberKey;
 
-										{!member.esDueño && (
-											<IconButton
-												size="small"
-												color="error"
-												onClick={() => handleDeleteMember(member.idUsuario)}
+									return isEditing ? (
+										<Paper key={memberKey} variant="outlined" sx={{ p: 2 }}>
+											<Grid container spacing={2}>
+												{member.tipo === 'NO_REGISTRADO' && (
+													<>
+														<Grid size={{ xs: 12, sm: 6 }}>
+															<TextField
+																fullWidth
+																required
+																size="small"
+																label="Nombre"
+																value={editMemberNombre}
+																onChange={(e) => setEditMemberNombre(e.target.value)}
+															/>
+														</Grid>
+														<Grid size={{ xs: 12, sm: 6 }}>
+															<TextField
+																fullWidth
+																required
+																size="small"
+																label="Apellido"
+																value={editMemberApellido}
+																onChange={(e) => setEditMemberApellido(e.target.value)}
+															/>
+														</Grid>
+														<Grid size={{ xs: 12, sm: 6 }}>
+															<TextField
+																fullWidth
+																size="small"
+																type="email"
+																label="Correo (opcional)"
+																value={editMemberEmail}
+																onChange={(e) => setEditMemberEmail(e.target.value)}
+															/>
+														</Grid>
+													</>
+												)}
+												<Grid size={{ xs: 12, sm: 6 }}>
+													<TextField
+														fullWidth
+														required
+														size="small"
+														label="Rol o función"
+														value={editMemberRol}
+														onChange={(e) => setEditMemberRol(e.target.value)}
+													/>
+												</Grid>
+												<Grid size={{ xs: 12 }}>
+													<Stack direction="row" spacing={1} justifyContent="flex-end">
+														<Button
+															size="small"
+															onClick={() => setEditingMember(null)}
+															disabled={memberSubmitting}
+														>
+															Cancelar
+														</Button>
+														<Button
+															variant="contained"
+															size="small"
+															onClick={handleSaveMember}
+															disabled={
+																memberSubmitting ||
+																!editMemberRol.trim() ||
+																(member.tipo === 'NO_REGISTRADO' &&
+																	(!editMemberNombre.trim() ||
+																		!editMemberApellido.trim()))
+															}
+														>
+															Guardar cambios
+														</Button>
+													</Stack>
+												</Grid>
+											</Grid>
+										</Paper>
+									) : (
+										<Stack
+											key={memberKey}
+											direction="row"
+											justifyContent="space-between"
+											alignItems="center"
+											spacing={2}
+										>
+											<Stack
+												direction="row"
+												spacing={1.5}
+												alignItems="center"
+												sx={{ minWidth: 0 }}
 											>
-												<DeleteOutlineIcon fontSize="small" />
-											</IconButton>
-										)}
-									</Stack>
-								))}
+												<Avatar
+													sx={{
+														bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
+														width: 36,
+														height: 36,
+														fontSize: 14,
+													}}
+												>
+													{member.nombre.charAt(0)}
+													{member.apellido?.charAt(0) || ''}
+												</Avatar>
+												<Box sx={{ minWidth: 0 }}>
+													<Stack direction="row" spacing={1} alignItems="center">
+														<Typography variant="body2" fontWeight={600}>
+															{member.nombre} {member.apellido}
+														</Typography>
+														{member.esDueño && (
+															<Chip
+																label="Dueño Principal"
+																size="small"
+																color="primary"
+																sx={{ height: 20, fontSize: 10 }}
+															/>
+														)}
+														{member.tipo === 'NO_REGISTRADO' && (
+															<Chip
+																label="Sin cuenta"
+																size="small"
+																variant="outlined"
+																sx={{ height: 20, fontSize: 10 }}
+															/>
+														)}
+													</Stack>
+													<Typography variant="caption" color="text.secondary">
+														{member.email ? `📧 ${member.email} · ` : ''}Rol: {member.rol}
+													</Typography>
+												</Box>
+											</Stack>
+
+											<Stack direction="row" spacing={0.5}>
+												<IconButton
+													size="small"
+													color="primary"
+													onClick={() => handleStartEditMember(member)}
+													aria-label={`Editar a ${member.nombre} ${member.apellido}`}
+												>
+													<EditIcon fontSize="small" />
+												</IconButton>
+												{!member.esDueño && (
+													<IconButton
+														size="small"
+														color="error"
+														onClick={() => handleDeleteMember(member)}
+														disabled={deletingMemberKey !== null}
+														aria-label={`Eliminar a ${member.nombre} ${member.apellido}`}
+													>
+														{deletingMemberKey === memberKey ? (
+															<CircularProgress size={18} />
+														) : (
+															<DeleteOutlineIcon fontSize="small" />
+														)}
+													</IconButton>
+												)}
+											</Stack>
+										</Stack>
+									);
+								})}
 							</Stack>
 						)}
 					</Stack>

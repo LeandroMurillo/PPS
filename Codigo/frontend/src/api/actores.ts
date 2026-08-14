@@ -407,12 +407,21 @@ export async function eliminarEventoApi(idActor: number, idEvento: number) {
 }
 
 export type IntegranteApiItem = {
-	idUsuario: number;
+	tipo: 'REGISTRADO' | 'NO_REGISTRADO';
+	idUsuario: number | null;
+	idIntegranteNoRegistrado: number | null;
 	nombre: string;
 	apellido: string;
-	email: string;
+	email: string | null;
 	rol: string;
 	esDueño: boolean;
+};
+
+export type IntegranteNoRegistradoInput = {
+	nombre: string;
+	apellido: string;
+	email: string | null;
+	rol: string;
 };
 
 export async function listarIntegrantesApi(idActor: number) {
@@ -431,4 +440,42 @@ export async function eliminarIntegranteApi(idActor: number, idUsuario: number) 
 	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes/${idUsuario}`, {
 		method: 'DELETE',
 	});
+}
+
+export async function editarIntegranteApi(idActor: number, idUsuario: number, input: { rol: string }) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes/${idUsuario}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(input),
+	});
+}
+
+export async function agregarIntegranteNoRegistradoApi(idActor: number, input: IntegranteNoRegistradoInput) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/integrantes-no-registrados`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(input),
+	});
+}
+
+export async function editarIntegranteNoRegistradoApi(
+	idActor: number,
+	idIntegranteNoRegistrado: number,
+	input: IntegranteNoRegistradoInput,
+) {
+	return apiRequest<{ message: string }>(
+		`/api/mis-actores/${idActor}/integrantes-no-registrados/${idIntegranteNoRegistrado}`,
+		{
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(input),
+		},
+	);
+}
+
+export async function eliminarIntegranteNoRegistradoApi(idActor: number, idIntegranteNoRegistrado: number) {
+	return apiRequest<{ message: string }>(
+		`/api/mis-actores/${idActor}/integrantes-no-registrados/${idIntegranteNoRegistrado}`,
+		{ method: 'DELETE' },
+	);
 }

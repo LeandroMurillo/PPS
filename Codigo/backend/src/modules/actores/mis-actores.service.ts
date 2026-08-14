@@ -1,6 +1,7 @@
 import {
 	agregarEventoRepository,
 	agregarIntegranteRepository,
+	agregarIntegranteNoRegistradoRepository,
 	agregarItemPortafolioRepository,
 	cambiarEstadoActorRepository,
 	crearActorRepository,
@@ -8,6 +9,9 @@ import {
 	eliminarActorRepository,
 	eliminarEventoRepository,
 	eliminarIntegranteRepository,
+	eliminarIntegranteNoRegistradoRepository,
+	editarIntegranteRepository,
+	editarIntegranteNoRegistradoRepository,
 	eliminarItemPortafolioRepository,
 	listarEventosRepository,
 	listarIntegrantesRepository,
@@ -269,10 +273,9 @@ export async function crearActorService(input: {
 		}
 	>(
 		formularios.data.flatMap((formulario) =>
-			formulario.preguntas.map((pregunta) => [
-				`${formulario.id}:${pregunta.id}`,
-				{ formulario, pregunta },
-			] as const),
+			formulario.preguntas.map(
+				(pregunta) => [`${formulario.id}:${pregunta.id}`, { formulario, pregunta }] as const,
+			),
 		),
 	);
 	const respuestas = input.respuestas ?? [];
@@ -330,7 +333,8 @@ export async function crearActorService(input: {
 			const esRedSocial = /(?:instagram|facebook|tiktok|x\.com|twitter)\./i.test(url);
 
 			return {
-				tipo: item.tipo === 'IMAGEN' ? ('IMAGEN' as const) : esRedSocial ? ('RRSS' as const) : ('LINK' as const),
+				tipo:
+					item.tipo === 'IMAGEN' ? ('IMAGEN' as const) : esRedSocial ? ('RRSS' as const) : ('LINK' as const),
 				descripcion,
 				url,
 			};
@@ -499,4 +503,44 @@ export async function eliminarIntegranteService(input: {
 	idUsuarioAEliminar: number;
 }) {
 	await eliminarIntegranteRepository(input);
+}
+
+export async function editarIntegranteService(input: {
+	idUsuario: number;
+	idActor: number;
+	idUsuarioAEditar: number;
+	rol: string;
+}) {
+	await editarIntegranteRepository(input);
+}
+
+export async function agregarIntegranteNoRegistradoService(input: {
+	idUsuario: number;
+	idActor: number;
+	nombre: string;
+	apellido: string;
+	email: string | null;
+	rol: string;
+}) {
+	await agregarIntegranteNoRegistradoRepository(input);
+}
+
+export async function editarIntegranteNoRegistradoService(input: {
+	idUsuario: number;
+	idActor: number;
+	idIntegranteNoRegistrado: number;
+	nombre: string;
+	apellido: string;
+	email: string | null;
+	rol: string;
+}) {
+	await editarIntegranteNoRegistradoRepository(input);
+}
+
+export async function eliminarIntegranteNoRegistradoService(input: {
+	idUsuario: number;
+	idActor: number;
+	idIntegranteNoRegistrado: number;
+}) {
+	await eliminarIntegranteNoRegistradoRepository(input);
 }

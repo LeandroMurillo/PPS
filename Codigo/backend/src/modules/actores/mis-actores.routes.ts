@@ -4,6 +4,7 @@ import { verifyToken } from '../../middleware/auth.middleware.js';
 import {
 	agregarEventoController,
 	agregarIntegranteController,
+	agregarIntegranteNoRegistradoController,
 	agregarItemPortafolioController,
 	cambiarEstadoActorController,
 	crearActorController,
@@ -11,6 +12,9 @@ import {
 	eliminarActorController,
 	eliminarEventoController,
 	eliminarIntegranteController,
+	eliminarIntegranteNoRegistradoController,
+	editarIntegranteController,
+	editarIntegranteNoRegistradoController,
 	eliminarItemPortafolioController,
 	listarEventosController,
 	listarIntegrantesController,
@@ -42,4 +46,14 @@ misActoresRouter.delete('/:id/eventos/:idEvento', eliminarEventoController);
 
 misActoresRouter.get('/:id/integrantes', listarIntegrantesController);
 misActoresRouter.post('/:id/integrantes', agregarIntegranteController);
+misActoresRouter.put('/:id/integrantes/:idUsuario', editarIntegranteController);
 misActoresRouter.delete('/:id/integrantes/:idUsuario', eliminarIntegranteController);
+misActoresRouter.post('/:id/integrantes-no-registrados', agregarIntegranteNoRegistradoController);
+misActoresRouter.put(
+	'/:id/integrantes-no-registrados/:idIntegranteNoRegistrado',
+	editarIntegranteNoRegistradoController,
+);
+misActoresRouter.delete(
+	'/:id/integrantes-no-registrados/:idIntegranteNoRegistrado',
+	eliminarIntegranteNoRegistradoController,
+);

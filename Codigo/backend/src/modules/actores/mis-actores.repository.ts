@@ -503,10 +503,12 @@ export async function eliminarEventoRepository(input: { idUsuario: number; idAct
 }
 
 const integranteRowSchema = z.object({
-	idUsuario: databaseIntegerSchema,
+	tipo: z.enum(['REGISTRADO', 'NO_REGISTRADO']),
+	idUsuario: databaseIntegerSchema.nullable(),
+	idIntegranteNoRegistrado: databaseIntegerSchema.nullable(),
 	nombre: z.string(),
 	apellido: z.string(),
-	email: z.string(),
+	email: z.string().nullable(),
 	rol: z.string(),
 	esDueño: databaseIntegerSchema.transform((v) => Boolean(v)),
 });
@@ -544,5 +546,69 @@ export async function eliminarIntegranteRepository(input: {
 		input.idUsuario,
 		input.idActor,
 		input.idUsuarioAEliminar,
+	]);
+}
+
+export async function editarIntegranteRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	idUsuarioAEditar: number;
+	rol: string;
+}) {
+	await pool.query('CALL sp_actor_editar_integrante(?, ?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.idUsuarioAEditar,
+		input.rol,
+	]);
+}
+
+export async function agregarIntegranteNoRegistradoRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	nombre: string;
+	apellido: string;
+	email: string | null;
+	rol: string;
+}) {
+	await pool.query('CALL sp_actor_agregar_integrante_no_registrado(?, ?, ?, ?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.nombre,
+		input.apellido,
+		input.email,
+		input.rol,
+	]);
+}
+
+export async function editarIntegranteNoRegistradoRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	idIntegranteNoRegistrado: number;
+	nombre: string;
+	apellido: string;
+	email: string | null;
+	rol: string;
+}) {
+	await pool.query('CALL sp_actor_editar_integrante_no_registrado(?, ?, ?, ?, ?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.idIntegranteNoRegistrado,
+		input.nombre,
+		input.apellido,
+		input.email,
+		input.rol,
+	]);
+}
+
+export async function eliminarIntegranteNoRegistradoRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	idIntegranteNoRegistrado: number;
+}) {
+	await pool.query('CALL sp_actor_eliminar_integrante_no_registrado(?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.idIntegranteNoRegistrado,
 	]);
 }

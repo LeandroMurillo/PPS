@@ -1,5 +1,7 @@
 import type { RequestHandler } from 'express';
 
+import { getPublicErrorMessage } from '../../shared/public-error.js';
+
 import {
 	asignarModeradorAdminBodySchema,
 	actorAdminParamsSchema,
@@ -746,7 +748,7 @@ export const editarPreguntaAdminController: RequestHandler = async (request, res
 		response.status(400).json({
 			error: {
 				code: 'QUESTION_EDIT_FAILED',
-				message: error instanceof Error ? error.message : 'No se pudo editar la pregunta.',
+				message: getPublicErrorMessage(error, 'No se pudo editar la pregunta.'),
 			},
 		});
 	}
@@ -780,7 +782,7 @@ export const reemplazarPreguntaFormularioAdminController: RequestHandler = async
 		response.status(400).json({
 			error: {
 				code: 'QUESTION_REPLACE_FAILED',
-				message: error instanceof Error ? error.message : 'No se pudo reemplazar la pregunta.',
+				message: getPublicErrorMessage(error, 'No se pudo reemplazar la pregunta.'),
 			},
 		});
 	}
@@ -801,7 +803,7 @@ export const crearPreguntaBancoAdminController: RequestHandler = async (request,
 		response.status(400).json({
 			error: {
 				code: 'QUESTION_CREATE_FAILED',
-				message: error instanceof Error ? error.message : 'No se pudo crear la pregunta.',
+				message: getPublicErrorMessage(error, 'No se pudo crear la pregunta.'),
 			},
 		});
 	}

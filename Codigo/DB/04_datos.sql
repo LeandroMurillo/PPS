@@ -22,6 +22,7 @@ TRUNCATE TABLE `cultura`.`ItemsPortafolio`;
 TRUNCATE TABLE `cultura`.`Postulaciones`;
 TRUNCATE TABLE `cultura`.`Convocatorias`;
 TRUNCATE TABLE `cultura`.`Eventos`;
+TRUNCATE TABLE `cultura`.`IntegrantesNoRegistrados`;
 TRUNCATE TABLE `cultura`.`Integrantes`;
 TRUNCATE TABLE `cultura`.`ModeradoresCategorias`;
 TRUNCATE TABLE `cultura`.`Actores`;
@@ -491,7 +492,19 @@ VALUES
   (10, 6, 'Logística', 0);
 
 -- -----------------------------------------------------
--- 9. Eventos
+-- 9. Integrantes sin usuario registrado
+-- -----------------------------------------------------
+INSERT INTO `cultura`.`IntegrantesNoRegistrados`
+  (`idIntegranteNoRegistrado`, `idActor`, `nombre`, `apellido`, `email`, `rol`)
+VALUES
+  (1, 2, 'Lucía', 'Figueroa', 'lucia.figueroa@example.com', 'Violín'),
+  (2, 2, 'Ramiro', 'Paz', NULL, 'Acordeón'),
+  (3, 4, 'Martina', 'Sosa', 'martina.sosa@example.com', 'Teclados'),
+  (4, 6, 'Bruno', 'Medina', NULL, 'Malabarista'),
+  (5, 6, 'Camila', 'Roldán', 'camila.roldan@example.com', 'Vestuario');
+
+-- -----------------------------------------------------
+-- 10. Eventos
 -- -----------------------------------------------------
 INSERT INTO `cultura`.`Eventos`
   (`idEvento`, `idActor`, `nombre`, `descripcion`, `fecha`, `fechaCreacion`, `estado`)

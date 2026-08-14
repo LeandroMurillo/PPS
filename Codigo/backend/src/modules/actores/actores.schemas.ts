@@ -383,9 +383,14 @@ export const actorDetalleRespuestaSchema = z
 
 export const actorDetalleIntegranteSchema = z
 	.strictObject({
-		id: z.number().int().positive().optional().meta({
+		id: z.number().int().positive().nullable().optional().meta({
 			description: 'Identificador del usuario integrante.',
 			example: 3,
+		}),
+
+		tipo: z.enum(['REGISTRADO', 'NO_REGISTRADO']).meta({
+			description: 'Indica si el integrante posee una cuenta en la plataforma.',
+			example: 'REGISTRADO',
 		}),
 
 		nombre: z.string().meta({

@@ -166,7 +166,8 @@ const actorDetalleRespuestaDatabaseRowSchema = z.object({
 });
 
 const actorDetalleIntegranteDatabaseRowSchema = z.object({
-	id: databaseIntegerSchema.optional(),
+	id: databaseIntegerSchema.nullable().optional(),
+	tipo: z.enum(['REGISTRADO', 'NO_REGISTRADO']),
 	nombre: z.string(),
 	apellido: z.string(),
 	email: z.string().nullable().optional(),

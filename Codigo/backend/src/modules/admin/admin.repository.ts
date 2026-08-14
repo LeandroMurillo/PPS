@@ -107,9 +107,11 @@ const actorDatabaseRowSchema = z.object({
 type ActorDatabaseRow = z.infer<typeof actorDatabaseRowSchema>;
 
 const actorIntegranteDatabaseRowSchema = z.object({
-	idUsuario: databaseIntegerSchema,
+	tipo: z.enum(['REGISTRADO', 'NO_REGISTRADO']),
+	idUsuario: databaseIntegerSchema.nullable(),
+	idIntegranteNoRegistrado: databaseIntegerSchema.nullable(),
 	nombreUsuario: z.string(),
-	email: z.string(),
+	email: z.string().nullable(),
 	rol: z.string(),
 	esDueno: databaseBooleanSchema,
 });
@@ -445,6 +447,8 @@ export async function obtenerActorAdminRepository(id: number): Promise<ActorDeta
 		...mapActor(actorRow),
 		integrantes: integrantes.map((row) => ({
 			id: row.idUsuario,
+			idIntegranteNoRegistrado: row.idIntegranteNoRegistrado,
+			tipo: row.tipo,
 			nombre: row.nombreUsuario,
 			email: row.email,
 			rol: row.rol,

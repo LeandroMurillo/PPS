@@ -224,6 +224,27 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `cultura`.`IntegrantesNoRegistrados`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `cultura`.`IntegrantesNoRegistrados` (
+  `idIntegranteNoRegistrado` INT NOT NULL AUTO_INCREMENT,
+  `idActor` INT NOT NULL,
+  `nombre` VARCHAR(45) NOT NULL,
+  `apellido` VARCHAR(45) NOT NULL,
+  `email` VARCHAR(99) NULL,
+  `rol` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`idIntegranteNoRegistrado`),
+  UNIQUE INDEX `uq_IntegrantesNoRegistrados_actor_email` (`idActor` ASC, `email` ASC) VISIBLE,
+  INDEX `fk_IntegrantesNoRegistrados_Actores_idx` (`idActor` ASC) VISIBLE,
+  CONSTRAINT `fk_IntegrantesNoRegistrados_Actores`
+    FOREIGN KEY (`idActor`)
+    REFERENCES `cultura`.`Actores` (`idActor`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `cultura`.`ModeradoresCategorias`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `cultura`.`ModeradoresCategorias` (

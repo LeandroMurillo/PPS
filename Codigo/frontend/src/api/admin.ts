@@ -94,9 +94,11 @@ export type ActorAdmin = {
 
 export type ActorDetalleAdmin = ActorAdmin & {
 	integrantes: {
-		id: number;
+		id: number | null;
+		idIntegranteNoRegistrado: number | null;
+		tipo: 'REGISTRADO' | 'NO_REGISTRADO';
 		nombre: string;
-		email: string;
+		email: string | null;
 		rol: string;
 		esDueno: boolean;
 	}[];

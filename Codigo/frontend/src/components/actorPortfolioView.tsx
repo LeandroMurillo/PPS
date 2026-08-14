@@ -146,8 +146,9 @@ export type ActorPortfolioViewData = {
 		publica?: boolean;
 	}[];
 	integrantes?: {
-		id?: number;
+		id?: number | null;
 		idUsuario?: number;
+		tipo?: 'REGISTRADO' | 'NO_REGISTRADO';
 		nombre: string;
 		apellido?: string | null;
 		email?: string | null;

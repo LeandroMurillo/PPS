@@ -27,10 +27,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 
 import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
-import {
-	ESTADO_COLORS as stateColors,
-	ESTADO_LABELS as stateLabels,
-} from '../constants/estados';
+import { ESTADO_COLORS as stateColors, ESTADO_LABELS as stateLabels } from '../constants/estados';
 import { formatDate } from '../utils/date';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
 
@@ -294,15 +291,24 @@ function ProfileTab({ actor }: { actor: ActorDetalleAdmin }) {
 											flexWrap="wrap"
 											useFlexGap
 										>
-											<Link
-												component={RouterLink}
-												to={`/usuarios/${integrante.id}`}
-												variant="body2"
-												fontWeight={600}
-												underline="hover"
-											>
-												{integrante.nombre}
-											</Link>
+											{integrante.id ? (
+												<Link
+													component={RouterLink}
+													to={`/usuarios/${integrante.id}`}
+													variant="body2"
+													fontWeight={600}
+													underline="hover"
+												>
+													{integrante.nombre}
+												</Link>
+											) : (
+												<Typography variant="body2" fontWeight={600}>
+													{integrante.nombre}
+												</Typography>
+											)}
+											{integrante.tipo === 'NO_REGISTRADO' && (
+												<Chip label="Sin cuenta" size="small" variant="outlined" />
+											)}
 											{integrante.esDueno && (
 												<Chip label="Dueño" size="small" variant="outlined" />
 											)}
