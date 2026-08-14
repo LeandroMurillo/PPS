@@ -4,10 +4,14 @@ import * as React from 'react';
 import { CircleMarker, GeoJSON, MapContainer, Marker, Pane, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
+import AddIcon from '@mui/icons-material/Add';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import MapIcon from '@mui/icons-material/Map';
+import RemoveIcon from '@mui/icons-material/Remove';
+import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -17,8 +21,11 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
+import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import MuiTooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useColorScheme, useTheme } from '@mui/material/styles';
@@ -41,7 +48,7 @@ const TUCUMAN_CENTER: L.LatLngExpression = [-26.8241, -65.2226];
 const TUCUMAN_BOUNDS = L.latLngBounds([-27.95, -66.35], [-25.75, -64.45]);
 const DEPARTAMENTOS_GEOJSON_URL = '/data/departamentos.geojson';
 const TUCUMAN_DEPARTAMENTOS_URL = '/data/tucuman_departamentos.json';
-const CLUSTER_ZOOM_THRESHOLD = 11;
+const CLUSTER_ZOOM_THRESHOLD = 10;
 
 type TucumanDepartamentosMap = Record<
 	string,
@@ -127,6 +134,74 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
 	}, [map, onZoomChange]);
 
 	return null;
+}
+
+function MapControls({ isSatelital, onToggleSatelital }: { isSatelital: boolean; onToggleSatelital: () => void }) {
+	const map = useMap();
+
+	return (
+		<Paper
+			elevation={4}
+			sx={{
+				position: 'absolute',
+				bottom: { xs: 16, sm: 20 },
+				left: { xs: 16, sm: 20 },
+				zIndex: 1000,
+				display: 'flex',
+				flexDirection: 'column',
+				borderRadius: 2,
+				overflow: 'hidden',
+				bgcolor: 'background.paper',
+				border: '1px solid',
+				borderColor: 'divider',
+				boxShadow: 3,
+			}}
+		>
+			<MuiTooltip title="Acercar" placement="right">
+				<IconButton
+					size="small"
+					aria-label="Acercar"
+					onClick={() => map.zoomIn()}
+					sx={{ borderRadius: 0, p: 1 }}
+				>
+					<AddIcon fontSize="small" />
+				</IconButton>
+			</MuiTooltip>
+			<Divider />
+			<MuiTooltip title="Alejar" placement="right">
+				<IconButton
+					size="small"
+					aria-label="Alejar"
+					onClick={() => map.zoomOut()}
+					sx={{ borderRadius: 0, p: 1 }}
+				>
+					<RemoveIcon fontSize="small" />
+				</IconButton>
+			</MuiTooltip>
+			<Divider />
+			<MuiTooltip
+				title={isSatelital ? 'Cambiar a mapa de calles' : 'Cambiar a vista satelital'}
+				placement="right"
+			>
+				<IconButton
+					size="small"
+					aria-label={isSatelital ? 'Cambiar a mapa de calles' : 'Cambiar a vista satelital'}
+					onClick={onToggleSatelital}
+					color={isSatelital ? 'primary' : 'default'}
+					sx={{
+						borderRadius: 0,
+						p: 1,
+						bgcolor: isSatelital ? 'action.selected' : 'transparent',
+						'&:hover': {
+							bgcolor: isSatelital ? 'action.selected' : 'action.hover',
+						},
+					}}
+				>
+					{isSatelital ? <MapIcon fontSize="small" /> : <SatelliteAltIcon fontSize="small" />}
+				</IconButton>
+			</MuiTooltip>
+		</Paper>
+	);
 }
 
 function DepartmentClusterMarkers({
@@ -335,6 +410,7 @@ export default function TucumanMap() {
 	const [puntosProcesados, setPuntosProcesados] = React.useState<CulturalPoint[]>([]);
 	const [error, setError] = React.useState<string | null>(null);
 	const [currentZoom, setCurrentZoom] = React.useState<number>(8);
+	const [isSatelital, setIsSatelital] = React.useState<boolean>(false);
 
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -562,9 +638,12 @@ export default function TucumanMap() {
 					transform: 'scale(1.15)',
 					boxShadow: '0 6px 18px rgba(0,0,0,0.5), 0 0 0 3px #e91e63 !important',
 				},
-				// Aplicar filtro a los mapas base si es modo oscuro
+				// Aplicar filtro a los mapas base si es modo oscuro (solo en mapa de calles)
 				'& .leaflet-tile-pane': {
-					filter: isDarkMode ? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)' : 'none',
+					filter:
+						!isSatelital && isDarkMode
+							? 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)'
+							: 'none',
 					transition: 'filter 0.3s ease',
 				},
 				// Aplicar colores a los botones de control (Zoom)
@@ -784,13 +863,26 @@ export default function TucumanMap() {
 				center={TUCUMAN_CENTER}
 				zoom={8}
 				minZoom={7}
+				zoomControl={false}
 				maxBounds={TUCUMAN_BOUNDS.pad(0.35)}
 				maxBoundsViscosity={0.75}
 				style={{ height: '100%', width: '100%' }}
 			>
+				{/* Controles unificados de Zoom y Capa Satelital/Calles abajo a la izquierda */}
+				<MapControls isSatelital={isSatelital} onToggleSatelital={() => setIsSatelital((prev) => !prev)} />
+
 				<TileLayer
-					attribution='<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+					key={isSatelital ? 'satellite' : 'streets'}
+					attribution={
+						isSatelital
+							? 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+							: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+					}
+					url={
+						isSatelital
+							? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+							: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+					}
 				/>
 
 				{/* Escuchador de eventos de zoom para alternar entre clusters y puntos individuales */}
@@ -824,14 +916,15 @@ export default function TucumanMap() {
 				{departamentosGeoJson && (
 					<Pane name="departamentos-borders" style={{ zIndex: 690 }}>
 						<GeoJSON
+							key={isSatelital ? 'borders-sat' : 'borders-osm'}
 							data={departamentosGeoJson}
 							interactive={false}
 							filter={(feature) =>
 								feature.geometry.type !== 'Point' && feature.geometry.type !== 'MultiPoint'
 							}
 							style={{
-								color: isDarkMode ? '#90caf9' : '#666666',
-								weight: 1,
+								color: isSatelital ? '#00e5ff' : isDarkMode ? '#90caf9' : '#666666',
+								weight: isSatelital ? 1.5 : 1,
 								dashArray: '4 4', // Línea punteada para departamentos
 								fillOpacity: 0,
 								fillColor: isDarkMode ? '#1976d2' : '#e3f2fd',

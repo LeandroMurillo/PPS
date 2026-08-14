@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { CircleMarker, MapContainer, TileLayer } from 'react-leaflet';
+import { CircleMarker, MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { Link as RouterLink } from 'react-router';
 
+import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -11,7 +12,10 @@ import InstagramIcon from '@mui/icons-material/Instagram';
 import LinkIcon from '@mui/icons-material/Link';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import MapIcon from '@mui/icons-material/Map';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
+import RemoveIcon from '@mui/icons-material/Remove';
+import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import YouTubeIcon from '@mui/icons-material/YouTube';
@@ -22,6 +26,7 @@ import {
 	Card,
 	CardContent,
 	Chip,
+	Divider,
 	FormControlLabel,
 	Grid,
 	IconButton,
@@ -29,6 +34,7 @@ import {
 	Paper,
 	Stack,
 	Switch,
+	Tooltip as MuiTooltip,
 	Typography,
 } from '@mui/material';
 
@@ -164,6 +170,79 @@ export type ActorPortfolioViewProps = {
 	initialShowAllInfo?: boolean;
 };
 
+function PortfolioMapControls({
+	isSatelital,
+	onToggleSatelital,
+}: {
+	isSatelital: boolean;
+	onToggleSatelital: () => void;
+}) {
+	const map = useMap();
+
+	return (
+		<Paper
+			elevation={3}
+			sx={{
+				position: 'absolute',
+				bottom: 8,
+				left: 8,
+				zIndex: 1000,
+				display: 'flex',
+				flexDirection: 'column',
+				borderRadius: 1.5,
+				overflow: 'hidden',
+				bgcolor: 'background.paper',
+				border: '1px solid',
+				borderColor: 'divider',
+			}}
+		>
+			<MuiTooltip title="Acercar" placement="right">
+				<IconButton
+					size="small"
+					aria-label="Acercar"
+					onClick={() => map.zoomIn()}
+					sx={{ borderRadius: 0, p: 0.75 }}
+				>
+					<AddIcon fontSize="small" />
+				</IconButton>
+			</MuiTooltip>
+			<Divider />
+			<MuiTooltip title="Alejar" placement="right">
+				<IconButton
+					size="small"
+					aria-label="Alejar"
+					onClick={() => map.zoomOut()}
+					sx={{ borderRadius: 0, p: 0.75 }}
+				>
+					<RemoveIcon fontSize="small" />
+				</IconButton>
+			</MuiTooltip>
+			<Divider />
+			<MuiTooltip
+				title={isSatelital ? 'Cambiar a mapa de calles' : 'Cambiar a vista satelital'}
+				placement="right"
+			>
+				<IconButton
+					size="small"
+					aria-label={isSatelital ? 'Cambiar a mapa de calles' : 'Cambiar a vista satelital'}
+					onClick={onToggleSatelital}
+					color={isSatelital ? 'primary' : 'default'}
+					sx={{
+						borderRadius: 0,
+						p: 0.75,
+						bgcolor: isSatelital ? 'action.selected' : 'transparent',
+						'&:hover': {
+							bgcolor: isSatelital ? 'action.selected' : 'action.hover',
+						},
+					}}
+				>
+					{isSatelital ? <MapIcon fontSize="small" /> : <SatelliteAltIcon fontSize="small" />}
+				</IconButton>
+			</MuiTooltip>
+		</Paper>
+	);
+}
+
 export default function ActorPortfolioView({
 	actor,
 	volverA,
@@ -200,6 +279,7 @@ export default function ActorPortfolioView({
 
 	// Estado del switch: solo puede activarse si el usuario es privilegiado
 	const [showAllInfo, setShowAllInfo] = useState(Boolean(isPrivileged && initialShowAllInfo));
+	const [mapaSatelital, setMapaSatelital] = useState(false);
 
 	// Asegurar que si los permisos cambian, no se muestre información privada
 	const effectiveShowAll = isPrivileged && showAllInfo;
@@ -514,15 +594,23 @@ export default function ActorPortfolioView({
 							}}
 						>
 							<Paper
-								elevation={1}
-								sx={{ overflow: 'hidden', borderRadius: 2, height: 300, position: 'relative' }}
+								variant="outlined"
+								sx={{
+									height: { xs: 240, md: 320 },
+									borderRadius: 2,
+									overflow: 'hidden',
+									position: 'relative',
+									'& .leaflet-container': {
+										fontFamily: 'inherit',
+									},
+								}}
 							>
 								{effectiveShowAll && actor.ubicacion.esPublica === false && (
 									<Box
 										sx={{
 											position: 'absolute',
 											top: 8,
-											right: 8,
+											left: 8,
 											zIndex: 1000,
 											bgcolor: 'warning.main',
 											color: 'warning.contrastText',
@@ -534,6 +622,7 @@ export default function ActorPortfolioView({
 											display: 'flex',
 											alignItems: 'center',
 											gap: 0.5,
+											boxShadow: 1,
 										}}
 									>
 										<LockIcon sx={{ fontSize: 14 }} /> Ubicación privada
@@ -543,12 +632,28 @@ export default function ActorPortfolioView({
 									center={ubicacionMapa}
 									zoom={14}
 									minZoom={7}
+									zoomControl={false}
 									style={{ height: '100%', width: '100%' }}
 									scrollWheelZoom={false}
 								>
+									{/* Controles unificados de Zoom y Capa Satelital/Calles abajo a la izquierda */}
+									<PortfolioMapControls
+										isSatelital={mapaSatelital}
+										onToggleSatelital={() => setMapaSatelital((prev) => !prev)}
+									/>
+
 									<TileLayer
-										attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-										url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+										key={mapaSatelital ? 'satellite' : 'streets'}
+										attribution={
+											mapaSatelital
+												? 'Esri, TomTom, Garmin, FAO, NOAA, USGS, and the GIS User Community'
+												: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+										}
+										url={
+											mapaSatelital
+												? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+												: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+										}
 									/>
 									<CircleMarker
 										center={ubicacionMapa}
