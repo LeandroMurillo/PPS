@@ -17,6 +17,7 @@ import {
 	listarIntegrantesRepository,
 	listarMisActoresRepository,
 	listarPortafolioRepository,
+	obtenerFormulariosActorRepository,
 	obtenerFormulariosAplicablesRepository,
 	obtenerOpcionesRegistroRepository,
 } from './mis-actores.repository.js';
@@ -379,9 +380,49 @@ export async function editarActorService(input: {
 	departamento: string;
 	localidad: string;
 	direccion: string;
+	latitud?: number | null | undefined;
+	longitud?: number | null | undefined;
+	esPublica?: boolean | undefined;
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
+	respuestas?: { idFormulario: number; idPregunta: number; valor: unknown }[] | undefined;
 }) {
 	const esAdmin = input.userRol === 'ADMIN' || input.userRol === 'MODERADOR';
+
+	const respuestas = input.respuestas;
+	if (respuestas && respuestas.length > 0) {
+		const formularios = await obtenerFormulariosAplicablesService({
+			idCategoria: input.idCategoria,
+			idSubcategoria: input.idSubcategoria,
+		});
+		const preguntasAplicables = new Map<
+			string,
+			{
+				formulario: (typeof formularios.data)[number];
+				pregunta: (typeof formularios.data)[number]['preguntas'][number];
+			}
+		>(
+			formularios.data.flatMap((formulario) =>
+				formulario.preguntas.map(
+					(pregunta) => [`${formulario.id}:${pregunta.id}`, { formulario, pregunta }] as const,
+				),
+			),
+		);
+
+		const respuestasPorPregunta = new Map<string, (typeof respuestas)[number]>();
+		for (const respuesta of respuestas) {
+			const key = `${respuesta.idFormulario}:${respuesta.idPregunta}`;
+			const aplicable = preguntasAplicables.get(key);
+			if (!aplicable) {
+				throw new Error('Una de las respuestas no pertenece a los formularios aplicables al actor.');
+			}
+			if (respuestasPorPregunta.has(key)) {
+				throw new Error('No se puede enviar dos veces la respuesta a una misma pregunta.');
+			}
+			validarValorRespuesta(aplicable.pregunta, respuesta.valor);
+			respuestasPorPregunta.set(key, respuesta);
+		}
+	}
+
 	const savedImages: SavedActorImage[] = [];
 	try {
 		let fotoPerfilUrl = input.fotoPerfilUrl ?? null;
@@ -404,7 +445,11 @@ export async function editarActorService(input: {
 			departamento: input.departamento,
 			localidad: input.localidad,
 			direccion: input.direccion,
+			latitud: input.latitud,
+			longitud: input.longitud,
+			esPublica: input.esPublica,
 			esAdmin,
+			respuestas,
 		});
 
 		return { fotoPerfilUrl };
@@ -412,6 +457,14 @@ export async function editarActorService(input: {
 		removeSavedActorImages(savedImages);
 		throw error;
 	}
+}
+
+export async function obtenerFormulariosActorService(input: {
+	idUsuario: number;
+	idActor: number;
+	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
+}) {
+	return await obtenerFormulariosActorRepository({ idActor: input.idActor });
 }
 
 export async function cambiarEstadoActorService(input: {

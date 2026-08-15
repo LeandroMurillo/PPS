@@ -20,6 +20,7 @@ import {
 	listarIntegrantesController,
 	listarMisActoresController,
 	listarPortafolioController,
+	obtenerFormulariosActorController,
 	obtenerFormulariosAplicablesController,
 	obtenerOpcionesRegistroController,
 } from './mis-actores.controller.js';
@@ -32,6 +33,7 @@ misActoresRouter.get('/opciones-registro', obtenerOpcionesRegistroController);
 misActoresRouter.get('/formularios-aplicables', obtenerFormulariosAplicablesController);
 misActoresRouter.get('/', listarMisActoresController);
 misActoresRouter.post('/', crearActorController);
+misActoresRouter.get('/:id/formularios', obtenerFormulariosActorController);
 misActoresRouter.put('/:id', editarActorController);
 misActoresRouter.patch('/:id/estado', cambiarEstadoActorController);
 misActoresRouter.delete('/:id', eliminarActorController);

@@ -8,6 +8,7 @@ import type {
 	EventoMock,
 	IntegranteMock,
 	PreguntaBancoMock,
+	PreguntaFormularioMock,
 	FormularioMock,
 	CategoriaIcono,
 	ConvocatoriaMock,
@@ -493,56 +494,48 @@ class MockDatabase {
 			},
 		];
 
-		this.formularios = [
+		const sectorQuestionsConfig: Record<
+			number,
 			{
-				id: 1,
-				idCategoria: 1,
-				categoria: 'Música',
-				estadoCategoria: 'A',
-				idSubcategoria: null,
-				subcategoria: null,
-				estadoSubcategoria: null,
-				ambito: 'CATEGORIA',
+				titulo: string;
+				descripcion: string;
+				preguntas: Array<{
+					pregunta: string;
+					tipoDato:
+						| 'TEXTO'
+						| 'NUMERO'
+						| 'BOOLEANO'
+						| 'FECHA'
+						| 'URL'
+						| 'EMAIL'
+						| 'TELEFONO'
+						| 'OPCION_UNICA'
+						| 'OPCION_MULTIPLE';
+					opciones: string[] | null;
+					esObligatorio: boolean;
+					esPublico: boolean;
+				}>;
+			}
+		> = {
+			1: {
 				titulo: 'Relevamiento del Sector Musical Tucumano',
-				descripcion:
-					'Relevamiento de necesidades técnicas, rider, trayectoria y equipamiento de grupos musicales tucumanos.',
-				fechaCreacion: '2025-01-05T09:00:00Z',
-				cantidadPreguntasHistoricas: 3,
-				cantidadPreguntasActivas: 3,
-				cantidadActoresConRespuestas: 150,
+				descripcion: 'Relevamiento de necesidades técnicas, rider, trayectoria y equipamiento.',
 				preguntas: [
 					{
-						id: 1,
 						pregunta: '¿Cuenta con personería jurídica o registro fiscal activo?',
 						tipoDato: 'BOOLEANO',
 						opciones: null,
-						idPreguntaReemplazada: null,
-						preguntaReemplazada: null,
-						orden: 1,
 						esObligatorio: false,
-						esPublico: false, // Pregunta privada
-						fechaIncorporacion: '2025-01-05T09:00:00Z',
-						fechaDesactivacion: null,
-						estado: 'A',
-						cantidadActoresQueRespondieron: 120,
+						esPublico: false,
 					},
 					{
-						id: 2,
 						pregunta: '¿Años de trayectoria artística continua en Tucumán?',
 						tipoDato: 'NUMERO',
 						opciones: null,
-						idPreguntaReemplazada: null,
-						preguntaReemplazada: null,
-						orden: 2,
 						esObligatorio: true,
 						esPublico: true,
-						fechaIncorporacion: '2025-01-05T09:00:00Z',
-						fechaDesactivacion: null,
-						estado: 'A',
-						cantidadActoresQueRespondieron: 150,
 					},
 					{
-						id: 3,
 						pregunta: '¿Canales de difusión principales?',
 						tipoDato: 'OPCION_MULTIPLE',
 						opciones: [
@@ -551,19 +544,306 @@ class MockDatabase {
 							'Afiches y boca a boca',
 							'Plataformas digitales',
 						],
-						idPreguntaReemplazada: null,
-						preguntaReemplazada: null,
-						orden: 3,
 						esObligatorio: false,
-						esPublico: false, // Pregunta privada
-						fechaIncorporacion: '2025-01-05T09:00:00Z',
-						fechaDesactivacion: null,
-						estado: 'A',
-						cantidadActoresQueRespondieron: 110,
+						esPublico: false,
 					},
 				],
 			},
-		];
+			2: {
+				titulo: 'Relevamiento del Sector de Teatro y Artes Escénicas',
+				descripcion: 'Relevamiento de salas, elencos, equipamiento escénico y trayectoria teatral.',
+				preguntas: [
+					{
+						pregunta: '¿Cuenta con espacio propio o sala de ensayo?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Años de trayectoria escénica continua?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Espacios donde se presentan habitualmente?',
+						tipoDato: 'OPCION_MULTIPLE',
+						opciones: [
+							'Salas independientes',
+							'Teatros oficiales',
+							'Espacios no convencionales o vía pública',
+							'Centros culturales',
+						],
+						esObligatorio: false,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Formato principal de las producciones?',
+						tipoDato: 'OPCION_UNICA',
+						opciones: [
+							'Obras de sala',
+							'Teatro callejero / itinerante',
+							'Microteatro / performances',
+							'Títeres y animación',
+						],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			3: {
+				titulo: 'Relevamiento del Sector Danza',
+				descripcion: 'Relevamiento de estilos, cuerpos de baile y espacios de formación.',
+				preguntas: [
+					{
+						pregunta: '¿Cuenta con sala de ensayo o academia propia?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Años de trayectoria del elenco o compañía?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Modalidades o estilos desarrollados?',
+						tipoDato: 'OPCION_MULTIPLE',
+						opciones: ['Folclore', 'Contemporáneo', 'Clásico / Neoclásico', 'Tango / Danza Urbana'],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			4: {
+				titulo: 'Relevamiento de Artes Visuales',
+				descripcion: 'Relevamiento de talleres, técnicas y espacios de exhibición.',
+				preguntas: [
+					{
+						pregunta: '¿Cuenta con taller o espacio de exhibición propio?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Años de producción artística?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Técnicas o disciplinas principales?',
+						tipoDato: 'OPCION_MULTIPLE',
+						opciones: ['Pintura / Dibujo', 'Escultura / Cerámica', 'Fotografía', 'Muralismo / Grabado'],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			5: {
+				titulo: 'Relevamiento del Sector Audiovisual',
+				descripcion: 'Relevamiento de productoras, realizadores y equipamiento técnico.',
+				preguntas: [
+					{
+						pregunta: '¿Dispone de equipamiento de rodaje / edición propio?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: false,
+					},
+					{
+						pregunta: '¿Cantidad de producciones realizadas?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Etapa principal de especialización?',
+						tipoDato: 'OPCION_UNICA',
+						opciones: [
+							'Preproducción y Guión',
+							'Rodaje y Dirección',
+							'Postproducción y Sonido',
+							'Animación y VFX',
+						],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			6: {
+				titulo: 'Relevamiento del Sector Artesanal',
+				descripcion: 'Relevamiento de materias primas, técnicas autóctonas y oficios.',
+				preguntas: [
+					{
+						pregunta: '¿Cuenta con carnet o registro oficial de artesano/a?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: false,
+					},
+					{
+						pregunta: '¿Años de oficio artesanal continuo?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Materiales principales que trabaja?',
+						tipoDato: 'OPCION_MULTIPLE',
+						opciones: ['Madera', 'Cuero', 'Tejidos y Lana', 'Arcilla y Cerámica', 'Metales / Platería'],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			7: {
+				titulo: 'Relevamiento del Sector Editorial y Literatura',
+				descripcion: 'Relevamiento de autores, editoriales independientes y publicaciones.',
+				preguntas: [
+					{
+						pregunta: '¿Cantidad de títulos o publicaciones editadas?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Géneros literarios principales?',
+						tipoDato: 'OPCION_MULTIPLE',
+						opciones: ['Poesía', 'Narrativa / Novela', 'Ensayo / Crónica', 'Infantil y Juvenil'],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			8: {
+				titulo: 'Relevamiento de Patrimonio y Museos',
+				descripcion: 'Relevamiento de sitios históricos, colecciones y archivos.',
+				preguntas: [
+					{
+						pregunta: '¿El espacio cuenta con acceso al público general?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Días y horarios de atención al público?',
+						tipoDato: 'TEXTO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+				],
+			},
+			9: {
+				titulo: 'Relevamiento de Diseño y Nuevas Tecnologías',
+				descripcion: 'Relevamiento de estudios de diseño, multimedia y desarrollo.',
+				preguntas: [
+					{
+						pregunta: '¿Años de actividad profesional?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Servicios principales ofrecidos?',
+						tipoDato: 'OPCION_MULTIPLE',
+						opciones: ['Identidad Visual', 'Diseño Web / UX', 'Diseño de Indumentaria', 'Videojuegos y 3D'],
+						esObligatorio: false,
+						esPublico: true,
+					},
+				],
+			},
+			10: {
+				titulo: 'Relevamiento de Gastronomía y Fiestas Populares',
+				descripcion: 'Relevamiento de tradiciones culinarias y organizadores de festividades.',
+				preguntas: [
+					{
+						pregunta: '¿Cuenta con habilitación bromatológica o comercial vigente?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: false,
+					},
+					{
+						pregunta: '¿Años de participación en festividades y ferias provinciales?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+				],
+			},
+		};
+
+		this.formularios = catDefinitions.map((cat) => {
+			const config = sectorQuestionsConfig[cat.id] ?? {
+				titulo: `Relevamiento del Sector ${cat.nombre}`,
+				descripcion: `Relevamiento sectorial de ${cat.nombre}.`,
+				preguntas: [
+					{
+						pregunta: '¿Años de trayectoria artística en Tucumán?',
+						tipoDato: 'NUMERO',
+						opciones: null,
+						esObligatorio: true,
+						esPublico: true,
+					},
+					{
+						pregunta: '¿Cuenta con personería jurídica o registro fiscal?',
+						tipoDato: 'BOOLEANO',
+						opciones: null,
+						esObligatorio: false,
+						esPublico: false,
+					},
+				],
+			};
+
+			const preguntas: PreguntaFormularioMock[] = config.preguntas.map((q, pIdx) => ({
+				id: cat.id * 100 + pIdx + 1,
+				pregunta: q.pregunta,
+				tipoDato: q.tipoDato,
+				opciones: q.opciones,
+				idPreguntaReemplazada: null,
+				preguntaReemplazada: null,
+				orden: pIdx + 1,
+				esObligatorio: q.esObligatorio,
+				esPublico: q.esPublico,
+				fechaIncorporacion: '2025-01-05T09:00:00Z',
+				fechaDesactivacion: null,
+				estado: 'A',
+				cantidadActoresQueRespondieron: 80,
+			}));
+
+			return {
+				id: cat.id,
+				idCategoria: cat.id,
+				categoria: cat.nombre,
+				estadoCategoria: 'A',
+				idSubcategoria: null,
+				subcategoria: null,
+				estadoSubcategoria: null,
+				ambito: 'CATEGORIA',
+				titulo: config.titulo,
+				descripcion: config.descripcion,
+				fechaCreacion: '2025-01-05T09:00:00Z',
+				cantidadPreguntasHistoricas: preguntas.length,
+				cantidadPreguntasActivas: preguntas.length,
+				cantidadActoresConRespuestas: 80,
+				preguntas,
+			};
+		});
 
 		// 6. Convocatorias Mock
 		this.convocatorias = [

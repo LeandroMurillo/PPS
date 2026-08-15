@@ -397,23 +397,127 @@ export async function editarActorRepository(input: {
 	departamento: string;
 	localidad: string;
 	direccion: string;
+	latitud?: number | null | undefined;
+	longitud?: number | null | undefined;
+	esPublica?: boolean | undefined;
 	esAdmin: boolean;
+	respuestas?: RegistroActorRespuesta[] | undefined;
 }) {
-	await pool.query('CALL sp_actor_editar_actor(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-		input.idUsuario,
-		input.idActor,
-		input.idCategoria,
-		input.idSubcategoria || null,
-		input.nombre,
-		input.descripcion,
-		input.fotoPerfilUrl || null,
-		input.cuit || null,
-		input.tipoActor,
-		input.departamento,
-		input.localidad,
-		input.direccion,
-		input.esAdmin ? 1 : 0,
-	]);
+	const connection = await pool.getConnection();
+	try {
+		await connection.beginTransaction();
+		await connection.query('CALL sp_actor_editar_actor(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+			input.idUsuario,
+			input.idActor,
+			input.idCategoria,
+			input.idSubcategoria || null,
+			input.nombre,
+			input.descripcion,
+			input.fotoPerfilUrl || null,
+			input.cuit || null,
+			input.tipoActor,
+			input.departamento,
+			input.localidad,
+			input.direccion,
+			input.esAdmin ? 1 : 0,
+		]);
+
+		if (input.latitud !== undefined || input.longitud !== undefined || input.esPublica !== undefined) {
+			await connection.query(
+				`UPDATE Ubicaciones u
+				 JOIN Actores a ON a.idUbicacion = u.idUbicacion
+				 SET u.latitud = COALESCE(?, u.latitud),
+				     u.longitud = COALESCE(?, u.longitud),
+				     u.esPublica = COALESCE(?, u.esPublica)
+				 WHERE a.idActor = ?`,
+				[
+					input.latitud ?? null,
+					input.longitud ?? null,
+					input.esPublica === undefined ? null : (input.esPublica ? 1 : 0),
+					input.idActor,
+				],
+			);
+		}
+
+		for (const respuesta of input.respuestas ?? []) {
+			await connection.query('CALL sp_actor_guardar_respuesta(?, ?, ?, ?)', [
+				input.idActor,
+				respuesta.idFormulario,
+				respuesta.idPregunta,
+				JSON.stringify(respuesta.valor),
+			]);
+		}
+
+		await connection.commit();
+	} catch (error) {
+		await connection.rollback();
+		throw error;
+	} finally {
+		connection.release();
+	}
+}
+
+export async function obtenerFormulariosActorRepository(input: { idActor: number }) {
+	const listarProcedureName = 'sp_actor_listar_formularios';
+	const listarResult: unknown = await pool.query('CALL sp_actor_listar_formularios(?)', [input.idActor]);
+	const formularios = z
+		.array(
+			z.object({
+				idFormulario: databaseIntegerSchema,
+				ambito: z.enum(['CATEGORIA', 'SUBCATEGORIA']),
+				idCategoria: databaseIntegerSchema,
+				categoria: z.string(),
+				idSubcategoria: databaseIntegerSchema.nullable(),
+				subcategoria: z.string().nullable(),
+				titulo: z.string(),
+				descripcion: z.string().nullable(),
+			}),
+		)
+		.parse(getResultSet(listarResult, 0, listarProcedureName));
+
+	const formulariosConPreguntas = await Promise.all(
+		formularios.map(async (formulario) => {
+			const obtenerProcedureName = 'sp_actor_obtener_formulario';
+			const obtenerResult: unknown = await pool.query('CALL sp_actor_obtener_formulario(?, ?)', [
+				input.idActor,
+				formulario.idFormulario,
+			]);
+			const preguntas = z
+				.array(
+					z.object({
+						idPregunta: databaseIntegerSchema,
+						pregunta: z.string(),
+						tipoDato: tipoPreguntaSchema,
+						opciones: z
+							.union([z.string(), z.array(z.string())])
+							.nullable()
+							.transform(parseOpcionesPregunta),
+						orden: databaseIntegerSchema,
+						esObligatorio: databaseIntegerSchema.transform((v) => Boolean(v)),
+						esPublico: databaseIntegerSchema.transform((v) => Boolean(v)),
+						valor: z.unknown().nullable().optional(),
+					}),
+				)
+				.parse(getResultSet(obtenerResult, 1, obtenerProcedureName))
+				.map((pregunta) => ({
+					id: pregunta.idPregunta,
+					pregunta: pregunta.pregunta,
+					tipoDato: pregunta.tipoDato,
+					opciones: pregunta.opciones,
+					orden: pregunta.orden,
+					esObligatorio: pregunta.esObligatorio,
+					esPublico: pregunta.esPublico,
+					valor: pregunta.valor ?? null,
+				}));
+
+			return {
+				...formulario,
+				preguntas,
+			};
+		}),
+	);
+
+	return { data: formulariosConPreguntas };
 }
 
 export async function cambiarEstadoActorRepository(input: {

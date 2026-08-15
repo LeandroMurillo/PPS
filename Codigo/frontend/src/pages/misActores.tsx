@@ -4,6 +4,7 @@ import { Link as RouterLink, useNavigate } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ClearIcon from '@mui/icons-material/Clear';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
@@ -12,8 +13,13 @@ import GroupIcon from '@mui/icons-material/Group';
 import GridViewIcon from '@mui/icons-material/GridView';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LanguageIcon from '@mui/icons-material/Language';
+import LayersIcon from '@mui/icons-material/Layers';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PublicIcon from '@mui/icons-material/Public';
+import QuizIcon from '@mui/icons-material/Quiz';
+import SearchIcon from '@mui/icons-material/Search';
 import ShieldIcon from '@mui/icons-material/Shield';
 import TuneIcon from '@mui/icons-material/Tune';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -21,6 +27,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
 	Alert,
+	Autocomplete,
 	Avatar,
 	Box,
 	Button,
@@ -28,6 +35,7 @@ import {
 	CardActions,
 	CardContent,
 	CardMedia,
+	Checkbox,
 	Chip,
 	CircularProgress,
 	Dialog,
@@ -38,6 +46,8 @@ import {
 	Divider,
 	FormControl,
 	FormControlLabel,
+	FormGroup,
+	FormHelperText,
 	Grid,
 	IconButton,
 	InputLabel,
@@ -48,12 +58,19 @@ import {
 	RadioGroup,
 	Select,
 	Stack,
+	Tab,
+	Tabs,
 	TextField,
 	ToggleButton,
 	ToggleButtonGroup,
 	Tooltip,
 	Typography,
 } from '@mui/material';
+import type { LeafletMouseEvent } from 'leaflet';
+import L from 'leaflet';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+// @ts-ignore
+import 'leaflet/dist/leaflet.css';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import { notify } from '../utils/toast';
 
@@ -61,6 +78,7 @@ import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { type CategoriaIcono } from '../components/categoryIcon';
 import DatePickerSpanish from '../components/datePickerSpanish';
+import RequiredAsterisk from '../components/requiredAsterisk';
 import {
 	agregarEventoApi,
 	agregarIntegranteApi,
@@ -79,9 +97,13 @@ import {
 	listarEventosApi,
 	listarMisActoresApi,
 	listarPortafolioApi,
+	obtenerFormulariosActorApi,
+	obtenerFormulariosAplicablesApi,
 	obtenerOpcionesRegistroApi,
+	type FormularioActor,
 	type IntegranteApiItem,
 	type OpcionCategoriaRegistro,
+	type PreguntaFormularioActor,
 } from '../api/actores';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import {
@@ -151,6 +173,9 @@ export type MyActor = {
 	departamento: string;
 	localidad: string;
 	direccion: string;
+	latitud?: number | null;
+	longitud?: number | null;
+	esPublica?: boolean;
 	cuit: string | null;
 	descripcion: string;
 	fotoPerfilUrl: string | null;
@@ -160,10 +185,298 @@ export type MyActor = {
 	eventos?: MyActorEvent[];
 };
 
+type TucumanDataMap = Record<
+	string,
+	{
+		centroide: { lat: number; lon: number };
+		localidades: string[];
+	}
+>;
+
+type MapPoint = { lat: number; lng: number };
+
+const customPinIcon = L.divIcon({
+	className: 'custom-map-pin',
+	html: `<div style="
+		background-color: #d32f2f;
+		width: 32px;
+		height: 32px;
+		border-radius: 50% 50% 50% 0;
+		transform: rotate(-45deg);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 3px solid #ffffff;
+		box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+		cursor: grab;
+	">
+		<div style="
+			width: 10px;
+			height: 10px;
+			background-color: #ffffff;
+			border-radius: 50%;
+			transform: rotate(45deg);
+		"></div>
+	</div>`,
+	iconSize: [32, 32],
+	iconAnchor: [16, 32],
+	popupAnchor: [0, -32],
+});
+
+function MapDepartmentCenterer({
+	department,
+	locality,
+	point,
+	tucumanData,
+}: {
+	department: string;
+	locality: string;
+	point: MapPoint | null;
+	tucumanData: TucumanDataMap;
+}) {
+	const map = useMap();
+
+	React.useEffect(() => {
+		if (point) return;
+
+		const deptInfo = tucumanData[department];
+		if (deptInfo?.centroide) {
+			const coords: [number, number] = [deptInfo.centroide.lat, deptInfo.centroide.lon];
+			const targetZoom = locality ? 13 : 11;
+			map.flyTo(coords, targetZoom, { duration: 0.8 });
+		}
+	}, [map, department, locality, point, tucumanData]);
+
+	return null;
+}
+
+function MapClickHandler({ onPointChange }: { onPointChange: (point: MapPoint) => void }) {
+	useMapEvents({
+		click: (event: LeafletMouseEvent) => {
+			onPointChange({ lat: event.latlng.lat, lng: event.latlng.lng });
+		},
+	});
+
+	return null;
+}
+
+function InvalidateMapSize() {
+	const map = useMap();
+	React.useEffect(() => {
+		const timer = setTimeout(() => {
+			map.invalidateSize();
+		}, 150);
+		return () => clearTimeout(timer);
+	}, [map]);
+	return null;
+}
+
 function getMemberKey(member: IntegranteApiItem): string {
 	return member.tipo === 'REGISTRADO'
 		? `usuario-${member.idUsuario}`
 		: `sin-cuenta-${member.idIntegranteNoRegistrado}`;
+}
+
+function QuestionHeading({
+	question,
+	hasError = false,
+	isNew = false,
+}: {
+	question: PreguntaFormularioActor;
+	hasError?: boolean;
+	isNew?: boolean;
+}) {
+	return (
+		<Stack
+			direction={{ xs: 'column', sm: 'row' }}
+			spacing={1}
+			alignItems={{ xs: 'flex-start', sm: 'center' }}
+			justifyContent="space-between"
+		>
+			<Typography
+				variant="subtitle2"
+				fontWeight={600}
+				color={hasError ? 'error.main' : 'text.primary'}
+				sx={{ transition: 'color 0.2s ease' }}
+			>
+				{question.pregunta}
+				{question.esObligatorio && <RequiredAsterisk tooltipTitle="Pregunta obligatoria" />}
+			</Typography>
+			<Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
+				{isNew && (
+					<Tooltip title="Pregunta nueva: incorporada al catálogo del sector." arrow>
+						<Chip
+							size="small"
+							color="info"
+							variant="outlined"
+							label="Nueva"
+							sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+						/>
+					</Tooltip>
+				)}
+				{question.esObligatorio && (
+					<Chip
+						size="small"
+						color="warning"
+						variant="outlined"
+						label="Obligatoria"
+						sx={{ height: 22, fontSize: '0.7rem' }}
+					/>
+				)}
+				{question.esPublico ? (
+					<Tooltip title="Esta respuesta podrá mostrarse en el perfil público del actor cultural." arrow>
+						<Chip
+							size="small"
+							variant="outlined"
+							color="success"
+							icon={<PublicIcon sx={{ fontSize: 14 }} />}
+							label="Pública"
+							sx={{ height: 22, fontSize: '0.7rem' }}
+						/>
+					</Tooltip>
+				) : (
+					<Tooltip title="Esta respuesta solo es visible para moderación y administración." arrow>
+						<Chip
+							size="small"
+							variant="outlined"
+							color="default"
+							label="Interna"
+							sx={{ height: 22, fontSize: '0.7rem' }}
+						/>
+					</Tooltip>
+				)}
+			</Stack>
+		</Stack>
+	);
+}
+
+function QuestionField({
+	question,
+	value,
+	hasError = false,
+	isNew = false,
+	onChange,
+}: {
+	question: PreguntaFormularioActor;
+	value: string | string[];
+	hasError?: boolean;
+	isNew?: boolean;
+	onChange: (value: string | string[]) => void;
+}) {
+	const label = question.pregunta;
+
+	if (question.tipoDato === 'BOOLEANO') {
+		return (
+			<FormControl error={hasError} component="fieldset" fullWidth>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
+					<RadioGroup
+						row
+						aria-label={label}
+						value={typeof value === 'string' ? value : ''}
+						onChange={(event) => onChange(event.target.value)}
+					>
+						<FormControlLabel
+							value="true"
+							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
+							label="Sí"
+						/>
+						<FormControlLabel
+							value="false"
+							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
+							label="No"
+						/>
+					</RadioGroup>
+					{hasError && <FormHelperText error>Esta pregunta es obligatoria.</FormHelperText>}
+				</Stack>
+			</FormControl>
+		);
+	}
+
+	if (question.tipoDato === 'OPCION_UNICA') {
+		return (
+			<FormControl fullWidth required={question.esObligatorio} error={hasError}>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
+					<Select
+						displayEmpty
+						error={hasError}
+						value={typeof value === 'string' ? value : ''}
+						onChange={(event) => onChange(event.target.value)}
+						inputProps={{ 'aria-label': label }}
+					>
+						<MenuItem value="" disabled>
+							Seleccioná una opción
+						</MenuItem>
+						{question.opciones?.map((option) => (
+							<MenuItem key={option} value={option}>
+								{option}
+							</MenuItem>
+						))}
+					</Select>
+					{hasError && <FormHelperText error>Seleccioná una opción.</FormHelperText>}
+				</Stack>
+			</FormControl>
+		);
+	}
+
+	if (question.tipoDato === 'OPCION_MULTIPLE') {
+		const selected = Array.isArray(value) ? value : [];
+		return (
+			<FormControl error={hasError} component="fieldset" fullWidth>
+				<Stack spacing={1}>
+					<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
+					<FormGroup aria-label={label}>
+						{question.opciones?.map((option) => (
+							<FormControlLabel
+								key={option}
+								label={option}
+								control={
+									<Checkbox
+										checked={selected.includes(option)}
+										color={hasError ? 'error' : 'primary'}
+										onChange={(event) =>
+											onChange(
+												event.target.checked
+													? [...selected, option]
+													: selected.filter((item) => item !== option),
+											)
+										}
+									/>
+								}
+							/>
+						))}
+					</FormGroup>
+					{hasError && <FormHelperText error>Seleccioná al menos una opción.</FormHelperText>}
+				</Stack>
+			</FormControl>
+		);
+	}
+
+	const inputType: Record<string, string> = {
+		NUMERO: 'number',
+		FECHA: 'date',
+		URL: 'url',
+		EMAIL: 'email',
+		TELEFONO: 'tel',
+	};
+
+	return (
+		<Stack spacing={1}>
+			<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
+			<TextField
+				fullWidth
+				required={question.esObligatorio}
+				error={hasError}
+				helperText={hasError ? 'Esta pregunta es obligatoria.' : undefined}
+				type={inputType[question.tipoDato] ?? 'text'}
+				placeholder={question.tipoDato === 'FECHA' ? undefined : 'Ingresá tu respuesta'}
+				value={typeof value === 'string' ? value : ''}
+				onChange={(event) => onChange(event.target.value)}
+				slotProps={{ htmlInput: { 'aria-label': label } }}
+			/>
+		</Stack>
+	);
 }
 
 export default function MisActoresPage() {
@@ -187,19 +500,48 @@ export default function MisActoresPage() {
 	// Edit Modal
 	const [editModalOpen, setEditModalOpen] = React.useState(false);
 	const [editingActor, setEditingActor] = React.useState<MyActor | null>(null);
+	const [editActiveTab, setEditActiveTab] = React.useState<number>(0);
+	const [editValidationAttempted, setEditValidationAttempted] = React.useState<boolean>(false);
+	const [editForms, setEditForms] = React.useState<FormularioActor[]>([]);
+	const [editFormsLoading, setEditFormsLoading] = React.useState<boolean>(false);
+	const [editFormAnswers, setEditFormAnswers] = React.useState<Record<string, string | string[]>>({});
+	const [tucumanData, setTucumanData] = React.useState<TucumanDataMap>({});
+	const [editMapLayer, setEditMapLayer] = React.useState<'streets' | 'satellite'>('streets');
+	const [isSearchingAddress, setIsSearchingAddress] = React.useState(false);
+	const [searchAddressError, setSearchAddressError] = React.useState<string | null>(null);
+	const [isLocatingUser, setIsLocatingUser] = React.useState(false);
 
 	// Edit Confirmation Modal
 	const [editConfirmModalOpen, setEditConfirmModalOpen] = React.useState(false);
 
 	// Edit Form values
-	const [formValues, setFormValues] = React.useState({
+	const [formValues, setFormValues] = React.useState<{
+		nombre: string;
+		tipoActor: MyActor['tipoActor'];
+		categoria: string;
+		subcategoria: string;
+		departamento: string;
+		localidad: string;
+		direccion: string;
+		latitud: number | null;
+		longitud: number | null;
+		esPublica: boolean;
+		cuit: string;
+		descripcion: string;
+		fotoPerfilUrl: string;
+		fotoPerfilBase64: string;
+		fotoPerfilNombre: string;
+	}>({
 		nombre: '',
-		tipoActor: 'COLECTIVO' as MyActor['tipoActor'],
+		tipoActor: 'INDIVIDUO',
 		categoria: '',
 		subcategoria: '',
-		departamento: '',
-		localidad: '',
+		departamento: 'Capital',
+		localidad: 'San Miguel de Tucumán',
 		direccion: '',
+		latitud: -26.8241,
+		longitud: -65.2226,
+		esPublica: true,
 		cuit: '',
 		descripcion: '',
 		fotoPerfilUrl: '',
@@ -290,6 +632,14 @@ export default function MisActoresPage() {
 					);
 				}
 			});
+
+		void fetch('/data/tucuman_departamentos.json', { signal: controller.signal })
+			.then((res) => res.json())
+			.then((data: TucumanDataMap) => {
+				setTucumanData(data);
+			})
+			.catch(() => {});
+
 		return () => controller.abort();
 	}, []);
 
@@ -316,6 +666,9 @@ export default function MisActoresPage() {
 					departamento: item.ubicacion.departamento,
 					localidad: item.ubicacion.localidad,
 					direccion: item.ubicacion.direccion,
+					latitud: item.ubicacion.latitud,
+					longitud: item.ubicacion.longitud,
+					esPublica: item.ubicacion.esPublica ?? true,
 					cuit: item.cuit,
 					descripcion: item.descripcion,
 					fotoPerfilUrl: item.foto,
@@ -361,6 +714,13 @@ export default function MisActoresPage() {
 	// Open Edit Dialog
 	const handleOpenEdit = (actor: MyActor) => {
 		setEditingActor(actor);
+		setEditActiveTab(0);
+		setEditValidationAttempted(false);
+		setEditFormsLoading(true);
+		setEditForms([]);
+		setEditFormAnswers({});
+		setSearchAddressError(null);
+
 		const category = findCategoryByName(categoryOptions, actor.categoria);
 		const cat = category?.nombre ?? actor.categoria;
 		const sub = actor.subcategoria
@@ -374,9 +734,12 @@ export default function MisActoresPage() {
 			tipoActor: actor.tipoActor,
 			categoria: cat,
 			subcategoria: sub,
-			departamento: actor.departamento,
-			localidad: actor.localidad,
-			direccion: actor.direccion,
+			departamento: actor.departamento || 'Capital',
+			localidad: actor.localidad || 'San Miguel de Tucumán',
+			direccion: actor.direccion || '',
+			latitud: actor.latitud ?? -26.8241,
+			longitud: actor.longitud ?? -65.2226,
+			esPublica: actor.esPublica ?? true,
 			cuit: actor.cuit || '',
 			descripcion: actor.descripcion,
 			fotoPerfilUrl: actor.fotoPerfilUrl || '',
@@ -386,6 +749,114 @@ export default function MisActoresPage() {
 		setFormError(null);
 		setProfileImageError(null);
 		setEditModalOpen(true);
+
+		// Cargar formularios y respuestas existentes del actor
+		obtenerFormulariosActorApi(actor.id)
+			.then((res) => {
+				setEditForms(res.data);
+				const initial: Record<string, string | string[]> = {};
+				for (const form of res.data) {
+					for (const q of form.preguntas) {
+						const key = `${form.id}:${q.id}`;
+						if (q.valor !== null && q.valor !== undefined) {
+							initial[key] = q.valor as string | string[];
+						}
+					}
+				}
+				setEditFormAnswers(initial);
+			})
+			.catch(() => {
+				const catId = getCategoryIdByName(categoryOptions, cat);
+				if (catId) {
+					const subId = getSubcategoryIdByName(categoryOptions, cat, sub);
+					obtenerFormulariosAplicablesApi({ idCategoria: catId, idSubcategoria: subId })
+						.then((res) => setEditForms(res.data))
+						.catch(() => {});
+				}
+			})
+			.finally(() => {
+				setEditFormsLoading(false);
+			});
+	};
+
+	const handleSearchAddress = async () => {
+		const trimmed = formValues.direccion.trim();
+		if (!trimmed || isSearchingAddress) return;
+		setIsSearchingAddress(true);
+		setSearchAddressError(null);
+
+		try {
+			const query = `${trimmed}, ${formValues.localidad}, ${formValues.departamento}, Tucumán, Argentina`;
+			const params = new URLSearchParams({
+				q: query,
+				format: 'jsonv2',
+				limit: '1',
+				countrycodes: 'ar',
+				'accept-language': 'es',
+				viewbox: '-66.35,-25.75,-64.45,-27.95',
+				bounded: '1',
+			});
+			const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`);
+			if (!response.ok) throw new Error('No se pudo consultar el servicio de geocodificación.');
+
+			const results = (await response.json()) as Array<{ lat: string; lon: string; display_name: string }>;
+			const result = results[0];
+			if (!result) {
+				setSearchAddressError(
+					'No encontramos esa dirección exacta. Podés conservar el texto y señalar el punto en el mapa.',
+				);
+				return;
+			}
+
+			setFormValues((v) => ({
+				...v,
+				latitud: Number(result.lat),
+				longitud: Number(result.lon),
+			}));
+		} catch {
+			setSearchAddressError('No se pudo realizar la búsqueda en el mapa en este momento.');
+		} finally {
+			setIsSearchingAddress(false);
+		}
+	};
+
+	const handleUseCurrentLocation = () => {
+		setSearchAddressError(null);
+		if (!navigator.geolocation) {
+			setSearchAddressError('Tu navegador no permite obtener la ubicación actual.');
+			return;
+		}
+
+		setIsLocatingUser(true);
+		navigator.geolocation.getCurrentPosition(
+			(position) => {
+				const lat = position.coords.latitude;
+				const lng = position.coords.longitude;
+				const isInsideTucuman = lat >= -27.95 && lat <= -25.75 && lng >= -66.35 && lng <= -64.45;
+
+				if (!isInsideTucuman) {
+					setSearchAddressError('La ubicación detectada se encuentra fuera de Tucumán.');
+					setIsLocatingUser(false);
+					return;
+				}
+
+				setFormValues((v) => ({
+					...v,
+					latitud: lat,
+					longitud: lng,
+				}));
+				setIsLocatingUser(false);
+			},
+			(error) => {
+				setSearchAddressError(
+					error.code === error.PERMISSION_DENIED
+						? 'Permiso de ubicación denegado.'
+						: 'No se pudo obtener tu ubicación actual.',
+				);
+				setIsLocatingUser(false);
+			},
+			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+		);
 	};
 
 	const handleProfileImageFile = async (file: File | null) => {
@@ -417,14 +888,55 @@ export default function MisActoresPage() {
 	const handleRequestEditSave = () => {
 		if (!formValues.nombre.trim()) {
 			setFormError('El nombre del actor es obligatorio.');
+			setEditActiveTab(0);
 			return;
 		}
 
 		if (!editingActor) return;
 		if (!getCategoryIdByName(categoryOptions, formValues.categoria)) {
 			setFormError('La categoría seleccionada ya no está disponible. Recargá la página e intentá nuevamente.');
+			setEditActiveTab(0);
 			return;
 		}
+
+		if (!formValues.departamento.trim()) {
+			setFormError('El departamento es obligatorio.');
+			setEditActiveTab(1);
+			return;
+		}
+
+		if (!formValues.localidad.trim()) {
+			setFormError('La localidad es obligatoria.');
+			setEditActiveTab(1);
+			return;
+		}
+
+		if (!formValues.direccion.trim()) {
+			setFormError('La dirección o referencia es obligatoria.');
+			setEditActiveTab(1);
+			return;
+		}
+
+		// Validar preguntas obligatorias
+		for (const form of editForms) {
+			for (const q of form.preguntas) {
+				if (q.esObligatorio) {
+					const key = `${form.id}:${q.id}`;
+					const val = editFormAnswers[key];
+					const isMissing =
+						val === null ||
+						val === undefined ||
+						(Array.isArray(val) ? val.length === 0 : !String(val).trim());
+					if (isMissing) {
+						setEditValidationAttempted(true);
+						setFormError(`Falta responder la pregunta obligatoria: "${q.pregunta}"`);
+						setEditActiveTab(2);
+						return;
+					}
+				}
+			}
+		}
+
 		setFormError(null);
 		setEditConfirmModalOpen(true);
 	};
@@ -436,6 +948,18 @@ export default function MisActoresPage() {
 		// If edited by regular user, state automatically changes to 'P' for re-validation.
 		const nextState: 'A' | 'P' | 'I' = isAdminOrMod ? editingActor.estado : 'P';
 		let savedPhotoUrl: string | null = formValues.fotoPerfilUrl.trim() || null;
+
+		const respuestas = Object.entries(editFormAnswers)
+			.filter(
+				([, val]) =>
+					val !== null &&
+					val !== undefined &&
+					(Array.isArray(val) ? val.length > 0 : String(val).trim() !== ''),
+			)
+			.map(([key, val]) => {
+				const [idFormulario, idPregunta] = key.split(':').map(Number);
+				return { idFormulario, idPregunta, valor: val };
+			});
 
 		try {
 			const response = await editarMiActorApi(editingActor.id, {
@@ -450,6 +974,10 @@ export default function MisActoresPage() {
 				departamento: formValues.departamento,
 				localidad: formValues.localidad.trim(),
 				direccion: formValues.direccion.trim(),
+				latitud: formValues.latitud,
+				longitud: formValues.longitud,
+				esPublica: formValues.esPublica,
+				respuestas,
 			});
 			savedPhotoUrl = response.data.fotoPerfilUrl;
 		} catch (err) {
@@ -470,6 +998,9 @@ export default function MisActoresPage() {
 							departamento: formValues.departamento,
 							localidad: formValues.localidad.trim(),
 							direccion: formValues.direccion.trim(),
+							latitud: formValues.latitud,
+							longitud: formValues.longitud,
+							esPublica: formValues.esPublica,
 							cuit: formValues.cuit.trim() || null,
 							descripcion: formValues.descripcion.trim(),
 							fotoPerfilUrl: savedPhotoUrl,
@@ -1361,311 +1892,733 @@ export default function MisActoresPage() {
 			{/* MODAL: Editar Actor                                                       */}
 			{/* ========================================================================= */}
 			<Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="md" fullWidth>
-				<DialogTitle fontWeight={700}>Editar actor: {editingActor?.nombre}</DialogTitle>
-				<DialogContent dividers>
-					<Stack spacing={2.5} sx={{ pt: 1 }}>
-						<Grid container spacing={2} alignItems="flex-start">
-							<Grid size={{ xs: 12, md: 5 }}>
-								<Box
-									component="label"
-									title="Cambiar foto de perfil"
-									onDragEnter={(event) => {
-										event.preventDefault();
-										setProfileImageDragging(true);
-									}}
-									onDragOver={(event) => event.preventDefault()}
-									onDragLeave={(event) => {
-										if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-											setProfileImageDragging(false);
+				<DialogTitle sx={{ pb: 1, fontWeight: 700 }}>Editar actor: {editingActor?.nombre}</DialogTitle>
+
+				<Tabs
+					value={editActiveTab}
+					onChange={(_, val) => {
+						setEditActiveTab(val);
+						setFormError(null);
+					}}
+					sx={{
+						px: 3,
+						borderBottom: 1,
+						borderColor: 'divider',
+						// bgcolor: 'background.paper',
+						'& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minHeight: 48 },
+					}}
+				>
+					<Tab icon={<TuneIcon fontSize="small" />} iconPosition="start" label="Información general" />
+					<Tab icon={<LocationOnIcon fontSize="small" />} iconPosition="start" label="Ubicación" />
+					<Tab
+						icon={<QuizIcon fontSize="small" />}
+						iconPosition="start"
+						label={
+							<Stack direction="row" spacing={1} alignItems="center">
+								<span>Preguntas del sector</span>
+								{editForms.reduce((sum, f) => sum + f.preguntas.length, 0) > 0 && (
+									<Chip
+										size="small"
+										label={editForms.reduce((sum, f) => sum + f.preguntas.length, 0)}
+										color={
+											editForms.some((f) =>
+												f.preguntas.some((q) => {
+													if (!q.esObligatorio) return false;
+													const val = editFormAnswers[`${f.id}:${q.id}`];
+													return (
+														val === null ||
+														val === undefined ||
+														(Array.isArray(val) ? val.length === 0 : !String(val).trim())
+													);
+												}),
+											)
+												? 'warning'
+												: 'default'
 										}
-									}}
-									onDrop={(event) => {
-										event.preventDefault();
-										setProfileImageDragging(false);
-										handleProfileImageFile(event.dataTransfer.files[0] ?? null);
-									}}
-									sx={{
-										position: 'relative',
-										display: 'block',
-										width:
-											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
-												? 'fit-content'
-												: '100%',
-										maxWidth: '100%',
-										height:
-											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
-												? 'auto'
-												: { xs: 190, sm: 260 },
-										mx: { xs: 'auto', md: 0 },
-										lineHeight: 0,
-										border: '1px solid',
-										borderColor: profileImageError
-											? 'error.main'
-											: profileImageDragging
-												? 'primary.main'
-												: 'divider',
-										borderWidth: profileImageDragging ? 2 : 1,
-										borderRadius: 2,
-										overflow: 'hidden',
-										cursor: 'pointer',
-										bgcolor:
-											formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
-												? 'transparent'
-												: 'action.hover',
-										transition: 'border-color 160ms ease, box-shadow 160ms ease',
-										boxShadow: profileImageDragging ? 2 : 0,
-										'&:hover': {
-											borderColor: 'primary.main',
-										},
-										'&:hover .profile-photo-overlay': {
-											bgcolor: 'rgba(0, 0, 0, 0.38)',
-										},
-										'&:hover .profile-photo-icon': {
-											transform: 'scale(1.08)',
-										},
-									}}
-								>
-									{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
-										<>
-											<Box
-												component="img"
-												src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
-												alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
-												sx={{
-													width: 'auto',
-													height: 'auto',
-													maxWidth: '100%',
-													maxHeight: { xs: 190, sm: 260 },
-													display: 'block',
-												}}
+										sx={{ height: 20, fontSize: '0.72rem', fontWeight: 700 }}
+									/>
+								)}
+							</Stack>
+						}
+					/>
+				</Tabs>
+
+				<DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+					{/* PESTAÑA 0: Información General */}
+					{editActiveTab === 0 && (
+						<Stack spacing={2.5}>
+							{/* Fila superior: Foto de perfil + Datos principales */}
+							<Grid container spacing={2.5} alignItems="stretch">
+								{/* Tarjeta de foto de perfil */}
+								<Grid size={{ xs: 12, sm: 5, md: 4 }}>
+									<Paper
+										variant="outlined"
+										sx={{
+											p: 2,
+											height: '100%',
+											display: 'flex',
+											flexDirection: 'column',
+											alignItems: 'center',
+											justifyContent: 'center',
+											borderRadius: 2,
+											bgcolor: 'background.default',
+											textAlign: 'center',
+										}}
+									>
+										<Box
+											component="label"
+											title="Cambiar foto de perfil"
+											onDragEnter={(event) => {
+												event.preventDefault();
+												setProfileImageDragging(true);
+											}}
+											onDragOver={(event) => event.preventDefault()}
+											onDragLeave={(event) => {
+												if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+													setProfileImageDragging(false);
+												}
+											}}
+											onDrop={(event) => {
+												event.preventDefault();
+												setProfileImageDragging(false);
+												handleProfileImageFile(event.dataTransfer.files[0] ?? null);
+											}}
+											sx={{
+												position: 'relative',
+												width: 170,
+												height: 170,
+												borderRadius: 3,
+												overflow: 'hidden',
+												cursor: 'pointer',
+												display: 'flex',
+												alignItems: 'center',
+												justifyContent: 'center',
+												border: '2px dashed',
+												borderColor: profileImageError
+													? 'error.main'
+													: profileImageDragging
+														? 'primary.main'
+														: 'divider',
+												bgcolor:
+													formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl
+														? 'transparent'
+														: 'action.hover',
+												transition: 'border-color 160ms ease, box-shadow 160ms ease',
+												boxShadow: profileImageDragging ? 2 : 0,
+												'&:hover': {
+													borderColor: 'primary.main',
+												},
+												'&:hover .profile-photo-overlay': {
+													opacity: 1,
+												},
+											}}
+										>
+											{formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl ? (
+												<>
+													<Box
+														component="img"
+														src={formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl}
+														alt={`Foto de perfil de ${formValues.nombre || 'actor cultural'}`}
+														sx={{
+															width: '100%',
+															height: '100%',
+															objectFit: 'cover',
+															display: 'block',
+														}}
+													/>
+													<Box
+														className="profile-photo-overlay"
+														sx={{
+															position: 'absolute',
+															inset: 0,
+															display: 'grid',
+															placeItems: 'center',
+															bgcolor: 'rgba(0, 0, 0, 0.48)',
+															opacity: profileImageDragging ? 1 : 0,
+															transition: 'opacity 160ms ease',
+															color: 'common.white',
+														}}
+													>
+														<Stack alignItems="center" spacing={0.5}>
+															<AddPhotoAlternateIcon sx={{ fontSize: 32 }} />
+															<Typography
+																variant="caption"
+																sx={{ color: 'common.white', fontWeight: 600 }}
+															>
+																Cambiar foto
+															</Typography>
+														</Stack>
+													</Box>
+												</>
+											) : (
+												<Stack
+													alignItems="center"
+													justifyContent="center"
+													sx={{ color: 'text.secondary', p: 1 }}
+												>
+													<AddPhotoAlternateIcon
+														sx={{ fontSize: 42, mb: 0.5, color: 'text.disabled' }}
+													/>
+													<Typography
+														variant="caption"
+														fontWeight={600}
+														color="text.secondary"
+													>
+														Subir foto de perfil
+													</Typography>
+												</Stack>
+											)}
+											<input
+												hidden
+												type="file"
+												accept="image/jpeg,image/png,image/webp"
+												onChange={(event) =>
+													handleProfileImageFile(event.target.files?.[0] ?? null)
+												}
 											/>
-											<Box
-												className="profile-photo-overlay"
+										</Box>
+										{(formValues.fotoPerfilBase64 || formValues.fotoPerfilUrl) && (
+											<Button
+												size="small"
+												color="inherit"
+												startIcon={<ClearIcon fontSize="small" />}
+												onClick={() =>
+													setFormValues((v) => ({
+														...v,
+														fotoPerfilUrl: '',
+														fotoPerfilBase64: '',
+														fotoPerfilNombre: '',
+													}))
+												}
 												sx={{
-													position: 'absolute',
-													inset: 0,
-													display: 'grid',
-													placeItems: 'center',
-													bgcolor: profileImageDragging
-														? 'rgba(0, 0, 0, 0.42)'
-														: 'rgba(0, 0, 0, 0.24)',
-													transition: 'background-color 160ms ease',
-													pointerEvents: 'none',
+													mt: 0.75,
+													fontSize: '0.75rem',
+													textTransform: 'none',
+													color: 'text.secondary',
 												}}
 											>
-												<Box
-													className="profile-photo-icon"
-													sx={{
-														width: 54,
-														height: 54,
-														borderRadius: '50%',
-														display: 'grid',
-														placeItems: 'center',
-														color: 'common.white',
-														bgcolor: 'rgba(0, 0, 0, 0.58)',
-														border: '1px solid rgba(255, 255, 255, 0.55)',
-														transition: 'transform 160ms ease',
-													}}
-												>
-													<AddPhotoAlternateIcon sx={{ fontSize: 28 }} />
-												</Box>
-											</Box>
-										</>
-									) : (
-										<Stack
-											alignItems="center"
-											justifyContent="center"
-											sx={{ height: '100%', color: 'text.secondary' }}
-										>
-											<AddPhotoAlternateIcon sx={{ fontSize: 46, mb: 0.5 }} />
-											<Typography variant="body2">Sin foto de perfil</Typography>
-										</Stack>
-									)}
-									<input
-										hidden
-										type="file"
-										accept="image/jpeg,image/png,image/webp"
-										onChange={(event) => handleProfileImageFile(event.target.files?.[0] ?? null)}
-									/>
-								</Box>
-								{profileImageError && (
-									<Typography
-										variant="caption"
-										color="error.main"
-										sx={{ display: 'block', mt: 0.75, ml: 0.25 }}
-									>
-										{profileImageError}
-									</Typography>
-								)}
+												Quitar foto
+											</Button>
+										)}
+										{profileImageError && (
+											<Typography
+												variant="caption"
+												color="error.main"
+												sx={{ mt: 0.5, display: 'block' }}
+											>
+												{profileImageError}
+											</Typography>
+										)}
+									</Paper>
+								</Grid>
+
+								{/* Columna datos principales */}
+								<Grid size={{ xs: 12, sm: 7, md: 8 }}>
+									<Stack spacing={2} justifyContent="space-between" sx={{ height: '100%' }}>
+										<TextField
+											fullWidth
+											required
+											label="Nombre público del actor"
+											placeholder="Ej. Ensamble del Valle"
+											value={formValues.nombre}
+											onChange={(e) => setFormValues((v) => ({ ...v, nombre: e.target.value }))}
+										/>
+
+										<FormControl fullWidth required>
+											<InputLabel>Tipo de actor</InputLabel>
+											<Select
+												value={formValues.tipoActor}
+												label="Tipo de actor"
+												onChange={(e) =>
+													setFormValues((v) => ({
+														...v,
+														tipoActor: e.target.value as MyActor['tipoActor'],
+													}))
+												}
+											>
+												{Object.entries(typeLabels).map(([key, label]) => (
+													<MenuItem key={key} value={key}>
+														{label}
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+
+										<TextField
+											fullWidth
+											label="CUIT / CUIL (Opcional)"
+											placeholder="Ej. 20300000014"
+											value={formValues.cuit}
+											onChange={(e) => setFormValues((v) => ({ ...v, cuit: e.target.value }))}
+										/>
+									</Stack>
+								</Grid>
 							</Grid>
 
-							<Grid size={{ xs: 12, md: 7 }}>
-								<Stack spacing={1.5}>
-									<TextField
-										fullWidth
-										required
-										label="Nombre público del actor"
-										placeholder="Ej. Compañía Circo Fuego"
-										value={formValues.nombre}
-										onChange={(e) => setFormValues((v) => ({ ...v, nombre: e.target.value }))}
-									/>
-
-									<FormControl fullWidth required>
-										<InputLabel>Tipo de actor</InputLabel>
-										<Select
-											value={formValues.tipoActor}
-											label="Tipo de actor"
-											onChange={(e) =>
-												setFormValues((v) => ({
-													...v,
-													tipoActor: e.target.value as MyActor['tipoActor'],
-												}))
-											}
-										>
-											{Object.entries(typeLabels).map(([key, label]) => (
-												<MenuItem key={key} value={key}>
-													{label}
+							{/* Clasificación cultural (Deshabilitada por ahora) */}
+							<Grid container spacing={2}>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<FormControl fullWidth required disabled>
+										<InputLabel>Categoría principal</InputLabel>
+										<Select value={formValues.categoria} label="Categoría principal" disabled>
+											{!selectedEditCategory && formValues.categoria && (
+												<MenuItem value={formValues.categoria} disabled>
+													{formValues.categoria}
+												</MenuItem>
+											)}
+											{categoryOptions.map((category) => (
+												<MenuItem key={category.id} value={category.nombre}>
+													{category.nombre}
 												</MenuItem>
 											))}
 										</Select>
 									</FormControl>
+								</Grid>
 
-									<Grid container spacing={1.5}>
-										<Grid size={{ xs: 12, sm: 6 }}>
-											<FormControl fullWidth required>
-												<InputLabel>Categoría principal</InputLabel>
-												<Select
-													value={formValues.categoria}
-													label="Categoría principal"
-													onChange={(e) => {
-														const cat = e.target.value;
-														const category = findCategoryByName(categoryOptions, cat);
-														setFormValues((v) => ({
-															...v,
-															categoria: cat,
-															subcategoria: category?.subcategorias[0]?.nombre ?? '',
-														}));
-													}}
-												>
-													{!selectedEditCategory && formValues.categoria && (
-														<MenuItem value={formValues.categoria} disabled>
-															{formValues.categoria} (no disponible)
-														</MenuItem>
-													)}
-													{categoryOptions.map((category) => (
-														<MenuItem key={category.id} value={category.nombre}>
-															{category.nombre}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										</Grid>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<FormControl fullWidth disabled>
+										<InputLabel>Subcategoría</InputLabel>
+										<Select value={formValues.subcategoria} label="Subcategoría" disabled>
+											{!selectedEditCategory?.subcategorias.some(
+												(option) => option.nombre === formValues.subcategoria,
+											) &&
+												formValues.subcategoria && (
+													<MenuItem value={formValues.subcategoria} disabled>
+														{formValues.subcategoria}
+													</MenuItem>
+												)}
+											{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
+												<MenuItem key={subcategory.id} value={subcategory.nombre}>
+													{subcategory.nombre}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Grid>
+							</Grid>
 
-										<Grid size={{ xs: 12, sm: 6 }}>
-											<FormControl fullWidth>
-												<InputLabel>Subcategoría</InputLabel>
-												<Select
-													value={formValues.subcategoria}
-													label="Subcategoría"
-													onChange={(e) =>
-														setFormValues((v) => ({ ...v, subcategoria: e.target.value }))
-													}
-												>
-													{!selectedEditCategory?.subcategorias.some(
-														(option) => option.nombre === formValues.subcategoria,
-													) &&
-														formValues.subcategoria && (
-															<MenuItem value={formValues.subcategoria} disabled>
-																{formValues.subcategoria} (no disponible)
-															</MenuItem>
-														)}
-													{(selectedEditCategory?.subcategorias ?? []).map((subcategory) => (
-														<MenuItem key={subcategory.id} value={subcategory.nombre}>
-															{subcategory.nombre}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										</Grid>
-									</Grid>
+							{/* Descripción o trayectoria */}
+							<TextField
+								fullWidth
+								multiline
+								rows={3}
+								label="Descripción o trayectoria"
+								placeholder="Resumen del proyecto artístico, trayectoria e información destacada..."
+								value={formValues.descripcion}
+								onChange={(e) => setFormValues((v) => ({ ...v, descripcion: e.target.value }))}
+							/>
 
-									<TextField
-										fullWidth
-										label="CUIT / CUIL (Opcional)"
-										placeholder="Ej. 30712345678"
-										value={formValues.cuit}
-										onChange={(e) => setFormValues((v) => ({ ...v, cuit: e.target.value }))}
+							{!isAdminOrMod && (
+								<Alert severity="info">
+									Nota: Al guardar cambios en tu actor cultural, su estado pasará automáticamente a{' '}
+									<strong>Pendiente de revisión</strong> hasta que un moderador lo apruebe.
+								</Alert>
+							)}
+							{formError && <Alert severity="error">{formError}</Alert>}
+						</Stack>
+					)}
+
+					{/* PESTAÑA 1: Ubicación */}
+					{editActiveTab === 1 && (
+						<Stack spacing={2.5}>
+							{/* Departamento y Localidad */}
+							<Grid container spacing={2}>
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<FormControl fullWidth required>
+										<InputLabel>Departamento</InputLabel>
+										<Select
+											value={formValues.departamento}
+											label="Departamento"
+											onChange={(e) => {
+												const newDept = e.target.value;
+												const deptInfo = tucumanData[newDept];
+												const firstLoc = deptInfo?.localidades?.[0] ?? '';
+												setFormValues((v) => ({
+													...v,
+													departamento: newDept,
+													localidad: firstLoc,
+													latitud: deptInfo?.centroide?.lat ?? v.latitud,
+													longitud: deptInfo?.centroide?.lon ?? v.longitud,
+												}));
+											}}
+										>
+											{DEPARTAMENTOS_TUCUMAN.map((dep) => (
+												<MenuItem key={dep} value={dep}>
+													{dep}
+												</MenuItem>
+											))}
+										</Select>
+									</FormControl>
+								</Grid>
+
+								<Grid size={{ xs: 12, sm: 6 }}>
+									<Autocomplete
+										freeSolo
+										options={tucumanData[formValues.departamento]?.localidades ?? []}
+										value={formValues.localidad}
+										onInputChange={(_, newValue) =>
+											setFormValues((v) => ({ ...v, localidad: newValue }))
+										}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												required
+												label="Localidad"
+												placeholder="Ej. San Miguel de Tucumán"
+											/>
+										)}
 									/>
-								</Stack>
-							</Grid>
-						</Grid>
-
-						{!isAdminOrMod && (
-							<Alert severity="info">
-								Nota: Al guardar cambios en tu actor cultural, su estado pasará automáticamente a{' '}
-								<strong>Pendiente de revisión</strong> hasta que un moderador lo apruebe.
-							</Alert>
-						)}
-						{formError && <Alert severity="error">{formError}</Alert>}
-
-						<Grid container spacing={2}>
-							<Grid size={{ xs: 12, md: 4 }}>
-								<FormControl fullWidth required>
-									<InputLabel>Departamento</InputLabel>
-									<Select
-										value={formValues.departamento}
-										label="Departamento"
-										onChange={(e) => setFormValues((v) => ({ ...v, departamento: e.target.value }))}
-									>
-										{DEPARTAMENTOS_TUCUMAN.map((dep) => (
-											<MenuItem key={dep} value={dep}>
-												{dep}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
+								</Grid>
 							</Grid>
 
-							<Grid size={{ xs: 12, md: 4 }}>
+							{/* Dirección / Referencia y Búsqueda */}
+							<Stack spacing={1}>
 								<TextField
 									fullWidth
 									required
-									label="Localidad"
-									placeholder="Ej. San Miguel de Tucumán"
-									value={formValues.localidad}
-									onChange={(e) => setFormValues((v) => ({ ...v, localidad: e.target.value }))}
-								/>
-							</Grid>
-
-							<Grid size={{ xs: 12, md: 4 }}>
-								<TextField
-									fullWidth
-									label="Dirección / Calle"
-									placeholder="Ej. Av. Mate de Luna 2100"
+									label="Dirección / Calle o referencia"
+									placeholder="Ej. San Martín 450 o plaza principal"
 									value={formValues.direccion}
-									onChange={(e) => setFormValues((v) => ({ ...v, direccion: e.target.value }))}
+									onChange={(e) => {
+										setFormValues((v) => ({ ...v, direccion: e.target.value }));
+										setSearchAddressError(null);
+									}}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter') {
+											e.preventDefault();
+											void handleSearchAddress();
+										}
+									}}
+									helperText={
+										searchAddressError ||
+										'Ingresá la calle, número o referencia del espacio/taller/sala.'
+									}
+									error={Boolean(searchAddressError)}
 								/>
-							</Grid>
 
-							<Grid size={{ xs: 12 }}>
-								<TextField
-									fullWidth
-									multiline
-									rows={3}
-									label="Descripción o trayectoria"
-									placeholder="Resumen del proyecto artístico, trayectoria e información destacada..."
-									value={formValues.descripcion}
-									onChange={(e) => setFormValues((v) => ({ ...v, descripcion: e.target.value }))}
+								<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+									<Button
+										variant="outlined"
+										startIcon={<SearchIcon />}
+										disabled={!formValues.direccion.trim() || isSearchingAddress}
+										onClick={() => void handleSearchAddress()}
+										sx={{ textTransform: 'none' }}
+									>
+										{isSearchingAddress ? 'Buscando en mapa…' : 'Buscar en el mapa'}
+									</Button>
+									<Button
+										variant="outlined"
+										color="secondary"
+										startIcon={<MyLocationIcon />}
+										disabled={isLocatingUser}
+										onClick={handleUseCurrentLocation}
+										sx={{ textTransform: 'none' }}
+									>
+										{isLocatingUser ? 'Obteniendo GPS…' : 'Usar mi ubicación actual'}
+									</Button>
+								</Stack>
+							</Stack>
+
+							{/* Mapa interactivo Leaflet */}
+							<Paper
+								variant="outlined"
+								sx={{
+									position: 'relative',
+									height: 320,
+									borderRadius: 2,
+									overflow: 'hidden',
+									borderColor: 'divider',
+								}}
+							>
+								<MapContainer
+									center={[formValues.latitud ?? -26.8241, formValues.longitud ?? -65.2226]}
+									zoom={13}
+									style={{ width: '100%', height: '100%' }}
+									scrollWheelZoom={false}
+								>
+									<InvalidateMapSize />
+									<MapDepartmentCenterer
+										department={formValues.departamento}
+										locality={formValues.localidad}
+										point={
+											formValues.latitud !== null && formValues.longitud !== null
+												? { lat: formValues.latitud, lng: formValues.longitud }
+												: null
+										}
+										tucumanData={tucumanData}
+									/>
+									<MapClickHandler
+										onPointChange={(p) =>
+											setFormValues((v) => ({ ...v, latitud: p.lat, longitud: p.lng }))
+										}
+									/>
+									<TileLayer
+										attribution={
+											editMapLayer === 'satellite'
+												? '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+												: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+										}
+										url={
+											editMapLayer === 'satellite'
+												? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+												: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+										}
+									/>
+									{formValues.latitud !== null && formValues.longitud !== null && (
+										<Marker
+											position={[formValues.latitud, formValues.longitud]}
+											icon={customPinIcon}
+											draggable
+											eventHandlers={{
+												dragend: (event) => {
+													const marker = event.target as L.Marker;
+													const latlng = marker.getLatLng();
+													setFormValues((v) => ({
+														...v,
+														latitud: latlng.lat,
+														longitud: latlng.lng,
+													}));
+												},
+											}}
+										/>
+									)}
+								</MapContainer>
+
+								{/* Control flotante para alternar capa */}
+								<Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
+									<ToggleButtonGroup
+										size="small"
+										value={editMapLayer}
+										exclusive
+										onChange={(_, nextLayer) => {
+											if (nextLayer) setEditMapLayer(nextLayer);
+										}}
+										sx={{ bgcolor: 'background.paper', boxShadow: 2 }}
+									>
+										<ToggleButton value="streets" title="Mapa de calles">
+											<LayersIcon fontSize="small" sx={{ mr: 0.5 }} /> Calles
+										</ToggleButton>
+										<ToggleButton value="satellite" title="Foto satelital">
+											Satélite
+										</ToggleButton>
+									</ToggleButtonGroup>
+								</Box>
+							</Paper>
+
+							{/* Resumen de coordenadas */}
+							{/* <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+								<Chip
+									size="small"
+									icon={<LocationOnIcon fontSize="small" />}
+									label={`Latitud: ${formValues.latitud?.toFixed(5) ?? 'N/A'}`}
+									variant="outlined"
 								/>
-							</Grid>
-						</Grid>
-					</Stack>
+								<Chip
+									size="small"
+									icon={<LocationOnIcon fontSize="small" />}
+									label={`Longitud: ${formValues.longitud?.toFixed(5) ?? 'N/A'}`}
+									variant="outlined"
+								/>
+								<Typography variant="caption" color="text.secondary">
+									Hacé clic en el mapa o arrastrá el marcador rojo para ajustar la posición precisa.
+								</Typography>
+							</Stack>
+
+							<Divider /> */}
+
+							{/* Visibilidad pública de la ubicación */}
+							<Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default' }}>
+								<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+									¿Querés que esta ubicación aparezca en el mapa público provincial?
+								</Typography>
+								<RadioGroup
+									row
+									value={formValues.esPublica ? 'si' : 'no'}
+									onChange={(e) =>
+										setFormValues((v) => ({ ...v, esPublica: e.target.value === 'si' }))
+									}
+								>
+									<FormControlLabel
+										value="si"
+										control={<Radio size="small" color="success" />}
+										label={
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<PublicIcon sx={{ fontSize: 18, color: 'success.main' }} />
+												<Typography variant="body2" fontWeight={600}>
+													Sí, mostrar públicamente en el mapa
+												</Typography>
+											</Stack>
+										}
+										sx={{ mr: 3 }}
+									/>
+									<FormControlLabel
+										value="no"
+										control={<Radio size="small" color="default" />}
+										label={
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<ShieldIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+												<Typography variant="body2">
+													No, mantenerla privada (solo administración)
+												</Typography>
+											</Stack>
+										}
+									/>
+								</RadioGroup>
+								<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+									Si la mantenés privada, tu actor no mostrará la dirección exacta ni el punto en el
+									mapa público, pero la administración podrá verificar la procedencia.
+								</Typography>
+							</Paper>
+
+							{formError && <Alert severity="error">{formError}</Alert>}
+						</Stack>
+					)}
+
+					{/* PESTAÑA 2: Preguntas del Sector */}
+					{editActiveTab === 2 && (
+						<Stack spacing={3}>
+							{editFormsLoading ? (
+								<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
+									<CircularProgress size={36} />
+									<Typography variant="body2" color="text.secondary">
+										Cargando preguntas de {formValues.categoria || 'la categoría'}...
+									</Typography>
+								</Stack>
+							) : editForms.length === 0 || editForms.every((f) => f.preguntas.length === 0) ? (
+								<Paper
+									variant="outlined"
+									sx={{
+										p: 4,
+										textAlign: 'center',
+										borderRadius: 2,
+										bgcolor: 'background.default',
+									}}
+								>
+									<QuizIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+									<Typography variant="subtitle1" fontWeight={600}>
+										Sin preguntas adicionales
+									</Typography>
+									<Typography
+										variant="body2"
+										color="text.secondary"
+										sx={{ maxWidth: 480, mx: 'auto', mt: 0.5 }}
+									>
+										No hay preguntas sectoriales configuradas actualmente para la categoría
+										{formValues.categoria}
+										{formValues.subcategoria ? ` y subcategoría "${formValues.subcategoria}"` : ''}.
+									</Typography>
+								</Paper>
+							) : (
+								editForms.map((form, index) => (
+									<Box key={form.id}>
+										{index > 0 && <Divider sx={{ mb: 3 }} />}
+										<Stack spacing={0.5} sx={{ mb: 2 }}>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Typography variant="h6" fontWeight={700}>
+													{form.titulo}
+												</Typography>
+												<Chip
+													size="small"
+													label={form.ambito === 'CATEGORIA' ? 'Categoría' : 'Subcategoría'}
+													variant="outlined"
+													sx={{ height: 20, fontSize: '0.7rem' }}
+												/>
+											</Stack>
+											{form.descripcion && (
+												<Typography variant="body2" color="text.secondary">
+													{form.descripcion}
+												</Typography>
+											)}
+										</Stack>
+
+										{form.preguntas.length === 0 ? (
+											<Typography variant="body2" color="text.secondary">
+												Este formulario no tiene preguntas activas.
+											</Typography>
+										) : (
+											<Stack spacing={2.5}>
+												{form.preguntas.map((question) => {
+													const key = `${form.id}:${question.id}`;
+													const value =
+														editFormAnswers[key] ??
+														(question.tipoDato === 'OPCION_MULTIPLE' ? [] : '');
+													const isMissing =
+														question.esObligatorio &&
+														(Array.isArray(value)
+															? value.length === 0
+															: !String(value ?? '').trim());
+													const hasError = editValidationAttempted && isMissing;
+													const isNew =
+														question.valor === null || question.valor === undefined;
+
+													return (
+														<Paper
+															key={key}
+															variant="outlined"
+															sx={{
+																p: 2,
+																borderRadius: 2,
+																borderColor: hasError ? 'error.main' : 'divider',
+																bgcolor: hasError
+																	? 'error.lighter'
+																	: 'background.paper',
+																transition: 'border-color 0.2s ease',
+															}}
+														>
+															<QuestionField
+																question={question}
+																value={value}
+																hasError={hasError}
+																isNew={isNew}
+																onChange={(val) =>
+																	setEditFormAnswers((prev) => ({
+																		...prev,
+																		[key]: val,
+																	}))
+																}
+															/>
+														</Paper>
+													);
+												})}
+											</Stack>
+										)}
+									</Box>
+								))
+							)}
+
+							{formError && <Alert severity="error">{formError}</Alert>}
+						</Stack>
+					)}
 				</DialogContent>
-				<DialogActions sx={{ p: 2 }}>
-					<Button onClick={() => setEditModalOpen(false)}>Cancelar</Button>
-					<Button variant="contained" color="primary" onClick={handleRequestEditSave}>
-						Guardar cambios
-					</Button>
+				<DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+					<Box>
+						{editActiveTab === 1 && (
+							<Button color="inherit" onClick={() => setEditActiveTab(0)}>
+								← Datos generales
+							</Button>
+						)}
+						{editActiveTab === 2 && (
+							<Button color="inherit" onClick={() => setEditActiveTab(1)}>
+								← Ubicación
+							</Button>
+						)}
+					</Box>
+					<Stack direction="row" spacing={1.5}>
+						<Button onClick={() => setEditModalOpen(false)}>Cancelar</Button>
+						{editActiveTab === 0 && (
+							<Button variant="outlined" onClick={() => setEditActiveTab(1)}>
+								Ubicación →
+							</Button>
+						)}
+						{editActiveTab === 1 && editForms.reduce((sum, f) => sum + f.preguntas.length, 0) > 0 && (
+							<Button variant="outlined" onClick={() => setEditActiveTab(2)}>
+								Preguntas del sector →
+							</Button>
+						)}
+						<Button variant="contained" color="primary" onClick={handleRequestEditSave}>
+							Guardar cambios
+						</Button>
+					</Stack>
 				</DialogActions>
 			</Dialog>
 
@@ -1680,7 +2633,7 @@ export default function MisActoresPage() {
 							¿Deseás guardar las modificaciones realizadas en <strong>{formValues.nombre}</strong>?
 						</DialogContentText>
 
-						<Alert severity="info">
+						<Alert severity="error">
 							Al guardar los cambios, la ficha del actor volverá automáticamente al estado{' '}
 							<strong>Pendiente de revisión</strong> hasta que sea aprobada por los moderadores.
 						</Alert>
@@ -1688,7 +2641,7 @@ export default function MisActoresPage() {
 				</DialogContent>
 				<DialogActions sx={{ p: 2 }}>
 					<Button onClick={() => setEditConfirmModalOpen(false)}>Cancelar</Button>
-					<Button variant="contained" color="primary" onClick={handleConfirmEditSave}>
+					<Button variant="contained" color="error" onClick={handleConfirmEditSave}>
 						Sí, guardar cambios
 					</Button>
 				</DialogActions>

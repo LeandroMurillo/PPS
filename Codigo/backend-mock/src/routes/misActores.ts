@@ -102,6 +102,7 @@ misActoresRouter.get('/', (req, res) => {
 				direccion: a.ubicacion?.direccion ?? '',
 				latitud: a.ubicacion?.latitud ?? -26.8241,
 				longitud: a.ubicacion?.longitud ?? -65.2226,
+				esPublica: a.ubicacion?.esPublica ?? true,
 			},
 		};
 	});
@@ -166,10 +167,55 @@ misActoresRouter.get('/:id', (req, res) => {
 			direccion: a.ubicacion?.direccion ?? '',
 			latitud: a.ubicacion?.latitud ?? -26.8241,
 			longitud: a.ubicacion?.longitud ?? -65.2226,
+			esPublica: a.ubicacion?.esPublica ?? true,
 		},
 		portafolio,
 		eventos,
 	};
+
+	return res.json({ data });
+});
+
+// GET /api/mis-actores/:id/formularios
+misActoresRouter.get('/:id/formularios', (req, res) => {
+	const id = Number(req.params.id);
+	const actor = db.actores.find((item) => item.id === id);
+
+	if (!actor) {
+		return res.status(404).json({ error: { message: 'Actor cultural no encontrado.' } });
+	}
+
+	let forms = db.formularios.filter((f) => f.idCategoria === actor.idCategoria);
+	if (actor.idSubcategoria) {
+		forms = forms.concat(
+			db.formularios.filter((f) => f.idSubcategoria === actor.idSubcategoria),
+		);
+	}
+
+	const respuestasFormulario = actor.respuestasFormulario ?? {};
+
+	const data = forms.map((f) => ({
+		id: f.id,
+		ambito: f.ambito,
+		idCategoria: f.idCategoria,
+		categoria: f.categoria,
+		idSubcategoria: f.idSubcategoria ?? null,
+		subcategoria: f.subcategoria ?? null,
+		titulo: f.titulo,
+		descripcion: f.descripcion ?? null,
+		preguntas: (f.preguntas ?? [])
+			.filter((p) => p.estado === 'A')
+			.map((p) => ({
+				id: p.id,
+				pregunta: p.pregunta,
+				tipoDato: p.tipoDato,
+				opciones: p.opciones,
+				orden: p.orden,
+				esObligatorio: p.esObligatorio,
+				esPublico: p.esPublico,
+				valor: respuestasFormulario[p.id] ?? null,
+			})),
+	}));
 
 	return res.json({ data });
 });
@@ -283,9 +329,23 @@ misActoresRouter.put('/:id', (req, res) => {
 	actor.idCategoria = Number(attrs.idCategoria);
 	actor.idSubcategoria = attrs.idSubcategoria ? Number(attrs.idSubcategoria) : null;
 	if (actor.ubicacion) {
-		actor.ubicacion.departamento = attrs.departamento;
-		actor.ubicacion.localidad = attrs.localidad;
-		actor.ubicacion.direccion = attrs.direccion;
+		if (attrs.departamento) actor.ubicacion.departamento = attrs.departamento;
+		if (attrs.localidad) actor.ubicacion.localidad = attrs.localidad;
+		if (attrs.direccion !== undefined) actor.ubicacion.direccion = attrs.direccion;
+		if (typeof attrs.latitud === 'number') actor.ubicacion.latitud = attrs.latitud;
+		if (typeof attrs.longitud === 'number') actor.ubicacion.longitud = attrs.longitud;
+		if (typeof attrs.esPublica === 'boolean') actor.ubicacion.esPublica = attrs.esPublica;
+	}
+
+	if (Array.isArray(attrs.respuestas)) {
+		if (!actor.respuestasFormulario) {
+			actor.respuestasFormulario = {};
+		}
+		for (const r of attrs.respuestas) {
+			if (r && typeof r.idPregunta === 'number') {
+				actor.respuestasFormulario[r.idPregunta] = r.valor;
+			}
+		}
 	}
 
 	return res.json({ data: { fotoPerfilUrl: actor.foto }, message: 'Actor actualizado correctamente.' });

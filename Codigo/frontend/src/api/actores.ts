@@ -193,6 +193,7 @@ export type MisActorApiItem = {
 		direccion: string;
 		latitud: number;
 		longitud: number;
+		esPublica?: boolean;
 	};
 };
 
@@ -313,6 +314,18 @@ export async function crearMiActorApi(input: CrearActorInput) {
 	});
 }
 
+export type PreguntaFormularioActor = PreguntaFormularioAplicable & {
+	valor?: unknown;
+};
+
+export type FormularioActor = Omit<FormularioAplicable, 'preguntas'> & {
+	preguntas: PreguntaFormularioActor[];
+};
+
+export async function obtenerFormulariosActorApi(idActor: number, signal?: AbortSignal) {
+	return apiFetch<{ data: FormularioActor[] }>(`/api/mis-actores/${idActor}/formularios`, signal);
+}
+
 export async function editarMiActorApi(
 	idActor: number,
 	input: {
@@ -327,6 +340,14 @@ export async function editarMiActorApi(
 		departamento: string;
 		localidad: string;
 		direccion: string;
+		latitud?: number | null;
+		longitud?: number | null;
+		esPublica?: boolean;
+		respuestas?: {
+			idFormulario: number;
+			idPregunta: number;
+			valor: string | number | boolean | string[];
+		}[];
 	},
 ) {
 	return apiRequest<{ data: { fotoPerfilUrl: string | null }; message: string }>(`/api/mis-actores/${idActor}`, {

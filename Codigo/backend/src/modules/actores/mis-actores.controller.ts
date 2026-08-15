@@ -22,6 +22,7 @@ import {
 	listarIntegrantesService,
 	listarMisActoresService,
 	listarPortafolioService,
+	obtenerFormulariosActorService,
 	obtenerFormulariosAplicablesService,
 	obtenerOpcionesRegistroService,
 } from './mis-actores.service.js';
@@ -108,6 +109,10 @@ const editarBodySchema = z.object({
 	departamento: z.string().trim().min(1),
 	localidad: z.string().trim().min(1),
 	direccion: z.string().trim().min(1),
+	latitud: z.number().min(-27.95).max(-25.75).optional(),
+	longitud: z.number().min(-66.35).max(-64.45).optional(),
+	esPublica: z.boolean().optional(),
+	respuestas: z.array(respuestaRegistroSchema).max(100).optional(),
 });
 
 const cambiarEstadoBodySchema = z.object({
@@ -214,6 +219,28 @@ export async function editarActorController(req: Request, res: Response): Promis
 			error: {
 				code: 'BAD_REQUEST',
 				message: getPublicErrorMessage(error, 'No se pudo modificar el actor cultural.'),
+			},
+		});
+	}
+}
+
+export async function obtenerFormulariosActorController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+
+		const result = await obtenerFormulariosActorService({
+			idUsuario: user.idUsuario,
+			idActor,
+			userRol: user.rol,
+		});
+
+		res.json(result);
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudieron obtener los formularios del actor.'),
 			},
 		});
 	}
