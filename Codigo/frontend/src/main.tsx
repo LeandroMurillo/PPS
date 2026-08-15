@@ -35,13 +35,13 @@ function DocsApiRedirect() {
 	React.useEffect(() => {
 		const token = typeof localStorage !== 'undefined' ? localStorage.getItem('mosaico_cultural_token') : null;
 		const query = token ? `?token=${encodeURIComponent(token)}` : '';
-		const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? (
-			typeof window !== 'undefined' && window.location.port === '5173'
+		const apiBaseUrl =
+			(import.meta.env.VITE_API_URL as string | undefined) ??
+			(typeof window !== 'undefined' && window.location.port === '5173'
 				? `${window.location.protocol}//${window.location.hostname}:3000`
 				: typeof window !== 'undefined'
 					? window.location.origin
-					: 'http://localhost:3000'
-		);
+					: 'http://localhost:3000');
 		window.location.href = `${apiBaseUrl}/docs${query}`;
 	}, []);
 

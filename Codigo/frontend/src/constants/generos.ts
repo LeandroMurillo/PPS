@@ -13,9 +13,7 @@ export const GENEROS = [
 
 export type GeneroCodigo = (typeof GENEROS)[number]['code'];
 
-export const GENEROS_MAP: Record<string, string> = Object.fromEntries(
-	GENEROS.map((g) => [g.code, g.label]),
-);
+export const GENEROS_MAP: Record<string, string> = Object.fromEntries(GENEROS.map((g) => [g.code, g.label]));
 
 /**
  * Obtiene la etiqueta descriptiva en español dado su código de ENUM.

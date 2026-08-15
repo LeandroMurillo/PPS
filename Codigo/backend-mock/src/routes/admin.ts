@@ -1,7 +1,13 @@
 import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { db } from '../db';
-import type { CategoriaMock, SubcategoriaMock, PreguntaBancoMock, ConvocatoriaMock } from '../types';
+import type {
+	CategoriaMock,
+	ConvocatoriaMock,
+	PreguntaBancoMock,
+	PreguntaFormularioMock,
+	SubcategoriaMock,
+} from '../types';
 
 export const adminRouter = Router();
 
@@ -697,6 +703,7 @@ adminRouter.post('/formularios/:idFormulario/preguntas', (req, res) => {
 	const form = db.formularios.find((f) => f.id === idFormulario);
 	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
 
+	form.preguntas = form.preguntas || [];
 	const attrs = req.body || {};
 	const newQId = db.preguntasBanco.length + 1;
 	const bankQ: PreguntaBancoMock = {
@@ -707,7 +714,7 @@ adminRouter.post('/formularios/:idFormulario/preguntas', (req, res) => {
 	};
 	db.preguntasBanco.push(bankQ);
 
-	const formQ = {
+	const formQ: PreguntaFormularioMock = {
 		...bankQ,
 		idPreguntaReemplazada: null,
 		preguntaReemplazada: null,
@@ -721,10 +728,10 @@ adminRouter.post('/formularios/:idFormulario/preguntas', (req, res) => {
 	};
 
 	form.preguntas.push(formQ);
-	form.cantidadPreguntasActivas++;
-	form.cantidadPreguntasHistoricas++;
+	form.cantidadPreguntasActivas = form.preguntas.filter((p) => p.estado === 'A').length;
+	form.cantidadPreguntasHistoricas = form.preguntas.length;
 
-	return res.json({ data: formQ });
+	return res.status(201).json({ data: form });
 });
 
 // POST /api/admin/formularios/:idFormulario/preguntas/existente
@@ -733,11 +740,12 @@ adminRouter.post('/formularios/:idFormulario/preguntas/existente', (req, res) =>
 	const form = db.formularios.find((f) => f.id === idFormulario);
 	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
 
+	form.preguntas = form.preguntas || [];
 	const attrs = req.body || {};
 	const bankQ = db.preguntasBanco.find((p) => p.id === Number(attrs.idPregunta));
 	if (!bankQ) return res.status(404).json({ error: { message: 'Pregunta del banco no encontrada.' } });
 
-	const formQ = {
+	const formQ: PreguntaFormularioMock = {
 		...bankQ,
 		idPreguntaReemplazada: null,
 		preguntaReemplazada: null,
@@ -751,10 +759,80 @@ adminRouter.post('/formularios/:idFormulario/preguntas/existente', (req, res) =>
 	};
 
 	form.preguntas.push(formQ);
-	form.cantidadPreguntasActivas++;
-	form.cantidadPreguntasHistoricas++;
+	form.cantidadPreguntasActivas = form.preguntas.filter((p) => p.estado === 'A').length;
+	form.cantidadPreguntasHistoricas = form.preguntas.length;
 
-	return res.json({ data: formQ });
+	return res.status(201).json({ data: form });
+});
+
+// POST /api/admin/formularios/:idFormulario/preguntas/:idPregunta/reemplazar
+adminRouter.post('/formularios/:idFormulario/preguntas/:idPregunta/reemplazar', (req, res) => {
+	const idFormulario = Number(req.params.idFormulario);
+	const idPregunta = Number(req.params.idPregunta);
+	const form = db.formularios.find((f) => f.id === idFormulario);
+	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
+
+	form.preguntas = form.preguntas || [];
+	const attrs = req.body || {};
+	let bankQ: PreguntaBancoMock | undefined;
+
+	if (attrs.idPregunta) {
+		bankQ = db.preguntasBanco.find((p) => p.id === Number(attrs.idPregunta));
+		if (!bankQ) return res.status(404).json({ error: { message: 'Pregunta del banco no encontrada.' } });
+	} else {
+		const newQId = db.preguntasBanco.length + 1;
+		bankQ = {
+			id: newQId,
+			pregunta: attrs.pregunta,
+			tipoDato: attrs.tipoDato,
+			opciones: attrs.opciones ?? null,
+		};
+		db.preguntasBanco.push(bankQ);
+	}
+
+	const oldQ = form.preguntas.find((p) => p.id === idPregunta);
+	if (oldQ) {
+		oldQ.estado = 'I';
+		oldQ.fechaDesactivacion = new Date().toISOString();
+	}
+
+	const formQ: PreguntaFormularioMock = {
+		...bankQ,
+		idPreguntaReemplazada: idPregunta,
+		preguntaReemplazada: oldQ?.pregunta ?? null,
+		orden: oldQ?.orden ?? form.preguntas.length + 1,
+		esObligatorio: Boolean(attrs.esObligatorio),
+		esPublico: Boolean(attrs.esPublico),
+		fechaIncorporacion: new Date().toISOString(),
+		fechaDesactivacion: null,
+		estado: 'A' as const,
+		cantidadActoresQueRespondieron: 0,
+	};
+
+	form.preguntas.push(formQ);
+	form.cantidadPreguntasActivas = form.preguntas.filter((p) => p.estado === 'A').length;
+	form.cantidadPreguntasHistoricas = form.preguntas.length;
+
+	return res.status(201).json({ data: form });
+});
+
+// PUT /api/admin/formularios/:idFormulario/preguntas/:idPregunta
+adminRouter.put('/formularios/:idFormulario/preguntas/:idPregunta', (req, res) => {
+	const idFormulario = Number(req.params.idFormulario);
+	const idPregunta = Number(req.params.idPregunta);
+	const form = db.formularios.find((f) => f.id === idFormulario);
+	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
+
+	form.preguntas = form.preguntas || [];
+	const attrs = req.body || {};
+	const q = form.preguntas.find((p) => p.id === idPregunta);
+	if (q) {
+		if (attrs.esObligatorio !== undefined) q.esObligatorio = Boolean(attrs.esObligatorio);
+		if (attrs.esPublico !== undefined) q.esPublico = Boolean(attrs.esPublico);
+		if (attrs.orden !== undefined) q.orden = Number(attrs.orden);
+	}
+
+	return res.json({ data: form });
 });
 
 // DELETE /api/admin/formularios/:idFormulario/preguntas/:idPregunta
@@ -764,10 +842,15 @@ adminRouter.delete('/formularios/:idFormulario/preguntas/:idPregunta', (req, res
 	const form = db.formularios.find((f) => f.id === idFormulario);
 	if (!form) return res.status(404).json({ error: { message: 'Formulario no encontrado.' } });
 
-	form.preguntas = form.preguntas.filter((p) => p.id !== idPregunta);
-	form.cantidadPreguntasActivas = form.preguntas.length;
+	form.preguntas = form.preguntas || [];
+	const q = form.preguntas.find((p) => p.id === idPregunta);
+	if (q) {
+		q.estado = 'I';
+		q.fechaDesactivacion = new Date().toISOString();
+	}
+	form.cantidadPreguntasActivas = form.preguntas.filter((p) => p.estado === 'A').length;
 
-	return res.json({ message: 'Pregunta eliminada del formulario.' });
+	return res.json({ data: form });
 });
 
 // GET /api/admin/convocatorias

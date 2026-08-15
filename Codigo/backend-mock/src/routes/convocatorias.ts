@@ -65,9 +65,7 @@ convocatoriasRouter.post('/:id/postulaciones', (req, res) => {
 		return res.status(404).json({ error: { message: 'Convocatoria no encontrada.' } });
 	}
 
-	const existing = db.postulaciones.find(
-		(p) => p.idConvocatoria === idConvocatoria && p.idActor === Number(idActor),
-	);
+	const existing = db.postulaciones.find((p) => p.idConvocatoria === idConvocatoria && p.idActor === Number(idActor));
 
 	if (existing) {
 		return res.status(400).json({ error: { message: 'Este actor ya está postulado a esta convocatoria.' } });
@@ -96,9 +94,7 @@ convocatoriasRouter.delete('/:id/postulaciones/:idActor', (req, res) => {
 	const idConvocatoria = Number(req.params.id);
 	const idActor = Number(req.params.idActor);
 
-	db.postulaciones = db.postulaciones.filter(
-		(p) => !(p.idConvocatoria === idConvocatoria && p.idActor === idActor),
-	);
+	db.postulaciones = db.postulaciones.filter((p) => !(p.idConvocatoria === idConvocatoria && p.idActor === idActor));
 
 	return res.json({ mensaje: 'Postulación cancelada correctamente.' });
 });

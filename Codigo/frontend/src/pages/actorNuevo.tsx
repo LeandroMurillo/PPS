@@ -454,8 +454,8 @@ export default function ActorNuevoPage() {
 									<Typography fontWeight={700} sx={{ mb: 0.5 }}>
 										No podés agregar un nuevo actor cultural
 									</Typography>
-									Ya tenés muchos actores culturales pendientes de revisión. Vas a poder registrar otro
-									cuando finalice alguna de esas revisiones.
+									Ya tenés muchos actores culturales pendientes de revisión. Vas a poder registrar
+									otro cuando finalice alguna de esas revisiones.
 								</Alert>
 								<Button variant="contained" onClick={() => navigate('/mis-actores')}>
 									Ir a Mis actores

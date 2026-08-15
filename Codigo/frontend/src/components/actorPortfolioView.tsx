@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CircleMarker, MapContainer, TileLayer, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { Link as RouterLink } from 'react-router';
 
 import AddIcon from '@mui/icons-material/Add';
@@ -171,7 +172,7 @@ export type ActorPortfolioViewProps = {
 	initialShowAllInfo?: boolean;
 };
 
-function PortfolioMapControls({
+export function PortfolioMapControls({
 	isSatelital,
 	onToggleSatelital,
 }: {
@@ -179,10 +180,28 @@ function PortfolioMapControls({
 	onToggleSatelital: () => void;
 }) {
 	const map = useMap();
+	const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+	React.useEffect(() => {
+		if (containerRef.current) {
+			L.DomEvent.disableClickPropagation(containerRef.current);
+			L.DomEvent.disableScrollPropagation(containerRef.current);
+		}
+	}, []);
 
 	return (
 		<Paper
+			ref={containerRef}
 			elevation={3}
+			onClick={(e) => {
+				e.stopPropagation();
+			}}
+			onMouseDown={(e) => {
+				e.stopPropagation();
+			}}
+			onDoubleClick={(e) => {
+				e.stopPropagation();
+			}}
 			sx={{
 				position: 'absolute',
 				bottom: 8,

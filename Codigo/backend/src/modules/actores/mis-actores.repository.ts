@@ -423,20 +423,12 @@ export async function editarActorRepository(input: {
 		]);
 
 		if (input.latitud !== undefined || input.longitud !== undefined || input.esPublica !== undefined) {
-			await connection.query(
-				`UPDATE Ubicaciones u
-				 JOIN Actores a ON a.idUbicacion = u.idUbicacion
-				 SET u.latitud = COALESCE(?, u.latitud),
-				     u.longitud = COALESCE(?, u.longitud),
-				     u.esPublica = COALESCE(?, u.esPublica)
-				 WHERE a.idActor = ?`,
-				[
-					input.latitud ?? null,
-					input.longitud ?? null,
-					input.esPublica === undefined ? null : (input.esPublica ? 1 : 0),
-					input.idActor,
-				],
-			);
+			await connection.query('CALL sp_actor_actualizar_ubicacion_coordenadas(?, ?, ?, ?)', [
+				input.idActor,
+				input.latitud ?? null,
+				input.longitud ?? null,
+				input.esPublica === undefined ? null : input.esPublica ? 1 : 0,
+			]);
 		}
 
 		for (const respuesta of input.respuestas ?? []) {
@@ -511,6 +503,7 @@ export async function obtenerFormulariosActorRepository(input: { idActor: number
 				}));
 
 			return {
+				id: formulario.idFormulario,
 				...formulario,
 				preguntas,
 			};

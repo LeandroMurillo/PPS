@@ -315,10 +315,12 @@ export async function crearMiActorApi(input: CrearActorInput) {
 }
 
 export type PreguntaFormularioActor = PreguntaFormularioAplicable & {
+	idPregunta?: number;
 	valor?: unknown;
 };
 
 export type FormularioActor = Omit<FormularioAplicable, 'preguntas'> & {
+	idFormulario?: number;
 	preguntas: PreguntaFormularioActor[];
 };
 
@@ -372,7 +374,8 @@ export async function eliminarMiActorApi(idActor: number) {
 }
 
 export type MiActorPortafolioApiItem = {
-	id: number;
+	id?: number;
+	idItem?: number;
 	tipo: 'IMAGEN' | 'LINK' | 'RRSS';
 	descripcion: string;
 	url: string;

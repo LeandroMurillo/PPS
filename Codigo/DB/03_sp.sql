@@ -4031,6 +4031,31 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_actor_actualizar_ubicacion_coordenadas
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_actualizar_ubicacion_coordenadas`(
+    IN pIdActor INT,
+    IN pLatitud DECIMAL(10, 8),
+    IN pLongitud DECIMAL(11, 8),
+    IN pEsPublica TINYINT
+)
+MODIFIES SQL DATA
+COMMENT 'Actualiza las coordenadas geograficas (lat/lng) y visibilidad publica de la ubicacion de un actor.'
+BEGIN
+    DECLARE vIdUbicacion INT;
+
+    SELECT idUbicacion INTO vIdUbicacion FROM `Actores` WHERE idActor = pIdActor;
+
+    IF vIdUbicacion IS NOT NULL THEN
+        UPDATE `Ubicaciones`
+        SET latitud = COALESCE(pLatitud, latitud),
+            longitud = COALESCE(pLongitud, longitud),
+            esPublica = COALESCE(pEsPublica, esPublica)
+        WHERE idUbicacion = vIdUbicacion;
+    END IF;
+END //
+
+-- -----------------------------------------------------
 -- sp_actor_cambiar_estado_actor
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_actor_cambiar_estado_actor`(

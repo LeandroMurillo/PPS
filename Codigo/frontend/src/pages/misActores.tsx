@@ -13,7 +13,6 @@ import GroupIcon from '@mui/icons-material/Group';
 import GridViewIcon from '@mui/icons-material/GridView';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LanguageIcon from '@mui/icons-material/Language';
-import LayersIcon from '@mui/icons-material/Layers';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -76,6 +75,7 @@ import { notify } from '../utils/toast';
 
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
+import { PortfolioMapControls } from '../components/actorPortfolioView';
 import CategoryIcon, { type CategoriaIcono } from '../components/categoryIcon';
 import DatePickerSpanish from '../components/datePickerSpanish';
 import RequiredAsterisk from '../components/requiredAsterisk';
@@ -816,8 +816,10 @@ export default function MisActoresPage() {
 				setEditForms(res.data);
 				const initialAnswers: Record<string, string | string[]> = {};
 				for (const form of res.data) {
+					const formId = form.id ?? form.idFormulario;
 					for (const q of form.preguntas) {
-						const key = `${form.id}:${q.id}`;
+						const qId = q.id ?? q.idPregunta;
+						const key = `${formId}:${qId}`;
 						if (q.valor !== null && q.valor !== undefined) {
 							initialAnswers[key] = q.valor as string | string[];
 						}
@@ -969,6 +971,11 @@ export default function MisActoresPage() {
 			notify.error('El nombre del actor es obligatorio.');
 			return;
 		}
+		if (!formValues.descripcion.trim()) {
+			setEditValidationAttempted(true);
+			notify.error('La descripción o trayectoria es obligatoria.');
+			return;
+		}
 		setEditActiveTab(1);
 	};
 
@@ -992,6 +999,13 @@ export default function MisActoresPage() {
 		if (!formValues.nombre.trim()) {
 			setEditValidationAttempted(true);
 			notify.error('El nombre del actor es obligatorio.');
+			setEditActiveTab(0);
+			return;
+		}
+
+		if (!formValues.descripcion.trim()) {
+			setEditValidationAttempted(true);
+			notify.error('La descripción o trayectoria es obligatoria.');
 			setEditActiveTab(0);
 			return;
 		}
@@ -1027,9 +1041,11 @@ export default function MisActoresPage() {
 
 		// Validar preguntas obligatorias
 		for (const form of editForms) {
+			const formId = form.id ?? form.idFormulario;
 			for (const q of form.preguntas) {
 				if (q.esObligatorio) {
-					const key = `${form.id}:${q.id}`;
+					const qId = q.id ?? q.idPregunta;
+					const key = `${formId}:${qId}`;
 					const val = editFormAnswers[key];
 					const isMissing =
 						val === null ||
@@ -1071,9 +1087,12 @@ export default function MisActoresPage() {
 					(Array.isArray(val) ? val.length > 0 : String(val).trim() !== ''),
 			)
 			.map(([key, val]) => {
-				const [idFormulario, idPregunta] = key.split(':').map(Number);
+				const [fIdStr, qIdStr] = key.split(':');
+				const idFormulario = Number(fIdStr);
+				const idPregunta = Number(qIdStr);
 				return { idFormulario, idPregunta, valor: val };
-			});
+			})
+			.filter((r) => !isNaN(r.idFormulario) && !isNaN(r.idPregunta) && r.idFormulario > 0 && r.idPregunta > 0);
 
 		try {
 			const response = await editarMiActorApi(editingActor.id, {
@@ -1195,7 +1214,7 @@ export default function MisActoresPage() {
 		try {
 			const res = await listarPortafolioApi(actor.id);
 			const portafolio = (res.data ?? []).map((item) => ({
-				id: item.id,
+				id: item.idItem ?? item.id ?? Date.now(),
 				tipo: item.tipo,
 				descripcion: item.descripcion,
 				url: item.url,
@@ -1362,7 +1381,7 @@ export default function MisActoresPage() {
 	// Open Members Modal
 	const handleOpenMembersModal = async (actor: MyActor) => {
 		setTargetMembersActor(actor);
-		setNewMemberType('REGISTRADO');
+		setNewMemberType('NO_REGISTRADO');
 		setNewMemberNombre('');
 		setNewMemberApellido('');
 		setNewMemberEmail('');
@@ -2017,17 +2036,19 @@ export default function MisActoresPage() {
 										size="small"
 										label={editForms.reduce((sum, f) => sum + f.preguntas.length, 0)}
 										color={
-											editForms.some((f) =>
-												f.preguntas.some((q) => {
+											editForms.some((f) => {
+												const fId = f.id ?? f.idFormulario;
+												return f.preguntas.some((q) => {
 													if (!q.esObligatorio) return false;
-													const val = editFormAnswers[`${f.id}:${q.id}`];
+													const qId = q.id ?? q.idPregunta;
+													const val = editFormAnswers[`${fId}:${qId}`];
 													return (
 														val === null ||
 														val === undefined ||
 														(Array.isArray(val) ? val.length === 0 : !String(val).trim())
 													);
-												}),
-											)
+												});
+											})
 												? 'warning'
 												: 'default'
 										}
@@ -2226,7 +2247,11 @@ export default function MisActoresPage() {
 											}
 										/>
 
-										<FormControl fullWidth required error={editValidationAttempted && !formValues.tipoActor}>
+										<FormControl
+											fullWidth
+											required
+											error={editValidationAttempted && !formValues.tipoActor}
+										>
 											<InputLabel>Tipo de actor</InputLabel>
 											<Select
 												value={formValues.tipoActor}
@@ -2305,12 +2330,19 @@ export default function MisActoresPage() {
 							{/* Descripción o trayectoria */}
 							<TextField
 								fullWidth
+								required
 								multiline
 								rows={3}
 								label="Descripción o trayectoria"
 								placeholder="Resumen del proyecto artístico, trayectoria e información destacada..."
 								value={formValues.descripcion}
 								onChange={(e) => setFormValues((v) => ({ ...v, descripcion: e.target.value }))}
+								error={editValidationAttempted && !formValues.descripcion.trim()}
+								helperText={
+									editValidationAttempted && !formValues.descripcion.trim()
+										? 'La descripción o trayectoria es obligatoria'
+										: undefined
+								}
 							/>
 
 							{!isAdminOrMod && (
@@ -2406,7 +2438,10 @@ export default function MisActoresPage() {
 											void handleSearchAddress();
 										}
 									}}
-									error={Boolean(searchAddressError) || (editValidationAttempted && !formValues.direccion.trim())}
+									error={
+										Boolean(searchAddressError) ||
+										(editValidationAttempted && !formValues.direccion.trim())
+									}
 									helperText={
 										searchAddressError ||
 										(editValidationAttempted && !formValues.direccion.trim()
@@ -2452,10 +2487,17 @@ export default function MisActoresPage() {
 								<MapContainer
 									center={[formValues.latitud ?? -26.8241, formValues.longitud ?? -65.2226]}
 									zoom={13}
+									zoomControl={false}
 									style={{ width: '100%', height: '100%' }}
 									scrollWheelZoom={false}
 								>
 									<InvalidateMapSize />
+									<PortfolioMapControls
+										isSatelital={editMapLayer === 'satellite'}
+										onToggleSatelital={() =>
+											setEditMapLayer((l) => (l === 'satellite' ? 'streets' : 'satellite'))
+										}
+									/>
 									<MapDepartmentCenterer
 										department={formValues.departamento}
 										locality={formValues.localidad}
@@ -2502,26 +2544,6 @@ export default function MisActoresPage() {
 										/>
 									)}
 								</MapContainer>
-
-								{/* Control flotante para alternar capa */}
-								<Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
-									<ToggleButtonGroup
-										size="small"
-										value={editMapLayer}
-										exclusive
-										onChange={(_, nextLayer) => {
-											if (nextLayer) setEditMapLayer(nextLayer);
-										}}
-										sx={{ bgcolor: 'background.paper', boxShadow: 2 }}
-									>
-										<ToggleButton value="streets" title="Mapa de calles">
-											<LayersIcon fontSize="small" sx={{ mr: 0.5 }} /> Calles
-										</ToggleButton>
-										<ToggleButton value="satellite" title="Foto satelital">
-											Satélite
-										</ToggleButton>
-									</ToggleButtonGroup>
-								</Box>
 							</Paper>
 
 							{/* Resumen de coordenadas */}
@@ -2655,7 +2677,9 @@ export default function MisActoresPage() {
 										) : (
 											<Stack spacing={2.5}>
 												{form.preguntas.map((question) => {
-													const key = `${form.id}:${question.id}`;
+													const formId = form.id ?? form.idFormulario;
+													const qId = question.id ?? question.idPregunta;
+													const key = `${formId}:${qId}`;
 													const value =
 														editFormAnswers[key] ??
 														(question.tipoDato === 'OPCION_MULTIPLE' ? [] : '');

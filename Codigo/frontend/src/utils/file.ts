@@ -17,10 +17,7 @@ export function fileToBase64(file: File): Promise<string> {
 	});
 }
 
-export function validateImageFile(
-	file: File,
-	maxSizeMB = 5,
-): { valid: boolean; error?: string } {
+export function validateImageFile(file: File, maxSizeMB = 5): { valid: boolean; error?: string } {
 	const maxSizeBytes = maxSizeMB * 1024 * 1024;
 	if (file.size > maxSizeBytes) {
 		const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);

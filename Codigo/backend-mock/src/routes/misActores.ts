@@ -187,9 +187,7 @@ misActoresRouter.get('/:id/formularios', (req, res) => {
 
 	let forms = db.formularios.filter((f) => f.idCategoria === actor.idCategoria);
 	if (actor.idSubcategoria) {
-		forms = forms.concat(
-			db.formularios.filter((f) => f.idSubcategoria === actor.idSubcategoria),
-		);
+		forms = forms.concat(db.formularios.filter((f) => f.idSubcategoria === actor.idSubcategoria));
 	}
 
 	const respuestasFormulario = actor.respuestasFormulario ?? {};
@@ -379,6 +377,7 @@ misActoresRouter.get('/:id/portafolio', (req, res) => {
 	const data = db.portafolioItems
 		.filter((p) => p.idActor === idActor)
 		.map((p) => ({
+			id: p.id,
 			idItem: p.id,
 			tipo: p.tipo,
 			descripcion: p.descripcion,

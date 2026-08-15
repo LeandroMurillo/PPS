@@ -728,7 +728,8 @@ export default function RegistroPage() {
 							</Typography>
 
 							<Alert severity="success" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
-								Ya podés iniciar sesión para gestionar tus perfiles de actor cultural y publicar en el mapa.
+								Ya podés iniciar sesión para gestionar tus perfiles de actor cultural y publicar en el
+								mapa.
 							</Alert>
 
 							<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>

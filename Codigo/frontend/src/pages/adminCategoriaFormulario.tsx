@@ -386,13 +386,13 @@ export default function AdminCategoriaFormularioPage() {
 		? `/categorias/${buildSlugSinId(categoria.nombre, categoria.id)}/subcategorias`
 		: '/categorias';
 	const questions =
-		formulario?.preguntas.filter((question) =>
+		formulario?.preguntas?.filter((question) =>
 			questionTab === 'activas' ? question.estado === 'A' : question.estado === 'I',
 		) ?? [];
 	const usesOptions = questionType === 'OPCION_UNICA' || questionType === 'OPCION_MULTIPLE';
 
 	const activeQuestionIds = React.useMemo(
-		() => new Set(formulario?.preguntas.filter((q) => q.estado === 'A').map((q) => q.id) ?? []),
+		() => new Set(formulario?.preguntas?.filter((q) => q.estado === 'A').map((q) => q.id) ?? []),
 		[formulario],
 	);
 	const availableBankQuestions = React.useMemo(

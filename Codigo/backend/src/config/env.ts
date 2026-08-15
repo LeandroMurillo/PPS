@@ -1,38 +1,41 @@
 import { z } from 'zod';
 
-const envSchema = z.object({
-	NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+const envSchema = z
+	.object({
+		NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
-	PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+		PORT: z.coerce.number().int().min(1).max(65535).default(3000),
 
-	CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
+		CORS_ORIGIN: z.string().url().default('http://localhost:5173'),
 
-	PUBLIC_BASE_URL: z.string().url().default('http://localhost:3000'),
+		PUBLIC_BASE_URL: z.string().url().default('http://localhost:3000'),
 
-	DB_HOST: z.string().trim().min(1).default('localhost'),
+		DB_HOST: z.string().trim().min(1).default('localhost'),
 
-	DB_PORT: z.coerce.number().int().min(1).max(65535).default(3306),
+		DB_PORT: z.coerce.number().int().min(1).max(65535).default(3306),
 
-	DB_USER: z.string().trim().min(1).default('root'),
+		DB_USER: z.string().trim().min(1).default('root'),
 
-	DB_PASSWORD: z.string().default(''),
+		DB_PASSWORD: z.string().default(''),
 
-	DB_NAME: z.string().trim().min(1).default('cultura'),
+		DB_NAME: z.string().trim().min(1).default('cultura'),
 
-	DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(50).default(10),
+		DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(50).default(10),
 
-	JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
-}).superRefine((data, ctx) => {
-	if (data.NODE_ENV === 'production') {
-		if (!process.env.JWT_SECRET || data.JWT_SECRET === 'mosaico_cultural_jwt_secret_key_dev_mode_2026') {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ['JWT_SECRET'],
-				message: 'En producción se debe configurar una variable JWT_SECRET segura y diferente al valor por defecto.',
-			});
+		JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
+	})
+	.superRefine((data, ctx) => {
+		if (data.NODE_ENV === 'production') {
+			if (!process.env.JWT_SECRET || data.JWT_SECRET === 'mosaico_cultural_jwt_secret_key_dev_mode_2026') {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['JWT_SECRET'],
+					message:
+						'En producción se debe configurar una variable JWT_SECRET segura y diferente al valor por defecto.',
+				});
+			}
 		}
-	}
-});
+	});
 
 const result = envSchema.safeParse(process.env);
 

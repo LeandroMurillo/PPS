@@ -11,10 +11,7 @@ import { PageContainer } from '@toolpad/core/PageContainer';
 import { listarUsuariosAdmin, type SortDirection, type UsuarioAdmin, type UsuarioAdminSortBy } from '../api/admin';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
-import {
-	ESTADO_COLORS as stateColors,
-	ESTADO_LABELS as stateLabels,
-} from '../constants/estados';
+import { ESTADO_COLORS as stateColors, ESTADO_LABELS as stateLabels } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { formatDate, formatDateTime } from '../utils/date';
 
