@@ -346,9 +346,34 @@ export default function PerfilUsuarioPage() {
 	const statusColor: ChipProps['color'] = perfil?.estado ? (ESTADO_COLORS[perfil.estado] ?? 'default') : 'default';
 	const statusLabel = perfil?.estado ? ESTADO_LABELS[perfil.estado] : '—';
 
+	// Configuración de avatar dinámico por género
+	const getAvatarConfig = (genero?: string) => {
+		if (genero === 'F' || genero === 'MF') {
+			return {
+				style: 'lorelei',
+				backgroundColor: ['f9d5e5', 'f7c6d9', 'f2d7d5'],
+			};
+		}
+		if (genero === 'M' || genero === 'FM') {
+			return {
+				style: 'micah',
+				backgroundColor: ['dbeafe', 'c7d2fe', 'e0f2fe'],
+			};
+		}
+		return {
+			style: 'initials',
+			backgroundColor: ['e5e7eb', 'd1d5db', 'f3f4f6'],
+		};
+	};
+
+	const avatarConfig = getAvatarConfig(perfil?.genero);
+	const avatarUrl = `https://api.dicebear.com/10.x/${avatarConfig.style}/svg?seed=${encodeURIComponent(
+		`${perfil?.nombre} ${perfil?.apellido}`,
+	)}&backgroundColor=${avatarConfig.backgroundColor.join(',')}`;
+
 	return (
 		<PageContainer title="Mi perfil">
-			<Stack spacing={3} sx={{ maxWidth: 960, mx: 'auto', pb: 6 }}>
+			<Stack spacing={3} sx={{ width: '100%', maxWidth: 960, mx: 'auto', pb: 6 }}>
 				{/* Encabezado / Resumen del Usuario */}
 				<Paper
 					variant="outlined"
@@ -367,6 +392,8 @@ export default function PerfilUsuarioPage() {
 					>
 						<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems="center">
 							<Avatar
+								src={avatarUrl}
+								alt={`${perfil?.nombre} ${perfil?.apellido}`}
 								sx={{
 									width: 80,
 									height: 80,
@@ -616,15 +643,6 @@ export default function PerfilUsuarioPage() {
 
 									{/* Documento de Identidad / Foto DNI */}
 									<Box>
-										<Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-											Documento de Identidad (DNI)
-										</Typography>
-										<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-											Tu documento de identidad es utilizado exclusivamente por el equipo de
-											moderación para verificar la autenticidad de tu cuenta y de tus actores
-											culturales.
-										</Typography>
-
 										<Paper
 											variant="outlined"
 											sx={{
@@ -693,18 +711,11 @@ export default function PerfilUsuarioPage() {
 												)}
 
 												<Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-													<Typography variant="subtitle2" fontWeight={600}>
+													<Typography variant="subtitle2" fontWeight={600} paddingBottom={2}>
 														{fotoDniNombre ||
 															(perfil?.fotoDniUrl
 																? 'Documento registrado actualmente'
 																: 'Sin documento cargado')}
-													</Typography>
-													<Typography
-														variant="caption"
-														color="text.secondary"
-														sx={{ display: 'block', mb: 1.5 }}
-													>
-														Formato permitido: JPG, PNG o WebP (máx. 5 MB).
 													</Typography>
 
 													<Stack
@@ -781,7 +792,7 @@ export default function PerfilUsuarioPage() {
 						{/* PESTAÑA 1: SEGURIDAD Y CONTRASEÑA                                         */}
 						{/* ========================================================================= */}
 						{activeTab === 1 && (
-							<Box component="form" onSubmit={handleCambiarContraseña} noValidate sx={{ maxWidth: 540 }}>
+							<Box component="form" onSubmit={handleCambiarContraseña} noValidate>
 								<Stack spacing={3}>
 									<Box>
 										<Typography variant="h6" fontWeight={700}>
@@ -1057,7 +1068,7 @@ export default function PerfilUsuarioPage() {
 							</strong>
 							.
 						</Alert>
-						<DialogContentText>
+						<DialogContentText style={{ userSelect: 'none' }}>
 							Para confirmar la eliminación, escribí <strong>BORRAR MI CUENTA</strong> en el siguiente
 							campo:
 						</DialogContentText>
