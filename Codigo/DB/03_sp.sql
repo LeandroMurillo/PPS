@@ -4579,4 +4579,200 @@ BEGIN
     END IF;
 END //
 
+-- -----------------------------------------------------
+-- sp_usuario_obtener_perfil
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_usuario_obtener_perfil`(
+    IN pIdUsuario INT
+)
+READS SQL DATA
+COMMENT 'Obtiene los datos de perfil del usuario autenticado comprobando que exista y esté activo.'
+BEGIN
+    DECLARE vEstado VARCHAR(1);
+
+    SELECT estado INTO vEstado
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario;
+
+    IF vEstado IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o no tiene autorización.';
+    END IF;
+
+    IF vEstado = 'I' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La cuenta de usuario se encuentra inactiva.';
+    END IF;
+
+    SELECT
+        u.idUsuario,
+        u.actividadesArcaCodigo,
+        aa.descripcion AS actividadArca,
+        u.nombre,
+        u.apellido,
+        u.CUIL,
+        u.genero,
+        u.fechaNacimiento,
+        u.nacionalidad,
+        u.email,
+        u.fotoDniUrl,
+        u.fechaRegistro,
+        u.rol,
+        u.estado,
+        u.contraseña,
+        (SELECT COUNT(*) FROM `Integrantes` i WHERE i.idUsuario = u.idUsuario AND i.esDueño = 1) AS actoresDuenoCount
+    FROM `Usuarios` u
+    LEFT JOIN `ActividadesArca` aa
+        ON aa.codigo = u.actividadesArcaCodigo
+    WHERE u.idUsuario = pIdUsuario;
+END //
+
+-- -----------------------------------------------------
+-- sp_usuario_actualizar_perfil
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_usuario_actualizar_perfil`(
+    IN pIdUsuario INT,
+    IN pNombre VARCHAR(45),
+    IN pApellido VARCHAR(45),
+    IN pGenero ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N'),
+    IN pFechaNacimiento DATE,
+    IN pNacionalidad VARCHAR(45),
+    IN pCUIL VARCHAR(11),
+    IN pActividadesArcaCodigo CHAR(6),
+    IN pFotoDniUrl VARCHAR(255)
+)
+MODIFIES SQL DATA
+COMMENT 'Actualiza los datos personales del usuario autenticado previa comprobación de autorización y estado.'
+BEGIN
+    DECLARE vEstado VARCHAR(1);
+
+    SELECT estado INTO vEstado
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario;
+
+    IF vEstado IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o no tiene autorización.';
+    END IF;
+
+    IF vEstado = 'I' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No podés modificar una cuenta que se encuentra inactiva.';
+    END IF;
+
+    IF pCUIL IS NOT NULL AND EXISTS (
+        SELECT 1 FROM `Usuarios` WHERE CUIL = TRIM(pCUIL) AND idUsuario <> pIdUsuario
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El CUIL ingresado ya pertenece a otro usuario.';
+    END IF;
+
+    UPDATE `Usuarios`
+    SET nombre = TRIM(pNombre),
+        apellido = TRIM(pApellido),
+        genero = pGenero,
+        fechaNacimiento = pFechaNacimiento,
+        nacionalidad = TRIM(pNacionalidad),
+        CUIL = TRIM(pCUIL),
+        actividadesArcaCodigo = NULLIF(TRIM(pActividadesArcaCodigo), ''),
+        fotoDniUrl = COALESCE(pFotoDniUrl, fotoDniUrl)
+    WHERE idUsuario = pIdUsuario;
+
+    CALL `sp_usuario_obtener_perfil`(pIdUsuario);
+END //
+
+-- -----------------------------------------------------
+-- sp_usuario_actualizar_contrasena
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_usuario_actualizar_contrasena`(
+    IN pIdUsuario INT,
+    IN pNuevaContrasenaHash VARCHAR(255)
+)
+MODIFIES SQL DATA
+COMMENT 'Actualiza el hash de contraseña del usuario autenticado comprobando su estado.'
+BEGIN
+    DECLARE vEstado VARCHAR(1);
+
+    SELECT estado INTO vEstado
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario;
+
+    IF vEstado IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o no tiene autorización.';
+    END IF;
+
+    IF vEstado = 'I' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No podés modificar la clave de una cuenta inactiva.';
+    END IF;
+
+    UPDATE `Usuarios`
+    SET contraseña = pNuevaContrasenaHash
+    WHERE idUsuario = pIdUsuario;
+END //
+
+-- -----------------------------------------------------
+-- sp_usuario_eliminar_cuenta
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_usuario_eliminar_cuenta`(
+    IN pIdUsuario INT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina la cuenta del usuario autenticado y en cascada todos los actores culturales de los que es dueño principal.'
+BEGIN
+    DECLARE vExiste INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO vExiste
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario;
+
+    IF vExiste = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o ya fue eliminado.';
+    END IF;
+
+    -- 1. Eliminar respuestas a formularios de los actores propios
+    DELETE r FROM `Respuestas` r
+    JOIN `Integrantes` i ON r.idActor = i.idActor
+    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
+    -- 2. Eliminar postulaciones de los actores propios
+    DELETE p FROM `Postulaciones` p
+    JOIN `Integrantes` i ON p.idActor = i.idActor
+    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
+    -- 3. Eliminar ítems de portafolio de los actores propios
+    DELETE it FROM `ItemsPortafolio` it
+    JOIN `Integrantes` i ON it.idActor = i.idActor
+    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
+    -- 4. Eliminar eventos de los actores propios
+    DELETE e FROM `Eventos` e
+    JOIN `Integrantes` i ON e.idActor = i.idActor
+    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
+    -- 5. Eliminar integrantes no registrados de los actores propios
+    DELETE nr FROM `IntegrantesNoRegistrados` nr
+    JOIN `Integrantes` i ON nr.idActor = i.idActor
+    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
+    -- 6. Eliminar integrantes de los actores propios (incluyendo a otros miembros)
+    DELETE i2 FROM `Integrantes` i2
+    WHERE i2.idActor IN (
+        SELECT idActor FROM (
+            SELECT idActor FROM `Integrantes` WHERE idUsuario = pIdUsuario AND esDueño = 1
+        ) AS sub
+    );
+
+    -- 7. Eliminar actores propios y sus ubicaciones
+    DELETE u FROM `Ubicaciones` u
+    JOIN `Actores` a ON u.idUbicacion = a.idUbicacion
+    WHERE a.idActor NOT IN (SELECT idActor FROM `Integrantes`);
+
+    DELETE FROM `Actores`
+    WHERE idActor NOT IN (SELECT idActor FROM `Integrantes`);
+
+    -- 8. Eliminar membresías en actores donde no era dueño
+    DELETE FROM `Integrantes` WHERE idUsuario = pIdUsuario;
+
+    -- 9. Eliminar asignaciones de moderación
+    DELETE FROM `ModeradoresCategorias` WHERE idUsuario = pIdUsuario;
+
+    -- 10. Eliminar usuario
+    DELETE FROM `Usuarios` WHERE idUsuario = pIdUsuario;
+END //
+
 DELIMITER ;

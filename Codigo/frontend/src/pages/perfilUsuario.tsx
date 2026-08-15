@@ -19,6 +19,7 @@ import {
 	Box,
 	Button,
 	Chip,
+	type ChipProps,
 	CircularProgress,
 	Dialog,
 	DialogActions,
@@ -79,7 +80,7 @@ function validarCUIL(cuil: string): boolean {
 
 export default function PerfilUsuarioPage() {
 	const navigate = useNavigate();
-	const { user: authUser, updateUser, logout } = useAuth();
+	const { updateUser, logout } = useAuth();
 
 	const [activeTab, setActiveTab] = React.useState<number>(0);
 	const [loading, setLoading] = React.useState<boolean>(true);
@@ -342,7 +343,7 @@ export default function PerfilUsuarioPage() {
 	}
 
 	const roleLabel = perfil?.rol === 'ADMIN' ? 'Administrador' : perfil?.rol === 'MODERADOR' ? 'Moderador' : 'Usuario';
-	const statusColor = perfil?.estado ? ESTADO_COLORS[perfil.estado] : 'default';
+	const statusColor: ChipProps['color'] = perfil?.estado ? (ESTADO_COLORS[perfil.estado] ?? 'default') : 'default';
 	const statusLabel = perfil?.estado ? ESTADO_LABELS[perfil.estado] : '—';
 
 	return (
@@ -408,7 +409,7 @@ export default function PerfilUsuarioPage() {
 									<Chip
 										size="small"
 										label={`Estado: ${statusLabel}`}
-										color={statusColor as any}
+										color={statusColor}
 										variant="outlined"
 									/>
 									<Chip

@@ -5,6 +5,7 @@ import { actoresPublicosRouter } from './routes/actoresPublicos';
 import { misActoresRouter } from './routes/misActores';
 import { adminRouter } from './routes/admin';
 import { convocatoriasRouter } from './routes/convocatorias';
+import { usuarioRouter } from './routes/usuario';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/publico/auth', authRouter);
 app.use('/api/publico/actores', actoresPublicosRouter);
 app.use('/api/mis-actores', misActoresRouter);
+app.use('/api/usuario', usuarioRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/convocatorias', convocatoriasRouter);
 
