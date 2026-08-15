@@ -413,9 +413,7 @@ export default function AdminCategoriaFormularioPage() {
 			setFormulario(response.data);
 			setTitulo(response.data.titulo);
 			setDescripcion(response.data.descripcion ?? '');
-			const msg = formulario
-				? 'Formulario actualizado.'
-				: 'Formulario creado. Ya podés agregar preguntas.';
+			const msg = formulario ? 'Formulario actualizado.' : 'Formulario creado. Ya podés agregar preguntas.';
 			notify.success(msg);
 		} catch (saveError) {
 			const errMsg = saveError instanceof Error ? saveError.message : 'No se pudo guardar el formulario.';

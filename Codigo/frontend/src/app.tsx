@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Outlet, useNavigate } from 'react-router';
 
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
 import CategoryIcon from '@mui/icons-material/Category';
@@ -80,6 +81,11 @@ function AppContent() {
 					title: 'Convocatorias',
 					segment: 'convocatoriasUsuario',
 					icon: <AnnouncementIcon />,
+				},
+				{
+					title: 'Mi perfil',
+					segment: 'perfil',
+					icon: <AccountCircleIcon />,
 				},
 			);
 

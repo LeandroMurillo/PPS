@@ -71,7 +71,7 @@ export const registrarUsuarioBodySchema = z.object({
 				const year = date.getFullYear();
 				return !isNaN(date.getTime()) && date < new Date() && year >= 1900;
 			},
-			{ message: 'La fecha de nacimiento debe ser una fecha válida entre el año 1900 y la fecha actual' },
+			{ message: 'La fecha de nacimiento debe ser una fecha válida' },
 		),
 
 	nacionalidad: z

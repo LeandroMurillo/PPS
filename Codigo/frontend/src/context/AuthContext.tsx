@@ -11,6 +11,7 @@ type AuthContextType = {
 	session: Session | null;
 	login: (user: UsuarioSession, token: string) => void;
 	logout: () => void;
+	updateUser: (updatedUser: Partial<UsuarioSession>) => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
 	session: null,
 	login: () => {},
 	logout: () => {},
+	updateUser: () => {},
 });
 
 function sanitizeUserForStorage(user: UsuarioSession): Partial<UsuarioSession> {
@@ -73,6 +75,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		setToken(null);
 	};
 
+	const updateUser = (updatedFields: Partial<UsuarioSession>) => {
+		setUser((prev) => (prev ? { ...prev, ...updatedFields } : null));
+	};
+
 	const getAvatarConfig = (genero?: string) => {
 		if (genero === 'F' || genero === 'MF') {
 			return {
@@ -107,7 +113,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			}
 		: null;
 
-	return <AuthContext.Provider value={{ user, token, session, login, logout }}>{children}</AuthContext.Provider>;
+	return (
+		<AuthContext.Provider value={{ user, token, session, login, logout, updateUser }}>
+			{children}
+		</AuthContext.Provider>
+	);
 };
 
 export function useAuth() {

@@ -26,6 +26,7 @@ import ConvocatoriasAdminPage from './pages/convocatoriasAdmin';
 import ConvocatoriasUsuario from './pages/convocatoriasUsuario';
 import ConfirmacionesPage from './pages/confirmaciones';
 import MisActoresPage from './pages/misActores';
+import PerfilUsuarioPage from './pages/perfilUsuario';
 import Licencia from './pages/licencia';
 import LoginPage from './pages/login';
 import Mapa from './pages/mapa';
@@ -107,6 +108,14 @@ const router = createBrowserRouter([
 						element: (
 							<ProtectedRoute>
 								<MisActoresPage />
+							</ProtectedRoute>
+						),
+					},
+					{
+						path: 'perfil',
+						element: (
+							<ProtectedRoute>
+								<PerfilUsuarioPage />
 							</ProtectedRoute>
 						),
 					},

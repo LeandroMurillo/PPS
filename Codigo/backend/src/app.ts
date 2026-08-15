@@ -14,6 +14,7 @@ import { misActoresRouter } from './modules/actores/mis-actores.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { usuarioRouter } from './modules/usuario/usuario.routes.js';
 import { openApiRouter } from './openapi/openapi.routes.js';
 import { logger } from './shared/logger.js';
 
@@ -66,6 +67,7 @@ app.use('/api', healthRouter);
 app.use('/api/publico/auth', authRouter);
 app.use('/api/publico/actores', actoresPublicosRouter);
 app.use('/api/mis-actores', misActoresRouter);
+app.use('/api/usuario', usuarioRouter);
 app.use('/api/admin', adminRouter);
 
 app.use(openApiRouter);
