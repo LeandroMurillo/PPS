@@ -92,7 +92,7 @@ export default function ConvocatoriasUsuario() {
 					[idConvocatoria]: actoresActuales.filter((id) => id !== actor.id),
 				};
 			} else {
-				notify.success(`¡"${actor.nombre}" postulado correctamente!`);
+				notify.success(`¡"${actor.nombre}" postulado!`);
 				return {
 					...prev,
 					[idConvocatoria]: [...actoresActuales, actor.id],

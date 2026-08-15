@@ -144,13 +144,13 @@ export default function SubcategoriasManager({
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
-				notify.success(`Subcategoría "${trimmedNombre}" modificada correctamente.`);
+				notify.success(`Subcategoría "${trimmedNombre}" modificada.`);
 			} else {
 				await crearSubcategoriaAdmin(categoryId, {
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
-				notify.success(`Subcategoría "${trimmedNombre}" creada correctamente.`);
+				notify.success(`Subcategoría "${trimmedNombre}" creada.`);
 			}
 
 			setDialogOpen(false);
@@ -175,7 +175,7 @@ export default function SubcategoriasManager({
 
 		try {
 			await eliminarSubcategoriaAdmin(categoryId, deletingSubcategoria.id);
-			notify.info(`Subcategoría "${deletingSubcategoria.nombre}" dada de baja correctamente.`);
+			notify.info(`Subcategoría "${deletingSubcategoria.nombre}" dada de baja.`);
 			setDeleteDialogOpen(false);
 			setDeletingSubcategoria(null);
 			void fetchSubcategorias();

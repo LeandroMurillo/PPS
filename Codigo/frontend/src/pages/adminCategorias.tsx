@@ -172,14 +172,14 @@ export default function AdminCategoriasPage() {
 					icono: formIcono,
 					estado: formEstado,
 				});
-				notify.success(`Categoría "${trimmedNombre}" modificada correctamente.`);
+				notify.success(`Categoría "${trimmedNombre}" modificada.`);
 			} else {
 				await crearCategoriaAdmin({
 					nombre: trimmedNombre,
 					icono: formIcono,
 					estado: formEstado,
 				});
-				notify.success(`Categoría "${trimmedNombre}" creada correctamente.`);
+				notify.success(`Categoría "${trimmedNombre}" creada.`);
 			}
 
 			handleCloseDialog();
@@ -204,7 +204,7 @@ export default function AdminCategoriasPage() {
 
 		try {
 			await eliminarCategoriaAdmin(deletingCategoria.id);
-			notify.info(`Categoría "${deletingCategoria.nombre}" dada de baja correctamente.`);
+			notify.info(`Categoría "${deletingCategoria.nombre}" dada de baja.`);
 			setDeleteDialogOpen(false);
 			setDeletingCategoria(null);
 			void fetchCategorias();

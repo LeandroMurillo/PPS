@@ -77,7 +77,7 @@ export default function ActorStatusDialog({ open, actor, defaultNext, onClose, o
 			let actionText = '';
 			if (nextSt === 'I') actionText = 'fue dado de baja (Inactivo)';
 			else if (nextSt === 'P') actionText = 'pasó a estado Pendiente de revisión';
-			else if (nextSt === 'A') actionText = 'fue activado correctamente';
+			else if (nextSt === 'A') actionText = 'fue activado';
 
 			notify.info(`"${actor.nombre}" ${actionText}.`);
 			setDeactivateConfirmModalOpen(false);

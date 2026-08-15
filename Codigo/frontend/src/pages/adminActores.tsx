@@ -226,8 +226,8 @@ export default function AdminActoresPage() {
 
 		try {
 			await cambiarEstadoActoresAdmin(selectedRowsIds, targetState);
-			const stateLabel = targetState === 'A' ? 'activados' : 'inactivados';
-			notify.success(`Se han ${stateLabel} ${selectedRowsIds.length} actores correctamente.`);
+			const stateLabel = targetState === 'A' ? 'activados' : 'desactivados';
+			notify.success(`Se han ${stateLabel} ${selectedRowsIds.length} actores.`);
 			setSelectedActorIds([]);
 			setConfirmDialogOpen(false);
 			setTargetState(null);

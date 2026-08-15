@@ -95,7 +95,7 @@ export default function ActorEventsDialog({ open, actor, onClose, onEventsChange
 			setNombre('');
 			setFecha('');
 			setDescripcion('');
-			notify.success('Evento agregado correctamente.');
+			notify.success('Evento agregado.');
 		} catch (err) {
 			notify.error(err instanceof Error ? err.message : 'No se pudo agregar el evento.');
 		} finally {

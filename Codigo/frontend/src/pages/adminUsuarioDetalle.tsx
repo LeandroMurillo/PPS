@@ -94,7 +94,7 @@ export default function AdminUsuarioDetallePage() {
 		try {
 			const result = await cambiarEstadoUsuarioAdmin(usuario.id, activating ? 'A' : 'I');
 			reload(result.data);
-			notify.success(activating ? 'Usuario reactivado correctamente.' : 'Usuario dado de baja.');
+			notify.success(activating ? 'Usuario activado.' : 'Usuario dado de baja.');
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : 'No se pudo actualizar el estado.';
 			notify.error(errMsg);
@@ -127,7 +127,7 @@ export default function AdminUsuarioDetallePage() {
 			notify.success(
 				selectedCategories.length === 0
 					? 'Se quitaron las categorías y el usuario dejó de ser moderador.'
-					: 'Rol y categorías de moderación actualizados correctamente.',
+					: 'Rol y categorías de moderación actualizados.',
 			);
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : 'No se pudo asignar la moderación.';

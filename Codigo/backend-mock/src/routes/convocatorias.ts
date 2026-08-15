@@ -96,5 +96,5 @@ convocatoriasRouter.delete('/:id/postulaciones/:idActor', (req, res) => {
 
 	db.postulaciones = db.postulaciones.filter((p) => !(p.idConvocatoria === idConvocatoria && p.idActor === idActor));
 
-	return res.json({ mensaje: 'Postulación cancelada correctamente.' });
+	return res.json({ mensaje: 'Postulación cancelada.' });
 });

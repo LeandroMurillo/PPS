@@ -909,7 +909,7 @@ export default function ActorEditDialog({
 
 		const msg = !isAdminOrMod
 			? `Se actualizaron los datos de "${formValues.nombre.trim()}". La ficha pasó a estado Pendiente para su revisión.`
-			: `Se actualizó "${formValues.nombre.trim()}" correctamente.`;
+			: `Se actualizó "${formValues.nombre.trim()}".`;
 
 		notify.success(msg);
 		setEditConfirmModalOpen(false);
@@ -1460,7 +1460,7 @@ export default function ActorEditDialog({
 							{/* Visibilidad pública de la ubicación */}
 							<Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default' }}>
 								<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-									¿Querés que esta ubicación aparezca en el mapa público provincial?
+									¿Querés que esta ubicación aparezca en el mapa público?
 								</Typography>
 								<RadioGroup
 									row
@@ -1497,7 +1497,7 @@ export default function ActorEditDialog({
 								</RadioGroup>
 								<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
 									Si la mantenés privada, tu actor no mostrará la dirección exacta ni el punto en el
-									mapa público, pero la administración podrá verificar la procedencia.
+									mapa público, pero la administración podrá consultarla para validar el registro.
 								</Typography>
 							</Paper>
 						</Stack>

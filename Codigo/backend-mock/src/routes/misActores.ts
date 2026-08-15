@@ -348,7 +348,7 @@ misActoresRouter.put('/:id', (req, res) => {
 		}
 	}
 
-	return res.json({ data: { fotoPerfilUrl: actor.foto }, message: 'Actor actualizado correctamente.' });
+	return res.json({ data: { fotoPerfilUrl: actor.foto }, message: 'Actor actualizado.' });
 });
 
 // PATCH /api/mis-actores/:id/estado
@@ -362,7 +362,7 @@ misActoresRouter.patch('/:id/estado', (req, res) => {
 	}
 
 	actor.estado = nuevoEstado;
-	return res.json({ message: 'Estado actualizado correctamente.' });
+	return res.json({ message: 'Estado actualizado.' });
 });
 
 // DELETE /api/mis-actores/:id
@@ -370,7 +370,7 @@ misActoresRouter.delete('/:id', (req, res) => {
 	const id = Number(req.params.id);
 	db.actores = db.actores.filter((a) => a.id !== id);
 
-	return res.json({ message: 'Actor eliminado correctamente.' });
+	return res.json({ message: 'Actor eliminado.' });
 });
 
 // GET /api/mis-actores/:id/portafolio
@@ -447,7 +447,7 @@ misActoresRouter.delete('/:id/eventos/:idEvento', (req, res) => {
 	const idEvento = Number(req.params.idEvento);
 	db.eventos = db.eventos.filter((e) => e.id !== idEvento);
 
-	return res.json({ message: 'Evento eliminado correctamente.' });
+	return res.json({ message: 'Evento eliminado.' });
 });
 
 // GET /api/mis-actores/:id/integrantes
@@ -503,7 +503,7 @@ misActoresRouter.post('/:id/integrantes', (req, res) => {
 		esDueno: false,
 	});
 
-	return res.status(201).json({ message: 'Integrante agregado correctamente.' });
+	return res.status(201).json({ message: 'Integrante agregado.' });
 });
 
 // PUT /api/mis-actores/:id/integrantes/:idUsuario
@@ -525,7 +525,7 @@ misActoresRouter.put('/:id/integrantes/:idUsuario', (req, res) => {
 	}
 
 	integrante.rol = req.body.rol.trim();
-	return res.json({ message: 'Integrante modificado correctamente.' });
+	return res.json({ message: 'Integrante modificado.' });
 });
 
 // DELETE /api/mis-actores/:id/integrantes/:idUsuario
@@ -548,7 +548,7 @@ misActoresRouter.delete('/:id/integrantes/:idUsuario', (req, res) => {
 
 	db.integrantes = db.integrantes.filter((i) => !(i.idActor === idActor && i.idUsuario === idUsuario));
 
-	return res.json({ message: 'Integrante eliminado correctamente.' });
+	return res.json({ message: 'Integrante eliminado.' });
 });
 
 // POST /api/mis-actores/:id/integrantes-no-registrados
@@ -594,7 +594,7 @@ misActoresRouter.post('/:id/integrantes-no-registrados', (req, res) => {
 		esDueno: false,
 	});
 
-	return res.status(201).json({ message: 'Integrante sin cuenta agregado correctamente.' });
+	return res.status(201).json({ message: 'Integrante sin cuenta agregado.' });
 });
 
 // PUT /api/mis-actores/:id/integrantes-no-registrados/:idIntegranteNoRegistrado
@@ -647,7 +647,7 @@ misActoresRouter.put('/:id/integrantes-no-registrados/:idIntegranteNoRegistrado'
 	integrante.email = normalizedEmail;
 	integrante.rol = typeof rol === 'string' && rol.trim() ? rol.trim() : integrante.rol;
 
-	return res.json({ message: 'Integrante modificado correctamente.' });
+	return res.json({ message: 'Integrante modificado.' });
 });
 
 // DELETE /api/mis-actores/:id/integrantes-no-registrados/:idIntegranteNoRegistrado
@@ -668,5 +668,5 @@ misActoresRouter.delete('/:id/integrantes-no-registrados/:idIntegranteNoRegistra
 		(i) => !(i.idActor === idActor && i.idIntegranteNoRegistrado === idIntegranteNoRegistrado),
 	);
 
-	return res.json({ message: 'Integrante eliminado correctamente.' });
+	return res.json({ message: 'Integrante eliminado.' });
 });

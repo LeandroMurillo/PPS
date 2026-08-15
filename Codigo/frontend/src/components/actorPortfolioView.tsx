@@ -528,7 +528,17 @@ export default function ActorPortfolioView({
 								Creador / Dueño de la ficha
 							</Typography>
 							<Typography variant="body2" fontWeight={600}>
-								{actor.dueno ? `${actor.dueno.nombre} (${actor.dueno.email})` : 'No informado'}
+								{actor.dueno ? (
+									<>
+										{actor.dueno.nombre} (
+										<MuiLink href={`mailto:${actor.dueno.email}`} underline="hover">
+											{actor.dueno.email}
+										</MuiLink>
+										)
+									</>
+								) : (
+									'No informado'
+								)}
 							</Typography>
 						</Grid>
 					</Grid>
@@ -853,7 +863,9 @@ export default function ActorPortfolioView({
 										</Stack>
 										{effectiveShowAll && integrante.email && (
 											<Typography variant="caption" color="text.secondary" display="block">
-												{integrante.email}
+												<MuiLink href={`mailto:${integrante.email}`} underline="hover">
+													{integrante.email}
+												</MuiLink>
 											</Typography>
 										)}
 									</Box>

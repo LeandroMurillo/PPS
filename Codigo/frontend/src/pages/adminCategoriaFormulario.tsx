@@ -414,7 +414,7 @@ export default function AdminCategoriaFormularioPage() {
 			setTitulo(response.data.titulo);
 			setDescripcion(response.data.descripcion ?? '');
 			const msg = formulario
-				? 'Formulario actualizado correctamente.'
+				? 'Formulario actualizado.'
 				: 'Formulario creado. Ya podés agregar preguntas.';
 			notify.success(msg);
 		} catch (saveError) {
@@ -462,7 +462,7 @@ export default function AdminCategoriaFormularioPage() {
 					esPublico: questionPublic,
 				});
 				setFormulario(response.data);
-				notify.success('Pregunta asociada correctamente.');
+				notify.success('Pregunta asociada.');
 				setQuestionDialogOpen(false);
 				setQuestionTab('activas');
 			} catch (submitError) {
@@ -504,7 +504,7 @@ export default function AdminCategoriaFormularioPage() {
 				esPublico: questionPublic,
 			});
 			setFormulario(response.data);
-			notify.success('Pregunta agregada correctamente.');
+			notify.success('Pregunta agregada.');
 			setQuestionDialogOpen(false);
 			setQuestionTab('activas');
 		} catch (submitError) {

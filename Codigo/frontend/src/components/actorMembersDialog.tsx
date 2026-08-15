@@ -43,6 +43,8 @@ function getMemberKey(member: IntegranteApiItem): string {
 		: `sin-cuenta-${member.idIntegranteNoRegistrado}`;
 }
 
+const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 type Props = {
 	open: boolean;
 	actor: MyActor | null;
@@ -98,8 +100,17 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 
 	const handleAddMember = async () => {
 		if (!actor) return;
-		if (memberType === 'REGISTRADO' && !email.trim()) return;
+		if (memberType === 'REGISTRADO') {
+			if (!email.trim() || !isValidEmail(email)) {
+				notify.error('Ingresá un correo electrónico válido.');
+				return;
+			}
+		}
 		if (memberType === 'NO_REGISTRADO' && (!nombre.trim() || !apellido.trim())) return;
+		if (memberType === 'NO_REGISTRADO' && email.trim() && !isValidEmail(email)) {
+			notify.error('El correo electrónico ingresado no es válido.');
+			return;
+		}
 
 		setSubmitting(true);
 		try {
@@ -117,7 +128,7 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 				});
 			}
 
-			notify.success('Integrante agregado correctamente.');
+			notify.success('Integrante agregado.');
 			setNombre('');
 			setApellido('');
 			setEmail('');
@@ -141,6 +152,14 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 
 	const handleSaveEdit = async () => {
 		if (!actor || !editingMember || !editRol.trim()) return;
+		if (editingMember.tipo === 'REGISTRADO' && (!editEmail.trim() || !isValidEmail(editEmail))) {
+			notify.error('Ingresá un correo electrónico válido.');
+			return;
+		}
+		if (editingMember.tipo === 'NO_REGISTRADO' && editEmail.trim() && !isValidEmail(editEmail)) {
+			notify.error('El correo electrónico ingresado no es válido.');
+			return;
+		}
 
 		setSubmitting(true);
 		try {
@@ -157,7 +176,7 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 				});
 			}
 
-			notify.success('Integrante modificado correctamente.');
+			notify.success('Integrante modificado.');
 			setEditingMember(null);
 			await loadMembers(actor.id);
 		} catch (err) {
@@ -247,6 +266,12 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 									size="small"
 									required={memberType === 'REGISTRADO'}
 									type="email"
+									error={Boolean(email.trim()) && !isValidEmail(email)}
+									helperText={
+										Boolean(email.trim()) && !isValidEmail(email)
+											? 'Correo electrónico inválido'
+											: undefined
+									}
 									label={
 										memberType === 'REGISTRADO'
 											? 'Correo del usuario registrado'
@@ -277,8 +302,10 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 										submitting ||
 										!rol.trim() ||
 										(memberType === 'REGISTRADO'
-											? !email.trim()
-											: !nombre.trim() || !apellido.trim())
+											? !email.trim() || !isValidEmail(email)
+											: !nombre.trim() ||
+												!apellido.trim() ||
+												(Boolean(email.trim()) && !isValidEmail(email)))
 									}
 								>
 									{submitting ? <CircularProgress size={18} /> : 'Agregar integrante'}
@@ -334,6 +361,14 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 															fullWidth
 															size="small"
 															type="email"
+															error={
+																Boolean(editEmail.trim()) && !isValidEmail(editEmail)
+															}
+															helperText={
+																Boolean(editEmail.trim()) && !isValidEmail(editEmail)
+																	? 'Correo electrónico inválido'
+																	: undefined
+															}
 															label="Correo (opcional)"
 															value={editEmail}
 															onChange={(e) => setEditEmail(e.target.value)}
@@ -368,7 +403,8 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 															submitting ||
 															!editRol.trim() ||
 															(member.tipo === 'NO_REGISTRADO' &&
-																(!editNombre.trim() || !editApellido.trim()))
+																(!editNombre.trim() || !editApellido.trim())) ||
+															(Boolean(editEmail.trim()) && !isValidEmail(editEmail))
 														}
 													>
 														Guardar cambios

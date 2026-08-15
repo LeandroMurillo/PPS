@@ -20,6 +20,7 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import PublicIcon from '@mui/icons-material/Public';
 import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
 import SearchIcon from '@mui/icons-material/Search';
+import ShieldIcon from '@mui/icons-material/Shield';
 import L, { type LeafletMouseEvent } from 'leaflet';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import {
@@ -400,7 +401,7 @@ export default function ActorNuevoPage() {
 				})),
 			});
 
-			notify.success('¡El actor fue enviado a revisión correctamente!');
+			notify.success('¡El actor fue enviado a revisión!');
 			navigate('/mis-actores', { replace: true });
 		} catch (error) {
 			const errMsg =
@@ -917,22 +918,45 @@ function GeneralActorFields({
 				/>
 			</Grid>
 
-			<Grid size={{ xs: 12 }}>
-				<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+			{/* Visibilidad pública de la ubicación */}
+			<Stack sx={{ borderRadius: 2, bgcolor: 'background.default' }}>
+				<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
 					¿Querés que esta ubicación aparezca en el mapa público?
 				</Typography>
 				<RadioGroup
+					row
 					value={value.ubicacionPublica ? 'si' : 'no'}
 					onChange={(event) => onChange({ ubicacionPublica: event.target.value === 'si' })}
 				>
-					<FormControlLabel value="si" control={<Radio size="small" />} label="Sí, mostrarla públicamente" />
-					<FormControlLabel value="no" control={<Radio size="small" />} label="No, mantenerla privada" />
+					<FormControlLabel
+						value="si"
+						control={<Radio size="small" color="success" />}
+						label={
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<PublicIcon sx={{ fontSize: 18, color: 'success.main' }} />
+								<Typography variant="body2" fontWeight={600}>
+									Sí, mostrar públicamente en el mapa
+								</Typography>
+							</Stack>
+						}
+						sx={{ mr: 3 }}
+					/>
+					<FormControlLabel
+						value="no"
+						control={<Radio size="small" color="default" />}
+						label={
+							<Stack direction="row" spacing={0.5} alignItems="center">
+								<ShieldIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+								<Typography variant="body2">No, mantenerla privada (solo administración)</Typography>
+							</Stack>
+						}
+					/>
 				</RadioGroup>
-				<Typography variant="caption" color="text.secondary">
-					La administración podrá consultar la ubicación para validar el registro, aunque decidas no
-					publicarla.
+				<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+					Si la mantenés privada, tu actor no mostrará la dirección exacta ni el punto en el mapa público,
+					pero la administración podrá consultarla para validar el registro.
 				</Typography>
-			</Grid>
+			</Stack>
 		</Grid>
 	);
 }

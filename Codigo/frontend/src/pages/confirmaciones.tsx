@@ -210,7 +210,7 @@ export default function ConfirmacionesPage() {
 			const msg =
 				count === 1
 					? `El actor cultural "${actors[0].nombre}" fue ${isApproved ? 'aprobado y publicado' : 'rechazado'}.`
-					: `Se ${isApproved ? 'aprobaron' : 'rechazaron'} ${count} actores culturales correctamente.`;
+					: `Se ${isApproved ? 'aprobaron' : 'rechazaron'} ${count} actores culturales.`;
 
 			if (isApproved) {
 				notify.success(msg);
