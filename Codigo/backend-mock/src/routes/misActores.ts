@@ -194,6 +194,7 @@ misActoresRouter.get('/:id/formularios', (req, res) => {
 
 	const data = forms.map((f) => ({
 		id: f.id,
+		idFormulario: f.id,
 		ambito: f.ambito,
 		idCategoria: f.idCategoria,
 		categoria: f.categoria,
@@ -205,6 +206,7 @@ misActoresRouter.get('/:id/formularios', (req, res) => {
 			.filter((p) => p.estado === 'A')
 			.map((p) => ({
 				id: p.id,
+				idPregunta: p.id,
 				pregunta: p.pregunta,
 				tipoDato: p.tipoDato,
 				opciones: p.opciones,
@@ -418,7 +420,7 @@ misActoresRouter.get('/:id/eventos', (req, res) => {
 	const idActor = Number(req.params.id);
 	const data = db.eventos
 		.filter((e) => e.idActor === idActor)
-		.map((e) => ({ id: e.id, nombre: e.nombre, descripcion: e.descripcion, fecha: e.fecha }));
+		.map((e) => ({ idEvento: e.id, id: e.id, nombre: e.nombre, descripcion: e.descripcion, fecha: e.fecha }));
 
 	return res.json({ data });
 });

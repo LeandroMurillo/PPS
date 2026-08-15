@@ -414,7 +414,8 @@ export async function agregarEventoApi(
 }
 
 export type MiActorEventoApiItem = {
-	id: number;
+	id?: number;
+	idEvento?: number;
 	nombre: string;
 	descripcion: string;
 	fecha: string;

@@ -8,10 +8,10 @@ Servidor HTTP de prueba independiente desarrollado en **Node.js + Express** para
 
 - **Servidor HTTP Independiente en Puerto 3000:** Totalmente desacoplado del frontend. El frontend simplemente ejecuta `npm run dev` y Vite redirige las llamadas `/api` a `http://localhost:3000`.
 - **Datos Masivos de Prueba (500+ Actores):**
-  - Actores culturales ubicados geográficamente en los 17 departamentos de Tucumán (_San Miguel, Yerba Buena, Tafí Viejo, Tafí del Valle, Monteros, Concepción, Lules, Simoca, etc._).
-  - Categorías (`Música`, `Teatro`, `Danza`, `Artes Visuales`, `Audiovisual`, `Artesanía`).
-  - Actividades officiales de ARCA.
-  - Formularios, encuestas dinámicas, eventos y portafolios de prueba.
+    - Actores culturales ubicados geográficamente en los 17 departamentos de Tucumán (_San Miguel, Yerba Buena, Tafí Viejo, Tafí del Valle, Monteros, Concepción, Lules, Simoca, etc._).
+    - Categorías (`Música`, `Teatro`, `Danza`, `Artes Visuales`, `Audiovisual`, `Artesanía`).
+    - Actividades officiales de ARCA.
+    - Formularios, encuestas dinámicas, eventos y portafolios de prueba.
 
 ---
 

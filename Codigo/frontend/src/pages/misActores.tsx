@@ -1302,7 +1302,12 @@ export default function MisActoresPage() {
 
 		try {
 			const res = await listarEventosApi(actor.id);
-			const eventos = res.data ?? [];
+			const eventos = (res.data ?? []).map((e) => ({
+				id: e.idEvento ?? e.id ?? Date.now(),
+				nombre: e.nombre,
+				descripcion: e.descripcion,
+				fecha: e.fecha,
+			}));
 			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, eventos } : item)));
 			setTargetEventsActor((prev) => (prev?.id === actor.id ? { ...prev, eventos } : prev));
 		} catch (err) {
@@ -1594,6 +1599,12 @@ export default function MisActoresPage() {
 						</IconButton>
 					</Tooltip>
 
+					<Tooltip title="Editar datos del actor">
+						<IconButton size="small" color="primary" onClick={() => handleOpenEdit(row)}>
+							<EditIcon fontSize="small" />
+						</IconButton>
+					</Tooltip>
+
 					<Tooltip title="Gestionar integrantes">
 						<IconButton size="small" color="secondary" onClick={() => handleOpenMembersModal(row)}>
 							<GroupIcon fontSize="small" />
@@ -1609,12 +1620,6 @@ export default function MisActoresPage() {
 					<Tooltip title="Gestionar eventos">
 						<IconButton size="small" color="secondary" onClick={() => handleOpenEventsModal(row)}>
 							<EventIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
-
-					<Tooltip title="Editar datos del actor">
-						<IconButton size="small" color="primary" onClick={() => handleOpenEdit(row)}>
-							<EditIcon fontSize="small" />
 						</IconButton>
 					</Tooltip>
 
@@ -1914,6 +1919,16 @@ export default function MisActoresPage() {
 										</Button>
 
 										<Stack direction="row" spacing={0.5}>
+											<Tooltip title="Editar actor">
+												<IconButton
+													size="small"
+													color="primary"
+													onClick={() => handleOpenEdit(actor)}
+												>
+													<EditIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+
 											<Tooltip title="Gestionar integrantes">
 												<IconButton
 													size="small"
@@ -1941,16 +1956,6 @@ export default function MisActoresPage() {
 													onClick={() => handleOpenEventsModal(actor)}
 												>
 													<EventIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
-
-											<Tooltip title="Editar actor">
-												<IconButton
-													size="small"
-													color="primary"
-													onClick={() => handleOpenEdit(actor)}
-												>
-													<EditIcon fontSize="small" />
 												</IconButton>
 											</Tooltip>
 
