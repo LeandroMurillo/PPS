@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DoNotDisturbOnOutlinedIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -19,6 +18,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
 
+import { notify } from '../utils/toast';
 import {
 	cambiarEstadoActoresAdmin,
 	listarActoresAdmin,
@@ -104,7 +104,7 @@ export default function AdminActoresPage() {
 	const [confirmDialogOpen, setConfirmDialogOpen] = React.useState(false);
 	const [targetState, setTargetState] = React.useState<'A' | 'I' | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
-	const [actionError, setActionError] = React.useState<string | null>(null);
+	const [, setActionError] = React.useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
 	const debouncedCategoryId = useDebouncedValue(categoryId);
 	const debouncedDepartment = useDebouncedValue(department);
@@ -226,16 +226,19 @@ export default function AdminActoresPage() {
 
 		try {
 			await cambiarEstadoActoresAdmin(selectedRowsIds, targetState);
+			const stateLabel = targetState === 'A' ? 'activados' : 'inactivados';
+			notify.success(`Se han ${stateLabel} ${selectedRowsIds.length} actores correctamente.`);
 			setSelectedActorIds([]);
 			setConfirmDialogOpen(false);
 			setTargetState(null);
 			await loadActores();
 		} catch (requestError: unknown) {
-			setActionError(
+			const msg =
 				requestError instanceof Error
 					? requestError.message
-					: 'No se pudo actualizar el estado de los actores seleccionados.',
-			);
+					: 'No se pudo actualizar el estado de los actores seleccionados.';
+			setActionError(msg);
+			notify.error(msg);
 		} finally {
 			setSavingState(false);
 		}
@@ -325,7 +328,6 @@ export default function AdminActoresPage() {
 				<Typography variant="body2" color="text.secondary">
 					{loading && rows.length === 0 ? 'Buscando actores…' : resultSummary}
 				</Typography>
-				{actionError && <Alert severity="error">{actionError}</Alert>}
 
 				<AdminTable
 					columns={columns}

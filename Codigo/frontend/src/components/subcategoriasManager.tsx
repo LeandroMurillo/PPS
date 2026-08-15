@@ -5,7 +5,6 @@ import AddIcon from '@mui/icons-material/Add';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -31,10 +30,7 @@ import {
 	type SubcategoriaAdmin,
 	type SubcategoriaAdminSortBy,
 } from '../api/admin';
-import {
-	ESTADO_CATEGORIA_LABELS as stateLabels,
-	ESTADO_COLORS as stateColors,
-} from '../constants/estados';
+import { ESTADO_CATEGORIA_LABELS as stateLabels, ESTADO_COLORS as stateColors } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { buildSlugSinId } from '../utils/slug';
 import { notify } from '../utils/toast';
@@ -74,7 +70,6 @@ export default function SubcategoriasManager({
 	const [editingSubcategoria, setEditingSubcategoria] = React.useState<SubcategoriaAdmin | null>(null);
 	const [formNombre, setFormNombre] = React.useState('');
 	const [formEstado, setFormEstado] = React.useState<'A' | 'I'>('A');
-	const [formError, setFormError] = React.useState<string | null>(null);
 	const [formSubmitting, setFormSubmitting] = React.useState(false);
 
 	// Delete confirmation states
@@ -121,7 +116,6 @@ export default function SubcategoriasManager({
 		setEditingSubcategoria(null);
 		setFormNombre('');
 		setFormEstado('A');
-		setFormError(null);
 		setDialogOpen(true);
 	};
 
@@ -129,7 +123,6 @@ export default function SubcategoriasManager({
 		setEditingSubcategoria(sub);
 		setFormNombre(sub.nombre);
 		setFormEstado(sub.estado);
-		setFormError(null);
 		setDialogOpen(true);
 	};
 
@@ -139,12 +132,11 @@ export default function SubcategoriasManager({
 
 		const trimmedNombre = formNombre.trim();
 		if (!trimmedNombre) {
-			setFormError('El nombre es obligatorio.');
+			notify.error('El nombre es obligatorio.');
 			return;
 		}
 
 		setFormSubmitting(true);
-		setFormError(null);
 
 		try {
 			if (editingSubcategoria) {
@@ -165,7 +157,6 @@ export default function SubcategoriasManager({
 			void fetchSubcategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la subcategoría.';
-			setFormError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setFormSubmitting(false);
@@ -328,8 +319,6 @@ export default function SubcategoriasManager({
 
 					<DialogContent dividers>
 						<Stack spacing={2.5} sx={{ pt: 1 }}>
-							{formError && <Alert severity="error">{formError}</Alert>}
-
 							<TextField
 								required
 								fullWidth

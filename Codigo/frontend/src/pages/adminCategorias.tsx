@@ -5,7 +5,6 @@ import AddIcon from '@mui/icons-material/Add';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
@@ -69,7 +68,6 @@ export default function AdminCategoriasPage() {
 	const [formNombre, setFormNombre] = React.useState('');
 	const [formIcono, setFormIcono] = React.useState<CategoriaIcono>('Category');
 	const [formEstado, setFormEstado] = React.useState<'A' | 'I'>('A');
-	const [formError, setFormError] = React.useState<string | null>(null);
 	const [formSubmitting, setFormSubmitting] = React.useState(false);
 
 	// Delete dialog states
@@ -116,7 +114,6 @@ export default function AdminCategoriasPage() {
 			setFormNombre('');
 			setFormIcono('Category');
 			setFormEstado('A');
-			setFormError(null);
 			setDialogOpen(true);
 		} else if (matchEdit) {
 			const id = Number(matchEdit[1]);
@@ -126,7 +123,6 @@ export default function AdminCategoriasPage() {
 					setFormNombre(res.data.nombre);
 					setFormIcono(res.data.icono);
 					setFormEstado(res.data.estado);
-					setFormError(null);
 					setDialogOpen(true);
 				})
 				.catch(() => {
@@ -147,7 +143,6 @@ export default function AdminCategoriasPage() {
 		setFormNombre('');
 		setFormIcono('Category');
 		setFormEstado('A');
-		setFormError(null);
 		setDialogOpen(true);
 	};
 
@@ -156,7 +151,6 @@ export default function AdminCategoriasPage() {
 		setFormNombre(cat.nombre);
 		setFormIcono(cat.icono);
 		setFormEstado(cat.estado);
-		setFormError(null);
 		setDialogOpen(true);
 	};
 
@@ -165,12 +159,11 @@ export default function AdminCategoriasPage() {
 
 		const trimmedNombre = formNombre.trim();
 		if (!trimmedNombre) {
-			setFormError('El nombre es obligatorio.');
+			notify.error('El nombre es obligatorio.');
 			return;
 		}
 
 		setFormSubmitting(true);
-		setFormError(null);
 
 		try {
 			if (editingCategoria) {
@@ -193,7 +186,6 @@ export default function AdminCategoriasPage() {
 			void fetchCategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la categoría.';
-			setFormError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setFormSubmitting(false);
@@ -358,8 +350,6 @@ export default function AdminCategoriasPage() {
 
 					<DialogContent dividers>
 						<Stack spacing={2.5} sx={{ pt: 1 }}>
-							{formError && <Alert severity="error">{formError}</Alert>}
-
 							<TextField
 								required
 								fullWidth

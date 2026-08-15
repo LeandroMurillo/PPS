@@ -1907,7 +1907,7 @@ BEGIN
     --
     -- Se incluyen:
     --   - preguntas activas;
-    --   - preguntas públicas (o privadas si es integrante/admin);
+    --   - preguntas públicas (y privadas si es integrante/admin);
     --   - formularios aplicables a la categoría actual;
     --   - formularios aplicables a la subcategoría actual.
     -- =====================================================

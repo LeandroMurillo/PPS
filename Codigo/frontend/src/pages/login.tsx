@@ -86,7 +86,7 @@ export default function LoginPage() {
 		try {
 			const response = await loginApi({ email: trimmedEmail, contraseña: password });
 			login(response.usuario, response.token);
-			notify.success(`¡Bienvenido/a, ${response.usuario.nombre || 'usuario'}!`);
+			notify.success(`¡Hola, ${response.usuario.nombre || 'usuario'}!`);
 			navigate('/');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';

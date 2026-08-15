@@ -511,6 +511,22 @@ export default function MisActoresPage() {
 	const [searchAddressError, setSearchAddressError] = React.useState<string | null>(null);
 	const [isLocatingUser, setIsLocatingUser] = React.useState(false);
 
+	const initialEditSnapshot = React.useRef<{
+		nombre: string;
+		tipoActor: MyActor['tipoActor'];
+		departamento: string;
+		localidad: string;
+		direccion: string;
+		latitud: number | null;
+		longitud: number | null;
+		esPublica: boolean;
+		cuit: string;
+		descripcion: string;
+		fotoPerfilUrl: string;
+		fotoPerfilBase64: string;
+		respuestas: Record<string, string | string[]>;
+	} | null>(null);
+
 	// Edit Confirmation Modal
 	const [editConfirmModalOpen, setEditConfirmModalOpen] = React.useState(false);
 
@@ -548,7 +564,6 @@ export default function MisActoresPage() {
 		fotoPerfilBase64: '',
 		fotoPerfilNombre: '',
 	});
-	const [formError, setFormError] = React.useState<string | null>(null);
 	const [profileImageError, setProfileImageError] = React.useState<string | null>(null);
 	const [profileImageDragging, setProfileImageDragging] = React.useState(false);
 
@@ -567,7 +582,6 @@ export default function MisActoresPage() {
 	const [newPortfolioUrl, setNewPortfolioUrl] = React.useState('');
 	const [newPortfolioDesc, setNewPortfolioDesc] = React.useState('');
 	const [portfolioLoading, setPortfolioLoading] = React.useState(false);
-	const [portfolioError, setPortfolioError] = React.useState<string | null>(null);
 	const [portfolioSubmitting, setPortfolioSubmitting] = React.useState(false);
 	const [deletingPortfolioItemId, setDeletingPortfolioItemId] = React.useState<number | null>(null);
 
@@ -578,7 +592,6 @@ export default function MisActoresPage() {
 	const [newEventFecha, setNewEventFecha] = React.useState('');
 	const [newEventDesc, setNewEventDesc] = React.useState('');
 	const [eventsLoading, setEventsLoading] = React.useState(false);
-	const [eventsError, setEventsError] = React.useState<string | null>(null);
 	const [eventCreating, setEventCreating] = React.useState(false);
 	const [deletingEventId, setDeletingEventId] = React.useState<number | null>(null);
 
@@ -599,7 +612,6 @@ export default function MisActoresPage() {
 	const [memberSubmitting, setMemberSubmitting] = React.useState(false);
 	const [deletingMemberKey, setDeletingMemberKey] = React.useState<string | null>(null);
 	const [membersLoading, setMembersLoading] = React.useState(false);
-	const [membersError, setMembersError] = React.useState<string | null>(null);
 
 	// Delete Modal
 	const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -617,6 +629,46 @@ export default function MisActoresPage() {
 		() => findCategoryByName(categoryOptions, formValues.categoria),
 		[categoryOptions, formValues.categoria],
 	);
+
+	const hasChanges = React.useMemo(() => {
+		if (!initialEditSnapshot.current) return false;
+		const init = initialEditSnapshot.current;
+
+		if (formValues.nombre.trim() !== init.nombre.trim()) return true;
+		if (formValues.tipoActor !== init.tipoActor) return true;
+		if (formValues.departamento !== init.departamento) return true;
+		if (formValues.localidad.trim() !== init.localidad.trim()) return true;
+		if (formValues.direccion.trim() !== init.direccion.trim()) return true;
+		if (
+			formValues.latitud !== null &&
+			init.latitud !== null &&
+			Number(formValues.latitud.toFixed(5)) !== Number(init.latitud.toFixed(5))
+		)
+			return true;
+		if (
+			formValues.longitud !== null &&
+			init.longitud !== null &&
+			Number(formValues.longitud.toFixed(5)) !== Number(init.longitud.toFixed(5))
+		)
+			return true;
+		if (formValues.esPublica !== init.esPublica) return true;
+		if (formValues.cuit.trim() !== init.cuit.trim()) return true;
+		if (formValues.descripcion.trim() !== init.descripcion.trim()) return true;
+		if (formValues.fotoPerfilBase64) return true;
+		if (formValues.fotoPerfilUrl.trim() !== init.fotoPerfilUrl.trim()) return true;
+
+		// Compare responses
+		const allKeys = new Set([...Object.keys(init.respuestas), ...Object.keys(editFormAnswers)]);
+		for (const key of allKeys) {
+			const v1 = init.respuestas[key];
+			const v2 = editFormAnswers[key];
+			const normalizeVal = (val: unknown) =>
+				Array.isArray(val) ? [...val].map(String).sort().join(',') : String(val ?? '').trim();
+			if (normalizeVal(v1) !== normalizeVal(v2)) return true;
+		}
+
+		return false;
+	}, [formValues, editFormAnswers]);
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -683,7 +735,9 @@ export default function MisActoresPage() {
 			}
 		} catch (err) {
 			console.error('Error al obtener actores del backend:', err);
-			setError('No se pudieron cargar los actores culturales desde la base de datos.');
+			const msg = 'No se pudieron cargar los actores culturales desde la base de datos.';
+			setError(msg);
+			notify.error(msg);
 			setActores([]);
 		} finally {
 			setLoading(false);
@@ -729,7 +783,7 @@ export default function MisActoresPage() {
 				)?.nombre ?? actor.subcategoria)
 			: '';
 
-		setFormValues({
+		const initialValues = {
 			nombre: actor.nombre,
 			tipoActor: actor.tipoActor,
 			categoria: cat,
@@ -745,8 +799,14 @@ export default function MisActoresPage() {
 			fotoPerfilUrl: actor.fotoPerfilUrl || '',
 			fotoPerfilBase64: '',
 			fotoPerfilNombre: '',
-		});
-		setFormError(null);
+		};
+
+		setFormValues(initialValues);
+		initialEditSnapshot.current = {
+			...initialValues,
+			respuestas: {},
+		};
+
 		setProfileImageError(null);
 		setEditModalOpen(true);
 
@@ -754,16 +814,19 @@ export default function MisActoresPage() {
 		obtenerFormulariosActorApi(actor.id)
 			.then((res) => {
 				setEditForms(res.data);
-				const initial: Record<string, string | string[]> = {};
+				const initialAnswers: Record<string, string | string[]> = {};
 				for (const form of res.data) {
 					for (const q of form.preguntas) {
 						const key = `${form.id}:${q.id}`;
 						if (q.valor !== null && q.valor !== undefined) {
-							initial[key] = q.valor as string | string[];
+							initialAnswers[key] = q.valor as string | string[];
 						}
 					}
 				}
-				setEditFormAnswers(initial);
+				setEditFormAnswers(initialAnswers);
+				if (initialEditSnapshot.current) {
+					initialEditSnapshot.current.respuestas = { ...initialAnswers };
+				}
 			})
 			.catch(() => {
 				const catId = getCategoryIdByName(categoryOptions, cat);
@@ -802,9 +865,10 @@ export default function MisActoresPage() {
 			const results = (await response.json()) as Array<{ lat: string; lon: string; display_name: string }>;
 			const result = results[0];
 			if (!result) {
-				setSearchAddressError(
-					'No encontramos esa dirección exacta. Podés conservar el texto y señalar el punto en el mapa.',
-				);
+				const msg =
+					'No encontramos esa dirección exacta. Podés conservar el texto y señalar el punto en el mapa.';
+				setSearchAddressError(msg);
+				notify.error(msg);
 				return;
 			}
 
@@ -813,8 +877,11 @@ export default function MisActoresPage() {
 				latitud: Number(result.lat),
 				longitud: Number(result.lon),
 			}));
+			notify.success('Ubicación encontrada en el mapa.');
 		} catch {
-			setSearchAddressError('No se pudo realizar la búsqueda en el mapa en este momento.');
+			const msg = 'No se pudo realizar la búsqueda en el mapa en este momento.';
+			setSearchAddressError(msg);
+			notify.error(msg);
 		} finally {
 			setIsSearchingAddress(false);
 		}
@@ -823,7 +890,9 @@ export default function MisActoresPage() {
 	const handleUseCurrentLocation = () => {
 		setSearchAddressError(null);
 		if (!navigator.geolocation) {
-			setSearchAddressError('Tu navegador no permite obtener la ubicación actual.');
+			const msg = 'Tu navegador no permite obtener la ubicación actual.';
+			setSearchAddressError(msg);
+			notify.error(msg);
 			return;
 		}
 
@@ -835,7 +904,9 @@ export default function MisActoresPage() {
 				const isInsideTucuman = lat >= -27.95 && lat <= -25.75 && lng >= -66.35 && lng <= -64.45;
 
 				if (!isInsideTucuman) {
-					setSearchAddressError('La ubicación detectada se encuentra fuera de Tucumán.');
+					const msg = 'La ubicación detectada se encuentra fuera de Tucumán.';
+					setSearchAddressError(msg);
+					notify.error(msg);
 					setIsLocatingUser(false);
 					return;
 				}
@@ -845,14 +916,16 @@ export default function MisActoresPage() {
 					latitud: lat,
 					longitud: lng,
 				}));
+				notify.success('Ubicación GPS aplicada.');
 				setIsLocatingUser(false);
 			},
 			(error) => {
-				setSearchAddressError(
+				const msg =
 					error.code === error.PERMISSION_DENIED
 						? 'Permiso de ubicación denegado.'
-						: 'No se pudo obtener tu ubicación actual.',
-				);
+						: 'No se pudo obtener tu ubicación actual.';
+				setSearchAddressError(msg);
+				notify.error(msg);
 				setIsLocatingUser(false);
 			},
 			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
@@ -862,12 +935,16 @@ export default function MisActoresPage() {
 	const handleProfileImageFile = async (file: File | null) => {
 		if (!file) return;
 		if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-			setProfileImageError('Seleccioná una imagen JPG, PNG o WebP.');
+			const err = 'Seleccioná una imagen JPG, PNG o WebP.';
+			setProfileImageError(err);
+			notify.error(err);
 			return;
 		}
 		const sizeValidation = validateImageFile(file, 5);
 		if (!sizeValidation.valid) {
-			setProfileImageError(sizeValidation.error ?? 'La imagen supera el límite permitido.');
+			const err = sizeValidation.error ?? 'La imagen supera el límite permitido.';
+			setProfileImageError(err);
+			notify.error(err);
 			return;
 		}
 
@@ -880,39 +957,70 @@ export default function MisActoresPage() {
 			}));
 			setProfileImageError(null);
 		} catch {
-			setProfileImageError('No se pudo procesar la imagen seleccionada.');
+			const err = 'No se pudo procesar la imagen seleccionada.';
+			setProfileImageError(err);
+			notify.error(err);
 		}
+	};
+
+	const handleNextFromTab0 = () => {
+		if (!formValues.nombre.trim()) {
+			setEditValidationAttempted(true);
+			notify.error('El nombre del actor es obligatorio.');
+			return;
+		}
+		setEditActiveTab(1);
+	};
+
+	const handleNextFromTab1 = () => {
+		if (!formValues.departamento.trim() || !formValues.localidad.trim() || !formValues.direccion.trim()) {
+			setEditValidationAttempted(true);
+			if (!formValues.departamento.trim()) {
+				notify.error('El departamento es obligatorio.');
+			} else if (!formValues.localidad.trim()) {
+				notify.error('La localidad es obligatoria.');
+			} else {
+				notify.error('La dirección o referencia es obligatoria.');
+			}
+			return;
+		}
+		setEditActiveTab(2);
 	};
 
 	// Request Edit Save -> Open Edit Confirmation Dialog
 	const handleRequestEditSave = () => {
 		if (!formValues.nombre.trim()) {
-			setFormError('El nombre del actor es obligatorio.');
+			setEditValidationAttempted(true);
+			notify.error('El nombre del actor es obligatorio.');
 			setEditActiveTab(0);
 			return;
 		}
 
 		if (!editingActor) return;
 		if (!getCategoryIdByName(categoryOptions, formValues.categoria)) {
-			setFormError('La categoría seleccionada ya no está disponible. Recargá la página e intentá nuevamente.');
+			setEditValidationAttempted(true);
+			notify.error('La categoría seleccionada ya no está disponible. Recargá la página e intentá nuevamente.');
 			setEditActiveTab(0);
 			return;
 		}
 
 		if (!formValues.departamento.trim()) {
-			setFormError('El departamento es obligatorio.');
+			setEditValidationAttempted(true);
+			notify.error('El departamento es obligatorio.');
 			setEditActiveTab(1);
 			return;
 		}
 
 		if (!formValues.localidad.trim()) {
-			setFormError('La localidad es obligatoria.');
+			setEditValidationAttempted(true);
+			notify.error('La localidad es obligatoria.');
 			setEditActiveTab(1);
 			return;
 		}
 
 		if (!formValues.direccion.trim()) {
-			setFormError('La dirección o referencia es obligatoria.');
+			setEditValidationAttempted(true);
+			notify.error('La dirección o referencia es obligatoria.');
 			setEditActiveTab(1);
 			return;
 		}
@@ -929,7 +1037,7 @@ export default function MisActoresPage() {
 						(Array.isArray(val) ? val.length === 0 : !String(val).trim());
 					if (isMissing) {
 						setEditValidationAttempted(true);
-						setFormError(`Falta responder la pregunta obligatoria: "${q.pregunta}"`);
+						notify.error(`Falta responder la pregunta obligatoria: "${q.pregunta}"`);
 						setEditActiveTab(2);
 						return;
 					}
@@ -937,7 +1045,13 @@ export default function MisActoresPage() {
 			}
 		}
 
-		setFormError(null);
+		// Solo mostrar confirmar los cambios si algo cambió
+		if (!hasChanges) {
+			notify.info('No se detectaron modificaciones para guardar.');
+			setEditModalOpen(false);
+			return;
+		}
+
 		setEditConfirmModalOpen(true);
 	};
 
@@ -981,7 +1095,8 @@ export default function MisActoresPage() {
 			});
 			savedPhotoUrl = response.data.fotoPerfilUrl;
 		} catch (err) {
-			setFormError(err instanceof Error ? err.message : 'No se pudo actualizar el actor cultural.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudo actualizar el actor cultural.';
+			notify.error(errMsg);
 			setEditConfirmModalOpen(false);
 			return;
 		}
@@ -1074,7 +1189,6 @@ export default function MisActoresPage() {
 		setNewPortfolioType('IMAGEN');
 		setNewPortfolioUrl('');
 		setNewPortfolioDesc('');
-		setPortfolioError(null);
 		setPortfolioModalOpen(true);
 		setPortfolioLoading(true);
 
@@ -1089,9 +1203,8 @@ export default function MisActoresPage() {
 			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, portafolio } : item)));
 			setTargetPortfolioActor((prev) => (prev?.id === actor.id ? { ...prev, portafolio } : prev));
 		} catch (err) {
-			setPortfolioError(
-				err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.',
-			);
+			const errMsg = err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.';
+			notify.error(errMsg);
 		} finally {
 			setPortfolioLoading(false);
 		}
@@ -1102,7 +1215,6 @@ export default function MisActoresPage() {
 		if (!targetPortfolioActor || !newPortfolioUrl.trim()) return;
 
 		setPortfolioSubmitting(true);
-		setPortfolioError(null);
 		try {
 			const res = await agregarItemPortafolioApi(targetPortfolioActor.id, {
 				tipo: newPortfolioType,
@@ -1130,7 +1242,6 @@ export default function MisActoresPage() {
 			notify.success('Elemento agregado al portafolio.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.';
-			setPortfolioError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setPortfolioSubmitting(false);
@@ -1142,7 +1253,6 @@ export default function MisActoresPage() {
 		if (!targetPortfolioActor) return;
 
 		setDeletingPortfolioItemId(itemId);
-		setPortfolioError(null);
 		try {
 			await eliminarItemPortafolioApi(targetPortfolioActor.id, itemId);
 
@@ -1156,7 +1266,6 @@ export default function MisActoresPage() {
 			notify.success('Elemento eliminado del portafolio.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.';
-			setPortfolioError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setDeletingPortfolioItemId(null);
@@ -1169,7 +1278,6 @@ export default function MisActoresPage() {
 		setNewEventNombre('');
 		setNewEventFecha('');
 		setNewEventDesc('');
-		setEventsError(null);
 		setEventsModalOpen(true);
 		setEventsLoading(true);
 
@@ -1179,7 +1287,8 @@ export default function MisActoresPage() {
 			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, eventos } : item)));
 			setTargetEventsActor((prev) => (prev?.id === actor.id ? { ...prev, eventos } : prev));
 		} catch (err) {
-			setEventsError(err instanceof Error ? err.message : 'No se pudieron cargar los eventos.');
+			const errMsg = err instanceof Error ? err.message : 'No se pudieron cargar los eventos.';
+			notify.error(errMsg);
 		} finally {
 			setEventsLoading(false);
 		}
@@ -1190,7 +1299,6 @@ export default function MisActoresPage() {
 		if (!targetEventsActor || !newEventNombre.trim()) return;
 
 		setEventCreating(true);
-		setEventsError(null);
 		try {
 			const res = await agregarEventoApi(targetEventsActor.id, {
 				nombre: newEventNombre.trim(),
@@ -1221,7 +1329,6 @@ export default function MisActoresPage() {
 			notify.success('Evento agregado correctamente.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el evento.';
-			setEventsError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setEventCreating(false);
@@ -1233,7 +1340,6 @@ export default function MisActoresPage() {
 		if (!targetEventsActor) return;
 
 		setDeletingEventId(eventId);
-		setEventsError(null);
 		try {
 			await eliminarEventoApi(targetEventsActor.id, eventId);
 
@@ -1247,7 +1353,6 @@ export default function MisActoresPage() {
 			notify.success('Evento eliminado.');
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el evento.';
-			setEventsError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setDeletingEventId(null);
@@ -1263,7 +1368,6 @@ export default function MisActoresPage() {
 		setNewMemberEmail('');
 		setNewMemberRol('Integrante');
 		setEditingMember(null);
-		setMembersError(null);
 		setMembersModalOpen(true);
 		setMembersLoading(true);
 
@@ -1275,9 +1379,9 @@ export default function MisActoresPage() {
 				setIntegrantesList([]);
 			}
 		} catch (err) {
-			setMembersError(
-				err instanceof Error ? err.message : 'No se pudieron cargar los integrantes del actor cultural.',
-			);
+			const errMsg =
+				err instanceof Error ? err.message : 'No se pudieron cargar los integrantes del actor cultural.';
+			notify.error(errMsg);
 			setIntegrantesList([]);
 		} finally {
 			setMembersLoading(false);
@@ -1295,7 +1399,6 @@ export default function MisActoresPage() {
 		if (newMemberType === 'REGISTRADO' && !newMemberEmail.trim()) return;
 		if (newMemberType === 'NO_REGISTRADO' && (!newMemberNombre.trim() || !newMemberApellido.trim())) return;
 
-		setMembersError(null);
 		setMemberSubmitting(true);
 		try {
 			if (newMemberType === 'REGISTRADO') {
@@ -1320,7 +1423,6 @@ export default function MisActoresPage() {
 			await refreshMembers(targetMembersActor.id);
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
-			setMembersError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setMemberSubmitting(false);
@@ -1333,13 +1435,11 @@ export default function MisActoresPage() {
 		setEditMemberApellido(member.apellido);
 		setEditMemberEmail(member.email ?? '');
 		setEditMemberRol(member.rol);
-		setMembersError(null);
 	};
 
 	const handleSaveMember = async () => {
 		if (!targetMembersActor || !editingMember || !editMemberRol.trim()) return;
 
-		setMembersError(null);
 		setMemberSubmitting(true);
 		try {
 			if (editingMember.tipo === 'REGISTRADO' && editingMember.idUsuario) {
@@ -1360,7 +1460,6 @@ export default function MisActoresPage() {
 			await refreshMembers(targetMembersActor.id);
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al modificar integrante.';
-			setMembersError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setMemberSubmitting(false);
@@ -1372,7 +1471,6 @@ export default function MisActoresPage() {
 		if (!targetMembersActor) return;
 
 		const memberKey = getMemberKey(member);
-		setMembersError(null);
 		setDeletingMemberKey(memberKey);
 		try {
 			if (member.tipo === 'REGISTRADO' && member.idUsuario) {
@@ -1384,7 +1482,6 @@ export default function MisActoresPage() {
 			setIntegrantesList((prev) => prev.filter((item) => getMemberKey(item) !== memberKey));
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
-			setMembersError(errMsg);
 			notify.error(errMsg);
 		} finally {
 			setDeletingMemberKey(null);
@@ -1898,7 +1995,6 @@ export default function MisActoresPage() {
 					value={editActiveTab}
 					onChange={(_, val) => {
 						setEditActiveTab(val);
-						setFormError(null);
 					}}
 					sx={{
 						px: 3,
@@ -2122,9 +2218,15 @@ export default function MisActoresPage() {
 											placeholder="Ej. Ensamble del Valle"
 											value={formValues.nombre}
 											onChange={(e) => setFormValues((v) => ({ ...v, nombre: e.target.value }))}
+											error={editValidationAttempted && !formValues.nombre.trim()}
+											helperText={
+												editValidationAttempted && !formValues.nombre.trim()
+													? 'El nombre del actor es obligatorio'
+													: undefined
+											}
 										/>
 
-										<FormControl fullWidth required>
+										<FormControl fullWidth required error={editValidationAttempted && !formValues.tipoActor}>
 											<InputLabel>Tipo de actor</InputLabel>
 											<Select
 												value={formValues.tipoActor}
@@ -2142,6 +2244,9 @@ export default function MisActoresPage() {
 													</MenuItem>
 												))}
 											</Select>
+											{editValidationAttempted && !formValues.tipoActor && (
+												<FormHelperText>Seleccioná el tipo de actor</FormHelperText>
+											)}
 										</FormControl>
 
 										<TextField
@@ -2214,7 +2319,6 @@ export default function MisActoresPage() {
 									<strong>Pendiente de revisión</strong> hasta que un moderador lo apruebe.
 								</Alert>
 							)}
-							{formError && <Alert severity="error">{formError}</Alert>}
 						</Stack>
 					)}
 
@@ -2224,7 +2328,11 @@ export default function MisActoresPage() {
 							{/* Departamento y Localidad */}
 							<Grid container spacing={2}>
 								<Grid size={{ xs: 12, sm: 6 }}>
-									<FormControl fullWidth required>
+									<FormControl
+										fullWidth
+										required
+										error={editValidationAttempted && !formValues.departamento.trim()}
+									>
 										<InputLabel>Departamento</InputLabel>
 										<Select
 											value={formValues.departamento}
@@ -2248,6 +2356,9 @@ export default function MisActoresPage() {
 												</MenuItem>
 											))}
 										</Select>
+										{editValidationAttempted && !formValues.departamento.trim() && (
+											<FormHelperText>El departamento es obligatorio</FormHelperText>
+										)}
 									</FormControl>
 								</Grid>
 
@@ -2265,6 +2376,12 @@ export default function MisActoresPage() {
 												required
 												label="Localidad"
 												placeholder="Ej. San Miguel de Tucumán"
+												error={editValidationAttempted && !formValues.localidad.trim()}
+												helperText={
+													editValidationAttempted && !formValues.localidad.trim()
+														? 'La localidad es obligatoria'
+														: undefined
+												}
 											/>
 										)}
 									/>
@@ -2289,11 +2406,13 @@ export default function MisActoresPage() {
 											void handleSearchAddress();
 										}
 									}}
+									error={Boolean(searchAddressError) || (editValidationAttempted && !formValues.direccion.trim())}
 									helperText={
 										searchAddressError ||
-										'Ingresá la calle, número o referencia del espacio/taller/sala.'
+										(editValidationAttempted && !formValues.direccion.trim()
+											? 'La dirección o referencia es obligatoria'
+											: 'Ingresá la calle, número o referencia del espacio/taller/sala.')
 									}
-									error={Boolean(searchAddressError)}
 								/>
 
 								<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -2469,8 +2588,6 @@ export default function MisActoresPage() {
 									mapa público, pero la administración podrá verificar la procedencia.
 								</Typography>
 							</Paper>
-
-							{formError && <Alert severity="error">{formError}</Alert>}
 						</Stack>
 					)}
 
@@ -2585,8 +2702,6 @@ export default function MisActoresPage() {
 									</Box>
 								))
 							)}
-
-							{formError && <Alert severity="error">{formError}</Alert>}
 						</Stack>
 					)}
 				</DialogContent>
@@ -2603,21 +2718,35 @@ export default function MisActoresPage() {
 							</Button>
 						)}
 					</Box>
-					<Stack direction="row" spacing={1.5}>
+					<Stack direction="row" spacing={1.5} alignItems="center">
 						<Button onClick={() => setEditModalOpen(false)}>Cancelar</Button>
+
 						{editActiveTab === 0 && (
-							<Button variant="outlined" onClick={() => setEditActiveTab(1)}>
-								Ubicación →
+							<Button variant="contained" onClick={handleNextFromTab0}>
+								Siguiente: Ubicación →
 							</Button>
 						)}
-						{editActiveTab === 1 && editForms.reduce((sum, f) => sum + f.preguntas.length, 0) > 0 && (
-							<Button variant="outlined" onClick={() => setEditActiveTab(2)}>
-								Preguntas del sector →
+
+						{editActiveTab === 1 && (
+							<Button variant="contained" onClick={handleNextFromTab1}>
+								Siguiente: Preguntas del sector →
 							</Button>
 						)}
-						<Button variant="contained" color="primary" onClick={handleRequestEditSave}>
-							Guardar cambios
-						</Button>
+
+						{editActiveTab === 2 && (
+							<Tooltip title={!hasChanges ? 'No se han realizado modificaciones para guardar' : ''} arrow>
+								<span>
+									<Button
+										variant="contained"
+										color="primary"
+										// disabled={!hasChanges}
+										onClick={handleRequestEditSave}
+									>
+										Guardar cambios
+									</Button>
+								</span>
+							</Tooltip>
+						)}
 					</Stack>
 				</DialogActions>
 			</Dialog>
@@ -2633,7 +2762,7 @@ export default function MisActoresPage() {
 							¿Deseás guardar las modificaciones realizadas en <strong>{formValues.nombre}</strong>?
 						</DialogContentText>
 
-						<Alert severity="error">
+						<Alert severity="warning">
 							Al guardar los cambios, la ficha del actor volverá automáticamente al estado{' '}
 							<strong>Pendiente de revisión</strong> hasta que sea aprobada por los moderadores.
 						</Alert>
@@ -2812,8 +2941,6 @@ export default function MisActoresPage() {
 							redes sociales).
 						</Typography>
 
-						{portfolioError && <Alert severity="error">{portfolioError}</Alert>}
-
 						{/* Form to add portfolio item */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -2957,8 +3084,6 @@ export default function MisActoresPage() {
 							Agregá o eliminá presentaciones, funciones o eventos programados para este actor cultural.
 						</Typography>
 
-						{eventsError && <Alert severity="error">{eventsError}</Alert>}
-
 						{/* Form to add new event */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
 							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -3075,8 +3200,6 @@ export default function MisActoresPage() {
 						<Typography variant="body2" color="text.secondary">
 							Administrá las personas que forman parte del actor, tengan o no una cuenta en la plataforma.
 						</Typography>
-
-						{membersError && <Alert severity="error">{membersError}</Alert>}
 
 						{/* Form to add member */}
 						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
