@@ -27,11 +27,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LanguageIcon from '@mui/icons-material/Language';
 
-import {
-	agregarItemPortafolioApi,
-	eliminarItemPortafolioApi,
-	listarPortafolioApi,
-} from '../api/actores';
+import { agregarItemPortafolioApi, eliminarItemPortafolioApi, listarPortafolioApi } from '../api/actores';
 import { notify } from '../utils/toast';
 import type { MyActor, MyActorPortfolioItem } from '../pages/misActores';
 
@@ -71,7 +67,8 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 				onPortfolioChange?.(actor.id, portafolio);
 			})
 			.catch((err) => {
-				const errMsg = err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.';
+				const errMsg =
+					err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.';
 				notify.error(errMsg);
 			})
 			.finally(() => setLoading(false));
@@ -135,7 +132,8 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 			<DialogContent dividers>
 				<Stack spacing={3}>
 					<Typography variant="body2" color="text.secondary">
-						Agregá o eliminá elementos públicos para el portafolio de este actor (imágenes, enlaces o redes sociales).
+						Agregá o eliminá elementos públicos para el portafolio de este actor (imágenes, enlaces o redes
+						sociales).
 					</Typography>
 
 					{/* Formulario de carga aislado */}
@@ -182,7 +180,9 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 								<Button
 									variant="contained"
 									size="small"
-									startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
+									startIcon={
+										submitting ? <CircularProgress size={16} color="inherit" /> : <AddIcon />
+									}
 									onClick={handleAddItem}
 									disabled={!url.trim() || submitting}
 								>

@@ -385,12 +385,7 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 										alignItems="center"
 										spacing={2}
 									>
-										<Stack
-											direction="row"
-											spacing={1.5}
-											alignItems="center"
-											sx={{ minWidth: 0 }}
-										>
+										<Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
 											<Avatar
 												sx={{
 													bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
