@@ -1,9 +1,7 @@
 import * as React from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router';
 
-import AddIcon from '@mui/icons-material/Add';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ClearIcon from '@mui/icons-material/Clear';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -11,8 +9,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
 import GroupIcon from '@mui/icons-material/Group';
 import GridViewIcon from '@mui/icons-material/GridView';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import LanguageIcon from '@mui/icons-material/Language';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -27,7 +23,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
 	Alert,
 	Autocomplete,
-	Avatar,
 	Box,
 	Button,
 	Card,
@@ -50,7 +45,6 @@ import {
 	Grid,
 	IconButton,
 	InputLabel,
-	Link as MuiLink,
 	MenuItem,
 	Paper,
 	Radio,
@@ -73,35 +67,23 @@ import 'leaflet/dist/leaflet.css';
 import { PageContainer } from '@toolpad/core/PageContainer';
 import { notify } from '../utils/toast';
 
+import ActorEventsDialog from '../components/actorEventsDialog';
+import ActorMembersDialog from '../components/actorMembersDialog';
+import ActorPortfolioDialog from '../components/actorPortfolioDialog';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { PortfolioMapControls } from '../components/actorPortfolioView';
 import CategoryIcon, { type CategoriaIcono } from '../components/categoryIcon';
-import DatePickerSpanish from '../components/datePickerSpanish';
 import RequiredAsterisk from '../components/requiredAsterisk';
 import {
-	agregarEventoApi,
-	agregarIntegranteApi,
-	agregarIntegranteNoRegistradoApi,
-	agregarItemPortafolioApi,
 	cambiarEstadoMiActorApi,
 	editarMiActorApi,
-	eliminarEventoApi,
-	eliminarIntegranteApi,
-	eliminarIntegranteNoRegistradoApi,
-	editarIntegranteApi,
-	editarIntegranteNoRegistradoApi,
-	eliminarItemPortafolioApi,
 	eliminarMiActorApi,
-	listarIntegrantesApi,
-	listarEventosApi,
 	listarMisActoresApi,
-	listarPortafolioApi,
 	obtenerFormulariosActorApi,
 	obtenerFormulariosAplicablesApi,
 	obtenerOpcionesRegistroApi,
 	type FormularioActor,
-	type IntegranteApiItem,
 	type OpcionCategoriaRegistro,
 	type PreguntaFormularioActor,
 } from '../api/actores';
@@ -113,7 +95,6 @@ import {
 } from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { formatEventDate } from '../utils/date';
 import { fileToBase64, validateImageFile } from '../utils/file';
 import { buildSlugConId } from '../utils/slug';
 
@@ -269,12 +250,6 @@ function InvalidateMapSize() {
 		return () => clearTimeout(timer);
 	}, [map]);
 	return null;
-}
-
-function getMemberKey(member: IntegranteApiItem): string {
-	return member.tipo === 'REGISTRADO'
-		? `usuario-${member.idUsuario}`
-		: `sin-cuenta-${member.idIntegranteNoRegistrado}`;
 }
 
 function QuestionHeading({
@@ -578,40 +553,14 @@ export default function MisActoresPage() {
 	// Portfolio Management Modal
 	const [portfolioModalOpen, setPortfolioModalOpen] = React.useState(false);
 	const [targetPortfolioActor, setTargetPortfolioActor] = React.useState<MyActor | null>(null);
-	const [newPortfolioType, setNewPortfolioType] = React.useState<'IMAGEN' | 'LINK' | 'RRSS'>('IMAGEN');
-	const [newPortfolioUrl, setNewPortfolioUrl] = React.useState('');
-	const [newPortfolioDesc, setNewPortfolioDesc] = React.useState('');
-	const [portfolioLoading, setPortfolioLoading] = React.useState(false);
-	const [portfolioSubmitting, setPortfolioSubmitting] = React.useState(false);
-	const [deletingPortfolioItemId, setDeletingPortfolioItemId] = React.useState<number | null>(null);
 
 	// Events Management Modal
 	const [eventsModalOpen, setEventsModalOpen] = React.useState(false);
 	const [targetEventsActor, setTargetEventsActor] = React.useState<MyActor | null>(null);
-	const [newEventNombre, setNewEventNombre] = React.useState('');
-	const [newEventFecha, setNewEventFecha] = React.useState('');
-	const [newEventDesc, setNewEventDesc] = React.useState('');
-	const [eventsLoading, setEventsLoading] = React.useState(false);
-	const [eventCreating, setEventCreating] = React.useState(false);
-	const [deletingEventId, setDeletingEventId] = React.useState<number | null>(null);
 
 	// Members Management Modal
 	const [membersModalOpen, setMembersModalOpen] = React.useState(false);
 	const [targetMembersActor, setTargetMembersActor] = React.useState<MyActor | null>(null);
-	const [integrantesList, setIntegrantesList] = React.useState<IntegranteApiItem[]>([]);
-	const [newMemberType, setNewMemberType] = React.useState<'REGISTRADO' | 'NO_REGISTRADO'>('REGISTRADO');
-	const [newMemberNombre, setNewMemberNombre] = React.useState('');
-	const [newMemberApellido, setNewMemberApellido] = React.useState('');
-	const [newMemberEmail, setNewMemberEmail] = React.useState('');
-	const [newMemberRol, setNewMemberRol] = React.useState('Integrante');
-	const [editingMember, setEditingMember] = React.useState<IntegranteApiItem | null>(null);
-	const [editMemberNombre, setEditMemberNombre] = React.useState('');
-	const [editMemberApellido, setEditMemberApellido] = React.useState('');
-	const [editMemberEmail, setEditMemberEmail] = React.useState('');
-	const [editMemberRol, setEditMemberRol] = React.useState('');
-	const [memberSubmitting, setMemberSubmitting] = React.useState(false);
-	const [deletingMemberKey, setDeletingMemberKey] = React.useState<string | null>(null);
-	const [membersLoading, setMembersLoading] = React.useState(false);
 
 	// Delete Modal
 	const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -1203,313 +1152,21 @@ export default function MisActoresPage() {
 	};
 
 	// Open Portfolio Modal
-	const handleOpenPortfolioModal = async (actor: MyActor) => {
+	const handleOpenPortfolioModal = (actor: MyActor) => {
 		setTargetPortfolioActor(actor);
-		setNewPortfolioType('IMAGEN');
-		setNewPortfolioUrl('');
-		setNewPortfolioDesc('');
 		setPortfolioModalOpen(true);
-		setPortfolioLoading(true);
-
-		try {
-			const res = await listarPortafolioApi(actor.id);
-			const portafolio = (res.data ?? []).map((item) => ({
-				id: item.idItem ?? item.id ?? Date.now(),
-				tipo: item.tipo,
-				descripcion: item.descripcion,
-				url: item.url,
-			}));
-			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, portafolio } : item)));
-			setTargetPortfolioActor((prev) => (prev?.id === actor.id ? { ...prev, portafolio } : prev));
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'No se pudieron cargar los elementos del portafolio.';
-			notify.error(errMsg);
-		} finally {
-			setPortfolioLoading(false);
-		}
-	};
-
-	// Add Item to Portfolio
-	const handleAddPortfolioItem = async () => {
-		if (!targetPortfolioActor || !newPortfolioUrl.trim()) return;
-
-		setPortfolioSubmitting(true);
-		try {
-			const res = await agregarItemPortafolioApi(targetPortfolioActor.id, {
-				tipo: newPortfolioType,
-				descripcion: newPortfolioDesc.trim() || 'Sin descripción',
-				url: newPortfolioUrl.trim(),
-			});
-
-			const createdId = res?.data?.idItem ?? Date.now();
-			const newItem: MyActorPortfolioItem = {
-				id: createdId,
-				tipo: newPortfolioType,
-				url: newPortfolioUrl.trim(),
-				descripcion: newPortfolioDesc.trim() || 'Sin descripción',
-			};
-
-			const updatedItems = [newItem, ...(targetPortfolioActor.portafolio || [])];
-
-			setActores((prev) =>
-				prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
-			);
-			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
-
-			setNewPortfolioUrl('');
-			setNewPortfolioDesc('');
-			notify.success('Elemento agregado al portafolio.');
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.';
-			notify.error(errMsg);
-		} finally {
-			setPortfolioSubmitting(false);
-		}
-	};
-
-	// Delete Item from Portfolio
-	const handleDeletePortfolioItem = async (itemId: number) => {
-		if (!targetPortfolioActor) return;
-
-		setDeletingPortfolioItemId(itemId);
-		try {
-			await eliminarItemPortafolioApi(targetPortfolioActor.id, itemId);
-
-			const updatedItems = (targetPortfolioActor.portafolio || []).filter((item) => item.id !== itemId);
-
-			setActores((prev) =>
-				prev.map((a) => (a.id === targetPortfolioActor.id ? { ...a, portafolio: updatedItems } : a)),
-			);
-			setTargetPortfolioActor((prev) => (prev ? { ...prev, portafolio: updatedItems } : null));
-
-			notify.success('Elemento eliminado del portafolio.');
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.';
-			notify.error(errMsg);
-		} finally {
-			setDeletingPortfolioItemId(null);
-		}
 	};
 
 	// Open Events Modal
-	const handleOpenEventsModal = async (actor: MyActor) => {
+	const handleOpenEventsModal = (actor: MyActor) => {
 		setTargetEventsActor(actor);
-		setNewEventNombre('');
-		setNewEventFecha('');
-		setNewEventDesc('');
 		setEventsModalOpen(true);
-		setEventsLoading(true);
-
-		try {
-			const res = await listarEventosApi(actor.id);
-			const eventos = (res.data ?? []).map((e) => ({
-				id: e.idEvento ?? e.id ?? Date.now(),
-				nombre: e.nombre,
-				descripcion: e.descripcion,
-				fecha: e.fecha,
-			}));
-			setActores((prev) => prev.map((item) => (item.id === actor.id ? { ...item, eventos } : item)));
-			setTargetEventsActor((prev) => (prev?.id === actor.id ? { ...prev, eventos } : prev));
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'No se pudieron cargar los eventos.';
-			notify.error(errMsg);
-		} finally {
-			setEventsLoading(false);
-		}
-	};
-
-	// Add Event
-	const handleAddEvent = async () => {
-		if (!targetEventsActor || !newEventNombre.trim()) return;
-
-		setEventCreating(true);
-		try {
-			const res = await agregarEventoApi(targetEventsActor.id, {
-				nombre: newEventNombre.trim(),
-				descripcion: newEventDesc.trim() || 'Sin descripción',
-				fecha: newEventFecha.trim() || undefined,
-			});
-			if (!res.data.idEvento) throw new Error('El backend no devolvió el identificador del evento.');
-
-			const newEvt: MyActorEvent = {
-				id: res.data.idEvento,
-				nombre: newEventNombre.trim(),
-				fecha: newEventFecha.trim() || new Date().toISOString(),
-				descripcion: newEventDesc.trim() || 'Sin descripción',
-			};
-
-			const updatedEvents = [...(targetEventsActor.eventos || []), newEvt].sort((a, b) =>
-				a.fecha.localeCompare(b.fecha),
-			);
-
-			setActores((prev) =>
-				prev.map((a) => (a.id === targetEventsActor.id ? { ...a, eventos: updatedEvents } : a)),
-			);
-			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
-
-			setNewEventNombre('');
-			setNewEventFecha('');
-			setNewEventDesc('');
-			notify.success('Evento agregado correctamente.');
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el evento.';
-			notify.error(errMsg);
-		} finally {
-			setEventCreating(false);
-		}
-	};
-
-	// Delete Event
-	const handleDeleteEvent = async (eventId: number) => {
-		if (!targetEventsActor) return;
-
-		setDeletingEventId(eventId);
-		try {
-			await eliminarEventoApi(targetEventsActor.id, eventId);
-
-			const updatedEvents = (targetEventsActor.eventos || []).filter((e) => e.id !== eventId);
-
-			setActores((prev) =>
-				prev.map((a) => (a.id === targetEventsActor.id ? { ...a, eventos: updatedEvents } : a)),
-			);
-			setTargetEventsActor((prev) => (prev ? { ...prev, eventos: updatedEvents } : null));
-
-			notify.success('Evento eliminado.');
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el evento.';
-			notify.error(errMsg);
-		} finally {
-			setDeletingEventId(null);
-		}
 	};
 
 	// Open Members Modal
-	const handleOpenMembersModal = async (actor: MyActor) => {
+	const handleOpenMembersModal = (actor: MyActor) => {
 		setTargetMembersActor(actor);
-		setNewMemberType('NO_REGISTRADO');
-		setNewMemberNombre('');
-		setNewMemberApellido('');
-		setNewMemberEmail('');
-		setNewMemberRol('Integrante');
-		setEditingMember(null);
 		setMembersModalOpen(true);
-		setMembersLoading(true);
-
-		try {
-			const res = await listarIntegrantesApi(actor.id);
-			if (res?.data) {
-				setIntegrantesList(res.data);
-			} else {
-				setIntegrantesList([]);
-			}
-		} catch (err) {
-			const errMsg =
-				err instanceof Error ? err.message : 'No se pudieron cargar los integrantes del actor cultural.';
-			notify.error(errMsg);
-			setIntegrantesList([]);
-		} finally {
-			setMembersLoading(false);
-		}
-	};
-
-	const refreshMembers = async (idActor: number) => {
-		const res = await listarIntegrantesApi(idActor);
-		setIntegrantesList(res?.data ?? []);
-	};
-
-	// Add a registered member or a person without an account.
-	const handleAddMember = async () => {
-		if (!targetMembersActor) return;
-		if (newMemberType === 'REGISTRADO' && !newMemberEmail.trim()) return;
-		if (newMemberType === 'NO_REGISTRADO' && (!newMemberNombre.trim() || !newMemberApellido.trim())) return;
-
-		setMemberSubmitting(true);
-		try {
-			if (newMemberType === 'REGISTRADO') {
-				await agregarIntegranteApi(targetMembersActor.id, {
-					email: newMemberEmail.trim(),
-					rol: newMemberRol.trim() || 'Integrante',
-				});
-			} else {
-				await agregarIntegranteNoRegistradoApi(targetMembersActor.id, {
-					nombre: newMemberNombre.trim(),
-					apellido: newMemberApellido.trim(),
-					email: newMemberEmail.trim() || null,
-					rol: newMemberRol.trim() || 'Integrante',
-				});
-			}
-
-			notify.success('Integrante agregado correctamente.');
-			setNewMemberNombre('');
-			setNewMemberApellido('');
-			setNewMemberEmail('');
-			setNewMemberRol('Integrante');
-			await refreshMembers(targetMembersActor.id);
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
-			notify.error(errMsg);
-		} finally {
-			setMemberSubmitting(false);
-		}
-	};
-
-	const handleStartEditMember = (member: IntegranteApiItem) => {
-		setEditingMember(member);
-		setEditMemberNombre(member.nombre);
-		setEditMemberApellido(member.apellido);
-		setEditMemberEmail(member.email ?? '');
-		setEditMemberRol(member.rol);
-	};
-
-	const handleSaveMember = async () => {
-		if (!targetMembersActor || !editingMember || !editMemberRol.trim()) return;
-
-		setMemberSubmitting(true);
-		try {
-			if (editingMember.tipo === 'REGISTRADO' && editingMember.idUsuario) {
-				await editarIntegranteApi(targetMembersActor.id, editingMember.idUsuario, {
-					rol: editMemberRol.trim(),
-				});
-			} else if (editingMember.idIntegranteNoRegistrado) {
-				await editarIntegranteNoRegistradoApi(targetMembersActor.id, editingMember.idIntegranteNoRegistrado, {
-					nombre: editMemberNombre.trim(),
-					apellido: editMemberApellido.trim(),
-					email: editMemberEmail.trim() || null,
-					rol: editMemberRol.trim(),
-				});
-			}
-
-			notify.success('Integrante modificado correctamente.');
-			setEditingMember(null);
-			await refreshMembers(targetMembersActor.id);
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'Error al modificar integrante.';
-			notify.error(errMsg);
-		} finally {
-			setMemberSubmitting(false);
-		}
-	};
-
-	// Delete Member
-	const handleDeleteMember = async (member: IntegranteApiItem) => {
-		if (!targetMembersActor) return;
-
-		const memberKey = getMemberKey(member);
-		setDeletingMemberKey(memberKey);
-		try {
-			if (member.tipo === 'REGISTRADO' && member.idUsuario) {
-				await eliminarIntegranteApi(targetMembersActor.id, member.idUsuario);
-			} else if (member.idIntegranteNoRegistrado) {
-				await eliminarIntegranteNoRegistradoApi(targetMembersActor.id, member.idIntegranteNoRegistrado);
-			}
-			notify.success('Integrante eliminado.');
-			setIntegrantesList((prev) => prev.filter((item) => getMemberKey(item) !== memberKey));
-		} catch (err) {
-			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
-			notify.error(errMsg);
-		} finally {
-			setDeletingMemberKey(null);
-		}
 	};
 
 	// Open Delete Confirmation Modal
@@ -2958,548 +2615,43 @@ export default function MisActoresPage() {
 				</DialogActions>
 			</Dialog>
 
-			{/* ========================================================================= */}
-			{/* MODAL: Gestionar Portafolio                                               */}
-			{/* ========================================================================= */}
-			<Dialog open={portfolioModalOpen} onClose={() => setPortfolioModalOpen(false)} maxWidth="md" fullWidth>
-				<DialogTitle fontWeight={700}>Gestionar portafolio: {targetPortfolioActor?.nombre}</DialogTitle>
-				<DialogContent dividers>
-					<Stack spacing={3}>
-						<Typography variant="body2" color="text.secondary">
-							Agregá o eliminá elementos públicos para el portafolio de este actor (imágenes, enlaces o
-							redes sociales).
-						</Typography>
+			{/* Portfolio Dialog */}
+			<ActorPortfolioDialog
+				open={portfolioModalOpen}
+				actor={targetPortfolioActor}
+				onClose={() => {
+					setPortfolioModalOpen(false);
+					setTargetPortfolioActor(null);
+				}}
+				onPortfolioChange={(actorId, updatedPortfolio) => {
+					setActores((prev) =>
+						prev.map((a) => (a.id === actorId ? { ...a, portafolio: updatedPortfolio } : a)),
+					);
+				}}
+			/>
 
-						{/* Form to add portfolio item */}
-						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
-							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-								Agregar nuevo elemento al portafolio
-							</Typography>
-							<Grid container spacing={2} sx={{ mt: 0.5 }}>
-								<Grid size={{ xs: 12, md: 3 }}>
-									<FormControl fullWidth size="small">
-										<InputLabel>Tipo</InputLabel>
-										<Select
-											value={newPortfolioType}
-											label="Tipo"
-											onChange={(e) =>
-												setNewPortfolioType(e.target.value as 'IMAGEN' | 'LINK' | 'RRSS')
-											}
-										>
-											<MenuItem value="IMAGEN">Imagen / Foto</MenuItem>
-											<MenuItem value="RRSS">Red Social / Instagram</MenuItem>
-											<MenuItem value="LINK">Link / Sitio Web</MenuItem>
-										</Select>
-									</FormControl>
-								</Grid>
-								<Grid size={{ xs: 12, md: 5 }}>
-									<TextField
-										fullWidth
-										size="small"
-										label="URL o Link"
-										placeholder="https://..."
-										value={newPortfolioUrl}
-										onChange={(e) => setNewPortfolioUrl(e.target.value)}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12, md: 4 }}>
-									<TextField
-										fullWidth
-										size="small"
-										label="Descripción breve"
-										placeholder="Ej. Show en vivo"
-										value={newPortfolioDesc}
-										onChange={(e) => setNewPortfolioDesc(e.target.value)}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12 }}>
-									<Button
-										variant="contained"
-										size="small"
-										startIcon={
-											portfolioSubmitting ? (
-												<CircularProgress size={16} color="inherit" />
-											) : (
-												<AddIcon />
-											)
-										}
-										onClick={handleAddPortfolioItem}
-										disabled={!newPortfolioUrl.trim() || portfolioSubmitting}
-									>
-										{portfolioSubmitting ? 'Agregando...' : 'Agregar elemento'}
-									</Button>
-								</Grid>
-							</Grid>
-						</Paper>
+			{/* Members Dialog */}
+			<ActorMembersDialog
+				open={membersModalOpen}
+				actor={targetMembersActor}
+				onClose={() => {
+					setMembersModalOpen(false);
+					setTargetMembersActor(null);
+				}}
+			/>
 
-						{/* Existing portfolio items */}
-						<Typography variant="subtitle2" fontWeight={700}>
-							Elementos actuales ({(targetPortfolioActor?.portafolio || []).length})
-						</Typography>
-
-						{portfolioLoading ? (
-							<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-								<CircularProgress size={32} />
-							</Box>
-						) : (targetPortfolioActor?.portafolio || []).length === 0 ? (
-							<Alert severity="info">Este actor todavía no tiene elementos en su portafolio.</Alert>
-						) : (
-							<Stack spacing={1.5} divider={<Divider />}>
-								{(targetPortfolioActor?.portafolio || []).map((item) => (
-									<Stack
-										key={item.id}
-										direction="row"
-										justifyContent="space-between"
-										alignItems="center"
-										spacing={2}
-									>
-										<Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-											{item.tipo === 'RRSS' ? (
-												<InstagramIcon color="primary" />
-											) : item.tipo === 'IMAGEN' ? (
-												<CollectionsIcon color="secondary" />
-											) : (
-												<LanguageIcon color="action" />
-											)}
-											<Box sx={{ minWidth: 0 }}>
-												<Typography variant="body2" fontWeight={600} noWrap>
-													{item.descripcion}
-												</Typography>
-												<MuiLink
-													href={item.url}
-													target="_blank"
-													underline="hover"
-													variant="caption"
-													color="text.secondary"
-													noWrap
-												>
-													{item.url}
-												</MuiLink>
-											</Box>
-										</Stack>
-										<IconButton
-											size="small"
-											color="error"
-											disabled={deletingPortfolioItemId === item.id}
-											onClick={() => handleDeletePortfolioItem(item.id)}
-										>
-											{deletingPortfolioItemId === item.id ? (
-												<CircularProgress size={16} color="inherit" />
-											) : (
-												<DeleteOutlineIcon fontSize="small" />
-											)}
-										</IconButton>
-									</Stack>
-								))}
-							</Stack>
-						)}
-					</Stack>
-				</DialogContent>
-				<DialogActions sx={{ p: 2 }}>
-					<Button variant="contained" onClick={() => setPortfolioModalOpen(false)}>
-						Cerrar
-					</Button>
-				</DialogActions>
-			</Dialog>
-
-			{/* ========================================================================= */}
-			{/* MODAL: Gestionar Eventos                                                  */}
-			{/* ========================================================================= */}
-			<Dialog open={eventsModalOpen} onClose={() => setEventsModalOpen(false)} maxWidth="md" fullWidth>
-				<DialogTitle fontWeight={700}>Gestionar eventos: {targetEventsActor?.nombre}</DialogTitle>
-				<DialogContent dividers>
-					<Stack spacing={3}>
-						<Typography variant="body2" color="text.secondary">
-							Agregá o eliminá presentaciones, funciones o eventos programados para este actor cultural.
-						</Typography>
-
-						{/* Form to add new event */}
-						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
-							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-								Agregar nuevo evento
-							</Typography>
-							<Grid container spacing={2} sx={{ mt: 0.5 }}>
-								<Grid size={{ xs: 12, md: 5 }}>
-									<TextField
-										fullWidth
-										required
-										label="Nombre del evento"
-										placeholder="Ej. Noche de Folklore en Anfiteatro"
-										value={newEventNombre}
-										onChange={(e) => setNewEventNombre(e.target.value)}
-										slotProps={{ htmlInput: { maxLength: 45 } }}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12, md: 3 }}>
-									<DatePickerSpanish
-										label="Fecha"
-										value={newEventFecha}
-										onChange={(dateStr) => setNewEventFecha(dateStr)}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12, md: 4 }}>
-									<TextField
-										fullWidth
-										label="Descripción / Lugar"
-										placeholder="Ej. Plaza Independencia"
-										value={newEventDesc}
-										onChange={(e) => setNewEventDesc(e.target.value)}
-										slotProps={{ htmlInput: { maxLength: 455 } }}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12 }}>
-									<Button
-										variant="contained"
-										size="medium"
-										startIcon={<AddIcon />}
-										onClick={handleAddEvent}
-										disabled={!newEventNombre.trim() || eventCreating || eventsLoading}
-									>
-										{eventCreating ? 'Agregando…' : 'Agregar evento'}
-									</Button>
-								</Grid>
-							</Grid>
-						</Paper>
-
-						{/* Existing events */}
-						<Typography variant="subtitle2" fontWeight={700}>
-							Eventos programados ({(targetEventsActor?.eventos || []).length})
-						</Typography>
-
-						{eventsLoading ? (
-							<Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-								<CircularProgress size={28} aria-label="Cargando eventos" />
-							</Box>
-						) : (targetEventsActor?.eventos || []).length === 0 ? (
-							<Alert severity="info">Este actor no tiene eventos registrados actualmente.</Alert>
-						) : (
-							<Stack spacing={1.5} divider={<Divider />}>
-								{(targetEventsActor?.eventos || []).map((evt) => (
-									<Stack
-										key={evt.id}
-										direction="row"
-										justifyContent="space-between"
-										alignItems="center"
-										spacing={2}
-									>
-										<Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-											<CalendarMonthIcon color="primary" />
-											<Box sx={{ minWidth: 0 }}>
-												<Typography variant="body2" fontWeight={600}>
-													{evt.nombre}
-												</Typography>
-												<Typography variant="caption" color="text.secondary">
-													📅 {formatEventDate(evt.fecha)} · {evt.descripcion}
-												</Typography>
-											</Box>
-										</Stack>
-										<IconButton
-											size="small"
-											color="error"
-											onClick={() => handleDeleteEvent(evt.id)}
-											disabled={deletingEventId !== null}
-											aria-label={`Eliminar evento ${evt.nombre}`}
-										>
-											{deletingEventId === evt.id ? (
-												<CircularProgress size={18} />
-											) : (
-												<DeleteOutlineIcon fontSize="small" />
-											)}
-										</IconButton>
-									</Stack>
-								))}
-							</Stack>
-						)}
-					</Stack>
-				</DialogContent>
-				<DialogActions sx={{ p: 2 }}>
-					<Button variant="contained" onClick={() => setEventsModalOpen(false)}>
-						Cerrar
-					</Button>
-				</DialogActions>
-			</Dialog>
-
-			{/* ========================================================================= */}
-			{/* MODAL: Gestionar Integrantes                                             */}
-			{/* ========================================================================= */}
-			<Dialog open={membersModalOpen} onClose={() => setMembersModalOpen(false)} maxWidth="md" fullWidth>
-				<DialogTitle fontWeight={700}>Gestionar integrantes: {targetMembersActor?.nombre}</DialogTitle>
-				<DialogContent dividers>
-					<Stack spacing={3}>
-						<Typography variant="body2" color="text.secondary">
-							Administrá las personas que forman parte del actor, tengan o no una cuenta en la plataforma.
-						</Typography>
-
-						{/* Form to add member */}
-						<Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
-							<Typography variant="subtitle2" fontWeight={700} gutterBottom>
-								Agregar integrante
-							</Typography>
-							<ToggleButtonGroup
-								exclusive
-								size="small"
-								value={newMemberType}
-								onChange={(_event, value: 'REGISTRADO' | 'NO_REGISTRADO' | null) => {
-									if (value) setNewMemberType(value);
-								}}
-								sx={{ mt: 1, mb: 1 }}
-							>
-								<ToggleButton value="REGISTRADO">Usuario registrado</ToggleButton>
-								<ToggleButton value="NO_REGISTRADO">Persona sin cuenta</ToggleButton>
-							</ToggleButtonGroup>
-							<Grid container spacing={2} sx={{ mt: 0.5 }}>
-								{newMemberType === 'NO_REGISTRADO' && (
-									<>
-										<Grid size={{ xs: 12, md: 6 }}>
-											<TextField
-												fullWidth
-												size="small"
-												required
-												label="Nombre"
-												value={newMemberNombre}
-												onChange={(e) => setNewMemberNombre(e.target.value)}
-											/>
-										</Grid>
-										<Grid size={{ xs: 12, md: 6 }}>
-											<TextField
-												fullWidth
-												size="small"
-												required
-												label="Apellido"
-												value={newMemberApellido}
-												onChange={(e) => setNewMemberApellido(e.target.value)}
-											/>
-										</Grid>
-									</>
-								)}
-								<Grid size={{ xs: 12, md: 6 }}>
-									<TextField
-										fullWidth
-										size="small"
-										required={newMemberType === 'REGISTRADO'}
-										type="email"
-										label={
-											newMemberType === 'REGISTRADO'
-												? 'Correo del usuario registrado'
-												: 'Correo electrónico (opcional)'
-										}
-										placeholder="ejemplo@correo.com"
-										value={newMemberEmail}
-										onChange={(e) => setNewMemberEmail(e.target.value)}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12, md: 6 }}>
-									<TextField
-										fullWidth
-										size="small"
-										label="Rol o función en el proyecto"
-										placeholder="Ej. Músico, Director, Prensa, Técnico"
-										value={newMemberRol}
-										onChange={(e) => setNewMemberRol(e.target.value)}
-									/>
-								</Grid>
-								<Grid size={{ xs: 12 }}>
-									<Button
-										variant="contained"
-										size="small"
-										startIcon={<GroupIcon />}
-										onClick={handleAddMember}
-										disabled={
-											memberSubmitting ||
-											!newMemberRol.trim() ||
-											(newMemberType === 'REGISTRADO'
-												? !newMemberEmail.trim()
-												: !newMemberNombre.trim() || !newMemberApellido.trim())
-										}
-									>
-										{memberSubmitting ? <CircularProgress size={18} /> : 'Agregar integrante'}
-									</Button>
-								</Grid>
-							</Grid>
-						</Paper>
-
-						{/* Members list */}
-						<Typography variant="subtitle2" fontWeight={700}>
-							Integrantes vinculados ({integrantesList.length})
-						</Typography>
-
-						{membersLoading ? (
-							<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-								<CircularProgress size={32} />
-							</Box>
-						) : integrantesList.length === 0 ? (
-							<Alert severity="info">No se encontraron integrantes para este actor.</Alert>
-						) : (
-							<Stack spacing={1.5} divider={<Divider />}>
-								{integrantesList.map((member) => {
-									const memberKey = getMemberKey(member);
-									const isEditing = editingMember && getMemberKey(editingMember) === memberKey;
-
-									return isEditing ? (
-										<Paper key={memberKey} variant="outlined" sx={{ p: 2 }}>
-											<Grid container spacing={2}>
-												{member.tipo === 'NO_REGISTRADO' && (
-													<>
-														<Grid size={{ xs: 12, sm: 6 }}>
-															<TextField
-																fullWidth
-																required
-																size="small"
-																label="Nombre"
-																value={editMemberNombre}
-																onChange={(e) => setEditMemberNombre(e.target.value)}
-															/>
-														</Grid>
-														<Grid size={{ xs: 12, sm: 6 }}>
-															<TextField
-																fullWidth
-																required
-																size="small"
-																label="Apellido"
-																value={editMemberApellido}
-																onChange={(e) => setEditMemberApellido(e.target.value)}
-															/>
-														</Grid>
-														<Grid size={{ xs: 12, sm: 6 }}>
-															<TextField
-																fullWidth
-																size="small"
-																type="email"
-																label="Correo (opcional)"
-																value={editMemberEmail}
-																onChange={(e) => setEditMemberEmail(e.target.value)}
-															/>
-														</Grid>
-													</>
-												)}
-												<Grid size={{ xs: 12, sm: 6 }}>
-													<TextField
-														fullWidth
-														required
-														size="small"
-														label="Rol o función"
-														value={editMemberRol}
-														onChange={(e) => setEditMemberRol(e.target.value)}
-													/>
-												</Grid>
-												<Grid size={{ xs: 12 }}>
-													<Stack direction="row" spacing={1} justifyContent="flex-end">
-														<Button
-															size="small"
-															onClick={() => setEditingMember(null)}
-															disabled={memberSubmitting}
-														>
-															Cancelar
-														</Button>
-														<Button
-															variant="contained"
-															size="small"
-															onClick={handleSaveMember}
-															disabled={
-																memberSubmitting ||
-																!editMemberRol.trim() ||
-																(member.tipo === 'NO_REGISTRADO' &&
-																	(!editMemberNombre.trim() ||
-																		!editMemberApellido.trim()))
-															}
-														>
-															Guardar cambios
-														</Button>
-													</Stack>
-												</Grid>
-											</Grid>
-										</Paper>
-									) : (
-										<Stack
-											key={memberKey}
-											direction="row"
-											justifyContent="space-between"
-											alignItems="center"
-											spacing={2}
-										>
-											<Stack
-												direction="row"
-												spacing={1.5}
-												alignItems="center"
-												sx={{ minWidth: 0 }}
-											>
-												<Avatar
-													sx={{
-														bgcolor: member.esDueño ? 'primary.main' : 'secondary.main',
-														width: 36,
-														height: 36,
-														fontSize: 14,
-													}}
-												>
-													{member.nombre.charAt(0)}
-													{member.apellido?.charAt(0) || ''}
-												</Avatar>
-												<Box sx={{ minWidth: 0 }}>
-													<Stack direction="row" spacing={1} alignItems="center">
-														<Typography variant="body2" fontWeight={600}>
-															{member.nombre} {member.apellido}
-														</Typography>
-														{member.esDueño && (
-															<Chip
-																label="Dueño Principal"
-																size="small"
-																color="primary"
-																sx={{ height: 20, fontSize: 10 }}
-															/>
-														)}
-														{member.tipo === 'NO_REGISTRADO' && (
-															<Chip
-																label="Sin cuenta"
-																size="small"
-																variant="outlined"
-																sx={{ height: 20, fontSize: 10 }}
-															/>
-														)}
-													</Stack>
-													<Typography variant="caption" color="text.secondary">
-														{member.email ? `📧 ${member.email} · ` : ''}Rol: {member.rol}
-													</Typography>
-												</Box>
-											</Stack>
-
-											<Stack direction="row" spacing={0.5}>
-												<IconButton
-													size="small"
-													color="primary"
-													onClick={() => handleStartEditMember(member)}
-													aria-label={`Editar a ${member.nombre} ${member.apellido}`}
-												>
-													<EditIcon fontSize="small" />
-												</IconButton>
-												{!member.esDueño && (
-													<IconButton
-														size="small"
-														color="error"
-														onClick={() => handleDeleteMember(member)}
-														disabled={deletingMemberKey !== null}
-														aria-label={`Eliminar a ${member.nombre} ${member.apellido}`}
-													>
-														{deletingMemberKey === memberKey ? (
-															<CircularProgress size={18} />
-														) : (
-															<DeleteOutlineIcon fontSize="small" />
-														)}
-													</IconButton>
-												)}
-											</Stack>
-										</Stack>
-									);
-								})}
-							</Stack>
-						)}
-					</Stack>
-				</DialogContent>
-				<DialogActions sx={{ p: 2 }}>
-					<Button variant="contained" onClick={() => setMembersModalOpen(false)}>
-						Cerrar
-					</Button>
-				</DialogActions>
-			</Dialog>
+			{/* Events Dialog */}
+			<ActorEventsDialog
+				open={eventsModalOpen}
+				actor={targetEventsActor}
+				onClose={() => {
+					setEventsModalOpen(false);
+					setTargetEventsActor(null);
+				}}
+				onEventsChange={(actorId, updatedEvents) => {
+					setActores((prev) => prev.map((a) => (a.id === actorId ? { ...a, eventos: updatedEvents } : a)));
+				}}
+			/>
 
 			{/* ========================================================================= */}
 			{/* MODAL: Borrar (Eliminar) - Confirmación Estricta                          */}
