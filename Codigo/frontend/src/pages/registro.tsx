@@ -281,14 +281,15 @@ export default function RegistroPage() {
 	return (
 		<Box
 			sx={{
-				minHeight: 'calc(100vh - 64px)',
+				minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
 				display: 'flex',
 				flexDirection: 'column',
 				justifyContent: 'center',
 				alignItems: 'center',
 				flex: '1 0 auto',
 				width: '100%',
-				py: { xs: 2, sm: 3 },
+				pt: { xs: 2, sm: 3 },
+				pb: { xs: 'calc(32px + env(safe-area-inset-bottom, 16px))', sm: 3 },
 				px: 2,
 				boxSizing: 'border-box',
 				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',
@@ -562,12 +563,13 @@ export default function RegistroPage() {
 								</Grid>
 							</Grid>
 
-							<Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+							<Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 8px))', sm: 0 } }}>
 								<Button
 									variant="contained"
 									endIcon={<ArrowForwardIcon />}
 									onClick={handleNext}
 									size="large"
+									sx={{ width: { xs: '100%', sm: 'auto' } }}
 								>
 									Siguiente (Confirmación)
 								</Button>
@@ -693,12 +695,13 @@ export default function RegistroPage() {
 								</CardContent>
 							</Card>
 
-							<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+							<Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1.5, justifyContent: 'space-between', alignItems: 'stretch', pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 8px))', sm: 0 } }}>
 								<Button
 									variant="outlined"
 									startIcon={<ArrowBackIcon />}
 									onClick={handleBack}
 									disabled={loading}
+									size="large"
 								>
 									Volver a Editar
 								</Button>

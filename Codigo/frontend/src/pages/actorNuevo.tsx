@@ -420,10 +420,11 @@ export default function ActorNuevoPage() {
 			<Box
 				sx={{
 					width: '100%',
-					minHeight: 'calc(100vh - 64px)',
+					minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
 					bgcolor: 'background.default',
 					px: { xs: 2, md: 3 },
-					py: { xs: 2, md: 3 },
+					pt: { xs: 2, md: 3 },
+					pb: { xs: 'calc(40px + env(safe-area-inset-bottom, 24px))', sm: 3 },
 					boxSizing: 'border-box',
 				}}
 			>
@@ -475,10 +476,11 @@ export default function ActorNuevoPage() {
 			ref={pageTopRef}
 			sx={{
 				width: '100%',
-				minHeight: 'calc(100vh - 64px)',
+				minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
 				bgcolor: 'background.default',
 				px: { xs: 2, md: 3 },
-				py: { xs: 2, md: 3 },
+				pt: { xs: 2, md: 3 },
+				pb: { xs: 'calc(40px + env(safe-area-inset-bottom, 24px))', sm: 4 },
 				boxSizing: 'border-box',
 			}}
 		>
@@ -586,16 +588,20 @@ export default function ActorNuevoPage() {
 							</Paper>
 
 							<Stack
-								direction={{ xs: 'column', sm: 'row' }}
-								spacing={1}
+								direction={{ xs: 'column-reverse', sm: 'row' }}
+								spacing={1.5}
 								justifyContent="space-between"
-								sx={{ pt: 1, pb: { xs: 3, md: 4 } }}
+								sx={{
+									pt: 1.5,
+									pb: { xs: 'calc(32px + env(safe-area-inset-bottom, 24px))', sm: 4 },
+								}}
 							>
 								<Button
 									variant="outlined"
 									startIcon={<ArrowBackIcon />}
 									onClick={handleBack}
 									disabled={activeStep === 0 || submitting}
+									size="large"
 								>
 									Atrás
 								</Button>
@@ -604,10 +610,12 @@ export default function ActorNuevoPage() {
 										variant="contained"
 										endIcon={<ArrowForwardIcon />}
 										onClick={handleNext}
+										size="large"
 										disabled={
 											(activeStep === 0 && (catalogLoading || Boolean(catalogError))) ||
 											(activeStep === 1 && formsLoading)
 										}
+										sx={{ minWidth: { sm: 140 } }}
 									>
 										Siguiente
 									</Button>
@@ -618,6 +626,7 @@ export default function ActorNuevoPage() {
 										startIcon={<CheckCircleOutlineIcon />}
 										onClick={() => void handleSubmit()}
 										disabled={submitting}
+										size="large"
 									>
 										{submitting ? 'Guardando…' : 'Enviar a revisión'}
 									</Button>

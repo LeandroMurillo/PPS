@@ -138,14 +138,26 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
 
 function MapControls({ isSatelital, onToggleSatelital }: { isSatelital: boolean; onToggleSatelital: () => void }) {
 	const map = useMap();
+	const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+	React.useEffect(() => {
+		if (containerRef.current) {
+			L.DomEvent.disableClickPropagation(containerRef.current);
+			L.DomEvent.disableScrollPropagation(containerRef.current);
+		}
+	}, []);
 
 	return (
 		<Paper
+			ref={containerRef}
 			elevation={4}
+			onClick={(e) => e.stopPropagation()}
+			onMouseDown={(e) => e.stopPropagation()}
+			onDoubleClick={(e) => e.stopPropagation()}
 			sx={{
 				position: 'absolute',
-				bottom: { xs: 16, sm: 20 },
-				left: { xs: 16, sm: 20 },
+				bottom: { xs: 'max(20px, calc(16px + env(safe-area-inset-bottom, 0px)))', sm: 20 },
+				left: { xs: 'max(16px, calc(16px + env(safe-area-inset-left, 0px)))', sm: 20 },
 				zIndex: 1000,
 				display: 'flex',
 				flexDirection: 'column',
@@ -620,7 +632,14 @@ export default function TucumanMap() {
 		<Box
 			sx={{
 				position: 'relative',
-				height: 'calc(100vh - 64px)',
+				height: {
+					xs: 'calc(100dvh - 56px)',
+					sm: 'calc(100dvh - 64px)',
+				},
+				maxHeight: {
+					xs: 'calc(100dvh - 56px)',
+					sm: 'calc(100dvh - 64px)',
+				},
 				width: '100%',
 				overflow: 'hidden',
 				borderRadius: 1,
@@ -702,8 +721,8 @@ export default function TucumanMap() {
 						py: 1.25,
 						cursor: 'pointer',
 						userSelect: 'none',
-						bgcolor: isMobile && !filtrosAbiertos ? 'primary.main' : 'background.paper',
-						color: isMobile && !filtrosAbiertos ? 'primary.contrastText' : 'text.primary',
+						bgcolor: isMobile && filtrosAbiertos ? 'primary.main' : 'background.paper',
+						color: isMobile && filtrosAbiertos ? 'primary.contrastText' : 'text.primary',
 						borderBottom: filtrosAbiertos ? '1px solid' : 'none',
 						borderColor: 'divider',
 						transition: 'background-color 0.2s ease',

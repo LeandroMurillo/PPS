@@ -101,12 +101,13 @@ export default function LoginPage() {
 	return (
 		<Box
 			sx={{
-				minHeight: 'calc(100vh - 64px)',
+				minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
 				display: 'flex',
 				flexDirection: 'column',
 				justifyContent: 'center',
 				alignItems: 'center',
-				py: { xs: 2, sm: 3 },
+				pt: { xs: 2, sm: 3 },
+				pb: { xs: 'calc(24px + env(safe-area-inset-bottom, 16px))', sm: 3 },
 				px: 2,
 				boxSizing: 'border-box',
 				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',

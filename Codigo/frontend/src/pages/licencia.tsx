@@ -21,12 +21,13 @@ export default function Licencia() {
 	return (
 		<Box
 			sx={{
-				minHeight: 'calc(100vh - 64px)',
+				minHeight: { xs: 'calc(100dvh - 56px)', sm: 'calc(100dvh - 64px)' },
 				display: 'flex',
 				justifyContent: 'center',
 				flex: '1 0 auto',
 				width: '100%',
-				py: { xs: 2, sm: 8 },
+				pt: { xs: 2, sm: 8 },
+				pb: { xs: 'calc(32px + env(safe-area-inset-bottom, 16px))', sm: 8 },
 				px: 2,
 				boxSizing: 'border-box',
 				backgroundColor: isDarkMode ? '#0b0b0b' : '#f4f6f8',
