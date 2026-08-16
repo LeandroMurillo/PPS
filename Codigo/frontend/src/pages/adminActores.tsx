@@ -227,7 +227,7 @@ export default function AdminActoresPage() {
 		try {
 			await cambiarEstadoActoresAdmin(selectedRowsIds, targetState);
 			const stateLabel = targetState === 'A' ? 'activados' : 'desactivados';
-			notify.success(`Se han ${stateLabel} ${selectedRowsIds.length} actores.`);
+			notify.success(`Se han ${stateLabel} ${selectedRowsIds.length} actores.`, { scope: 'admin-actores' });
 			setSelectedActorIds([]);
 			setConfirmDialogOpen(false);
 			setTargetState(null);
@@ -238,7 +238,7 @@ export default function AdminActoresPage() {
 					? requestError.message
 					: 'No se pudo actualizar el estado de los actores seleccionados.';
 			setActionError(msg);
-			notify.error(msg);
+			notify.error(msg, { scope: 'admin-actores' });
 		} finally {
 			setSavingState(false);
 		}

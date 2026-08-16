@@ -63,7 +63,9 @@ export default function ActorEventsDialog({ open, actor, onClose, onEventsChange
 				onEventsChange?.(actor.id, evts);
 			})
 			.catch((err) => {
-				notify.error(err instanceof Error ? err.message : 'No se pudieron cargar los eventos.');
+				notify.error(err instanceof Error ? err.message : 'No se pudieron cargar los eventos.', {
+					scope: 'actor-events',
+				});
 			})
 			.finally(() => setLoading(false));
 	}, [open, actor?.id]);
@@ -95,9 +97,11 @@ export default function ActorEventsDialog({ open, actor, onClose, onEventsChange
 			setNombre('');
 			setFecha('');
 			setDescripcion('');
-			notify.success('Evento agregado.');
+			notify.success('Evento agregado.', { scope: 'actor-events' });
 		} catch (err) {
-			notify.error(err instanceof Error ? err.message : 'No se pudo agregar el evento.');
+			notify.error(err instanceof Error ? err.message : 'No se pudo agregar el evento.', {
+				scope: 'actor-events',
+			});
 		} finally {
 			setSubmitting(false);
 		}
@@ -112,9 +116,11 @@ export default function ActorEventsDialog({ open, actor, onClose, onEventsChange
 			const updated = eventos.filter((e) => e.id !== eventId);
 			setEventos(updated);
 			onEventsChange?.(actor.id, updated);
-			notify.success('Evento eliminado.');
+			notify.success('Evento eliminado.', { scope: 'actor-events' });
 		} catch (err) {
-			notify.error(err instanceof Error ? err.message : 'No se pudo eliminar el evento.');
+			notify.error(err instanceof Error ? err.message : 'No se pudo eliminar el evento.', {
+				scope: 'actor-events',
+			});
 		} finally {
 			setDeletingId(null);
 		}

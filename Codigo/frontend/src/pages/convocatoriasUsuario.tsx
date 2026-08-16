@@ -86,13 +86,13 @@ export default function ConvocatoriasUsuario() {
 			const estaPostulado = actoresActuales.includes(actor.id);
 
 			if (estaPostulado) {
-				notify.info(`Se retiró la postulación de "${actor.nombre}".`);
+				notify.info(`Se retiró la postulación de "${actor.nombre}".`, { scope: 'convocatorias' });
 				return {
 					...prev,
 					[idConvocatoria]: actoresActuales.filter((id) => id !== actor.id),
 				};
 			} else {
-				notify.success(`¡"${actor.nombre}" postulado!`);
+				notify.success(`¡"${actor.nombre}" postulado!`, { scope: 'convocatorias' });
 				return {
 					...prev,
 					[idConvocatoria]: [...actoresActuales, actor.id],

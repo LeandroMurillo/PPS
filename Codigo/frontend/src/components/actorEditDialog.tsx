@@ -637,7 +637,7 @@ export default function ActorEditDialog({
 				const msg =
 					'No encontramos esa dirección exacta. Podés conservar el texto y señalar el punto en el mapa.';
 				setSearchAddressError(msg);
-				notify.error(msg);
+				notify.error(msg, { scope: 'actor-edit' });
 				return;
 			}
 
@@ -646,11 +646,11 @@ export default function ActorEditDialog({
 				latitud: Number(result.lat),
 				longitud: Number(result.lon),
 			}));
-			notify.success('Ubicación encontrada en el mapa.');
+			notify.success('Ubicación encontrada en el mapa.', { scope: 'actor-edit' });
 		} catch {
 			const msg = 'No se pudo realizar la búsqueda en el mapa en este momento.';
 			setSearchAddressError(msg);
-			notify.error(msg);
+			notify.error(msg, { scope: 'actor-edit' });
 		} finally {
 			setIsSearchingAddress(false);
 		}
@@ -661,7 +661,7 @@ export default function ActorEditDialog({
 		if (!navigator.geolocation) {
 			const msg = 'Tu navegador no permite obtener la ubicación actual.';
 			setSearchAddressError(msg);
-			notify.error(msg);
+			notify.error(msg, { scope: 'actor-edit' });
 			return;
 		}
 
@@ -675,7 +675,7 @@ export default function ActorEditDialog({
 				if (!isInsideTucuman) {
 					const msg = 'La ubicación detectada se encuentra fuera de Tucumán.';
 					setSearchAddressError(msg);
-					notify.error(msg);
+					notify.error(msg, { scope: 'actor-edit' });
 					setIsLocatingUser(false);
 					return;
 				}
@@ -685,7 +685,7 @@ export default function ActorEditDialog({
 					latitud: lat,
 					longitud: lng,
 				}));
-				notify.success('Ubicación GPS aplicada.');
+				notify.success('Ubicación GPS aplicada.', { scope: 'actor-edit' });
 				setIsLocatingUser(false);
 			},
 			(error) => {
@@ -694,7 +694,7 @@ export default function ActorEditDialog({
 						? 'Permiso de ubicación denegado.'
 						: 'No se pudo obtener tu ubicación actual.';
 				setSearchAddressError(msg);
-				notify.error(msg);
+				notify.error(msg, { scope: 'actor-edit' });
 				setIsLocatingUser(false);
 			},
 			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
@@ -706,14 +706,14 @@ export default function ActorEditDialog({
 		if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
 			const err = 'Seleccioná una imagen JPG, PNG o WebP.';
 			setProfileImageError(err);
-			notify.error(err);
+			notify.error(err, { scope: 'actor-edit' });
 			return;
 		}
 		const sizeValidation = validateImageFile(file, 5);
 		if (!sizeValidation.valid) {
 			const err = sizeValidation.error ?? 'La imagen supera el límite permitido.';
 			setProfileImageError(err);
-			notify.error(err);
+			notify.error(err, { scope: 'actor-edit' });
 			return;
 		}
 
@@ -728,19 +728,19 @@ export default function ActorEditDialog({
 		} catch {
 			const err = 'No se pudo procesar la imagen seleccionada.';
 			setProfileImageError(err);
-			notify.error(err);
+			notify.error(err, { scope: 'actor-edit' });
 		}
 	};
 
 	const handleNextFromTab0 = () => {
 		if (!formValues.nombre.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('El nombre del actor es obligatorio.');
+			notify.error('El nombre del actor es obligatorio.', { scope: 'actor-edit' });
 			return;
 		}
 		if (!formValues.descripcion.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('La descripción o trayectoria es obligatoria.');
+			notify.error('La descripción o trayectoria es obligatoria.', { scope: 'actor-edit' });
 			return;
 		}
 		setEditActiveTab(1);
@@ -750,11 +750,11 @@ export default function ActorEditDialog({
 		if (!formValues.departamento.trim() || !formValues.localidad.trim() || !formValues.direccion.trim()) {
 			setEditValidationAttempted(true);
 			if (!formValues.departamento.trim()) {
-				notify.error('El departamento es obligatorio.');
+				notify.error('El departamento es obligatorio.', { scope: 'actor-edit' });
 			} else if (!formValues.localidad.trim()) {
-				notify.error('La localidad es obligatoria.');
+				notify.error('La localidad es obligatoria.', { scope: 'actor-edit' });
 			} else {
-				notify.error('La dirección o referencia es obligatoria.');
+				notify.error('La dirección o referencia es obligatoria.', { scope: 'actor-edit' });
 			}
 			return;
 		}
@@ -765,14 +765,14 @@ export default function ActorEditDialog({
 	const handleRequestEditSave = () => {
 		if (!formValues.nombre.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('El nombre del actor es obligatorio.');
+			notify.error('El nombre del actor es obligatorio.', { scope: 'actor-edit' });
 			setEditActiveTab(0);
 			return;
 		}
 
 		if (!formValues.descripcion.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('La descripción o trayectoria es obligatoria.');
+			notify.error('La descripción o trayectoria es obligatoria.', { scope: 'actor-edit' });
 			setEditActiveTab(0);
 			return;
 		}
@@ -780,28 +780,30 @@ export default function ActorEditDialog({
 		if (!actor) return;
 		if (!getCategoryIdByName(categoryOptions, formValues.categoria)) {
 			setEditValidationAttempted(true);
-			notify.error('La categoría seleccionada ya no está disponible. Recargá la página e intentá nuevamente.');
+			notify.error('La categoría seleccionada ya no está disponible. Recargá la página e intentá nuevamente.', {
+				scope: 'actor-edit',
+			});
 			setEditActiveTab(0);
 			return;
 		}
 
 		if (!formValues.departamento.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('El departamento es obligatorio.');
+			notify.error('El departamento es obligatorio.', { scope: 'actor-edit' });
 			setEditActiveTab(1);
 			return;
 		}
 
 		if (!formValues.localidad.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('La localidad es obligatoria.');
+			notify.error('La localidad es obligatoria.', { scope: 'actor-edit' });
 			setEditActiveTab(1);
 			return;
 		}
 
 		if (!formValues.direccion.trim()) {
 			setEditValidationAttempted(true);
-			notify.error('La dirección o referencia es obligatoria.');
+			notify.error('La dirección o referencia es obligatoria.', { scope: 'actor-edit' });
 			setEditActiveTab(1);
 			return;
 		}
@@ -820,7 +822,9 @@ export default function ActorEditDialog({
 						(Array.isArray(val) ? val.length === 0 : !String(val).trim());
 					if (isMissing) {
 						setEditValidationAttempted(true);
-						notify.error(`Falta responder la pregunta obligatoria: "${q.pregunta}"`);
+						notify.error(`Falta responder la pregunta obligatoria: "${q.pregunta}"`, {
+							scope: 'actor-edit',
+						});
 						setEditActiveTab(2);
 						return;
 					}
@@ -830,7 +834,7 @@ export default function ActorEditDialog({
 
 		// Solo mostrar confirmar los cambios si algo cambió
 		if (!hasChanges) {
-			notify.info('No se detectaron modificaciones para guardar.');
+			notify.info('No se detectaron modificaciones para guardar.', { scope: 'actor-edit' });
 			onClose();
 			return;
 		}
@@ -882,7 +886,7 @@ export default function ActorEditDialog({
 			savedPhotoUrl = response.data.fotoPerfilUrl;
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo actualizar el actor cultural.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-edit' });
 			setEditConfirmModalOpen(false);
 			return;
 		}
@@ -911,7 +915,7 @@ export default function ActorEditDialog({
 			? `Se actualizaron los datos de "${formValues.nombre.trim()}". La ficha pasó a estado Pendiente para su revisión.`
 			: `Se actualizó "${formValues.nombre.trim()}".`;
 
-		notify.success(msg);
+		notify.success(msg, { scope: 'actor-edit' });
 		setEditConfirmModalOpen(false);
 		onClose();
 	};

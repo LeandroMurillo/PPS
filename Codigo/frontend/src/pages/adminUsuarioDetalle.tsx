@@ -94,10 +94,12 @@ export default function AdminUsuarioDetallePage() {
 		try {
 			const result = await cambiarEstadoUsuarioAdmin(usuario.id, activating ? 'A' : 'I');
 			reload(result.data);
-			notify.success(activating ? 'Usuario activado.' : 'Usuario dado de baja.');
+			notify.success(activating ? 'Usuario activado.' : 'Usuario dado de baja.', {
+				scope: 'admin-usuario-detalle',
+			});
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : 'No se pudo actualizar el estado.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-usuario-detalle' });
 		} finally {
 			setActionLoading(false);
 		}
@@ -128,10 +130,11 @@ export default function AdminUsuarioDetallePage() {
 				selectedCategories.length === 0
 					? 'Se quitaron las categorías y el usuario dejó de ser moderador.'
 					: 'Rol y categorías de moderación actualizados.',
+				{ scope: 'admin-usuario-detalle' },
 			);
 		} catch (error) {
 			const errMsg = error instanceof Error ? error.message : 'No se pudo asignar la moderación.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-usuario-detalle' });
 		} finally {
 			setActionLoading(false);
 		}

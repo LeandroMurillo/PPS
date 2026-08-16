@@ -45,12 +45,12 @@ export default function ActorDeleteDialog({ open, actor, onClose, onActorDeleted
 		try {
 			await eliminarMiActorApi(actor.id);
 			onActorDeleted?.(actor.id);
-			notify.info(`"${actor.nombre}" fue eliminado permanentemente.`);
+			notify.info(`"${actor.nombre}" fue eliminado permanentemente.`, { scope: 'actor-delete' });
 			onClose();
 		} catch (err) {
 			console.error('Error API eliminar actor:', err);
 			const msg = err instanceof Error ? err.message : 'No se pudo eliminar el actor cultural.';
-			notify.error(msg);
+			notify.error(msg, { scope: 'actor-delete' });
 		} finally {
 			setSubmitting(false);
 		}

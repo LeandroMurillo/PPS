@@ -152,7 +152,7 @@ export default function PerfilUsuarioPage() {
 			}
 		} catch (err) {
 			console.error('Error al cargar perfil:', err);
-			notify.error(err instanceof Error ? err.message : 'No se pudo cargar el perfil.');
+			notify.error(err instanceof Error ? err.message : 'No se pudo cargar el perfil.', { scope: 'perfil' });
 		} finally {
 			setLoading(false);
 		}
@@ -179,14 +179,14 @@ export default function PerfilUsuarioPage() {
 		if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
 			const err = 'Seleccioná una imagen JPG, PNG o WebP.';
 			setFotoDniError(err);
-			notify.error(err);
+			notify.error(err, { scope: 'perfil' });
 			return;
 		}
 		const sizeVal = validateImageFile(file, 5);
 		if (!sizeVal.valid) {
 			const err = sizeVal.error ?? 'La imagen supera el límite permitido de 5 MB.';
 			setFotoDniError(err);
-			notify.error(err);
+			notify.error(err, { scope: 'perfil' });
 			return;
 		}
 
@@ -198,7 +198,7 @@ export default function PerfilUsuarioPage() {
 		} catch {
 			const err = 'No se pudo procesar la imagen seleccionada.';
 			setFotoDniError(err);
-			notify.error(err);
+			notify.error(err, { scope: 'perfil' });
 		}
 	};
 
@@ -215,35 +215,37 @@ export default function PerfilUsuarioPage() {
 		setProfileValidationAttempted(true);
 
 		if (!nombre.trim()) {
-			notify.error('El nombre es obligatorio.');
+			notify.error('El nombre es obligatorio.', { scope: 'perfil' });
 			return;
 		}
 		if (/\d/.test(nombre)) {
-			notify.error('El nombre no puede contener números.');
+			notify.error('El nombre no puede contener números.', { scope: 'perfil' });
 			return;
 		}
 		if (!apellido.trim()) {
-			notify.error('El apellido es obligatorio.');
+			notify.error('El apellido es obligatorio.', { scope: 'perfil' });
 			return;
 		}
 		if (/\d/.test(apellido)) {
-			notify.error('El apellido no puede contener números.');
+			notify.error('El apellido no puede contener números.', { scope: 'perfil' });
 			return;
 		}
 		if (!fechaNacimiento) {
-			notify.error('La fecha de nacimiento es obligatoria.');
+			notify.error('La fecha de nacimiento es obligatoria.', { scope: 'perfil' });
 			return;
 		}
 		if (!nacionalidad.trim()) {
-			notify.error('La nacionalidad es obligatoria.');
+			notify.error('La nacionalidad es obligatoria.', { scope: 'perfil' });
 			return;
 		}
 		if (/\d/.test(nacionalidad)) {
-			notify.error('La nacionalidad no puede contener números.');
+			notify.error('La nacionalidad no puede contener números.', { scope: 'perfil' });
 			return;
 		}
 		if (!cuil.trim() || !validarCUIL(cuil.trim())) {
-			notify.error('El CUIL no es válido (debe tener 11 dígitos y dígito verificador correcto).');
+			notify.error('El CUIL no es válido (debe tener 11 dígitos y dígito verificador correcto).', {
+				scope: 'perfil',
+			});
 			return;
 		}
 
@@ -274,10 +276,10 @@ export default function PerfilUsuarioPage() {
 
 			setFotoDniBase64(null);
 			setFotoDniNombre('');
-			notify.success(res.mensaje || 'Perfil actualizado correctamente.');
+			notify.success(res.mensaje || 'Perfil actualizado correctamente.', { scope: 'perfil' });
 		} catch (err) {
 			console.error('Error al actualizar perfil:', err);
-			notify.error(err instanceof Error ? err.message : 'No se pudo actualizar el perfil.');
+			notify.error(err instanceof Error ? err.message : 'No se pudo actualizar el perfil.', { scope: 'perfil' });
 		} finally {
 			setSavingProfile(false);
 		}
@@ -289,11 +291,11 @@ export default function PerfilUsuarioPage() {
 		setPassValidationAttempted(true);
 
 		if (!contraseñaActual) {
-			notify.error('Ingresá tu contraseña actual.');
+			notify.error('Ingresá tu contraseña actual.', { scope: 'password' });
 			return;
 		}
 		if (!passIsValid) {
-			notify.error('La nueva contraseña no cumple con todos los requisitos.');
+			notify.error('La nueva contraseña no cumple con todos los requisitos.', { scope: 'password' });
 			return;
 		}
 
@@ -308,10 +310,12 @@ export default function PerfilUsuarioPage() {
 			setNuevaContraseña('');
 			setConfirmarContraseña('');
 			setPassValidationAttempted(false);
-			notify.success(res.mensaje || 'Contraseña actualizada correctamente.');
+			notify.success(res.mensaje || 'Contraseña actualizada correctamente.', { scope: 'password' });
 		} catch (err) {
 			console.error('Error al cambiar contraseña:', err);
-			notify.error(err instanceof Error ? err.message : 'No se pudo cambiar la contraseña.');
+			notify.error(err instanceof Error ? err.message : 'No se pudo cambiar la contraseña.', {
+				scope: 'password',
+			});
 		} finally {
 			setSavingPassword(false);
 		}
@@ -331,11 +335,11 @@ export default function PerfilUsuarioPage() {
 			const res = await eliminarCuentaUsuarioApi();
 			setDeleteModalOpen(false);
 			logout();
-			notify.info(res.mensaje || 'Tu cuenta ha sido eliminada.');
+			notify.info(res.mensaje || 'Tu cuenta ha sido eliminada.', { scope: 'cuenta' });
 			navigate('/login');
 		} catch (err) {
 			console.error('Error al eliminar cuenta:', err);
-			notify.error(err instanceof Error ? err.message : 'No se pudo eliminar la cuenta.');
+			notify.error(err instanceof Error ? err.message : 'No se pudo eliminar la cuenta.', { scope: 'cuenta' });
 		} finally {
 			setDeletingAccount(false);
 		}

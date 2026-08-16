@@ -52,7 +52,7 @@ export default function LoginPage() {
 		e.preventDefault();
 		if (forgotEmail.trim()) {
 			setForgotSubmitted(true);
-			notify.info('Si el correo está registrado, recibirás las instrucciones.');
+			notify.info('Si el correo está registrado, recibirás las instrucciones.', { scope: 'forgot-password' });
 		}
 	};
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
 		}
 
 		if (hasError) {
-			notify.error('Por favor complete correctamente los campos requeridos.');
+			notify.error('Por favor complete correctamente los campos requeridos.', { scope: 'login' });
 			return;
 		}
 
@@ -86,13 +86,13 @@ export default function LoginPage() {
 		try {
 			const response = await loginApi({ email: trimmedEmail, contraseña: password });
 			login(response.usuario, response.token);
-			notify.success(`¡Hola, ${response.usuario.nombre || 'usuario'}!`);
+			notify.success(`¡Hola, ${response.usuario.nombre || 'usuario'}!`, { scope: 'login' });
 			navigate('/');
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
 			setEmailError('Verifique sus credenciales');
 			setPasswordError('Verifique sus credenciales');
-			notify.error(msg);
+			notify.error(msg, { scope: 'login' });
 		} finally {
 			setLoading(false);
 		}

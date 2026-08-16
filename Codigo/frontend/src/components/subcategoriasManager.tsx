@@ -132,7 +132,7 @@ export default function SubcategoriasManager({
 
 		const trimmedNombre = formNombre.trim();
 		if (!trimmedNombre) {
-			notify.error('El nombre es obligatorio.');
+			notify.error('El nombre es obligatorio.', { scope: 'admin-subcategorias' });
 			return;
 		}
 
@@ -144,20 +144,20 @@ export default function SubcategoriasManager({
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
-				notify.success(`Subcategoría "${trimmedNombre}" modificada.`);
+				notify.success(`Subcategoría "${trimmedNombre}" modificada.`, { scope: 'admin-subcategorias' });
 			} else {
 				await crearSubcategoriaAdmin(categoryId, {
 					nombre: trimmedNombre,
 					estado: formEstado,
 				});
-				notify.success(`Subcategoría "${trimmedNombre}" creada.`);
+				notify.success(`Subcategoría "${trimmedNombre}" creada.`, { scope: 'admin-subcategorias' });
 			}
 
 			setDialogOpen(false);
 			void fetchSubcategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la subcategoría.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-subcategorias' });
 		} finally {
 			setFormSubmitting(false);
 		}
@@ -175,14 +175,16 @@ export default function SubcategoriasManager({
 
 		try {
 			await eliminarSubcategoriaAdmin(categoryId, deletingSubcategoria.id);
-			notify.info(`Subcategoría "${deletingSubcategoria.nombre}" dada de baja.`);
+			notify.info(`Subcategoría "${deletingSubcategoria.nombre}" dada de baja.`, {
+				scope: 'admin-subcategorias',
+			});
 			setDeleteDialogOpen(false);
 			setDeletingSubcategoria(null);
 			void fetchSubcategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo dar de baja la subcategoría';
 			setError(errMsg);
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-subcategorias' });
 		} finally {
 			setDeleteSubmitting(false);
 		}

@@ -102,22 +102,22 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 		if (!actor) return;
 		if (memberType === 'REGISTRADO') {
 			if (!email.trim() || !isValidEmail(email)) {
-				notify.error('Ingresá un correo electrónico válido.');
+				notify.error('Ingresá un correo electrónico válido.', { scope: 'actor-members' });
 				return;
 			}
 		}
 		if (memberType === 'NO_REGISTRADO') {
 			if (!nombre.trim() || !apellido.trim()) return;
 			if (/\d/.test(nombre)) {
-				notify.error('El nombre no puede contener números.');
+				notify.error('El nombre no puede contener números.', { scope: 'actor-members' });
 				return;
 			}
 			if (/\d/.test(apellido)) {
-				notify.error('El apellido no puede contener números.');
+				notify.error('El apellido no puede contener números.', { scope: 'actor-members' });
 				return;
 			}
 			if (email.trim() && !isValidEmail(email)) {
-				notify.error('El correo electrónico ingresado no es válido.');
+				notify.error('El correo electrónico ingresado no es válido.', { scope: 'actor-members' });
 				return;
 			}
 		}
@@ -138,7 +138,7 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 				});
 			}
 
-			notify.success('Integrante agregado.');
+			notify.success('Integrante agregado.', { scope: 'actor-members' });
 			setNombre('');
 			setApellido('');
 			setEmail('');
@@ -146,7 +146,7 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 			await loadMembers(actor.id);
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al agregar integrante.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-members' });
 		} finally {
 			setSubmitting(false);
 		}
@@ -163,24 +163,24 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 	const handleSaveEdit = async () => {
 		if (!actor || !editingMember || !editRol.trim()) return;
 		if (editingMember.tipo === 'REGISTRADO' && (!editEmail.trim() || !isValidEmail(editEmail))) {
-			notify.error('Ingresá un correo electrónico válido.');
+			notify.error('Ingresá un correo electrónico válido.', { scope: 'actor-members' });
 			return;
 		}
 		if (editingMember.tipo === 'NO_REGISTRADO') {
 			if (!editNombre.trim() || !editApellido.trim()) {
-				notify.error('Nombre y apellido son obligatorios.');
+				notify.error('Nombre y apellido son obligatorios.', { scope: 'actor-members' });
 				return;
 			}
 			if (/\d/.test(editNombre)) {
-				notify.error('El nombre no puede contener números.');
+				notify.error('El nombre no puede contener números.', { scope: 'actor-members' });
 				return;
 			}
 			if (/\d/.test(editApellido)) {
-				notify.error('El apellido no puede contener números.');
+				notify.error('El apellido no puede contener números.', { scope: 'actor-members' });
 				return;
 			}
 			if (editEmail.trim() && !isValidEmail(editEmail)) {
-				notify.error('El correo electrónico ingresado no es válido.');
+				notify.error('El correo electrónico ingresado no es válido.', { scope: 'actor-members' });
 				return;
 			}
 		}
@@ -200,12 +200,12 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 				});
 			}
 
-			notify.success('Integrante modificado.');
+			notify.success('Integrante modificado.', { scope: 'actor-members' });
 			setEditingMember(null);
 			await loadMembers(actor.id);
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al modificar integrante.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-members' });
 		} finally {
 			setSubmitting(false);
 		}
@@ -222,11 +222,11 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 			} else if (member.idIntegranteNoRegistrado) {
 				await eliminarIntegranteNoRegistradoApi(actor.id, member.idIntegranteNoRegistrado);
 			}
-			notify.success('Integrante eliminado.');
+			notify.success('Integrante eliminado.', { scope: 'actor-members' });
 			setIntegrantes((prev) => prev.filter((item) => getMemberKey(item) !== memberKey));
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al eliminar integrante.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-members' });
 		} finally {
 			setDeletingKey(null);
 		}

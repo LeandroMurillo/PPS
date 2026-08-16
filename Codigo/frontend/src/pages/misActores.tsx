@@ -214,7 +214,7 @@ export default function MisActoresPage() {
 			console.error('Error al obtener actores del backend:', err);
 			const msg = 'No se pudieron cargar los actores culturales desde la base de datos.';
 			setError(msg);
-			notify.error(msg);
+			notify.error(msg, { scope: 'mis-actores' });
 			setActores([]);
 		} finally {
 			setLoading(false);

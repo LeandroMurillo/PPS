@@ -268,11 +268,11 @@ export default function RegistroPage() {
 		try {
 			const res = await registrarUsuarioApi(payload);
 			setRegistroExitoso(res.mensaje);
-			notify.success('¡Cuenta registrada exitosamente!');
+			notify.success('¡Cuenta registrada exitosamente!', { scope: 'registro' });
 			setActiveStep(2);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.';
-			notify.error(msg);
+			notify.error(msg, { scope: 'registro' });
 		} finally {
 			setLoading(false);
 		}
@@ -563,7 +563,14 @@ export default function RegistroPage() {
 								</Grid>
 							</Grid>
 
-							<Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 8px))', sm: 0 } }}>
+							<Box
+								sx={{
+									mt: 4,
+									display: 'flex',
+									justifyContent: 'flex-end',
+									pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 8px))', sm: 0 },
+								}}
+							>
 								<Button
 									variant="contained"
 									endIcon={<ArrowForwardIcon />}
@@ -695,7 +702,16 @@ export default function RegistroPage() {
 								</CardContent>
 							</Card>
 
-							<Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1.5, justifyContent: 'space-between', alignItems: 'stretch', pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 8px))', sm: 0 } }}>
+							<Box
+								sx={{
+									display: 'flex',
+									flexDirection: { xs: 'column-reverse', sm: 'row' },
+									gap: 1.5,
+									justifyContent: 'space-between',
+									alignItems: 'stretch',
+									pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 8px))', sm: 0 },
+								}}
+							>
 								<Button
 									variant="outlined"
 									startIcon={<ArrowBackIcon />}

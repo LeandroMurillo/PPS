@@ -402,13 +402,13 @@ export default function ActorNuevoPage() {
 				})),
 			});
 
-			notify.success('¡El actor fue enviado a revisión!');
+			notify.success('¡El actor fue enviado a revisión!', { scope: 'actor-nuevo' });
 			navigate('/mis-actores', { replace: true });
 		} catch (error) {
 			const errMsg =
 				error instanceof Error ? error.message : 'No se pudo enviar el actor cultural para revisión.';
 			setSubmissionError(errMsg);
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-nuevo' });
 			scrollToTop();
 		} finally {
 			setSubmitting(false);

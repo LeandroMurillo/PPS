@@ -65,7 +65,9 @@ export default function ActorStatusDialog({ open, actor, defaultNext, onClose, o
 		if (!actor) return;
 
 		if (nextSt === 'A' && !isAdminOrMod) {
-			notify.warning('Solo un administrador o moderador puede activar un actor cultural.');
+			notify.warning('Solo un administrador o moderador puede activar un actor cultural.', {
+				scope: 'actor-status',
+			});
 			return;
 		}
 
@@ -79,13 +81,13 @@ export default function ActorStatusDialog({ open, actor, defaultNext, onClose, o
 			else if (nextSt === 'P') actionText = 'pasó a estado Pendiente de revisión';
 			else if (nextSt === 'A') actionText = 'fue activado';
 
-			notify.info(`"${actor.nombre}" ${actionText}.`);
+			notify.info(`"${actor.nombre}" ${actionText}.`, { scope: 'actor-status' });
 			setDeactivateConfirmModalOpen(false);
 			onClose();
 		} catch (err) {
 			console.error('Error API cambiar estado:', err);
 			const msg = err instanceof Error ? err.message : 'No se pudo cambiar el estado del actor cultural.';
-			notify.error(msg);
+			notify.error(msg, { scope: 'actor-status' });
 		} finally {
 			setSubmitting(false);
 		}

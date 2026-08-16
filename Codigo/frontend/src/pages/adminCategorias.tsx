@@ -159,7 +159,7 @@ export default function AdminCategoriasPage() {
 
 		const trimmedNombre = formNombre.trim();
 		if (!trimmedNombre) {
-			notify.error('El nombre es obligatorio.');
+			notify.error('El nombre es obligatorio.', { scope: 'admin-categorias' });
 			return;
 		}
 
@@ -172,21 +172,21 @@ export default function AdminCategoriasPage() {
 					icono: formIcono,
 					estado: formEstado,
 				});
-				notify.success(`Categoría "${trimmedNombre}" modificada.`);
+				notify.success(`Categoría "${trimmedNombre}" modificada.`, { scope: 'admin-categorias' });
 			} else {
 				await crearCategoriaAdmin({
 					nombre: trimmedNombre,
 					icono: formIcono,
 					estado: formEstado,
 				});
-				notify.success(`Categoría "${trimmedNombre}" creada.`);
+				notify.success(`Categoría "${trimmedNombre}" creada.`, { scope: 'admin-categorias' });
 			}
 
 			handleCloseDialog();
 			void fetchCategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Ocurrió un error al guardar la categoría.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-categorias' });
 		} finally {
 			setFormSubmitting(false);
 		}
@@ -204,14 +204,14 @@ export default function AdminCategoriasPage() {
 
 		try {
 			await eliminarCategoriaAdmin(deletingCategoria.id);
-			notify.info(`Categoría "${deletingCategoria.nombre}" dada de baja.`);
+			notify.info(`Categoría "${deletingCategoria.nombre}" dada de baja.`, { scope: 'admin-categorias' });
 			setDeleteDialogOpen(false);
 			setDeletingCategoria(null);
 			void fetchCategorias();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo dar de baja la categoría';
 			setError(errMsg);
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-categorias' });
 		} finally {
 			setDeleteSubmitting(false);
 		}

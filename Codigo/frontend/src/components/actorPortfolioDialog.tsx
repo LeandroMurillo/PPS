@@ -102,10 +102,10 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 
 			setUrl('');
 			setDescripcion('');
-			notify.success('Elemento agregado al portafolio.');
+			notify.success('Elemento agregado al portafolio.', { scope: 'actor-portfolio' });
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo agregar el elemento al portafolio.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-portfolio' });
 		} finally {
 			setSubmitting(false);
 		}
@@ -120,10 +120,10 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 			const updated = items.filter((item) => item.id !== itemId);
 			setItems(updated);
 			onPortfolioChange?.(actor.id, updated);
-			notify.success('Elemento eliminado del portafolio.');
+			notify.success('Elemento eliminado del portafolio.', { scope: 'actor-portfolio' });
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'No se pudo eliminar el elemento del portafolio.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'actor-portfolio' });
 		} finally {
 			setDeletingId(null);
 		}

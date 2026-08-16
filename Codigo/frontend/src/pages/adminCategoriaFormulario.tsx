@@ -264,7 +264,7 @@ export default function AdminCategoriaFormularioPage() {
 
 		async function load() {
 			if (!categoriaSlug) {
-				notify.error('La ruta del formulario no es válida.');
+				notify.error('La ruta del formulario no es válida.', { scope: 'admin-formulario' });
 				setLoading(false);
 				return;
 			}
@@ -296,7 +296,7 @@ export default function AdminCategoriaFormularioPage() {
 				}
 
 				if (!resolvedCat) {
-					notify.error('No se encontró la categoría solicitada.');
+					notify.error('No se encontró la categoría solicitada.', { scope: 'admin-formulario' });
 					setLoading(false);
 					return;
 				}
@@ -332,7 +332,7 @@ export default function AdminCategoriaFormularioPage() {
 					}
 
 					if (!resolvedSub) {
-						notify.error('No se encontró la subcategoría solicitada.');
+						notify.error('No se encontró la subcategoría solicitada.', { scope: 'admin-formulario' });
 						setLoading(false);
 						return;
 					}
@@ -370,7 +370,9 @@ export default function AdminCategoriaFormularioPage() {
 				}
 			} catch (loadError) {
 				if (!controller.signal.aborted) {
-					notify.error(loadError instanceof Error ? loadError.message : 'No se pudo cargar el formulario.');
+					notify.error(loadError instanceof Error ? loadError.message : 'No se pudo cargar el formulario.', {
+						scope: 'admin-formulario',
+					});
 				}
 			} finally {
 				if (!controller.signal.aborted) setLoading(false);
@@ -414,10 +416,10 @@ export default function AdminCategoriaFormularioPage() {
 			setTitulo(response.data.titulo);
 			setDescripcion(response.data.descripcion ?? '');
 			const msg = formulario ? 'Formulario actualizado.' : 'Formulario creado. Ya podés agregar preguntas.';
-			notify.success(msg);
+			notify.success(msg, { scope: 'admin-formulario' });
 		} catch (saveError) {
 			const errMsg = saveError instanceof Error ? saveError.message : 'No se pudo guardar el formulario.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-formulario' });
 		} finally {
 			setSaving(false);
 		}
@@ -460,14 +462,14 @@ export default function AdminCategoriaFormularioPage() {
 					esPublico: questionPublic,
 				});
 				setFormulario(response.data);
-				notify.success('Pregunta asociada.');
+				notify.success('Pregunta asociada.', { scope: 'admin-formulario' });
 				setQuestionDialogOpen(false);
 				setQuestionTab('activas');
 			} catch (submitError) {
 				const errMsg =
 					submitError instanceof Error ? submitError.message : 'No se pudo incorporar la pregunta.';
 				setQuestionError(errMsg);
-				notify.error(errMsg);
+				notify.error(errMsg, { scope: 'admin-formulario' });
 			} finally {
 				setQuestionSubmitting(false);
 			}
@@ -502,13 +504,13 @@ export default function AdminCategoriaFormularioPage() {
 				esPublico: questionPublic,
 			});
 			setFormulario(response.data);
-			notify.success('Pregunta agregada.');
+			notify.success('Pregunta agregada.', { scope: 'admin-formulario' });
 			setQuestionDialogOpen(false);
 			setQuestionTab('activas');
 		} catch (submitError) {
 			const errMsg = submitError instanceof Error ? submitError.message : 'No se pudo agregar la pregunta.';
 			setQuestionError(errMsg);
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-formulario' });
 		} finally {
 			setQuestionSubmitting(false);
 		}
@@ -521,11 +523,11 @@ export default function AdminCategoriaFormularioPage() {
 		try {
 			const response = await desactivarPreguntaFormularioAdmin(formulario.id, deletingQuestion.id);
 			setFormulario(response.data);
-			notify.info('Pregunta dada de baja del formulario.');
+			notify.info('Pregunta dada de baja del formulario.', { scope: 'admin-formulario' });
 			setDeletingQuestion(null);
 		} catch (deleteError) {
 			const errMsg = deleteError instanceof Error ? deleteError.message : 'No se pudo dar de baja la pregunta.';
-			notify.error(errMsg);
+			notify.error(errMsg, { scope: 'admin-formulario' });
 		} finally {
 			setQuestionSubmitting(false);
 		}
