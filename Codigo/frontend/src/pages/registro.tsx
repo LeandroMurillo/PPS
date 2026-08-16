@@ -164,12 +164,16 @@ export default function RegistroPage() {
 			errors.nombre = 'El nombre es obligatorio';
 		} else if (formData.nombre.trim().length > 45) {
 			errors.nombre = 'Máximo 45 caracteres';
+		} else if (/\d/.test(formData.nombre)) {
+			errors.nombre = 'El nombre no puede contener números';
 		}
 
 		if (!formData.apellido.trim()) {
 			errors.apellido = 'El apellido es obligatorio';
 		} else if (formData.apellido.trim().length > 45) {
 			errors.apellido = 'Máximo 45 caracteres';
+		} else if (/\d/.test(formData.apellido)) {
+			errors.apellido = 'El apellido no puede contener números';
 		}
 
 		if (!formData.email.trim()) {
@@ -215,6 +219,10 @@ export default function RegistroPage() {
 
 		if (!formData.nacionalidad.trim()) {
 			errors.nacionalidad = 'La nacionalidad es obligatoria';
+		} else if (formData.nacionalidad.trim().length > 45) {
+			errors.nacionalidad = 'Máximo 45 caracteres';
+		} else if (/\d/.test(formData.nacionalidad)) {
+			errors.nacionalidad = 'La nacionalidad no puede contener números';
 		}
 
 		if (formData.actividadesArcaCodigo.trim() && !/^\d{6}$/.test(formData.actividadesArcaCodigo.trim())) {

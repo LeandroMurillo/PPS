@@ -28,6 +28,7 @@ import InstagramIcon from '@mui/icons-material/Instagram';
 import LanguageIcon from '@mui/icons-material/Language';
 
 import { agregarItemPortafolioApi, eliminarItemPortafolioApi, listarPortafolioApi } from '../api/actores';
+import { normalizarUrl } from '../utils/links';
 import { notify } from '../utils/toast';
 import type { MyActor, MyActorPortfolioItem } from '../pages/misActores';
 
@@ -77,19 +78,21 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 	const handleAddItem = async () => {
 		if (!actor || !url.trim()) return;
 
+		const normalizedUrl = normalizarUrl(url);
+
 		setSubmitting(true);
 		try {
 			const res = await agregarItemPortafolioApi(actor.id, {
 				tipo,
 				descripcion: descripcion.trim() || 'Sin descripción',
-				url: url.trim(),
+				url: normalizedUrl,
 			});
 
 			const createdId = res?.data?.idItem ?? Date.now();
 			const newItem: MyActorPortfolioItem = {
 				id: createdId,
 				tipo,
-				url: url.trim(),
+				url: normalizedUrl,
 				descripcion: descripcion.trim() || 'Sin descripción',
 			};
 

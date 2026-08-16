@@ -147,6 +147,26 @@ describe('validación del registro y login de usuario', () => {
 		expect(result.success).toBe(false);
 	});
 
+	it('rechaza nombres, apellidos o nacionalidades que contengan números', () => {
+		const resultNombreConNumero = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			nombre: 'María 2',
+		});
+		expect(resultNombreConNumero.success).toBe(false);
+
+		const resultApellidoConNumero = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			apellido: 'González3',
+		});
+		expect(resultApellidoConNumero.success).toBe(false);
+
+		const resultNacConNumero = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			nacionalidad: 'Argentina 1',
+		});
+		expect(resultNacConNumero.success).toBe(false);
+	});
+
 	it('rechaza si no se adjunta el documento de identidad', () => {
 		const result = registrarUsuarioBodySchema.safeParse({
 			...validPayload,

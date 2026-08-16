@@ -56,6 +56,7 @@ import {
 } from '@mui/material';
 import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
 import { fileToBase64 } from '../utils/file';
+import { normalizarUrl } from '../utils/links';
 import { notify } from '../utils/toast';
 
 import {
@@ -987,6 +988,7 @@ function PortfolioStep({
 		if (items.length >= MAX_PORTFOLIO_ITEMS || !title.trim() || (type === 'IMAGEN' ? !imagePreview : !url.trim())) {
 			return;
 		}
+		const itemUrl = type === 'IMAGEN' ? imagePreview : normalizarUrl(url);
 		onChange([
 			...items,
 			{
@@ -994,7 +996,7 @@ function PortfolioStep({
 				tipo: type,
 				titulo: title.trim(),
 				descripcion: description.trim(),
-				url: type === 'IMAGEN' ? imagePreview : url.trim(),
+				url: itemUrl,
 				previewUrl: type === 'IMAGEN' ? imagePreview : undefined,
 			},
 		]);

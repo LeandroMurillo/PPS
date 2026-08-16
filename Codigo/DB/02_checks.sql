@@ -11,11 +11,23 @@ ALTER TABLE `cultura`.`ActividadesArca`
 
 ALTER TABLE `cultura`.`Usuarios`
   ADD CONSTRAINT `chk_Usuarios_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
+    CHECK (
+      `nombre` = TRIM(`nombre`)
+      AND `nombre` <> ''
+      AND `nombre` NOT REGEXP '[0-9]'
+    ),
   ADD CONSTRAINT `chk_Usuarios_apellido`
-    CHECK (`apellido` = TRIM(`apellido`) AND `apellido` <> ''),
+    CHECK (
+      `apellido` = TRIM(`apellido`)
+      AND `apellido` <> ''
+      AND `apellido` NOT REGEXP '[0-9]'
+    ),
   ADD CONSTRAINT `chk_Usuarios_nacionalidad`
-    CHECK (`nacionalidad` = TRIM(`nacionalidad`) AND `nacionalidad` <> ''),
+    CHECK (
+      `nacionalidad` = TRIM(`nacionalidad`)
+      AND `nacionalidad` <> ''
+      AND `nacionalidad` NOT REGEXP '[0-9]'
+    ),
   ADD CONSTRAINT `chk_Usuarios_email`
     CHECK (
       `email` = TRIM(`email`)
@@ -108,9 +120,17 @@ ALTER TABLE `cultura`.`Integrantes`
 
 ALTER TABLE `cultura`.`IntegrantesNoRegistrados`
   ADD CONSTRAINT `chk_IntegrantesNoRegistrados_nombre`
-    CHECK (`nombre` = TRIM(`nombre`) AND `nombre` <> ''),
+    CHECK (
+      `nombre` = TRIM(`nombre`)
+      AND `nombre` <> ''
+      AND `nombre` NOT REGEXP '[0-9]'
+    ),
   ADD CONSTRAINT `chk_IntegrantesNoRegistrados_apellido`
-    CHECK (`apellido` = TRIM(`apellido`) AND `apellido` <> ''),
+    CHECK (
+      `apellido` = TRIM(`apellido`)
+      AND `apellido` <> ''
+      AND `apellido` NOT REGEXP '[0-9]'
+    ),
   ADD CONSTRAINT `chk_IntegrantesNoRegistrados_email`
     CHECK (
       `email` IS NULL

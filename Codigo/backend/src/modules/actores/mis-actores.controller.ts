@@ -54,6 +54,16 @@ const actorImageDataUrlSchema = z
 	.max(7_000_000)
 	.regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/);
 
+function normalizeUrl(value: string | null | undefined): string | null | undefined {
+	if (value === null || value === undefined) return value;
+	const trimmed = value.trim();
+	if (!trimmed) return trimmed;
+	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//i.test(trimmed)) {
+		return trimmed;
+	}
+	return `https://${trimmed}`;
+}
+
 const respuestaRegistroSchema = z.object({
 	idFormulario: z.number().int().positive(),
 	idPregunta: z.number().int().positive(),
@@ -65,7 +75,13 @@ const itemPortafolioRegistroSchema = z
 		tipo: z.enum(['IMAGEN', 'VIDEO', 'ENLACE']),
 		titulo: z.string().trim().min(1).max(100),
 		descripcion: z.string().trim().max(140).nullable().optional(),
-		url: z.url().max(245).nullable().optional(),
+		url: z
+			.string()
+			.trim()
+			.transform((v) => normalizeUrl(v))
+			.pipe(z.string().url('El formato del enlace no es válido').max(245))
+			.nullable()
+			.optional(),
 		imagenBase64: actorImageDataUrlSchema.nullable().optional(),
 	})
 	.superRefine((item, context) => {
@@ -122,7 +138,11 @@ const cambiarEstadoBodySchema = z.object({
 const portafolioBodySchema = z.object({
 	tipo: z.enum(['IMAGEN', 'LINK', 'RRSS']),
 	descripcion: z.string().trim().min(1).max(255),
-	url: z.string().trim().url(),
+	url: z
+		.string()
+		.trim()
+		.transform((v) => normalizeUrl(v) ?? '')
+		.pipe(z.string().url('El formato del enlace no es válido').max(245)),
 });
 
 const eventoBodySchema = z.object({
@@ -445,8 +465,18 @@ const emailIntegranteOpcionalSchema = z.preprocess(
 );
 
 const integranteNoRegistradoBodySchema = z.object({
-	nombre: z.string().trim().min(1).max(45),
-	apellido: z.string().trim().min(1).max(45),
+	nombre: z
+		.string()
+		.trim()
+		.min(1, 'El nombre no puede estar vacío')
+		.max(45, 'El nombre debe tener como máximo 45 caracteres')
+		.refine((val) => !/\d/.test(val), { message: 'El nombre no puede contener números' }),
+	apellido: z
+		.string()
+		.trim()
+		.min(1, 'El apellido no puede estar vacío')
+		.max(45, 'El apellido debe tener como máximo 45 caracteres')
+		.refine((val) => !/\d/.test(val), { message: 'El apellido no puede contener números' }),
 	email: emailIntegranteOpcionalSchema,
 	rol: z.string().trim().min(1).max(45),
 });

@@ -47,7 +47,10 @@ export const registrarUsuarioBodySchema = z.object({
 			z
 				.string()
 				.min(1, 'El nombre no puede estar vacío')
-				.max(45, 'El nombre debe tener como máximo 45 caracteres'),
+				.max(45, 'El nombre debe tener como máximo 45 caracteres')
+				.refine((val) => !/\d/.test(val), {
+					message: 'El nombre no puede contener números',
+				}),
 		),
 
 	apellido: z
@@ -57,7 +60,10 @@ export const registrarUsuarioBodySchema = z.object({
 			z
 				.string()
 				.min(1, 'El apellido no puede estar vacío')
-				.max(45, 'El apellido debe tener como máximo 45 caracteres'),
+				.max(45, 'El apellido debe tener como máximo 45 caracteres')
+				.refine((val) => !/\d/.test(val), {
+					message: 'El apellido no puede contener números',
+				}),
 		),
 
 	genero: generoUsuarioSchema,
@@ -81,7 +87,10 @@ export const registrarUsuarioBodySchema = z.object({
 			z
 				.string()
 				.min(1, 'La nacionalidad no puede estar vacía')
-				.max(45, 'La nacionalidad debe tener como máximo 45 caracteres'),
+				.max(45, 'La nacionalidad debe tener como máximo 45 caracteres')
+				.refine((val) => !/\d/.test(val), {
+					message: 'La nacionalidad no puede contener números',
+				}),
 		),
 
 	email: z

@@ -106,10 +106,20 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 				return;
 			}
 		}
-		if (memberType === 'NO_REGISTRADO' && (!nombre.trim() || !apellido.trim())) return;
-		if (memberType === 'NO_REGISTRADO' && email.trim() && !isValidEmail(email)) {
-			notify.error('El correo electrónico ingresado no es válido.');
-			return;
+		if (memberType === 'NO_REGISTRADO') {
+			if (!nombre.trim() || !apellido.trim()) return;
+			if (/\d/.test(nombre)) {
+				notify.error('El nombre no puede contener números.');
+				return;
+			}
+			if (/\d/.test(apellido)) {
+				notify.error('El apellido no puede contener números.');
+				return;
+			}
+			if (email.trim() && !isValidEmail(email)) {
+				notify.error('El correo electrónico ingresado no es válido.');
+				return;
+			}
 		}
 
 		setSubmitting(true);
@@ -156,9 +166,23 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 			notify.error('Ingresá un correo electrónico válido.');
 			return;
 		}
-		if (editingMember.tipo === 'NO_REGISTRADO' && editEmail.trim() && !isValidEmail(editEmail)) {
-			notify.error('El correo electrónico ingresado no es válido.');
-			return;
+		if (editingMember.tipo === 'NO_REGISTRADO') {
+			if (!editNombre.trim() || !editApellido.trim()) {
+				notify.error('Nombre y apellido son obligatorios.');
+				return;
+			}
+			if (/\d/.test(editNombre)) {
+				notify.error('El nombre no puede contener números.');
+				return;
+			}
+			if (/\d/.test(editApellido)) {
+				notify.error('El apellido no puede contener números.');
+				return;
+			}
+			if (editEmail.trim() && !isValidEmail(editEmail)) {
+				notify.error('El correo electrónico ingresado no es válido.');
+				return;
+			}
 		}
 
 		setSubmitting(true);

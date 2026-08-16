@@ -4,9 +4,18 @@
 
 export type TipoEnlace = 'youtube' | 'instagram' | 'facebook' | 'whatsapp' | 'otro';
 
+export function normalizarUrl(url: string): string {
+	const trimmed = (url ?? '').trim();
+	if (!trimmed) return trimmed;
+	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//i.test(trimmed)) {
+		return trimmed;
+	}
+	return `https://${trimmed}`;
+}
+
 export function detectarTipoEnlace(url: string): TipoEnlace {
 	if (!url) return 'otro';
-	const u = url.toLowerCase();
+	const u = normalizarUrl(url).toLowerCase();
 	if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
 	if (u.includes('instagram.com')) return 'instagram';
 	if (u.includes('facebook.com') || u.includes('fb.com')) return 'facebook';

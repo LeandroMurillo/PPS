@@ -4724,54 +4724,61 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o ya fue eliminado.';
     END IF;
 
+    -- Tabla temporal para almacenar los actores propios y sus ubicaciones asociadas
+    CREATE TEMPORARY TABLE IF NOT EXISTS tmp_actores_eliminar (
+        idActor INT PRIMARY KEY,
+        idUbicacion INT
+    );
+    TRUNCATE TABLE tmp_actores_eliminar;
+
+    INSERT INTO tmp_actores_eliminar (idActor, idUbicacion)
+    SELECT a.idActor, a.idUbicacion
+    FROM `Actores` a
+    JOIN `Integrantes` i ON a.idActor = i.idActor
+    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
     -- 1. Eliminar respuestas a formularios de los actores propios
     DELETE r FROM `Respuestas` r
-    JOIN `Integrantes` i ON r.idActor = i.idActor
-    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+    JOIN tmp_actores_eliminar t ON r.idActor = t.idActor;
 
     -- 2. Eliminar postulaciones de los actores propios
     DELETE p FROM `Postulaciones` p
-    JOIN `Integrantes` i ON p.idActor = i.idActor
-    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+    JOIN tmp_actores_eliminar t ON p.idActor = t.idActor;
 
     -- 3. Eliminar ítems de portafolio de los actores propios
     DELETE it FROM `ItemsPortafolio` it
-    JOIN `Integrantes` i ON it.idActor = i.idActor
-    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+    JOIN tmp_actores_eliminar t ON it.idActor = t.idActor;
 
     -- 4. Eliminar eventos de los actores propios
     DELETE e FROM `Eventos` e
-    JOIN `Integrantes` i ON e.idActor = i.idActor
-    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+    JOIN tmp_actores_eliminar t ON e.idActor = t.idActor;
 
     -- 5. Eliminar integrantes no registrados de los actores propios
     DELETE nr FROM `IntegrantesNoRegistrados` nr
-    JOIN `Integrantes` i ON nr.idActor = i.idActor
-    WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+    JOIN tmp_actores_eliminar t ON nr.idActor = t.idActor;
 
-    -- 6. Eliminar integrantes de los actores propios (incluyendo a otros miembros)
-    DELETE i2 FROM `Integrantes` i2
-    WHERE i2.idActor IN (
-        SELECT idActor FROM (
-            SELECT idActor FROM `Integrantes` WHERE idUsuario = pIdUsuario AND esDueño = 1
-        ) AS sub
-    );
+    -- 6. Eliminar todos los integrantes de los actores propios (incluyendo a otros miembros)
+    DELETE i FROM `Integrantes` i
+    JOIN tmp_actores_eliminar t ON i.idActor = t.idActor;
 
-    -- 7. Eliminar actores propios y sus ubicaciones
+    -- 7. Eliminar actores propios
+    DELETE a FROM `Actores` a
+    JOIN tmp_actores_eliminar t ON a.idActor = t.idActor;
+
+    -- 8. Eliminar ubicaciones asociadas a los actores propios eliminados
     DELETE u FROM `Ubicaciones` u
-    JOIN `Actores` a ON u.idUbicacion = a.idUbicacion
-    WHERE a.idActor NOT IN (SELECT idActor FROM `Integrantes`);
+    JOIN tmp_actores_eliminar t ON u.idUbicacion = t.idUbicacion
+    WHERE t.idUbicacion IS NOT NULL;
 
-    DELETE FROM `Actores`
-    WHERE idActor NOT IN (SELECT idActor FROM `Integrantes`);
+    DROP TEMPORARY TABLE IF EXISTS tmp_actores_eliminar;
 
-    -- 8. Eliminar membresías en actores donde no era dueño
+    -- 9. Eliminar membresías en actores donde no era dueño
     DELETE FROM `Integrantes` WHERE idUsuario = pIdUsuario;
 
-    -- 9. Eliminar asignaciones de moderación
+    -- 10. Eliminar asignaciones de moderación
     DELETE FROM `ModeradoresCategorias` WHERE idUsuario = pIdUsuario;
 
-    -- 10. Eliminar usuario
+    -- 11. Eliminar usuario
     DELETE FROM `Usuarios` WHERE idUsuario = pIdUsuario;
 END //
 

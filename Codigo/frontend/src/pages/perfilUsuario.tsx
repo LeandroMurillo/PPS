@@ -218,8 +218,16 @@ export default function PerfilUsuarioPage() {
 			notify.error('El nombre es obligatorio.');
 			return;
 		}
+		if (/\d/.test(nombre)) {
+			notify.error('El nombre no puede contener números.');
+			return;
+		}
 		if (!apellido.trim()) {
 			notify.error('El apellido es obligatorio.');
+			return;
+		}
+		if (/\d/.test(apellido)) {
+			notify.error('El apellido no puede contener números.');
 			return;
 		}
 		if (!fechaNacimiento) {
@@ -228,6 +236,10 @@ export default function PerfilUsuarioPage() {
 		}
 		if (!nacionalidad.trim()) {
 			notify.error('La nacionalidad es obligatoria.');
+			return;
+		}
+		if (/\d/.test(nacionalidad)) {
+			notify.error('La nacionalidad no puede contener números.');
 			return;
 		}
 		if (!cuil.trim() || !validarCUIL(cuil.trim())) {
@@ -502,10 +514,16 @@ export default function PerfilUsuarioPage() {
 												label="Nombre"
 												value={nombre}
 												onChange={(e) => setNombre(e.target.value)}
-												error={profileValidationAttempted && !nombre.trim()}
+												error={
+													profileValidationAttempted && (!nombre.trim() || /\d/.test(nombre))
+												}
 												helperText={
-													profileValidationAttempted && !nombre.trim()
-														? 'El nombre es obligatorio'
+													profileValidationAttempted
+														? !nombre.trim()
+															? 'El nombre es obligatorio'
+															: /\d/.test(nombre)
+																? 'El nombre no puede contener números'
+																: undefined
 														: undefined
 												}
 											/>
@@ -519,10 +537,17 @@ export default function PerfilUsuarioPage() {
 												label="Apellido"
 												value={apellido}
 												onChange={(e) => setApellido(e.target.value)}
-												error={profileValidationAttempted && !apellido.trim()}
+												error={
+													profileValidationAttempted &&
+													(!apellido.trim() || /\d/.test(apellido))
+												}
 												helperText={
-													profileValidationAttempted && !apellido.trim()
-														? 'El apellido es obligatorio'
+													profileValidationAttempted
+														? !apellido.trim()
+															? 'El apellido es obligatorio'
+															: /\d/.test(apellido)
+																? 'El apellido no puede contener números'
+																: undefined
 														: undefined
 												}
 											/>
@@ -587,10 +612,17 @@ export default function PerfilUsuarioPage() {
 												label="Nacionalidad"
 												value={nacionalidad}
 												onChange={(e) => setNacionalidad(e.target.value)}
-												error={profileValidationAttempted && !nacionalidad.trim()}
+												error={
+													profileValidationAttempted &&
+													(!nacionalidad.trim() || /\d/.test(nacionalidad))
+												}
 												helperText={
-													profileValidationAttempted && !nacionalidad.trim()
-														? 'La nacionalidad es obligatoria'
+													profileValidationAttempted
+														? !nacionalidad.trim()
+															? 'La nacionalidad es obligatoria'
+															: /\d/.test(nacionalidad)
+																? 'La nacionalidad no puede contener números'
+																: undefined
 														: undefined
 												}
 											/>
