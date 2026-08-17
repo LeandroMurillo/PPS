@@ -855,25 +855,191 @@ adminRouter.delete('/formularios/:idFormulario/preguntas/:idPregunta', (req, res
 
 // GET /api/admin/convocatorias
 adminRouter.get('/convocatorias', (req, res) => {
-	return res.json({ data: db.convocatorias });
+	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase().trim() : '';
+	const estado = typeof req.query.estado === 'string' ? req.query.estado : 'TODAS';
+	const limit = Number(req.query.limit) || 25;
+	const offset = Number(req.query.offset) || 0;
+
+	let filtered = db.convocatorias.map((c) => {
+		const isAbierta = new Date(c.fechaCierre) >= new Date();
+		const totalPostulaciones = db.postulaciones.filter((p) => p.idConvocatoria === c.id).length;
+		return {
+			idConvocatoria: c.id,
+			id: c.id,
+			titulo: c.titulo,
+			descripcion: c.descripcion,
+			fechaCreacion: c.fechaInicio || new Date().toISOString(),
+			fechaCierre: c.fechaCierre,
+			totalPostulaciones,
+			estado: isAbierta ? ('ABIERTA' as const) : ('CERRADA' as const),
+		};
+	});
+
+	if (busqueda) {
+		filtered = filtered.filter(
+			(c) => c.titulo.toLowerCase().includes(busqueda) || c.descripcion.toLowerCase().includes(busqueda),
+		);
+	}
+
+	if (estado === 'ABIERTA') {
+		filtered = filtered.filter((c) => c.estado === 'ABIERTA');
+	} else if (estado === 'CERRADA') {
+		filtered = filtered.filter((c) => c.estado === 'CERRADA');
+	}
+
+	const total = filtered.length;
+	const paginated = filtered.slice(offset, offset + limit);
+
+	return res.json({
+		data: paginated,
+		total,
+	});
+});
+
+// GET /api/admin/convocatorias/:id
+adminRouter.get('/convocatorias/:id', (req, res) => {
+	const id = Number(req.params.id);
+	const c = db.convocatorias.find((item) => item.id === id);
+
+	if (!c) {
+		return res.status(404).json({ error: { message: 'Convocatoria no encontrada.' } });
+	}
+
+	const isAbierta = new Date(c.fechaCierre) >= new Date();
+	const totalPostulaciones = db.postulaciones.filter((p) => p.idConvocatoria === id).length;
+
+	const postulantes = db.postulaciones
+		.filter((p) => p.idConvocatoria === id)
+		.map((p) => {
+			const actor = db.actores.find((a) => a.id === p.idActor);
+			const ownerId = actor?.idUsuarioDueno ?? p.idUsuario;
+			const user = db.usuarios.find((u) => u.id === ownerId);
+			const cat = actor ? db.categorias.find((item) => item.id === actor.idCategoria) : null;
+			const sub =
+				actor && actor.idSubcategoria
+					? db.subcategorias.find((item) => item.id === actor.idSubcategoria)
+					: null;
+
+			return {
+				idActor: p.idActor,
+				fechaPostulacion: p.fechaPostulacion,
+				nombreActor: actor ? actor.nombre : 'Actor Cultural',
+				fotoPerfilUrl: actor ? actor.foto : null,
+				estadoActor: actor ? actor.estado : 'A',
+				categoria: cat ? cat.nombre : 'General',
+				subcategoria: sub ? sub.nombre : null,
+				departamento: actor ? actor.ubicacion.departamento : null,
+				localidad: actor ? actor.ubicacion.localidad : null,
+				responsableNombre: user ? user.nombre : null,
+				responsableApellido: user ? user.apellido : null,
+				responsableEmail: user ? user.email : null,
+			};
+		});
+
+	return res.json({
+		data: {
+			idConvocatoria: c.id,
+			id: c.id,
+			titulo: c.titulo,
+			descripcion: c.descripcion,
+			fechaCreacion: c.fechaInicio || new Date().toISOString(),
+			fechaCierre: c.fechaCierre,
+			totalPostulaciones,
+			estado: isAbierta ? 'ABIERTA' : 'CERRADA',
+		},
+		postulantes,
+	});
 });
 
 // POST /api/admin/convocatorias
 adminRouter.post('/convocatorias', (req, res) => {
-	const attrs = req.body || {};
+	const { titulo, descripcion, fechaCierre } = req.body || {};
+
+	if (!titulo || !titulo.trim()) {
+		return res.status(400).json({ error: { message: 'El título es obligatorio.' } });
+	}
+
+	if (!descripcion || !descripcion.trim()) {
+		return res.status(400).json({ error: { message: 'La descripción es obligatoria.' } });
+	}
+
+	if (!fechaCierre) {
+		return res.status(400).json({ error: { message: 'La fecha de cierre es obligatoria.' } });
+	}
+
 	const newId = db.convocatorias.length + 1;
+	const isAbierta = new Date(fechaCierre) >= new Date();
+
 	const c: ConvocatoriaMock = {
 		id: newId,
-		titulo: attrs.titulo,
-		descripcion: attrs.descripcion,
-		requisitos: attrs.requisitos,
-		fechaInicio: attrs.fechaInicio ?? new Date().toISOString().split('T')[0],
-		fechaCierre: attrs.fechaCierre,
-		estado: attrs.estado ?? 'ABIERTA',
-		idCategoria: attrs.idCategoria ? Number(attrs.idCategoria) : null,
-		categoria: attrs.categoria ?? null,
+		titulo: titulo.trim(),
+		descripcion: descripcion.trim(),
+		fechaInicio: new Date().toISOString(),
+		fechaCierre: new Date(fechaCierre).toISOString(),
+		estado: isAbierta ? 'ABIERTA' : 'CERRADA',
 	};
 
 	db.convocatorias.push(c);
-	return res.status(201).json({ data: c });
+
+	return res.status(201).json({
+		mensaje: 'Convocatoria creada exitosamente.',
+		data: {
+			idConvocatoria: c.id,
+			id: c.id,
+			titulo: c.titulo,
+			descripcion: c.descripcion,
+			fechaCreacion: c.fechaInicio,
+			fechaCierre: c.fechaCierre,
+			totalPostulaciones: 0,
+			estado: c.estado,
+		},
+	});
+});
+
+// PUT /api/admin/convocatorias/:id
+adminRouter.put('/convocatorias/:id', (req, res) => {
+	const id = Number(req.params.id);
+	const { titulo, descripcion, fechaCierre } = req.body || {};
+
+	const c = db.convocatorias.find((item) => item.id === id);
+	if (!c) {
+		return res.status(404).json({ error: { message: 'Convocatoria no encontrada.' } });
+	}
+
+	if (titulo) c.titulo = titulo.trim();
+	if (descripcion) c.descripcion = descripcion.trim();
+	if (fechaCierre) c.fechaCierre = new Date(fechaCierre).toISOString();
+
+	const isAbierta = new Date(c.fechaCierre) >= new Date();
+	c.estado = isAbierta ? 'ABIERTA' : 'CERRADA';
+	const totalPostulaciones = db.postulaciones.filter((p) => p.idConvocatoria === id).length;
+
+	return res.json({
+		mensaje: 'Convocatoria actualizada exitosamente.',
+		data: {
+			idConvocatoria: c.id,
+			id: c.id,
+			titulo: c.titulo,
+			descripcion: c.descripcion,
+			fechaCreacion: c.fechaInicio || new Date().toISOString(),
+			fechaCierre: c.fechaCierre,
+			totalPostulaciones,
+			estado: c.estado,
+		},
+	});
+});
+
+// DELETE /api/admin/convocatorias/:id
+adminRouter.delete('/convocatorias/:id', (req, res) => {
+	const id = Number(req.params.id);
+	const cIndex = db.convocatorias.findIndex((item) => item.id === id);
+
+	if (cIndex === -1) {
+		return res.status(404).json({ error: { message: 'Convocatoria no encontrada.' } });
+	}
+
+	db.convocatorias.splice(cIndex, 1);
+	db.postulaciones = db.postulaciones.filter((p) => p.idConvocatoria !== id);
+
+	return res.json({ mensaje: 'Convocatoria eliminada exitosamente.' });
 });

@@ -4782,4 +4782,383 @@ BEGIN
     DELETE FROM `Usuarios` WHERE idUsuario = pIdUsuario;
 END //
 
+-- -----------------------------------------------------
+-- sp_convocatoria_listar_activas
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_listar_activas`(
+    IN pIdUsuario INT DEFAULT NULL
+)
+READS SQL DATA
+COMMENT 'Lista convocatorias activas (fecha de cierre en el futuro) con cantidad total de postulaciones y lista de actores del usuario que estan postulados.'
+BEGIN
+    -- 1. Lista de convocatorias activas con conteo total de postulaciones
+    SELECT
+        c.idConvocatoria,
+        c.titulo,
+        c.descripcion,
+        c.fechaCreacion,
+        c.fechaCierre,
+        COUNT(p.idActor) AS totalPostulaciones
+    FROM `Convocatorias` c
+    LEFT JOIN `Postulaciones` p ON c.idConvocatoria = p.idConvocatoria
+    WHERE c.fechaCierre >= NOW()
+    GROUP BY c.idConvocatoria, c.titulo, c.descripcion, c.fechaCreacion, c.fechaCierre
+    ORDER BY c.fechaCierre ASC;
+
+    -- 2. Postulaciones de los actores asociados al usuario autenticado (si se proporciona)
+    IF pIdUsuario IS NOT NULL THEN
+        SELECT
+            p.idConvocatoria,
+            p.idActor,
+            a.nombre AS nombreActor,
+            p.fechaPostulacion
+        FROM `Postulaciones` p
+        JOIN `Convocatorias` c ON p.idConvocatoria = c.idConvocatoria
+        JOIN `Actores` a ON p.idActor = a.idActor
+        JOIN `Integrantes` i ON a.idActor = i.idActor
+        WHERE i.idUsuario = pIdUsuario
+          AND c.fechaCierre >= NOW();
+    ELSE
+        SELECT 1 WHERE 1 = 0;
+    END IF;
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_listar_admin
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_listar_admin`(
+    IN pBusqueda VARCHAR(255) DEFAULT NULL,
+    IN pEstado VARCHAR(20) DEFAULT NULL,
+    IN pLimit INT DEFAULT 25,
+    IN pOffset INT DEFAULT 0
+)
+READS SQL DATA
+COMMENT 'Lista todas las convocatorias para el panel de administracion con filtros y paginacion.'
+BEGIN
+    DECLARE vLimit INT DEFAULT 25;
+    DECLARE vOffset INT DEFAULT 0;
+    DECLARE vBusqueda VARCHAR(255);
+
+    SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
+    SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
+    SET vBusqueda = NULLIF(TRIM(pBusqueda), '');
+
+    -- Total de registros coincidentes
+    SELECT COUNT(*) AS total
+    FROM `Convocatorias` c
+    WHERE (vBusqueda IS NULL OR c.titulo LIKE CONCAT('%', vBusqueda, '%') OR c.descripcion LIKE CONCAT('%', vBusqueda, '%'))
+      AND (
+          pEstado IS NULL OR pEstado = 'TODAS'
+          OR (pEstado = 'ABIERTA' AND c.fechaCierre >= NOW())
+          OR (pEstado = 'CERRADA' AND c.fechaCierre < NOW())
+      );
+
+    -- Registros paginados
+    SELECT
+        c.idConvocatoria,
+        c.titulo,
+        c.descripcion,
+        c.fechaCreacion,
+        c.fechaCierre,
+        CASE WHEN c.fechaCierre >= NOW() THEN 'ABIERTA' ELSE 'CERRADA' END AS estado,
+        COUNT(p.idActor) AS totalPostulaciones
+    FROM `Convocatorias` c
+    LEFT JOIN `Postulaciones` p ON c.idConvocatoria = p.idConvocatoria
+    WHERE (vBusqueda IS NULL OR c.titulo LIKE CONCAT('%', vBusqueda, '%') OR c.descripcion LIKE CONCAT('%', vBusqueda, '%'))
+      AND (
+          pEstado IS NULL OR pEstado = 'TODAS'
+          OR (pEstado = 'ABIERTA' AND c.fechaCierre >= NOW())
+          OR (pEstado = 'CERRADA' AND c.fechaCierre < NOW())
+      )
+    GROUP BY c.idConvocatoria, c.titulo, c.descripcion, c.fechaCreacion, c.fechaCierre
+    ORDER BY c.fechaCreacion DESC
+    LIMIT vLimit OFFSET vOffset;
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_obtener_detalle
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_obtener_detalle`(
+    IN pIdConvocatoria INT
+)
+READS SQL DATA
+COMMENT 'Obtiene los datos de una convocatoria y la lista completa de actores postulados.'
+BEGIN
+    -- 1. Detalle de la convocatoria
+    SELECT
+        c.idConvocatoria,
+        c.titulo,
+        c.descripcion,
+        c.fechaCreacion,
+        c.fechaCierre,
+        CASE WHEN c.fechaCierre >= NOW() THEN 'ABIERTA' ELSE 'CERRADA' END AS estado,
+        COUNT(p.idActor) AS totalPostulaciones
+    FROM `Convocatorias` c
+    LEFT JOIN `Postulaciones` p ON c.idConvocatoria = p.idConvocatoria
+    WHERE c.idConvocatoria = pIdConvocatoria
+    GROUP BY c.idConvocatoria, c.titulo, c.descripcion, c.fechaCreacion, c.fechaCierre;
+
+    -- 2. Lista de actores postulados
+    SELECT
+        p.idActor,
+        p.fechaPostulacion,
+        a.nombre AS nombreActor,
+        a.fotoPerfilUrl,
+        a.estado AS estadoActor,
+        cat.nombre AS categoria,
+        sub.nombre AS subcategoria,
+        u.departamento,
+        u.localidad,
+        usr.nombre AS responsableNombre,
+        usr.apellido AS responsableApellido,
+        usr.email AS responsableEmail
+    FROM `Postulaciones` p
+    JOIN `Actores` a ON p.idActor = a.idActor
+    JOIN `Categorias` cat ON a.idCategoria = cat.idCategoria
+    LEFT JOIN `Subcategorias` sub ON a.idSubcategoria = sub.idSubcategoria
+    LEFT JOIN `Ubicaciones` u ON a.idUbicacion = u.idUbicacion
+    LEFT JOIN `Integrantes` i ON a.idActor = i.idActor AND i.rol = 'Dueño'
+    LEFT JOIN `Usuarios` usr ON i.idUsuario = usr.idUsuario
+    WHERE p.idConvocatoria = pIdConvocatoria
+    ORDER BY p.fechaPostulacion DESC;
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_crear
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_crear`(
+    IN pTitulo VARCHAR(145),
+    IN pDescripcion VARCHAR(445),
+    IN pFechaCierre DATETIME,
+    OUT pIdConvocatoria INT
+)
+MODIFIES SQL DATA
+COMMENT 'Crea una nueva convocatoria cultural validando fechas y titulo unico.'
+BEGIN
+    DECLARE vTitulo VARCHAR(145);
+    DECLARE vDescripcion VARCHAR(445);
+
+    SET vTitulo = TRIM(pTitulo);
+    SET vDescripcion = TRIM(pDescripcion);
+
+    IF vTitulo IS NULL OR vTitulo = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El título de la convocatoria es obligatorio.';
+    END IF;
+
+    IF vDescripcion IS NULL OR vDescripcion = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La descripción de la convocatoria es obligatoria.';
+    END IF;
+
+    IF pFechaCierre IS NULL OR pFechaCierre <= NOW() THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La fecha de cierre debe ser una fecha futura.';
+    END IF;
+
+    INSERT INTO `Convocatorias` (`titulo`, `descripcion`, `fechaCierre`)
+    VALUES (vTitulo, vDescripcion, pFechaCierre);
+
+    SET pIdConvocatoria = LAST_INSERT_ID();
+
+    SELECT
+        c.idConvocatoria,
+        c.titulo,
+        c.descripcion,
+        c.fechaCreacion,
+        c.fechaCierre,
+        'ABIERTA' AS estado,
+        0 AS totalPostulaciones
+    FROM `Convocatorias` c
+    WHERE c.idConvocatoria = pIdConvocatoria;
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_editar
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_editar`(
+    IN pIdConvocatoria INT,
+    IN pTitulo VARCHAR(145),
+    IN pDescripcion VARCHAR(445),
+    IN pFechaCierre DATETIME
+)
+MODIFIES SQL DATA
+COMMENT 'Modifica los datos de una convocatoria existente.'
+BEGIN
+    DECLARE vTitulo VARCHAR(145);
+    DECLARE vDescripcion VARCHAR(445);
+    DECLARE vExiste INT;
+
+    SET vTitulo = TRIM(pTitulo);
+    SET vDescripcion = TRIM(pDescripcion);
+
+    SELECT COUNT(*) INTO vExiste
+    FROM `Convocatorias`
+    WHERE idConvocatoria = pIdConvocatoria;
+
+    IF vExiste = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La convocatoria no existe.';
+    END IF;
+
+    IF vTitulo IS NULL OR vTitulo = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El título de la convocatoria es obligatorio.';
+    END IF;
+
+    IF vDescripcion IS NULL OR vDescripcion = '' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La descripción de la convocatoria es obligatoria.';
+    END IF;
+
+    IF pFechaCierre IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La fecha de cierre es obligatoria.';
+    END IF;
+
+    UPDATE `Convocatorias`
+    SET `titulo` = vTitulo,
+        `descripcion` = vDescripcion,
+        `fechaCierre` = pFechaCierre
+    WHERE idConvocatoria = pIdConvocatoria;
+
+    SELECT
+        c.idConvocatoria,
+        c.titulo,
+        c.descripcion,
+        c.fechaCreacion,
+        c.fechaCierre,
+        CASE WHEN c.fechaCierre >= NOW() THEN 'ABIERTA' ELSE 'CERRADA' END AS estado,
+        COUNT(p.idActor) AS totalPostulaciones
+    FROM `Convocatorias` c
+    LEFT JOIN `Postulaciones` p ON c.idConvocatoria = p.idConvocatoria
+    WHERE c.idConvocatoria = pIdConvocatoria
+    GROUP BY c.idConvocatoria, c.titulo, c.descripcion, c.fechaCreacion, c.fechaCierre;
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_eliminar
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_eliminar`(
+    IN pIdConvocatoria INT
+)
+MODIFIES SQL DATA
+COMMENT 'Elimina una convocatoria y sus postulaciones asociadas.'
+BEGIN
+    DECLARE vExiste INT;
+
+    SELECT COUNT(*) INTO vExiste
+    FROM `Convocatorias`
+    WHERE idConvocatoria = pIdConvocatoria;
+
+    IF vExiste = 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La convocatoria no existe.';
+    END IF;
+
+    -- Eliminar postulaciones vinculadas
+    DELETE FROM `Postulaciones` WHERE idConvocatoria = pIdConvocatoria;
+
+    -- Eliminar convocatoria
+    DELETE FROM `Convocatorias` WHERE idConvocatoria = pIdConvocatoria;
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_postular_actor
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_postular_actor`(
+    IN pIdConvocatoria INT,
+    IN pIdActor INT,
+    IN pIdUsuario INT
+)
+MODIFIES SQL DATA
+COMMENT 'Postula un actor cultural a una convocatoria activa verificando pertenencia.'
+BEGIN
+    DECLARE vCerrada INT DEFAULT 0;
+    DECLARE vEsMiembro INT DEFAULT 0;
+    DECLARE vYaPostulado INT DEFAULT 0;
+    DECLARE vRolUsuario VARCHAR(20);
+
+    -- 1. Verificar si la convocatoria existe y esta abierta
+    SELECT CASE WHEN fechaCierre < NOW() THEN 1 ELSE 0 END INTO vCerrada
+    FROM `Convocatorias`
+    WHERE idConvocatoria = pIdConvocatoria;
+
+    IF vCerrada IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La convocatoria no existe.';
+    END IF;
+
+    IF vCerrada = 1 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La convocatoria ya se encuentra cerrada y no recibe más postulaciones.';
+    END IF;
+
+    -- 2. Obtener rol del usuario
+    SELECT rol INTO vRolUsuario
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario;
+
+    -- 3. Verificar que el usuario tenga permisos sobre el actor (sea miembro o admin)
+    IF vRolUsuario NOT IN ('ADMIN', 'MODERADOR') THEN
+        SELECT COUNT(*) INTO vEsMiembro
+        FROM `Integrantes`
+        WHERE idActor = pIdActor AND idUsuario = pIdUsuario;
+
+        IF vEsMiembro = 0 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para postular este actor cultural.';
+        END IF;
+    END IF;
+
+    -- 4. Verificar si ya esta postulado
+    SELECT COUNT(*) INTO vYaPostulado
+    FROM `Postulaciones`
+    WHERE idConvocatoria = pIdConvocatoria AND idActor = pIdActor;
+
+    IF vYaPostulado > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Este actor cultural ya se encuentra postulado a esta convocatoria.';
+    END IF;
+
+    INSERT INTO `Postulaciones` (`idConvocatoria`, `idActor`, `fechaPostulacion`)
+    VALUES (pIdConvocatoria, pIdActor, NOW());
+END //
+
+-- -----------------------------------------------------
+-- sp_convocatoria_cancelar_postulacion
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_convocatoria_cancelar_postulacion`(
+    IN pIdConvocatoria INT,
+    IN pIdActor INT,
+    IN pIdUsuario INT
+)
+MODIFIES SQL DATA
+COMMENT 'Cancela la postulación de un actor a una convocatoria.'
+BEGIN
+    DECLARE vCerrada INT DEFAULT 0;
+    DECLARE vEsMiembro INT DEFAULT 0;
+    DECLARE vRolUsuario VARCHAR(20);
+
+    -- 1. Verificar si la convocatoria existe y esta abierta
+    SELECT CASE WHEN fechaCierre < NOW() THEN 1 ELSE 0 END INTO vCerrada
+    FROM `Convocatorias`
+    WHERE idConvocatoria = pIdConvocatoria;
+
+    IF vCerrada IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La convocatoria no existe.';
+    END IF;
+
+    IF vCerrada = 1 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No es posible cancelar la postulación porque la convocatoria ya cerró.';
+    END IF;
+
+    -- 2. Obtener rol del usuario
+    SELECT rol INTO vRolUsuario
+    FROM `Usuarios`
+    WHERE idUsuario = pIdUsuario;
+
+    -- 3. Verificar que el usuario tenga permisos sobre el actor (sea miembro o admin)
+    IF vRolUsuario NOT IN ('ADMIN', 'MODERADOR') THEN
+        SELECT COUNT(*) INTO vEsMiembro
+        FROM `Integrantes`
+        WHERE idActor = pIdActor AND idUsuario = pIdUsuario;
+
+        IF vEsMiembro = 0 THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para gestionar este actor cultural.';
+        END IF;
+    END IF;
+
+    DELETE FROM `Postulaciones`
+    WHERE idConvocatoria = pIdConvocatoria AND idActor = pIdActor;
+END //
+
 DELIMITER ;
