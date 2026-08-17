@@ -39,6 +39,8 @@ export type CambiarContrasenaResponse = {
 export type EliminarCuentaResponse = {
 	mensaje: string;
 	actoresEliminadosCount: number;
+	archivosEliminadosCount: number;
+	archivosNoEliminadosCount: number;
 };
 
 export async function obtenerPerfilUsuarioApi(): Promise<PerfilUsuarioData> {

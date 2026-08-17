@@ -335,7 +335,11 @@ export default function PerfilUsuarioPage() {
 			const res = await eliminarCuentaUsuarioApi();
 			setDeleteModalOpen(false);
 			logout();
-			notify.info(res.mensaje || 'Tu cuenta ha sido eliminada.', { scope: 'cuenta' });
+			if (res.archivosNoEliminadosCount > 0) {
+				notify.warning(res.mensaje, { scope: 'cuenta' });
+			} else {
+				notify.info(res.mensaje || 'Tu cuenta ha sido eliminada.', { scope: 'cuenta' });
+			}
 			navigate('/login');
 		} catch (err) {
 			console.error('Error al eliminar cuenta:', err);

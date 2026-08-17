@@ -4909,9 +4909,18 @@ CREATE OR REPLACE PROCEDURE `sp_usuario_eliminar_cuenta`(
     IN pIdUsuario INT
 )
 MODIFIES SQL DATA
-COMMENT 'Elimina la cuenta del usuario autenticado y en cascada todos los actores culturales de los que es dueño principal.'
+COMMENT 'Elimina físicamente una cuenta y devuelve el manifiesto de archivos personales locales que quedaron sin referencias.'
 BEGIN
     DECLARE vExiste INT DEFAULT 0;
+	DECLARE vActoresEliminadosCount INT DEFAULT 0;
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		ROLLBACK;
+		DROP TEMPORARY TABLE IF EXISTS tmp_archivos_eliminar;
+		DROP TEMPORARY TABLE IF EXISTS tmp_actores_eliminar;
+		RESIGNAL;
+	END;
 
     SELECT COUNT(*) INTO vExiste
     FROM `Usuarios`
@@ -4921,18 +4930,49 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o ya fue eliminado.';
     END IF;
 
-    -- Tabla temporal para almacenar los actores propios y sus ubicaciones asociadas
     CREATE TEMPORARY TABLE IF NOT EXISTS tmp_actores_eliminar (
         idActor INT PRIMARY KEY,
         idUbicacion INT
     );
     TRUNCATE TABLE tmp_actores_eliminar;
 
+	CREATE TEMPORARY TABLE IF NOT EXISTS tmp_archivos_eliminar (
+		tipo VARCHAR(30) NOT NULL,
+		url VARCHAR(500) NOT NULL
+	);
+	TRUNCATE TABLE tmp_archivos_eliminar;
+
+	START TRANSACTION;
+
     INSERT INTO tmp_actores_eliminar (idActor, idUbicacion)
     SELECT a.idActor, a.idUbicacion
     FROM `Actores` a
     JOIN `Integrantes` i ON a.idActor = i.idActor
     WHERE i.idUsuario = pIdUsuario AND i.esDueño = 1;
+
+	SELECT COUNT(*) INTO vActoresEliminadosCount
+	FROM tmp_actores_eliminar;
+
+	INSERT INTO tmp_archivos_eliminar (tipo, url)
+	SELECT 'DNI', u.fotoDniUrl
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuario
+	  AND u.fotoDniUrl IS NOT NULL
+	  AND TRIM(u.fotoDniUrl) <> '';
+
+	INSERT INTO tmp_archivos_eliminar (tipo, url)
+	SELECT 'ACTOR_PERFIL', a.fotoPerfilUrl
+	FROM `Actores` a
+	JOIN tmp_actores_eliminar t ON t.idActor = a.idActor
+	WHERE a.fotoPerfilUrl IS NOT NULL
+	  AND TRIM(a.fotoPerfilUrl) <> '';
+
+	INSERT INTO tmp_archivos_eliminar (tipo, url)
+	SELECT 'ACTOR_PORTAFOLIO', ip.url
+	FROM `ItemsPortafolio` ip
+	JOIN tmp_actores_eliminar t ON t.idActor = ip.idActor
+	WHERE ip.tipo = 'IMAGEN'
+	  AND TRIM(ip.url) <> '';
 
     -- 1. Eliminar respuestas a formularios de los actores propios
     DELETE r FROM `Respuestas` r
@@ -4967,8 +5007,6 @@ BEGIN
     JOIN tmp_actores_eliminar t ON u.idUbicacion = t.idUbicacion
     WHERE t.idUbicacion IS NOT NULL;
 
-    DROP TEMPORARY TABLE IF EXISTS tmp_actores_eliminar;
-
     -- 9. Eliminar membresías en actores donde no era dueño
     DELETE FROM `Integrantes` WHERE idUsuario = pIdUsuario;
 
@@ -4977,6 +5015,25 @@ BEGIN
 
     -- 11. Eliminar usuario
     DELETE FROM `Usuarios` WHERE idUsuario = pIdUsuario;
+
+	COMMIT;
+
+	SELECT vActoresEliminadosCount AS actoresEliminadosCount;
+
+	SELECT DISTINCT archivos.tipo, archivos.url
+	FROM tmp_archivos_eliminar archivos
+	WHERE NOT EXISTS (
+		SELECT 1 FROM `Usuarios` u WHERE u.fotoDniUrl = archivos.url
+	)
+	AND NOT EXISTS (
+		SELECT 1 FROM `Actores` a WHERE a.fotoPerfilUrl = archivos.url
+	)
+	AND NOT EXISTS (
+		SELECT 1 FROM `ItemsPortafolio` ip WHERE ip.url = archivos.url
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS tmp_archivos_eliminar;
+	DROP TEMPORARY TABLE IF EXISTS tmp_actores_eliminar;
 END //
 
 -- -----------------------------------------------------

@@ -6,6 +6,7 @@ import {
 	obtenerPerfilUsuarioRepository,
 } from './usuario.repository.js';
 import type { ActualizarPerfilBody, CambiarContraseñaBody, PerfilUsuario } from './usuario.schemas.js';
+import { eliminarArchivosPersonalesUsuario } from './usuario-files.service.js';
 
 export async function obtenerPerfilUsuarioService(idUsuario: number): Promise<PerfilUsuario> {
 	const user = await obtenerPerfilUsuarioRepository(idUsuario);
@@ -76,16 +77,28 @@ export async function cambiarContraseñaUsuarioService(
 
 export async function eliminarCuentaUsuarioService(
 	idUsuario: number,
-): Promise<{ mensaje: string; actoresEliminadosCount: number }> {
+): Promise<{
+	mensaje: string;
+	actoresEliminadosCount: number;
+	archivosEliminadosCount: number;
+	archivosNoEliminadosCount: number;
+}> {
 	const user = await obtenerPerfilUsuarioRepository(idUsuario);
 	if (!user) {
 		throw new Error('USUARIO_NO_ENCONTRADO');
 	}
 
 	const result = await eliminarCuentaUsuarioRepository(idUsuario);
+	const filesResult = eliminarArchivosPersonalesUsuario(result.archivos);
+	const archivosNoEliminadosCount = filesResult.fallidos;
 
 	return {
-		mensaje: 'Tu cuenta y todos tus actores asociados han sido eliminados correctamente.',
+		mensaje:
+			archivosNoEliminadosCount === 0
+				? 'Tu cuenta, tus actores asociados y sus archivos personales han sido eliminados correctamente.'
+				: `Tu cuenta fue eliminada, pero ${archivosNoEliminadosCount} archivo(s) personal(es) no pudieron eliminarse físicamente.`,
 		actoresEliminadosCount: result.actoresEliminadosCount,
+		archivosEliminadosCount: filesResult.eliminados,
+		archivosNoEliminadosCount,
 	};
 }

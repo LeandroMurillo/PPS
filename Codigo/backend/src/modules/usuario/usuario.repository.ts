@@ -14,6 +14,17 @@ const databaseIntegerSchema = z
 	})
 	.transform((value) => Number(value));
 
+const cuentaEliminadaRowSchema = z.object({
+	actoresEliminadosCount: databaseIntegerSchema,
+});
+
+const archivoPersonalRowSchema = z.object({
+	tipo: z.enum(['DNI', 'ACTOR_PERFIL', 'ACTOR_PORTAFOLIO']),
+	url: z.string(),
+});
+
+export type ArchivoPersonalUsuario = z.infer<typeof archivoPersonalRowSchema>;
+
 const perfilUsuarioDBRowSchema = z.object({
 	idUsuario: databaseIntegerSchema,
 	nombre: z.string(),
@@ -111,12 +122,19 @@ export async function actualizarContraseñaUsuarioRepository(
 	await pool.query('CALL sp_usuario_actualizar_contrasena(?, ?)', [idUsuario, nuevaContraseñaHash]);
 }
 
-export async function eliminarCuentaUsuarioRepository(idUsuario: number): Promise<{ actoresEliminadosCount: number }> {
-	// Obtenemos la cantidad de actores que poseía antes de eliminar para feedback
-	const user = await obtenerPerfilUsuarioRepository(idUsuario);
-	const actoresEliminadosCount = user?.actoresDuenoCount ?? 0;
+export async function eliminarCuentaUsuarioRepository(
+	idUsuario: number,
+): Promise<{ actoresEliminadosCount: number; archivos: ArchivoPersonalUsuario[] }> {
+	const procedureName = 'sp_usuario_eliminar_cuenta';
+	const result: unknown = await pool.query('CALL sp_usuario_eliminar_cuenta(?)', [idUsuario]);
+	const summary = z.array(cuentaEliminadaRowSchema).parse(getResultSet(result, 0, procedureName))[0];
 
-	await pool.query('CALL sp_usuario_eliminar_cuenta(?)', [idUsuario]);
+	if (!summary) {
+		throw new Error(`${procedureName} no devolvió el resumen de la eliminación`);
+	}
 
-	return { actoresEliminadosCount };
+	return {
+		actoresEliminadosCount: summary.actoresEliminadosCount,
+		archivos: z.array(archivoPersonalRowSchema).parse(getResultSet(result, 1, procedureName)),
+	};
 }
