@@ -473,7 +473,7 @@ export async function cambiarEstadoActorService(input: {
 	nuevoEstado: 'A' | 'P' | 'I';
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }) {
-	const esAdmin = input.userRol === 'ADMIN';
+	const esAdmin = input.userRol === 'ADMIN' || input.userRol === 'MODERADOR';
 
 	if (input.nuevoEstado === 'A' && !esAdmin) {
 		throw new Error('La activación debe realizarse desde el panel de moderación.');
