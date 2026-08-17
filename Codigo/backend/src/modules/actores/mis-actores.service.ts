@@ -386,7 +386,7 @@ export async function editarActorService(input: {
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 	respuestas?: { idFormulario: number; idPregunta: number; valor: unknown }[] | undefined;
 }) {
-	const esAdmin = input.userRol === 'ADMIN' || input.userRol === 'MODERADOR';
+	const esAdmin = input.userRol === 'ADMIN';
 
 	const respuestas = input.respuestas;
 	if (respuestas && respuestas.length > 0) {
@@ -473,10 +473,10 @@ export async function cambiarEstadoActorService(input: {
 	nuevoEstado: 'A' | 'P' | 'I';
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }) {
-	const esAdmin = input.userRol === 'ADMIN' || input.userRol === 'MODERADOR';
+	const esAdmin = input.userRol === 'ADMIN';
 
 	if (input.nuevoEstado === 'A' && !esAdmin) {
-		throw new Error('Solo los administradores o moderadores pueden activar un actor.');
+		throw new Error('La activación debe realizarse desde el panel de moderación.');
 	}
 
 	await cambiarEstadoActorRepository({
@@ -492,7 +492,7 @@ export async function eliminarActorService(input: {
 	idActor: number;
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }) {
-	const esAdmin = input.userRol === 'ADMIN' || input.userRol === 'MODERADOR';
+	const esAdmin = input.userRol === 'ADMIN';
 
 	await eliminarActorRepository({
 		idUsuario: input.idUsuario,

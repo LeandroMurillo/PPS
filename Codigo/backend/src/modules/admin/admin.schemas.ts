@@ -251,6 +251,20 @@ export const usuarioAdminProtegidoResponseSchema = z.object({
 	}),
 });
 
+export const usuarioAutoBajaProtegidoResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('SELF_STATE_CHANGE_NOT_ALLOWED'),
+		message: z.string(),
+	}),
+});
+
+export const usuarioModeradorProtegidoResponseSchema = z.object({
+	error: z.object({
+		code: z.literal('MODERATOR_USER_PROTECTED'),
+		message: z.string(),
+	}),
+});
+
 export const actorAdminSchema = z.object({
 	id: z.number().int().positive(),
 	nombre: z.string(),

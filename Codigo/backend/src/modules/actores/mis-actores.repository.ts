@@ -49,18 +49,6 @@ const opcionRegistroRowSchema = z.object({
 	subcategoria: z.string().nullable(),
 });
 
-const categoriaRegistroDatabaseRowSchema = z.object({
-	idCategoria: databaseIntegerSchema,
-	nombre: z.string(),
-	icono: categoriaIconoSchema,
-});
-
-const subcategoriaRegistroDatabaseRowSchema = z.object({
-	idCategoria: databaseIntegerSchema,
-	id: databaseIntegerSchema,
-	nombre: z.string(),
-});
-
 const tipoPreguntaSchema = z.enum([
 	'TEXTO',
 	'NUMERO',
@@ -179,44 +167,10 @@ function parseOpcionesPregunta(value: string | string[] | null): string[] | null
 }
 
 export async function obtenerOpcionesRegistroRepository() {
-	const categoriasResult: unknown = await pool.query(
-		"CALL sp_admin_listar_categorias(NULL, 'A', 100, 0, 'nombre', 'ASC')",
-	);
-	const categorias = z
-		.array(categoriaRegistroDatabaseRowSchema)
-		.parse(getResultSet(categoriasResult, 1, 'sp_admin_listar_categorias'));
+	const procedureName = 'sp_actor_listar_opciones_registro';
+	const result: unknown = await pool.query('CALL sp_actor_listar_opciones_registro()');
 
-	const categoriasConSubcategorias = await Promise.all(
-		categorias.map(async (categoria) => {
-			const subcategoriasResult: unknown = await pool.query(
-				"CALL sp_admin_listar_subcategorias(?, NULL, 'A', 100, 0, 'nombre', 'ASC')",
-				[categoria.idCategoria],
-			);
-			const subcategorias = z
-				.array(subcategoriaRegistroDatabaseRowSchema)
-				.parse(getResultSet(subcategoriasResult, 1, 'sp_admin_listar_subcategorias'));
-
-			return subcategorias.length > 0
-				? subcategorias.map((subcategoria) => ({
-						idCategoria: categoria.idCategoria,
-						categoria: categoria.nombre,
-						icono: categoria.icono,
-						idSubcategoria: subcategoria.id,
-						subcategoria: subcategoria.nombre,
-					}))
-				: [
-						{
-							idCategoria: categoria.idCategoria,
-							categoria: categoria.nombre,
-							icono: categoria.icono,
-							idSubcategoria: null,
-							subcategoria: null,
-						},
-					];
-		}),
-	);
-
-	return z.array(opcionRegistroRowSchema).parse(categoriasConSubcategorias.flat());
+	return z.array(opcionRegistroRowSchema).parse(getResultSet(result, 0, procedureName));
 }
 
 export async function obtenerFormulariosAplicablesRepository(input: {

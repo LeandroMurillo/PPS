@@ -47,6 +47,8 @@ import {
 	usuarioAdminNoEncontradoResponseSchema,
 	usuarioAdminParamsSchema,
 	usuarioAdminProtegidoResponseSchema,
+	usuarioAutoBajaProtegidoResponseSchema,
+	usuarioModeradorProtegidoResponseSchema,
 } from './admin.schemas.js';
 
 export function registerAdminOpenApi(): void {
@@ -125,8 +127,16 @@ export function registerAdminOpenApi(): void {
 				content: { 'application/json': { schema: usuarioAdminNoEncontradoResponseSchema } },
 			},
 			409: {
-				description: 'Los administradores no pueden cambiar de estado.',
-				content: { 'application/json': { schema: usuarioAdminProtegidoResponseSchema } },
+				description: 'No se puede cambiar el estado propio ni el de un administrador.',
+				content: {
+					'application/json': {
+						schema: z.union([usuarioAdminProtegidoResponseSchema, usuarioAutoBajaProtegidoResponseSchema]),
+					},
+				},
+			},
+			403: {
+				description: 'Un moderador no puede cambiar el estado de otro moderador.',
+				content: { 'application/json': { schema: usuarioModeradorProtegidoResponseSchema } },
 			},
 			500: {
 				description: 'Error interno al actualizar el estado.',

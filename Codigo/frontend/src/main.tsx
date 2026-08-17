@@ -69,6 +69,7 @@ function RootErrorBoundary() {
 }
 
 const ADMIN_ROLES: ('ADMIN' | 'MODERADOR')[] = ['ADMIN', 'MODERADOR'];
+const ONLY_ADMIN: 'ADMIN'[] = ['ADMIN'];
 
 const router = createBrowserRouter([
 	{
@@ -178,7 +179,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriasPage />
 							</ProtectedRoute>
 						),
@@ -186,7 +187,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias/new',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriasPage />
 							</ProtectedRoute>
 						),
@@ -194,7 +195,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias/:categoriaSlug/formulario',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriaFormularioPage />
 							</ProtectedRoute>
 						),
@@ -202,7 +203,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias/:categoriaSlug/subcategorias/:subcategoriaSlug/formulario',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriaFormularioPage />
 							</ProtectedRoute>
 						),
@@ -210,7 +211,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias/:categoriaSlug',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriaDetallePage />
 							</ProtectedRoute>
 						),
@@ -218,7 +219,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias/:categoriaSlug/subcategorias',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminSubcategoriasPage />
 							</ProtectedRoute>
 						),
@@ -226,7 +227,7 @@ const router = createBrowserRouter([
 					{
 						path: 'categorias/*',
 						element: (
-							<ProtectedRoute allowedRoles={ADMIN_ROLES}>
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriasPage />
 							</ProtectedRoute>
 						),

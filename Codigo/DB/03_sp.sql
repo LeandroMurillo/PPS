@@ -189,16 +189,36 @@ END //
 -- sp_admin_cambiar_estado_usuario
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_cambiar_estado_usuario`(
+	IN pIdUsuarioSolicitante INT,
     IN pIdUsuario INT,
     IN pEstado CHAR(1)
 )
 MODIFIES SQL DATA
-COMMENT 'Da de baja o reactiva un usuario estableciendo su estado en I o A. Los administradores no pueden cambiar de estado.'
+COMMENT 'Cambia el estado de un usuario respetando la jerarquía entre administradores, moderadores y usuarios.'
 BEGIN
+	DECLARE vRolSolicitante VARCHAR(20);
+	DECLARE vRolObjetivo VARCHAR(20);
+
+	SELECT u.rol
+	INTO vRolSolicitante
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuarioSolicitante
+	  AND u.estado = 'A';
+
+	IF vRolSolicitante IS NULL OR vRolSolicitante NOT IN ('ADMIN', 'MODERADOR') THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'El usuario solicitante no tiene permisos de administración.';
+	END IF;
+
     IF pIdUsuario IS NULL OR pIdUsuario <= 0 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'El identificador del usuario no es válido.';
     END IF;
+
+	IF pIdUsuarioSolicitante = pIdUsuario THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'No se puede cambiar el estado de la propia cuenta.';
+	END IF;
 
     IF pEstado NOT IN ('A', 'I') THEN
         SIGNAL SQLSTATE '45000'
@@ -214,15 +234,20 @@ BEGIN
             SET MESSAGE_TEXT = 'El usuario solicitado no existe.';
     END IF;
 
-    IF EXISTS (
-        SELECT 1
-        FROM `Usuarios`
-        WHERE idUsuario = pIdUsuario
-          AND rol = 'ADMIN'
-    ) THEN
+	SELECT u.rol
+	INTO vRolObjetivo
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuario;
+
+	IF vRolObjetivo = 'ADMIN' THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'No se puede cambiar el estado de un usuario administrador.';
     END IF;
+
+	IF vRolSolicitante = 'MODERADOR' AND vRolObjetivo = 'MODERADOR' THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Un moderador no puede cambiar el estado de otro moderador.';
+	END IF;
 
     UPDATE `Usuarios`
     SET estado = pEstado
@@ -333,12 +358,26 @@ END //
 -- sp_admin_cambiar_estado_actores
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_cambiar_estado_actores`(
+	IN pIdUsuarioSolicitante INT,
     IN pIdsActores JSON,
     IN pEstado CHAR(1)
 )
 MODIFIES SQL DATA
-COMMENT 'Da de baja o reactiva uno o más actores estableciendo su estado en I o A.'
+COMMENT 'Da de baja o reactiva actores. Los moderadores solo pueden operar sobre sus categorías asignadas.'
 BEGIN
+	DECLARE vRolSolicitante VARCHAR(20);
+
+	SELECT u.rol
+	INTO vRolSolicitante
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuarioSolicitante
+	  AND u.estado = 'A';
+
+	IF vRolSolicitante IS NULL OR vRolSolicitante NOT IN ('ADMIN', 'MODERADOR') THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'El usuario solicitante no tiene permisos de administración.';
+	END IF;
+
     IF pIdsActores IS NULL
        OR pIdsActores IS NOT JSON ARRAY
        OR JSON_LENGTH(pIdsActores) = 0
@@ -370,6 +409,25 @@ BEGIN
             SET MESSAGE_TEXT = 'Todos los actores seleccionados deben existir.';
     END IF;
 
+	IF vRolSolicitante = 'MODERADOR' AND EXISTS (
+		SELECT 1
+		FROM JSON_TABLE(
+			pIdsActores,
+			'$[*]' COLUMNS (
+				idActor INT PATH '$'
+			)
+		) ids
+		INNER JOIN `Actores` a
+			ON a.idActor = ids.idActor
+		LEFT JOIN `ModeradoresCategorias` mc
+			ON mc.idUsuario = pIdUsuarioSolicitante
+		   AND mc.idCategoria = a.idCategoria
+		WHERE mc.idCategoria IS NULL
+	) THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'No puede moderar actores de categorías que no tiene asignadas.';
+	END IF;
+
     UPDATE `Actores` a
     INNER JOIN (
         SELECT DISTINCT ids.idActor
@@ -390,6 +448,7 @@ END //
 -- sp_admin_listar_actores
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_listar_actores`(
+	IN pIdUsuarioSolicitante INT,
     IN pBusqueda VARCHAR(255) DEFAULT NULL,
     IN pIdCategoria INT DEFAULT NULL,
     IN pDepartamento VARCHAR(100) DEFAULT NULL,
@@ -401,12 +460,24 @@ CREATE OR REPLACE PROCEDURE `sp_admin_listar_actores`(
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
 )
 READS SQL DATA
-COMMENT 'Lista actores culturales para administración aplicando búsqueda, filtros opcionales por categoría, departamento, tipo de actor y estado, ordenamiento controlado y paginación. Incluye actores sin subcategoría y devuelve el total de coincidencias y la página de actores.'
+COMMENT 'Lista actores para administración. Los moderadores solo ven actores de sus categorías asignadas.'
 BEGIN
+	DECLARE vRolSolicitante VARCHAR(20);
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
     DECLARE vSortBy VARCHAR(50) DEFAULT 'idActor';
     DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+
+	SELECT u.rol
+	INTO vRolSolicitante
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuarioSolicitante
+	  AND u.estado = 'A';
+
+	IF vRolSolicitante IS NULL OR vRolSolicitante NOT IN ('ADMIN', 'MODERADOR') THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'El usuario solicitante no tiene permisos de administración.';
+	END IF;
 
     SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
     SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
@@ -454,6 +525,16 @@ BEGIN
     INNER JOIN `Ubicaciones` ub
         ON ub.idUbicacion = a.idUbicacion
     WHERE
+		(
+			vRolSolicitante = 'ADMIN'
+			OR EXISTS (
+				SELECT 1
+				FROM `ModeradoresCategorias` mc
+				WHERE mc.idUsuario = pIdUsuarioSolicitante
+				  AND mc.idCategoria = a.idCategoria
+			)
+		)
+		AND
         (
             pBusqueda IS NULL
             OR TRIM(pBusqueda) = ''
@@ -528,6 +609,16 @@ BEGIN
     INNER JOIN `Ubicaciones` ub
         ON ub.idUbicacion = a.idUbicacion
     WHERE
+		(
+			vRolSolicitante = 'ADMIN'
+			OR EXISTS (
+				SELECT 1
+				FROM `ModeradoresCategorias` mc
+				WHERE mc.idUsuario = pIdUsuarioSolicitante
+				  AND mc.idCategoria = a.idCategoria
+			)
+		)
+		AND
         (
             pBusqueda IS NULL
             OR TRIM(pBusqueda) = ''
@@ -589,16 +680,45 @@ END //
 -- sp_admin_obtener_actor
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_obtener_actor`(
+	IN pIdUsuarioSolicitante INT,
     IN pIdActor INT
 )
 READS SQL DATA
-COMMENT 'Obtiene el perfil administrativo de un actor cultural sin restringir su estado. Devuelve datos generales, integrantes y elementos del portafolio.'
+COMMENT 'Obtiene el perfil administrativo de un actor si pertenece al alcance de moderación del solicitante.'
 BEGIN
+	DECLARE vRolSolicitante VARCHAR(20);
+	DECLARE vPuedeAcceder TINYINT DEFAULT 0;
+
+	SELECT u.rol
+	INTO vRolSolicitante
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuarioSolicitante
+	  AND u.estado = 'A';
+
+	IF vRolSolicitante IS NULL OR vRolSolicitante NOT IN ('ADMIN', 'MODERADOR') THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'El usuario solicitante no tiene permisos de administración.';
+	END IF;
+
     IF pIdActor IS NULL OR pIdActor <= 0 THEN
         SIGNAL SQLSTATE '45000'
             SET MYSQL_ERRNO = 1644,
                 MESSAGE_TEXT = 'pIdActor debe ser un entero positivo';
     END IF;
+
+	SELECT COUNT(*)
+	INTO vPuedeAcceder
+	FROM `Actores` a
+	WHERE a.idActor = pIdActor
+	  AND (
+		vRolSolicitante = 'ADMIN'
+		OR EXISTS (
+			SELECT 1
+			FROM `ModeradoresCategorias` mc
+			WHERE mc.idUsuario = pIdUsuarioSolicitante
+			  AND mc.idCategoria = a.idCategoria
+		)
+	  );
 
     -- RESULTADO 1: datos generales, clasificación, dueño y ubicación.
     SELECT
@@ -654,7 +774,8 @@ BEGIN
         ON u.idUsuario = d.idUsuarioDueno
     INNER JOIN `Ubicaciones` ub
         ON ub.idUbicacion = a.idUbicacion
-    WHERE a.idActor = pIdActor;
+    WHERE a.idActor = pIdActor
+	  AND vPuedeAcceder = 1;
 
     -- RESULTADO 2: integrantes con cuenta y sin cuenta registrada.
     SELECT integrantes.*
@@ -670,7 +791,8 @@ BEGIN
         FROM `Integrantes` i
         INNER JOIN `Usuarios` u
             ON u.idUsuario = i.idUsuario
-        WHERE i.idActor = pIdActor
+		WHERE i.idActor = pIdActor
+		  AND vPuedeAcceder = 1
 
         UNION ALL
 
@@ -683,7 +805,8 @@ BEGIN
             nr.rol,
             0 AS esDueno
         FROM `IntegrantesNoRegistrados` nr
-        WHERE nr.idActor = pIdActor
+		WHERE nr.idActor = pIdActor
+		  AND vPuedeAcceder = 1
     ) integrantes
     ORDER BY
         integrantes.esDueno DESC,
@@ -697,7 +820,8 @@ BEGIN
         ip.url,
         ip.fechaCreacion
     FROM `ItemsPortafolio` ip
-    WHERE ip.idActor = pIdActor
+	WHERE ip.idActor = pIdActor
+	  AND vPuedeAcceder = 1
     ORDER BY ip.fechaCreacion DESC, ip.idItem DESC;
 END //
 
@@ -705,6 +829,7 @@ END //
 -- sp_admin_listar_categorias
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_admin_listar_categorias`(
+	IN pIdUsuarioSolicitante INT,
     IN pBusqueda VARCHAR(255) DEFAULT NULL,
     IN pEstado CHAR(1) DEFAULT NULL,
     IN pLimit INT DEFAULT 25,
@@ -713,12 +838,24 @@ CREATE OR REPLACE PROCEDURE `sp_admin_listar_categorias`(
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
 )
 READS SQL DATA
-COMMENT 'Lista categorías para administración con búsqueda, filtro de estado, orden y paginación. Incluye icono, la cantidad de subcategorías activas y la cantidad de actores asociados.'
+COMMENT 'Lista categorías administrativas; para moderadores limita el resultado a sus categorías asignadas.'
 BEGIN
+	DECLARE vRolSolicitante VARCHAR(20);
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
     DECLARE vSortBy VARCHAR(50) DEFAULT 'estado';
     DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+
+	SELECT u.rol
+	INTO vRolSolicitante
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuarioSolicitante
+	  AND u.estado = 'A';
+
+	IF vRolSolicitante IS NULL OR vRolSolicitante NOT IN ('ADMIN', 'MODERADOR') THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'El usuario solicitante no tiene permisos de administración.';
+	END IF;
 
     SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
     SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
@@ -735,6 +872,16 @@ BEGIN
     SELECT COUNT(*) AS total
     FROM `Categorias` c
     WHERE
+		(
+			vRolSolicitante = 'ADMIN'
+			OR EXISTS (
+				SELECT 1
+				FROM `ModeradoresCategorias` mc
+				WHERE mc.idUsuario = pIdUsuarioSolicitante
+				  AND mc.idCategoria = c.idCategoria
+			)
+		)
+		AND
         (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR c.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
         AND (pEstado IS NULL OR TRIM(pEstado) = '' OR c.estado = TRIM(pEstado));
 
@@ -749,6 +896,16 @@ BEGIN
     LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria AND s.estado = 'A'
     LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
     WHERE
+		(
+			vRolSolicitante = 'ADMIN'
+			OR EXISTS (
+				SELECT 1
+				FROM `ModeradoresCategorias` mc
+				WHERE mc.idUsuario = pIdUsuarioSolicitante
+				  AND mc.idCategoria = c.idCategoria
+			)
+		)
+		AND
         (pBusqueda IS NULL OR TRIM(pBusqueda) = '' OR c.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%'))
         AND (pEstado IS NULL OR TRIM(pEstado) = '' OR c.estado = TRIM(pEstado))
     GROUP BY c.idCategoria, c.nombre, c.icono, c.estado
@@ -3802,6 +3959,27 @@ BEGIN
         aa.descripcion
     FROM `ActividadesArca` aa
     ORDER BY aa.descripcion ASC;
+END //
+
+-- -----------------------------------------------------
+-- sp_actor_listar_opciones_registro
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_actor_listar_opciones_registro`()
+READS SQL DATA
+COMMENT 'Lista categorías y subcategorías activas disponibles para registrar o editar un actor.'
+BEGIN
+	SELECT
+		c.idCategoria,
+		c.nombre AS categoria,
+		c.icono,
+		s.idSubcategoria,
+		s.nombre AS subcategoria
+	FROM `Categorias` c
+	LEFT JOIN `Subcategorias` s
+		ON s.idCategoria = c.idCategoria
+	   AND s.estado = 'A'
+	WHERE c.estado = 'A'
+	ORDER BY c.nombre ASC, s.nombre ASC;
 END //
 
 -- -----------------------------------------------------

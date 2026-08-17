@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 
 import { getPublicErrorMessage } from '../../shared/public-error.js';
+import { getUserStateChangeBlockReason } from './admin.permissions.js';
 
 import {
 	asignarModeradorAdminBodySchema,
@@ -100,6 +101,24 @@ function adminUserProtected(response: Parameters<RequestHandler>[1]) {
 	});
 }
 
+function selfStateChangeProtected(response: Parameters<RequestHandler>[1]) {
+	response.status(409).json({
+		error: {
+			code: 'SELF_STATE_CHANGE_NOT_ALLOWED',
+			message: 'No podés cambiar el estado de tu propia cuenta desde la administración',
+		},
+	});
+}
+
+function moderatorUserProtected(response: Parameters<RequestHandler>[1]) {
+	response.status(403).json({
+		error: {
+			code: 'MODERATOR_USER_PROTECTED',
+			message: 'Un moderador no puede cambiar el estado de otro moderador',
+		},
+	});
+}
+
 function categoryNotFound(response: Parameters<RequestHandler>[1]) {
 	response.status(404).json({
 		error: {
@@ -195,7 +214,7 @@ export const listarActoresAdminController: RequestHandler = async (request, resp
 		return;
 	}
 
-	response.status(200).json(await listarActoresAdminService(result.data));
+	response.status(200).json(await listarActoresAdminService(request.user!.idUsuario, result.data));
 };
 
 export const obtenerActorAdminController: RequestHandler = async (request, response) => {
@@ -206,7 +225,7 @@ export const obtenerActorAdminController: RequestHandler = async (request, respo
 		return;
 	}
 
-	const result = await obtenerActorAdminService(params.data.id);
+	const result = await obtenerActorAdminService(request.user!.idUsuario, params.data.id);
 
 	if (!result) {
 		actorNotFound(response);
@@ -224,7 +243,9 @@ export const cambiarEstadoActoresAdminController: RequestHandler = async (reques
 		return;
 	}
 
-	response.status(200).json(await cambiarEstadoActoresAdminService(body.data.ids, body.data.estado));
+	response
+		.status(200)
+		.json(await cambiarEstadoActoresAdminService(request.user!.idUsuario, body.data.ids, body.data.estado));
 };
 
 export const obtenerUsuarioAdminController: RequestHandler = async (request, response) => {
@@ -259,6 +280,11 @@ export const cambiarEstadoUsuarioAdminController: RequestHandler = async (reques
 		return;
 	}
 
+	if (request.user!.idUsuario === params.data.id) {
+		selfStateChangeProtected(response);
+		return;
+	}
+
 	const currentUser = await obtenerUsuarioAdminService(params.data.id);
 
 	if (!currentUser) {
@@ -266,12 +292,28 @@ export const cambiarEstadoUsuarioAdminController: RequestHandler = async (reques
 		return;
 	}
 
-	if (currentUser.data.rol === 'ADMIN') {
+	const blockReason = getUserStateChangeBlockReason({
+		requesterId: request.user!.idUsuario,
+		requesterRole: request.user!.rol,
+		targetId: currentUser.data.id,
+		targetRole: currentUser.data.rol,
+	});
+
+	if (blockReason === 'ADMIN_TARGET') {
 		adminUserProtected(response);
 		return;
 	}
 
-	const result = await cambiarEstadoUsuarioAdminService(params.data.id, body.data.estado);
+	if (blockReason === 'MODERATOR_TARGET') {
+		moderatorUserProtected(response);
+		return;
+	}
+
+	const result = await cambiarEstadoUsuarioAdminService(
+		request.user!.idUsuario,
+		params.data.id,
+		body.data.estado,
+	);
 
 	if (!result) {
 		userNotFound(response);
@@ -325,7 +367,7 @@ export const listarCategoriasAdminController: RequestHandler = async (request, r
 		return;
 	}
 
-	response.status(200).json(await listarCategoriasAdminService(result.data));
+	response.status(200).json(await listarCategoriasAdminService(request.user!.idUsuario, result.data));
 };
 
 export const obtenerCategoriaAdminController: RequestHandler = async (request, response) => {

@@ -5,6 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BlockIcon from '@mui/icons-material/Block';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import SelectAllIcon from '@mui/icons-material/SelectAll';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
@@ -24,6 +25,7 @@ import { useDialogs } from '@toolpad/core/useDialogs';
 import { notify } from '../utils/toast';
 
 import { asignarModeradorAdmin, cambiarEstadoUsuarioAdmin, type UsuarioDetalleAdmin } from '../api/admin';
+import { useAuth } from '../context/AuthContext';
 import { usuarioAdminDataSource, type UsuarioDetalleDataModel } from '../data/adminUsuarios';
 
 function BarePageContainer({ children }: PageContainerProps) {
@@ -45,6 +47,7 @@ export default function AdminUsuarioDetallePage() {
 	const { usuarioId = '' } = useParams();
 	const navigate = useNavigate();
 	const dialogs = useDialogs();
+	const { user: currentUser } = useAuth();
 	const [usuario, setUsuario] = React.useState<UsuarioDetalleDataModel | null>(null);
 	const [reloadKey, setReloadKey] = React.useState(0);
 	const [actionLoading, setActionLoading] = React.useState(false);
@@ -140,6 +143,22 @@ export default function AdminUsuarioDetallePage() {
 		}
 	};
 
+	const selectAllCategories = () => {
+		setSelectedCategories(usuario?.categoriasModeracion.map((categoria) => categoria.id) ?? []);
+	};
+
+	const allCategoriesSelected =
+		(usuario?.categoriasModeracion.length ?? 0) > 0 &&
+		usuario!.categoriasModeracion.every((categoria) => selectedCategories.includes(categoria.id));
+	const isOwnProfile = usuario !== null && currentUser?.idUsuario === usuario.id;
+	const canChangeUserState =
+		usuario !== null &&
+		!isOwnProfile &&
+		usuario.rol !== 'ADMIN' &&
+		(currentUser?.rol === 'ADMIN' || usuario.rol === 'USUARIO');
+	const canEditModeration =
+		usuario !== null && currentUser?.rol === 'ADMIN' && !isOwnProfile && usuario.rol !== 'ADMIN';
+
 	return (
 		<PageContainer title={usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Detalle de usuario'} maxWidth="lg">
 			<Stack spacing={2}>
@@ -151,9 +170,9 @@ export default function AdminUsuarioDetallePage() {
 					>
 						Volver a usuarios
 					</Button>
-					{usuario && usuario.rol !== 'ADMIN' && (
+					{usuario && (canEditModeration || canChangeUserState) && (
 						<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-							{usuario.estado !== 'I' && (
+							{canEditModeration && usuario.estado !== 'I' && (
 								<Button
 									variant="contained"
 									startIcon={<ManageAccountsIcon />}
@@ -163,15 +182,17 @@ export default function AdminUsuarioDetallePage() {
 									{usuario.rol === 'MODERADOR' ? 'Editar categorías' : 'Asignar como moderador'}
 								</Button>
 							)}
-							<Button
-								variant={usuario.estado === 'I' ? 'contained' : 'outlined'}
-								color={usuario.estado === 'I' ? 'success' : 'error'}
-								startIcon={usuario.estado === 'I' ? <HowToRegIcon /> : <BlockIcon />}
-								onClick={handleStateChange}
-								disabled={actionLoading}
-							>
-								{usuario.estado === 'I' ? 'Reactivar usuario' : 'Dar de baja'}
-							</Button>
+							{canChangeUserState && (
+								<Button
+									variant={usuario.estado === 'I' ? 'contained' : 'outlined'}
+									color={usuario.estado === 'I' ? 'success' : 'error'}
+									startIcon={usuario.estado === 'I' ? <HowToRegIcon /> : <BlockIcon />}
+									onClick={handleStateChange}
+									disabled={actionLoading}
+								>
+									{usuario.estado === 'I' ? 'Reactivar usuario' : 'Dar de baja'}
+								</Button>
+							)}
 						</Stack>
 					)}
 				</Stack>
@@ -198,6 +219,15 @@ export default function AdminUsuarioDetallePage() {
 						Seleccioná las categorías activas que podrá moderar. Si quitás todas las categorías a un
 						moderador, volverá a tener el rol Usuario.
 					</DialogContentText>
+					<Button
+						variant="outlined"
+						startIcon={<SelectAllIcon />}
+						onClick={selectAllCategories}
+						disabled={actionLoading || allCategoriesSelected || !usuario?.categoriasModeracion.length}
+						sx={{ mb: 2 }}
+					>
+						{allCategoriesSelected ? 'Todas seleccionadas' : 'Moderar todas las categorías'}
+					</Button>
 					<FormControl fullWidth>
 						<InputLabel id="moderation-categories-label">Categorías</InputLabel>
 						<Select

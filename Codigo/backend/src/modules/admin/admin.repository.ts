@@ -389,10 +389,11 @@ export async function obtenerUsuarioAdminRepository(id: number): Promise<Usuario
 }
 
 export async function cambiarEstadoUsuarioAdminRepository(
+	idUsuarioSolicitante: number,
 	id: number,
 	estado: 'A' | 'I',
 ): Promise<UsuarioDetalleAdmin | null> {
-	await pool.query('CALL sp_admin_cambiar_estado_usuario(?, ?)', [id, estado]);
+	await pool.query('CALL sp_admin_cambiar_estado_usuario(?, ?, ?)', [idUsuarioSolicitante, id, estado]);
 
 	return obtenerUsuarioAdminRepository(id);
 }
@@ -407,10 +408,12 @@ export async function asignarModeradorAdminRepository(
 }
 
 export async function listarActoresAdminRepository(
+	idUsuarioSolicitante: number,
 	query: ListarActoresAdminQuery,
 ): Promise<{ total: number; actores: ActorAdmin[] }> {
 	const procedureName = 'sp_admin_listar_actores';
-	const result: unknown = await pool.query('CALL sp_admin_listar_actores(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+	const result: unknown = await pool.query('CALL sp_admin_listar_actores(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+		idUsuarioSolicitante,
 		query.busqueda ?? null,
 		query.idCategoria ?? null,
 		query.departamento ?? null,
@@ -429,9 +432,12 @@ export async function listarActoresAdminRepository(
 	};
 }
 
-export async function obtenerActorAdminRepository(id: number): Promise<ActorDetalleAdmin | null> {
+export async function obtenerActorAdminRepository(
+	idUsuarioSolicitante: number,
+	id: number,
+): Promise<ActorDetalleAdmin | null> {
 	const procedureName = 'sp_admin_obtener_actor';
-	const result: unknown = await pool.query('CALL sp_admin_obtener_actor(?)', [id]);
+	const result: unknown = await pool.query('CALL sp_admin_obtener_actor(?, ?)', [idUsuarioSolicitante, id]);
 	const actorRows = z.array(actorDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
 	const actorRow = actorRows[0];
 
@@ -546,9 +552,14 @@ async function obtenerEncuestasActor(idActor: number): Promise<ActorDetalleEncue
 	);
 }
 
-export async function cambiarEstadoActoresAdminRepository(ids: number[], estado: 'A' | 'I'): Promise<number> {
+export async function cambiarEstadoActoresAdminRepository(
+	idUsuarioSolicitante: number,
+	ids: number[],
+	estado: 'A' | 'I',
+): Promise<number> {
 	const procedureName = 'sp_admin_cambiar_estado_actores';
-	const result: unknown = await pool.query('CALL sp_admin_cambiar_estado_actores(?, ?)', [
+	const result: unknown = await pool.query('CALL sp_admin_cambiar_estado_actores(?, ?, ?)', [
+		idUsuarioSolicitante,
 		JSON.stringify(ids),
 		estado,
 	]);
@@ -563,10 +574,12 @@ export async function cambiarEstadoActoresAdminRepository(ids: number[], estado:
 }
 
 export async function listarCategoriasAdminRepository(
+	idUsuarioSolicitante: number,
 	query: ListarCategoriasAdminQuery,
 ): Promise<{ total: number; categorias: CategoriaAdmin[] }> {
 	const procedureName = 'sp_admin_listar_categorias';
-	const result: unknown = await pool.query('CALL sp_admin_listar_categorias(?, ?, ?, ?, ?, ?)', [
+	const result: unknown = await pool.query('CALL sp_admin_listar_categorias(?, ?, ?, ?, ?, ?, ?)', [
+		idUsuarioSolicitante,
 		query.busqueda ?? null,
 		query.estado ?? null,
 		query.limit,

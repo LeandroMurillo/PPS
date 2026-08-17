@@ -83,10 +83,11 @@ export async function obtenerUsuarioAdminService(id: number): Promise<ObtenerUsu
 }
 
 export async function cambiarEstadoUsuarioAdminService(
+	idUsuarioSolicitante: number,
 	id: number,
 	estado: 'A' | 'I',
 ): Promise<ObtenerUsuarioAdminResponse | null> {
-	const usuario = await cambiarEstadoUsuarioAdminRepository(id, estado);
+	const usuario = await cambiarEstadoUsuarioAdminRepository(idUsuarioSolicitante, id, estado);
 
 	return usuario ? { data: usuario } : null;
 }
@@ -100,8 +101,11 @@ export async function asignarModeradorAdminService(
 	return usuario ? { data: usuario } : null;
 }
 
-export async function listarActoresAdminService(query: ListarActoresAdminQuery): Promise<ListarActoresAdminResponse> {
-	const result = await listarActoresAdminRepository(query);
+export async function listarActoresAdminService(
+	idUsuarioSolicitante: number,
+	query: ListarActoresAdminQuery,
+): Promise<ListarActoresAdminResponse> {
+	const result = await listarActoresAdminRepository(idUsuarioSolicitante, query);
 
 	return {
 		data: result.actores,
@@ -109,23 +113,30 @@ export async function listarActoresAdminService(query: ListarActoresAdminQuery):
 	};
 }
 
-export async function obtenerActorAdminService(id: number): Promise<ObtenerActorAdminResponse | null> {
-	const actor = await obtenerActorAdminRepository(id);
+export async function obtenerActorAdminService(
+	idUsuarioSolicitante: number,
+	id: number,
+): Promise<ObtenerActorAdminResponse | null> {
+	const actor = await obtenerActorAdminRepository(idUsuarioSolicitante, id);
 
 	return actor ? { data: actor } : null;
 }
 
 export async function cambiarEstadoActoresAdminService(
+	idUsuarioSolicitante: number,
 	ids: number[],
 	estado: 'A' | 'I',
 ): Promise<CambiarEstadoActoresAdminResponse> {
-	return { data: { actualizados: await cambiarEstadoActoresAdminRepository(ids, estado) } };
+	return {
+		data: { actualizados: await cambiarEstadoActoresAdminRepository(idUsuarioSolicitante, ids, estado) },
+	};
 }
 
 export async function listarCategoriasAdminService(
+	idUsuarioSolicitante: number,
 	query: ListarCategoriasAdminQuery,
 ): Promise<ListarCategoriasAdminResponse> {
-	const result = await listarCategoriasAdminRepository(query);
+	const result = await listarCategoriasAdminRepository(idUsuarioSolicitante, query);
 
 	return {
 		data: result.categorias,
