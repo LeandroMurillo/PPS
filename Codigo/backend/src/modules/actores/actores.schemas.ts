@@ -282,7 +282,7 @@ export const actorMapaPublicoSchema = z
 			example: 'San Miguel de Tucumán',
 		}),
 
-		direccion: z.string().nullable().meta({
+		direccion: z.string().trim().min(1).meta({
 			description: 'Dirección pública del actor.',
 			example: 'Jujuy 92',
 		}),

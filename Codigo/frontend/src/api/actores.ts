@@ -53,7 +53,7 @@ export type ActorMapa = {
 	subcategoria: string | null;
 	departamento: string;
 	localidad: string | null;
-	direccion: string | null;
+	direccion: string;
 	latitud: number;
 	longitud: number;
 };

@@ -72,6 +72,7 @@ type CulturalPoint = {
 	categoria: string;
 	categoriaIcono: CategoriaIcono;
 	departamento: string;
+	direccion: string;
 	latitudlongitud: L.LatLngExpression;
 };
 
@@ -603,6 +604,7 @@ export default function TucumanMap() {
 						categoria: actor.categoria,
 						categoriaIcono: actor.categoriaIcono,
 						departamento: actor.departamento,
+						direccion: actor.direccion,
 						latitudlongitud: [actor.latitud, actor.longitud],
 					})),
 				);
@@ -815,10 +817,10 @@ export default function TucumanMap() {
 										/>
 										<Chip
 											icon={<LocationOnIcon fontSize="small" />}
-											label={activeActor.departamento}
+											label={activeActor.direccion}
 											size="small"
 											color="secondary"
-											sx={{ height: 24, fontSize: '0.725rem' }}
+											sx={{ height: 24, maxWidth: '100%', fontSize: '0.725rem' }}
 										/>
 									</Stack>
 

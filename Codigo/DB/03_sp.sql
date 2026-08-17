@@ -1394,7 +1394,7 @@ BEGIN
 
         ub.departamento,
         ub.localidad,
-        ub.direccion,
+        TRIM(ub.direccion) AS direccion,
         ub.latitud,
         ub.longitud
     FROM `Actores` a
@@ -1413,6 +1413,7 @@ BEGIN
             OR s.estado = 'A'
         )
         AND ub.esPublica = 1
+        AND NULLIF(TRIM(ub.direccion), '') IS NOT NULL
         AND ub.latitud IS NOT NULL
         AND ub.longitud IS NOT NULL
         AND (

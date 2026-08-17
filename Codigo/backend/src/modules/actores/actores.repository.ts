@@ -119,7 +119,7 @@ const actorMapaDatabaseRowSchema = z.object({
 	subcategoria: z.string().nullable(),
 	departamento: z.string(),
 	localidad: z.string().nullable(),
-	direccion: z.string().nullable(),
+	direccion: z.string().trim().min(1),
 	latitud: databaseLatitudeSchema,
 	longitud: databaseLongitudeSchema,
 });
