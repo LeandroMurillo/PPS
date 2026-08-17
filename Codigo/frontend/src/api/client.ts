@@ -1,6 +1,8 @@
 const API_BASE_URL = (import.meta as ImportMeta & { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? '';
 
 const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
+const USER_STORAGE_KEY = 'mosaico_cultural_user_session';
+export const SESSION_INVALIDATED_EVENT = 'mosaico-cultural:session-invalidated';
 
 type ApiErrorBody = {
 	error?: {
@@ -20,6 +22,12 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
 		...init,
 		headers,
 	});
+
+	if (response.status === 401 && typeof window !== 'undefined') {
+		localStorage.removeItem(TOKEN_STORAGE_KEY);
+		localStorage.removeItem(USER_STORAGE_KEY);
+		window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT));
+	}
 
 	if (!response.ok) {
 		let message = 'No se pudo completar la solicitud al backend.';

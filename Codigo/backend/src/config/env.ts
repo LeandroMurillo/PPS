@@ -23,6 +23,8 @@ const envSchema = z
 		DB_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(50).default(10),
 
 		JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
+
+		JWT_EXPIRES_IN_SECONDS: z.coerce.number().int().min(60).max(86400).default(900),
 	})
 	.superRefine((data, ctx) => {
 		if (data.NODE_ENV === 'production') {

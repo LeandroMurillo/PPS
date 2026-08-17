@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 
-import { env } from '../config/env.js';
+import { verifySessionToken } from '../modules/auth/session-token.js';
+import { obtenerUsuarioSesionRepository } from './auth-session.repository.js';
 
 export interface AuthUser {
 	idUsuario: number;
@@ -19,16 +19,8 @@ declare global {
 	}
 }
 
-export function verifyToken(req: Request, res: Response, next: NextFunction): void {
-	let token: string | undefined;
-
-	const authHeader = req.headers.authorization;
-	if (authHeader && authHeader.startsWith('Bearer ')) {
-		token = authHeader.substring(7);
-	} else if (typeof req.query.token === 'string' && req.query.token) {
-		token = req.query.token;
-	}
-
+export async function verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const token = getRequestToken(req);
 	if (!token) {
 		res.status(401).json({
 			error: {
@@ -39,39 +31,71 @@ export function verifyToken(req: Request, res: Response, next: NextFunction): vo
 		return;
 	}
 
+	let idUsuario: number;
 	try {
-		const decoded = jwt.verify(token, env.JWT_SECRET) as AuthUser;
-		req.user = decoded;
-		next();
+		idUsuario = verifySessionToken(token);
 	} catch {
-		res.status(401).json({
-			error: {
-				code: 'INVALID_TOKEN',
-				message: 'Token de sesión inválido o expirado.',
-			},
-		});
+		invalidSession(res);
+		return;
+	}
+
+	try {
+		const user = await obtenerUsuarioSesionRepository(idUsuario);
+
+		if (!user || user.estado !== 'A') {
+			invalidSession(res);
+			return;
+		}
+
+		req.user = user;
+		next();
+	} catch (error) {
+		next(error);
 	}
 }
 
-export function optionalToken(req: Request, _res: Response, next: NextFunction): void {
-	let token: string | undefined;
-
-	const authHeader = req.headers.authorization;
-	if (authHeader && authHeader.startsWith('Bearer ')) {
-		token = authHeader.substring(7);
-	} else if (typeof req.query.token === 'string' && req.query.token) {
-		token = req.query.token;
+export async function optionalToken(req: Request, _res: Response, next: NextFunction): Promise<void> {
+	const token = getRequestToken(req);
+	if (!token) {
+		next();
+		return;
 	}
 
-	if (token) {
-		try {
-			const decoded = jwt.verify(token, env.JWT_SECRET) as AuthUser;
-			req.user = decoded;
-		} catch {
-			// Ignore invalid token on optional endpoints
+	let idUsuario: number;
+	try {
+		idUsuario = verifySessionToken(token);
+	} catch {
+		next();
+		return;
+	}
+
+	try {
+		const user = await obtenerUsuarioSesionRepository(idUsuario);
+		if (user?.estado === 'A') {
+			req.user = user;
 		}
+		next();
+	} catch (error) {
+		next(error);
 	}
-	next();
+}
+
+function getRequestToken(req: Request): string | undefined {
+	const authHeader = req.headers.authorization;
+	if (authHeader?.startsWith('Bearer ')) {
+		return authHeader.substring(7);
+	}
+
+	return typeof req.query.token === 'string' && req.query.token ? req.query.token : undefined;
+}
+
+function invalidSession(res: Response): void {
+	res.status(401).json({
+		error: {
+			code: 'INVALID_TOKEN',
+			message: 'Token de sesión inválido.',
+		},
+	});
 }
 
 export function requireRole(...allowedRoles: string[]) {

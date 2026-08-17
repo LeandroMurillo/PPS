@@ -1,33 +1,34 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { env } from '../src/config/env.js';
 import { adminRouter } from '../src/modules/admin/admin.routes.js';
+
+vi.mock('../src/middleware/auth-session.repository.js', () => ({
+	obtenerUsuarioSesionRepository: vi.fn(async (idUsuario: number) => ({
+		idUsuario,
+		email: idUsuario === 20 ? 'admin@example.com' : 'moderador@example.com',
+		rol: idUsuario === 20 ? 'ADMIN' : 'MODERADOR',
+		estado: 'A',
+	})),
+}));
 
 const app = express();
 app.use(express.json());
 app.use('/api/admin', adminRouter);
 
 const moderatorToken = jwt.sign(
-	{
-		idUsuario: 10,
-		email: 'moderador@example.com',
-		rol: 'MODERADOR',
-		estado: 'A',
-	},
+	{},
 	env.JWT_SECRET,
+	{ subject: '10' },
 );
 
 const adminToken = jwt.sign(
-	{
-		idUsuario: 20,
-		email: 'admin@example.com',
-		rol: 'ADMIN',
-		estado: 'A',
-	},
+	{},
 	env.JWT_SECRET,
+	{ subject: '20' },
 );
 
 describe('autorización de rutas administrativas', () => {

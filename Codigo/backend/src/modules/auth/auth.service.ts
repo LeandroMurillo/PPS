@@ -2,14 +2,13 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
-import { env } from '../../config/env.js';
 import {
 	listarActividadesArcaRepository,
 	obtenerUsuarioPorEmailRepository,
 	registrarUsuarioRepository,
 } from './auth.repository.js';
+import { createSessionToken } from './session-token.js';
 import type {
 	ActividadArca,
 	LoginBody,
@@ -132,16 +131,7 @@ export async function loginService(input: LoginBody): Promise<LoginResponse> {
 	const { contraseña: unusedContraseña, ...usuarioSinContraseña } = user;
 	void unusedContraseña;
 
-	const token = jwt.sign(
-		{
-			idUsuario: user.idUsuario,
-			email: user.email,
-			rol: user.rol,
-			estado: user.estado,
-		},
-		env.JWT_SECRET,
-		{ expiresIn: '24h' },
-	);
+	const token = createSessionToken(user.idUsuario);
 
 	return {
 		usuario: usuarioSinContraseña,

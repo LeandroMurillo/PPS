@@ -3920,6 +3920,24 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_auth_obtener_usuario_sesion
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_auth_obtener_usuario_sesion`(
+	IN pIdUsuario INT
+)
+READS SQL DATA
+COMMENT 'Obtiene rol y estado vigentes para validar una sesión autenticada.'
+BEGIN
+	SELECT
+		u.idUsuario,
+		u.email,
+		u.rol,
+		u.estado
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuario;
+END //
+
+-- -----------------------------------------------------
 -- sp_publico_obtener_usuario_por_email
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_publico_obtener_usuario_por_email`(

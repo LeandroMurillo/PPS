@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session } from '@toolpad/core/AppProvider';
 import type { UsuarioSession } from '../api/auth';
+import { SESSION_INVALIDATED_EVENT } from '../api/client';
 
 const STORAGE_KEY = 'mosaico_cultural_user_session';
 const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
@@ -64,6 +65,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			localStorage.removeItem(TOKEN_STORAGE_KEY);
 		}
 	}, [token]);
+
+	useEffect(() => {
+		const invalidateSession = () => {
+			setUser(null);
+			setToken(null);
+		};
+
+		window.addEventListener(SESSION_INVALIDATED_EVENT, invalidateSession);
+		return () => window.removeEventListener(SESSION_INVALIDATED_EVENT, invalidateSession);
+	}, []);
 
 	const login = (newUser: UsuarioSession, newToken: string) => {
 		setUser(newUser);
