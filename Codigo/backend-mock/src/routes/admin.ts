@@ -188,8 +188,10 @@ adminRouter.get('/actores', (req, res) => {
 	const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
 	const limit = req.query.limit ? Number(req.query.limit) : 25;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
+	const sortBy = typeof req.query.sortBy === 'string' ? req.query.sortBy : 'fechaCreacion';
+	const sortDir = req.query.sortDir === 'ASC' ? 'ASC' : 'DESC';
 
-	let result = db.actores;
+	let result = [...db.actores];
 
 	if (idCategoria) result = result.filter((a) => a.idCategoria === idCategoria);
 	if (departamento) result = result.filter((a) => a.ubicacion?.departamento === departamento);
@@ -205,6 +207,35 @@ adminRouter.get('/actores', (req, res) => {
 				(a.ubicacion && a.ubicacion.departamento.toLowerCase().includes(busqueda)),
 		);
 	}
+
+	const sortValue = (actor: (typeof db.actores)[number]): string | number => {
+		switch (sortBy) {
+			case 'idActor':
+				return actor.id;
+			case 'categoria':
+				return db.categorias.find((category) => category.id === actor.idCategoria)?.nombre ?? '';
+			case 'subcategoria':
+				return db.subcategorias.find((subcategory) => subcategory.id === actor.idSubcategoria)?.nombre ?? '';
+			case 'usuarioDueno': {
+				const owner = db.usuarios.find((user) => user.id === actor.idUsuarioDueno);
+				return owner ? `${owner.nombre} ${owner.apellido}` : '';
+			}
+			case 'departamento':
+				return actor.ubicacion?.departamento ?? '';
+			case 'localidad':
+				return actor.ubicacion?.localidad ?? '';
+			default:
+				return String(actor[sortBy as keyof typeof actor] ?? '');
+		}
+	};
+
+	result.sort((a, b) => {
+		const valueA = sortValue(a);
+		const valueB = sortValue(b);
+		if (valueA === valueB) return b.id - a.id;
+		const comparison = valueA > valueB ? 1 : -1;
+		return sortDir === 'ASC' ? comparison : -comparison;
+	});
 
 	const total = result.length;
 	const paginated = result.slice(offset, offset + limit);

@@ -305,6 +305,7 @@ export default function ActorPortfolioView({
 	const effectiveShowAll = isPrivileged && showAllInfo;
 
 	const portafolioItems = actor.portafolio ?? [];
+	const enlacesPortafolio = portafolioItems.filter((item) => !esImagenPortafolio(item));
 	const eventos = actor.eventos ?? [];
 	const allRespuestas = actor.respuestas ?? [];
 	const integrantes = actor.integrantes ?? [];
@@ -708,15 +709,14 @@ export default function ActorPortfolioView({
 				</Typography>
 			)}
 
-			{/* --- ENLACES Y PORTAFOLIO --- */}
-			{portafolioItems.length > 0 && (
+			{/* --- ENLACES --- */}
+			{enlacesPortafolio.length > 0 && (
 				<Box sx={{ mb: 6 }}>
 					<Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
-						Portafolio
+						Enlaces
 					</Typography>
 					<Stack spacing={1} sx={{ mb: 3 }}>
-						{portafolioItems
-							.filter((enlace) => !esImagenPortafolio(enlace))
+						{enlacesPortafolio
 							.filter((enlace) => detectarTipoEnlace(enlace.url) !== 'youtube')
 							.map((enlace, idx) => {
 								const tipo = detectarTipoEnlace(enlace.url);
@@ -733,8 +733,7 @@ export default function ActorPortfolioView({
 
 					{/* Embeds de YouTube */}
 					<Grid container spacing={3}>
-						{portafolioItems
-							.filter((enlace) => !esImagenPortafolio(enlace))
+						{enlacesPortafolio
 							.filter((enlace) => detectarTipoEnlace(enlace.url) === 'youtube')
 							.map((enlace, idx) => {
 								const videoId = obtenerIdYoutube(enlace.url);

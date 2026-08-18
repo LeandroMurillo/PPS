@@ -465,8 +465,8 @@ CREATE OR REPLACE PROCEDURE `sp_admin_listar_actores`(
     IN pEstado CHAR(1) DEFAULT NULL,
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0,
-    IN pSortBy VARCHAR(50) DEFAULT 'idActor',
-    IN pSortDir VARCHAR(4) DEFAULT 'ASC'
+    IN pSortBy VARCHAR(50) DEFAULT 'fechaCreacion',
+    IN pSortDir VARCHAR(4) DEFAULT 'DESC'
 )
 READS SQL DATA
 COMMENT 'Lista actores para administración. Los moderadores solo ven actores de sus categorías asignadas.'
@@ -474,8 +474,8 @@ BEGIN
 	DECLARE vRolSolicitante VARCHAR(20);
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
-    DECLARE vSortBy VARCHAR(50) DEFAULT 'idActor';
-    DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+    DECLARE vSortBy VARCHAR(50) DEFAULT 'fechaCreacion';
+    DECLARE vSortDir VARCHAR(4) DEFAULT 'DESC';
 
 	SELECT u.rol
 	INTO vRolSolicitante
@@ -505,12 +505,12 @@ BEGIN
             'departamento',
             'localidad'
         ) THEN pSortBy
-        ELSE 'idActor'
+        ELSE 'fechaCreacion'
     END;
 
     SET vSortDir = CASE
-        WHEN UPPER(COALESCE(pSortDir, 'ASC')) = 'DESC' THEN 'DESC'
-        ELSE 'ASC'
+        WHEN UPPER(COALESCE(pSortDir, 'DESC')) = 'ASC' THEN 'ASC'
+        ELSE 'DESC'
     END;
 
     SELECT COUNT(*) AS total
@@ -681,7 +681,7 @@ BEGIN
         CASE WHEN vSortBy = 'localidad' AND vSortDir = 'ASC' THEN ub.localidad END ASC,
         CASE WHEN vSortBy = 'localidad' AND vSortDir = 'DESC' THEN ub.localidad END DESC,
 
-        a.idActor ASC
+        a.idActor DESC
     LIMIT vLimit OFFSET vOffset;
 END //
 

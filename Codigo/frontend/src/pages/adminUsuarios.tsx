@@ -211,6 +211,7 @@ export default function AdminUsuariosPage() {
 					columns={columns}
 					rows={rows}
 					getRowId={(row) => row.id}
+					showTopPagination
 					total={total}
 					page={page}
 					pageSize={pageSize}

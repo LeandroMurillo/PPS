@@ -85,10 +85,10 @@ export const listarActoresAdminQuerySchema = z.strictObject({
 	tipoActor: z.preprocess(normalizeOptionalString, z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']).optional()),
 	estado: z.preprocess(normalizeOptionalString, z.enum(['A', 'P', 'I']).optional()),
 	...paginationQueryFields,
-	sortBy: actorAdminSortBySchema.default('idActor'),
+	sortBy: actorAdminSortBySchema.default('fechaCreacion'),
 	sortDir: z.preprocess(
 		(value) => (typeof value === 'string' ? value.toUpperCase() : value),
-		sortDirectionSchema.default('ASC'),
+		sortDirectionSchema.default('DESC'),
 	),
 });
 

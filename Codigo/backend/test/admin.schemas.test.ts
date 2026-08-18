@@ -79,6 +79,15 @@ describe('consultas administrativas', () => {
 		});
 	});
 
+	it('ordena los actores más recientes primero por defecto', () => {
+		expect(listarActoresAdminQuerySchema.parse({})).toEqual({
+			limit: 25,
+			offset: 0,
+			sortBy: 'fechaCreacion',
+			sortDir: 'DESC',
+		});
+	});
+
 	it('normaliza el identificador del detalle de usuario', () => {
 		expect(usuarioAdminParamsSchema.parse({ id: '12' })).toEqual({ id: 12 });
 	});

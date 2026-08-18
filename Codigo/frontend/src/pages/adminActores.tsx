@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DoNotDisturbOnOutlinedIcon from '@mui/icons-material/DoNotDisturbOnOutlined';
@@ -37,9 +37,12 @@ import {
 	TIPO_ACTOR_LABELS as typeLabels,
 } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { formatDateTime } from '../utils/date';
 import { buildSlugConId } from '../utils/slug';
 
 const pageSize = 25;
+const validActorTypes = new Set<ActorAdmin['tipoActor']>(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']);
+const validActorStates = new Set<ActorAdmin['estado']>(['A', 'P', 'I']);
 
 function optionalPositiveInteger(value: string): number | undefined {
 	const parsed = Number(value);
@@ -83,19 +86,36 @@ const columns: AdminColumn<ActorAdmin, ActorAdminSortBy>[] = [
 		sortBy: 'estado',
 		render: (row) => <Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />,
 	},
+	{
+		id: 'registro',
+		label: 'Registro',
+		sortBy: 'fechaCreacion',
+		minWidth: 145,
+		render: (row) => formatDateTime(row.fechaCreacion),
+	},
 ];
 
 export default function AdminActoresPage() {
 	const navigate = useNavigate();
-	const [search, setSearch] = React.useState('');
-	const [categoryId, setCategoryId] = React.useState('');
-	const [department, setDepartment] = React.useState('');
-	const [actorType, setActorType] = React.useState('');
-	const [state, setState] = React.useState('A');
+	const [searchParams, setSearchParams] = useSearchParams();
+	const search = searchParams.get('busqueda') ?? '';
+	const categoryParam = searchParams.get('categoria') ?? '';
+	const departmentParam = searchParams.get('departamento') ?? '';
+	const actorTypeParam = searchParams.get('tipo') ?? '';
+	const stateParam = searchParams.get('estado');
+	const categoryId = optionalPositiveInteger(categoryParam) ? categoryParam : '';
+	const department = (DEPARTAMENTOS_TUCUMAN as readonly string[]).includes(departmentParam) ? departmentParam : '';
+	const actorType = validActorTypes.has(actorTypeParam as ActorAdmin['tipoActor']) ? actorTypeParam : '';
+	const state =
+		stateParam === 'TODOS'
+			? ''
+			: stateParam && validActorStates.has(stateParam as ActorAdmin['estado'])
+				? stateParam
+				: 'A';
 	const [categories, setCategories] = React.useState<CategoriaAdmin[]>([]);
 	const [page, setPage] = React.useState(0);
-	const [sortBy, setSortBy] = React.useState<ActorAdminSortBy>('idActor');
-	const [sortDir, setSortDir] = React.useState<SortDirection>('ASC');
+	const [sortBy, setSortBy] = React.useState<ActorAdminSortBy>('fechaCreacion');
+	const [sortDir, setSortDir] = React.useState<SortDirection>('DESC');
 	const [rows, setRows] = React.useState<ActorAdmin[]>([]);
 	const [selectedActorIds, setSelectedActorIds] = React.useState<React.Key[]>([]);
 	const [total, setTotal] = React.useState(0);
@@ -110,6 +130,14 @@ export default function AdminActoresPage() {
 	const debouncedDepartment = useDebouncedValue(department);
 	const debouncedActorType = useDebouncedValue(actorType);
 	const debouncedState = useDebouncedValue(state);
+	const hasExplicitStateFilter =
+		stateParam === 'TODOS' || Boolean(stateParam && validActorStates.has(stateParam as ActorAdmin['estado']));
+	const activeFilterCount =
+		Number(Boolean(search.trim())) +
+		Number(Boolean(categoryId)) +
+		Number(Boolean(department)) +
+		Number(Boolean(actorType)) +
+		Number(hasExplicitStateFilter);
 
 	React.useEffect(() => {
 		const controller = new AbortController();
@@ -203,8 +231,32 @@ export default function AdminActoresPage() {
 		return () => controller.abort();
 	}, [loadActores]);
 
-	const changeFilter = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
-		setter(value);
+	const changeFilter = (
+		key: 'busqueda' | 'categoria' | 'departamento' | 'tipo' | 'estado',
+		value: string,
+		replace = false,
+	) => {
+		const nextParams = new URLSearchParams(searchParams);
+		if (key === 'estado' && value === '') {
+			nextParams.set(key, 'TODOS');
+		} else if (value) {
+			nextParams.set(key, value);
+		} else {
+			nextParams.delete(key);
+		}
+		setSearchParams(nextParams, { replace });
+		setSelectedActorIds([]);
+		setPage(0);
+	};
+
+	const clearFilters = () => {
+		const nextParams = new URLSearchParams(searchParams);
+		nextParams.delete('busqueda');
+		nextParams.delete('categoria');
+		nextParams.delete('departamento');
+		nextParams.delete('tipo');
+		nextParams.delete('estado');
+		setSearchParams(nextParams);
 		setSelectedActorIds([]);
 		setPage(0);
 	};
@@ -252,23 +304,17 @@ export default function AdminActoresPage() {
 				<AdminFilters
 					search={search}
 					searchPlaceholder="Nombre, categoría, departamento o localidad…"
-					onSearchChange={(value) => changeFilter(setSearch, value)}
-					onClear={() => {
-						setSearch('');
-						setCategoryId('');
-						setDepartment('');
-						setActorType('');
-						setState('A');
-						setSelectedActorIds([]);
-						setPage(0);
-					}}
+					activeFilterCount={activeFilterCount}
+					showClear={activeFilterCount > 0}
+					onSearchChange={(value) => changeFilter('busqueda', value, true)}
+					onClear={clearFilters}
 				>
 					<FormControl size="small" sx={{ minWidth: 180 }}>
 						<InputLabel>Categoría</InputLabel>
 						<Select
 							value={categoryId}
 							label="Categoría"
-							onChange={(event) => changeFilter(setCategoryId, event.target.value)}
+							onChange={(event) => changeFilter('categoria', event.target.value)}
 						>
 							<MenuItem value="">Todas</MenuItem>
 							{categories.map((category) => (
@@ -283,7 +329,7 @@ export default function AdminActoresPage() {
 						<Select
 							value={department}
 							label="Departamento"
-							onChange={(event) => changeFilter(setDepartment, event.target.value)}
+							onChange={(event) => changeFilter('departamento', event.target.value)}
 						>
 							<MenuItem value="">Todos</MenuItem>
 							{DEPARTAMENTOS_TUCUMAN.map((departmentOption) => (
@@ -298,7 +344,7 @@ export default function AdminActoresPage() {
 						<Select
 							value={actorType}
 							label="Tipo"
-							onChange={(event) => changeFilter(setActorType, event.target.value)}
+							onChange={(event) => changeFilter('tipo', event.target.value)}
 						>
 							<MenuItem value="">Todos</MenuItem>
 							{Object.entries(typeLabels).map(([value, label]) => (
@@ -313,7 +359,7 @@ export default function AdminActoresPage() {
 						<Select
 							value={state}
 							label="Estado"
-							onChange={(event) => changeFilter(setState, event.target.value)}
+							onChange={(event) => changeFilter('estado', event.target.value)}
 						>
 							<MenuItem value="">Todos</MenuItem>
 							{Object.entries(stateLabels).map(([value, label]) => (
