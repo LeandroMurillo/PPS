@@ -23,8 +23,8 @@ describe('consultas administrativas', () => {
 		expect(listarUsuariosAdminQuerySchema.parse({})).toEqual({
 			limit: 25,
 			offset: 0,
-			sortBy: 'idUsuario',
-			sortDir: 'ASC',
+			sortBy: 'fechaRegistro',
+			sortDir: 'DESC',
 		});
 	});
 

@@ -35,6 +35,7 @@ export function formatDateTime(value: unknown): string {
 			: new Intl.DateTimeFormat('es-AR', {
 					dateStyle: 'medium',
 					timeStyle: 'short',
+					hourCycle: 'h23',
 				}).format(parsed);
 	} catch {
 		return String(value);

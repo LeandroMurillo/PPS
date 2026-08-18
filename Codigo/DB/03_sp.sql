@@ -19,16 +19,16 @@ CREATE OR REPLACE PROCEDURE `sp_admin_listar_usuarios`(
     IN pEstado CHAR(1) DEFAULT NULL,
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0,
-    IN pSortBy VARCHAR(50) DEFAULT 'idUsuario',
-    IN pSortDir VARCHAR(4) DEFAULT 'ASC'
+    IN pSortBy VARCHAR(50) DEFAULT 'fechaRegistro',
+    IN pSortDir VARCHAR(4) DEFAULT 'DESC'
 )
 READS SQL DATA
 COMMENT 'Lista usuarios para administración aplicando búsqueda, filtros opcionales por rol y estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de usuarios.'
 BEGIN
     DECLARE vLimit INT DEFAULT 25;
     DECLARE vOffset INT DEFAULT 0;
-    DECLARE vSortBy VARCHAR(50) DEFAULT 'idUsuario';
-    DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+    DECLARE vSortBy VARCHAR(50) DEFAULT 'fechaRegistro';
+    DECLARE vSortDir VARCHAR(4) DEFAULT 'DESC';
 
     SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 100);
     SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
@@ -47,12 +47,12 @@ BEGIN
             'estado',
             'fechaRegistro'
         ) THEN pSortBy
-        ELSE 'idUsuario'
+        ELSE 'fechaRegistro'
     END;
 
     SET vSortDir = CASE
-        WHEN UPPER(COALESCE(pSortDir, 'ASC')) = 'DESC' THEN 'DESC'
-        ELSE 'ASC'
+        WHEN UPPER(COALESCE(pSortDir, 'DESC')) = 'ASC' THEN 'ASC'
+        ELSE 'DESC'
     END;
 
     SELECT COUNT(*) AS total
@@ -139,7 +139,7 @@ BEGIN
         CASE WHEN vSortBy = 'fechaRegistro' AND vSortDir = 'ASC' THEN u.fechaRegistro END ASC,
         CASE WHEN vSortBy = 'fechaRegistro' AND vSortDir = 'DESC' THEN u.fechaRegistro END DESC,
 
-        u.idUsuario ASC
+        u.idUsuario DESC
     LIMIT vLimit OFFSET vOffset;
 END //
 

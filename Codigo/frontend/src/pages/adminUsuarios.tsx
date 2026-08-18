@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { PageContainer } from '@toolpad/core/PageContainer';
 
@@ -13,9 +14,11 @@ import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { ESTADO_COLORS as stateColors, ESTADO_LABELS as stateLabels } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { formatDate, formatDateTime } from '../utils/date';
+import { formatDateTime } from '../utils/date';
 
 const roleColors = { USUARIO: 'default', MODERADOR: 'warning', ADMIN: 'error' } as const;
+const validRoles = new Set<UsuarioAdmin['rol']>(['USUARIO', 'MODERADOR', 'ADMIN']);
+const validStates = new Set<UsuarioAdmin['estado']>(['A', 'P', 'I']);
 
 const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 	{
@@ -32,13 +35,22 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 			</Stack>
 		),
 	},
-	{ id: 'cuil', label: 'CUIL', sortBy: 'CUIL', minWidth: 110, render: (row) => row.cuil },
 	{
 		id: 'actividad',
 		label: 'Actividad ARCA',
 		sortBy: 'actividadArca',
-		minWidth: 220,
-		render: (row) => row.actividadArca ?? '—',
+		minWidth: 180,
+		render: (row) => {
+			const actividad = row.actividadArca ?? '—';
+
+			return (
+				<Tooltip title={actividad} disableHoverListener={actividad === '—'}>
+					<Typography variant="body2" noWrap sx={{ maxWidth: 260 }}>
+						{actividad}
+					</Typography>
+				</Tooltip>
+			);
+		},
 	},
 	{
 		id: 'rol',
@@ -53,19 +65,6 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 		render: (row) => <Chip label={stateLabels[row.estado]} color={stateColors[row.estado]} size="small" />,
 	},
 	{
-		id: 'nacionalidad',
-		label: 'Nacionalidad',
-		sortBy: 'nacionalidad',
-		minWidth: 130,
-		render: (row) => row.nacionalidad,
-	},
-	{
-		id: 'nacimiento',
-		label: 'Nacimiento',
-		minWidth: 115,
-		render: (row) => formatDate(row.fechaNacimiento),
-	},
-	{
 		id: 'registro',
 		label: 'Registro',
 		sortBy: 'fechaRegistro',
@@ -76,22 +75,30 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 
 export default function AdminUsuariosPage() {
 	const navigate = useNavigate();
-	const [search, setSearch] = React.useState('');
-	const [role, setRole] = React.useState('');
-	const [state, setState] = React.useState('A');
+	const [searchParams, setSearchParams] = useSearchParams();
+	const search = searchParams.get('busqueda') ?? '';
+	const roleParam = searchParams.get('rol');
+	const stateParam = searchParams.get('estado');
+	const role = roleParam && validRoles.has(roleParam as UsuarioAdmin['rol']) ? roleParam : '';
+	const state = stateParam && validStates.has(stateParam as UsuarioAdmin['estado']) ? stateParam : '';
 	const [page, setPage] = React.useState(0);
 	const [pageSize, setPageSize] = React.useState(25);
-	const [sortBy, setSortBy] = React.useState<UsuarioAdminSortBy>('idUsuario');
-	const [sortDir, setSortDir] = React.useState<SortDirection>('ASC');
+	const [sortBy, setSortBy] = React.useState<UsuarioAdminSortBy>('fechaRegistro');
+	const [sortDir, setSortDir] = React.useState<SortDirection>('DESC');
 	const [rows, setRows] = React.useState<UsuarioAdmin[]>([]);
 	const [total, setTotal] = React.useState(0);
 	const [loading, setLoading] = React.useState(true);
 	const [error, setError] = React.useState<string | null>(null);
 	const debouncedSearch = useDebouncedValue(search);
+	const activeFilterCount = Number(Boolean(search.trim())) + Number(Boolean(role)) + Number(Boolean(state));
+	const hasActiveFilters = activeFilterCount > 0;
+	const resultSummary = total === 1 ? '1 usuario encontrado' : `${total} usuarios encontrados`;
 
 	React.useEffect(() => {
 		setPage(0);
 		setRows([]);
+		setTotal(0);
+		setLoading(true);
 	}, [debouncedSearch, role, sortBy, sortDir, state]);
 
 	React.useEffect(() => {
@@ -131,10 +138,30 @@ export default function AdminUsuariosPage() {
 		return () => controller.abort();
 	}, [debouncedSearch, page, pageSize, role, sortBy, sortDir, state]);
 
-	const changeFilter = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
-		setter(value);
+	const changeFilter = (key: 'busqueda' | 'rol' | 'estado', value: string, replace = false) => {
+		const nextParams = new URLSearchParams(searchParams);
+		if (value) {
+			nextParams.set(key, value);
+		} else {
+			nextParams.delete(key);
+		}
+		setSearchParams(nextParams, { replace });
 		setPage(0);
 		setRows([]);
+		setTotal(0);
+		setLoading(true);
+	};
+
+	const clearFilters = () => {
+		const nextParams = new URLSearchParams(searchParams);
+		nextParams.delete('busqueda');
+		nextParams.delete('rol');
+		nextParams.delete('estado');
+		setSearchParams(nextParams);
+		setPage(0);
+		setRows([]);
+		setTotal(0);
+		setLoading(true);
 	};
 
 	return (
@@ -142,35 +169,31 @@ export default function AdminUsuariosPage() {
 			<Stack spacing={2}>
 				<AdminFilters
 					search={search}
-					searchPlaceholder="Nombre, apellido, email, CUIL o actividad…"
-					onSearchChange={(value) => changeFilter(setSearch, value)}
-					onClear={() => {
-						setSearch('');
-						setRole('');
-						setState('A');
-						setPage(0);
-						setRows([]);
-					}}
+					searchPlaceholder="Buscar por nombre, email, CUIL o actividad ARCA…"
+					activeFilterCount={activeFilterCount}
+					showClear={hasActiveFilters}
+					onSearchChange={(value) => changeFilter('busqueda', value, true)}
+					onClear={clearFilters}
 				>
 					<TextField
 						select
 						label="Rol"
 						size="small"
 						value={role}
-						onChange={(event) => changeFilter(setRole, event.target.value)}
+						onChange={(event) => changeFilter('rol', event.target.value)}
 						sx={{ minWidth: 150 }}
 					>
-						<MenuItem value="">Todos</MenuItem>
+						<MenuItem value="">Todos los roles</MenuItem>
 						<MenuItem value="USUARIO">Usuario</MenuItem>
 						<MenuItem value="MODERADOR">Moderador</MenuItem>
-						<MenuItem value="ADMIN">Admin</MenuItem>
+						<MenuItem value="ADMIN">Administrador</MenuItem>
 					</TextField>
 					<TextField
 						select
 						label="Estado"
 						size="small"
 						value={state}
-						onChange={(event) => changeFilter(setState, event.target.value)}
+						onChange={(event) => changeFilter('estado', event.target.value)}
 						sx={{ minWidth: 150 }}
 					>
 						<MenuItem value="">Todos</MenuItem>
@@ -179,6 +202,10 @@ export default function AdminUsuariosPage() {
 						<MenuItem value="I">Inactivo</MenuItem>
 					</TextField>
 				</AdminFilters>
+
+				<Typography variant="body2" color="text.secondary">
+					{loading && rows.length === 0 ? 'Buscando usuarios…' : resultSummary}
+				</Typography>
 
 				<AdminTable
 					columns={columns}

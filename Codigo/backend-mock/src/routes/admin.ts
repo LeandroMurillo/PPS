@@ -19,9 +19,9 @@ adminRouter.get('/usuarios', (req, res) => {
 	const limit = req.query.limit ? Number(req.query.limit) : 10;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
 	const sortBy = (
-		typeof req.query.sortBy === 'string' ? req.query.sortBy : 'idUsuario'
+		typeof req.query.sortBy === 'string' ? req.query.sortBy : 'fechaRegistro'
 	) as keyof (typeof db.usuarios)[0];
-	const sortDir = req.query.sortDir === 'DESC' ? 'DESC' : 'ASC';
+	const sortDir = req.query.sortDir === 'ASC' ? 'ASC' : 'DESC';
 
 	let result = [...db.usuarios];
 
@@ -41,6 +41,7 @@ adminRouter.get('/usuarios', (req, res) => {
 	result.sort((a, b) => {
 		const valA = String(a[sortBy as keyof typeof a] ?? '');
 		const valB = String(b[sortBy as keyof typeof b] ?? '');
+		if (valA === valB) return b.id - a.id;
 		return sortDir === 'ASC' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
 	});
 

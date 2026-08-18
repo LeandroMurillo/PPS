@@ -14,6 +14,7 @@ type AdminFiltersProps = {
 	searchPlaceholder?: string;
 	collapsible?: boolean;
 	activeFilterCount?: number;
+	showClear?: boolean;
 	children: React.ReactNode;
 	onSearchChange: (value: string) => void;
 	onClear: () => void;
@@ -24,6 +25,7 @@ export default function AdminFilters({
 	searchPlaceholder = 'Nombre, email, ubicación…',
 	collapsible = false,
 	activeFilterCount = 0,
+	showClear = true,
 	children,
 	onSearchChange,
 	onClear,
@@ -82,9 +84,11 @@ export default function AdminFilters({
 			}}
 		>
 			{children}
-			<Button onClick={onClear} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>
-				Limpiar
-			</Button>
+			{showClear && (
+				<Button onClick={onClear} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>
+					Limpiar filtros
+				</Button>
+			)}
 		</Stack>
 	);
 

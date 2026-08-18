@@ -69,10 +69,10 @@ export const listarUsuariosAdminQuerySchema = z.strictObject({
 	rol: z.preprocess(normalizeOptionalString, z.enum(['USUARIO', 'MODERADOR', 'ADMIN']).optional()),
 	estado: z.preprocess(normalizeOptionalString, z.enum(['A', 'P', 'I']).optional()),
 	...paginationQueryFields,
-	sortBy: usuarioAdminSortBySchema.default('idUsuario'),
+	sortBy: usuarioAdminSortBySchema.default('fechaRegistro'),
 	sortDir: z.preprocess(
 		(value) => (typeof value === 'string' ? value.toUpperCase() : value),
-		sortDirectionSchema.default('ASC'),
+		sortDirectionSchema.default('DESC'),
 	),
 });
 
