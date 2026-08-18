@@ -471,13 +471,11 @@ export async function cambiarEstadoActorRepository(input: {
 	idUsuario: number;
 	idActor: number;
 	nuevoEstado: 'A' | 'P' | 'I';
-	esAdmin: boolean;
 }) {
-	await pool.query('CALL sp_actor_cambiar_estado_actor(?, ?, ?, ?)', [
+	await pool.query('CALL sp_actor_cambiar_estado_actor(?, ?, ?)', [
 		input.idUsuario,
 		input.idActor,
 		input.nuevoEstado,
-		input.esAdmin ? 1 : 0,
 	]);
 }
 

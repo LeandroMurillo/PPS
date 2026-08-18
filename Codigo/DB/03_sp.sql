@@ -419,13 +419,22 @@ BEGIN
 		) ids
 		INNER JOIN `Actores` a
 			ON a.idActor = ids.idActor
-		LEFT JOIN `ModeradoresCategorias` mc
-			ON mc.idUsuario = pIdUsuarioSolicitante
-		   AND mc.idCategoria = a.idCategoria
-		WHERE mc.idCategoria IS NULL
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM `ModeradoresCategorias` mc
+			WHERE mc.idUsuario = pIdUsuarioSolicitante
+			  AND mc.idCategoria = a.idCategoria
+		)
+		AND NOT EXISTS (
+			SELECT 1
+			FROM `Integrantes` i
+			WHERE i.idUsuario = pIdUsuarioSolicitante
+			  AND i.idActor = a.idActor
+			  AND i.esDueño = 1
+		)
 	) THEN
 		SIGNAL SQLSTATE '45000'
-			SET MESSAGE_TEXT = 'No puede moderar actores de categorías que no tiene asignadas.';
+			SET MESSAGE_TEXT = 'Solo puede moderar actores de sus categorías asignadas o actores propios.';
 	END IF;
 
     UPDATE `Actores` a
@@ -4258,29 +4267,63 @@ END //
 CREATE OR REPLACE PROCEDURE `sp_actor_cambiar_estado_actor`(
     IN pIdUsuario INT,
     IN pIdActor INT,
-    IN pNuevoEstado CHAR(1),
-    IN pEsAdmin TINYINT
+    IN pNuevoEstado CHAR(1)
 )
 MODIFIES SQL DATA
-COMMENT 'Cambia el estado de un actor (P, I, o A si es admin).'
+COMMENT 'Cambia el estado según el rol vigente, la propiedad del actor y las categorías asignadas al moderador.'
 BEGIN
-    DECLARE vEsDueno INT DEFAULT 0;
+    DECLARE vRolSolicitante VARCHAR(20);
+	DECLARE vEsDueno TINYINT DEFAULT 0;
+	DECLARE vModeraCategoria TINYINT DEFAULT 0;
+	DECLARE vActorExiste TINYINT DEFAULT 0;
+
+	SELECT u.rol
+	INTO vRolSolicitante
+	FROM `Usuarios` u
+	WHERE u.idUsuario = pIdUsuario
+	  AND u.estado = 'A';
+
+	IF vRolSolicitante IS NULL THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o su cuenta no está activa.';
+	END IF;
+
+	IF pNuevoEstado NOT IN ('A', 'P', 'I') THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Estado no válido.';
+	END IF;
+
+	SELECT COUNT(*) INTO vActorExiste
+	FROM `Actores` a
+	WHERE a.idActor = pIdActor;
+
+	IF vActorExiste = 0 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El actor cultural no existe.';
+	END IF;
 
     SELECT COUNT(*) INTO vEsDueno
     FROM `Integrantes`
     WHERE idUsuario = pIdUsuario AND idActor = pIdActor AND esDueño = 1;
 
-    IF vEsDueno = 0 AND COALESCE(pEsAdmin, 0) = 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para gestionar este actor cultural.';
-    END IF;
+	IF vRolSolicitante = 'MODERADOR' THEN
+		SELECT COUNT(*) INTO vModeraCategoria
+		FROM `Actores` a
+		INNER JOIN `ModeradoresCategorias` mc
+			ON mc.idCategoria = a.idCategoria
+		   AND mc.idUsuario = pIdUsuario
+		WHERE a.idActor = pIdActor;
+	END IF;
 
-    IF pNuevoEstado = 'A' AND COALESCE(pEsAdmin, 0) = 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Solo administradores o moderadores pueden activar un actor.';
-    END IF;
+	IF vRolSolicitante = 'USUARIO' AND vEsDueno = 0 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No tenés permisos para gestionar este actor cultural.';
+	END IF;
 
-    IF pNuevoEstado NOT IN ('A', 'P', 'I') THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Estado no válido.';
-    END IF;
+	IF vRolSolicitante = 'USUARIO' AND pNuevoEstado = 'A' THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Solo un administrador o moderador autorizado puede activar un actor.';
+	END IF;
+
+	IF vRolSolicitante = 'MODERADOR' AND vEsDueno = 0 AND vModeraCategoria = 0 THEN
+		SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Solo podés gestionar actores propios o de las categorías que moderás.';
+	END IF;
 
     UPDATE `Actores`
     SET estado = pNuevoEstado

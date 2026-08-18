@@ -276,7 +276,6 @@ export async function cambiarEstadoActorController(req: Request, res: Response):
 			idUsuario: user.idUsuario,
 			idActor,
 			nuevoEstado,
-			userRol: user.rol,
 		});
 
 		res.json({ message: `Estado actualizado a ${nuevoEstado} correctamente.` });
