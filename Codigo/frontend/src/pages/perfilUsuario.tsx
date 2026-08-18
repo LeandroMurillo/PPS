@@ -19,7 +19,6 @@ import {
 	Box,
 	Button,
 	Chip,
-	type ChipProps,
 	CircularProgress,
 	Dialog,
 	DialogActions,
@@ -55,7 +54,6 @@ import {
 import { obtenerActividadesArcaApi, type ActividadArca } from '../api/auth';
 import DatePickerSpanish from '../components/datePickerSpanish';
 import { GENEROS, type GeneroCodigo } from '../constants/generos';
-import { ESTADO_COLORS, ESTADO_LABELS } from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
 import { fileToBase64, validateImageFile } from '../utils/file';
 import { notify } from '../utils/toast';
@@ -363,8 +361,6 @@ export default function PerfilUsuarioPage() {
 	}
 
 	const roleLabel = perfil?.rol === 'ADMIN' ? 'Administrador' : perfil?.rol === 'MODERADOR' ? 'Moderador' : 'Usuario';
-	const statusColor: ChipProps['color'] = perfil?.estado ? (ESTADO_COLORS[perfil.estado] ?? 'default') : 'default';
-	const statusLabel = perfil?.estado ? ESTADO_LABELS[perfil.estado] : '—';
 
 	// Configuración de avatar dinámico por género
 	const getAvatarConfig = (genero?: string) => {
@@ -451,12 +447,6 @@ export default function PerfilUsuarioPage() {
 													? 'info'
 													: 'default'
 										}
-										variant="outlined"
-									/>
-									<Chip
-										size="small"
-										label={`Estado: ${statusLabel}`}
-										color={statusColor}
 										variant="outlined"
 									/>
 									<Chip
