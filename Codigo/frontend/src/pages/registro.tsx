@@ -934,7 +934,7 @@ export default function RegistroPage() {
 									<CheckCircleOutlineIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
 
 									<Typography variant="h5" fontWeight="bold" gutterBottom color="success.main">
-										¡Registro Solicitado con Éxito!
+										¡Registro Completado con Éxito!
 									</Typography>
 
 									<Typography
@@ -943,20 +943,15 @@ export default function RegistroPage() {
 										paragraph
 										sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
 									>
-										{registroExitoso || 'Tu cuenta ya está activa y podés iniciar sesión.'}
+										{registroExitoso || 'Tu cuenta se encuentra activada. Ya podés iniciar sesión.'}
 									</Typography>
 
-									<Alert severity="info" sx={{ maxWidth: 600, mx: 'auto', mb: 4, textAlign: 'left' }}>
-										Un administrador debe aprobar la solicitud antes de que puedas ingresar al
-										sistema.
-									</Alert>
-
 									<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-										<Button variant="contained" onClick={() => navigate('/')} size="large">
-											Ir al Mapa Principal
-										</Button>
-										<Button variant="outlined" onClick={() => navigate('/login')} size="large">
+										<Button variant="contained" onClick={() => navigate('/login')} size="large">
 											Iniciar Sesión
+										</Button>
+										<Button variant="outlined" onClick={() => navigate('/')} size="large">
+											Ir al Mapa Principal
 										</Button>
 									</Box>
 								</Box>

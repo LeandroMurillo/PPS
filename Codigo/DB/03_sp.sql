@@ -3848,7 +3848,7 @@ CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
     IN pFotoDniUrl VARCHAR(255)
 )
 MODIFIES SQL DATA
-COMMENT 'Registra una identidad Firebase verificada en estado Pendiente (P) con rol USUARIO.'
+COMMENT 'Registra una identidad Firebase verificada en estado Activo (A) con rol USUARIO.'
 BEGIN
     DECLARE vEmailExistente INT DEFAULT 0;
     DECLARE vCUILExistente INT DEFAULT 0;
@@ -3916,7 +3916,7 @@ BEGIN
         pActividadesArcaCodigo,
         pFotoDniUrl,
         'USUARIO',
-        'P'
+        'A'
     );
 
     SET vNuevoId = LAST_INSERT_ID();

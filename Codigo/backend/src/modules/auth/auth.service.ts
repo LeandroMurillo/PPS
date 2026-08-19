@@ -78,7 +78,7 @@ export async function registrarUsuarioService(
 
 	return {
 		usuario,
-		mensaje: 'Registro enviado correctamente. La cuenta quedó pendiente de aprobación.',
+		mensaje: 'Registro completado exitosamente. Ya podés iniciar sesión.',
 	};
 }
 

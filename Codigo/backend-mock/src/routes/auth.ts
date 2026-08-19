@@ -249,7 +249,7 @@ authRouter.post('/registro', (req, res) => {
 		actividadesArcaCodigo: body.actividadesArcaCodigo?.trim() || null,
 		fotoDniUrl: body.documentoIdentidad ? `/uploads/dni/mock_dni_${Date.now()}.png` : null,
 		rol: 'USUARIO',
-		estado: 'P',
+		estado: 'A',
 		fechaRegistro: new Date().toISOString(),
 	};
 
@@ -273,7 +273,7 @@ authRouter.post('/registro', (req, res) => {
 
 	return res.status(201).json({
 		usuario: usuarioSession,
-		mensaje: 'Registro enviado correctamente. La cuenta quedó pendiente de aprobación.',
+		mensaje: 'Registro completado exitosamente. Ya podés iniciar sesión.',
 	});
 });
 
