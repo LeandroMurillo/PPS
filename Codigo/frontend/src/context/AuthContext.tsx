@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { Session } from '@toolpad/core/AppProvider';
+import { signOut } from 'firebase/auth';
 import type { UsuarioSession } from '../api/auth';
 import { SESSION_INVALIDATED_EVENT } from '../api/client';
+import { firebaseAuth } from '../config/firebase';
 
 const STORAGE_KEY = 'mosaico_cultural_user_session';
 const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
@@ -84,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	const logout = () => {
 		setUser(null);
 		setToken(null);
+		void signOut(firebaseAuth);
 	};
 
 	const updateUser = (updatedFields: Partial<UsuarioSession>) => {

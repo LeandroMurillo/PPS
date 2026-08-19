@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Usuarios` (
   `fechaNacimiento` DATE NOT NULL,
   `nacionalidad` VARCHAR(45) NOT NULL,
   `email` VARCHAR(99) NOT NULL,
-  `contraseña` VARCHAR(255) NOT NULL COMMENT '\'sha(256)\'',
+  `firebaseUid` VARCHAR(128) NULL COMMENT 'Identificador estable de Firebase Authentication',
+  `contraseña` VARCHAR(255) NULL COMMENT 'Hash legado; las cuentas Firebase no almacenan contraseña local',
   `fechaRegistro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `rol` ENUM('USUARIO', 'MODERADOR', 'ADMIN') NOT NULL,
   `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Usuarios` (
   `fotoDniUrl` VARCHAR(255) NULL,
   PRIMARY KEY (`idUsuario`),
   UNIQUE INDEX `uq_Usuarios_email` (`email` ASC) VISIBLE,
+  UNIQUE INDEX `uq_Usuarios_firebase_uid` (`firebaseUid` ASC) VISIBLE,
   INDEX `fk_Usuarios_actividades_arca_idx` (`actividadesArcaCodigo` ASC) VISIBLE,
   CONSTRAINT `fk_Usuarios_actividades_arca`
     FOREIGN KEY (`actividadesArcaCodigo`)

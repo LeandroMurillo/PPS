@@ -54,7 +54,6 @@ const perfilUsuarioDBRowSchema = z.object({
 		}
 		return String(val);
 	}),
-	contraseña: z.string(),
 	actoresDuenoCount: databaseIntegerSchema.default(0),
 });
 
@@ -95,31 +94,21 @@ export async function actualizarPerfilUsuarioRepository(
 ): Promise<PerfilUsuarioDBRow | null> {
 	const procedureName = 'sp_usuario_actualizar_perfil';
 
-	const result: unknown = await pool.query(
-		'CALL sp_usuario_actualizar_perfil(?, ?, ?, ?, ?, ?, ?, ?, ?)',
-		[
-			idUsuario,
-			input.nombre,
-			input.apellido,
-			input.genero,
-			input.fechaNacimiento,
-			input.nacionalidad,
-			input.CUIL,
-			input.actividadesArcaCodigo ?? null,
-			input.fotoDniUrl ?? null,
-		],
-	);
+	const result: unknown = await pool.query('CALL sp_usuario_actualizar_perfil(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+		idUsuario,
+		input.nombre,
+		input.apellido,
+		input.genero,
+		input.fechaNacimiento,
+		input.nacionalidad,
+		input.CUIL,
+		input.actividadesArcaCodigo ?? null,
+		input.fotoDniUrl ?? null,
+	]);
 
 	const rows = z.array(perfilUsuarioDBRowSchema).parse(getResultSet(result, 0, procedureName));
 
 	return rows[0] ?? null;
-}
-
-export async function actualizarContraseñaUsuarioRepository(
-	idUsuario: number,
-	nuevaContraseñaHash: string,
-): Promise<void> {
-	await pool.query('CALL sp_usuario_actualizar_contrasena(?, ?)', [idUsuario, nuevaContraseñaHash]);
 }
 
 export async function eliminarCuentaUsuarioRepository(

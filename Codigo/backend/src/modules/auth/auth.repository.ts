@@ -55,8 +55,9 @@ function getResultSet(procedureResult: unknown, index: number, procedureName: st
 	return procedureResult[index];
 }
 
-export type RegistrarUsuarioRepositoryInput = Omit<RegistrarUsuarioBody, 'contraseña' | 'documentoIdentidad'> & {
-	contraseñaHash: string;
+export type RegistrarUsuarioRepositoryInput = Omit<RegistrarUsuarioBody, 'documentoIdentidad'> & {
+	firebaseUid: string;
+	email: string;
 	fotoDniUrl: string | null;
 };
 
@@ -64,13 +65,13 @@ export async function registrarUsuarioRepository(input: RegistrarUsuarioReposito
 	const procedureName = 'sp_publico_registrar_usuario';
 
 	const result: unknown = await pool.query('CALL sp_publico_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+		input.firebaseUid,
 		input.nombre,
 		input.apellido,
 		input.genero,
 		input.fechaNacimiento,
 		input.nacionalidad,
 		input.email,
-		input.contraseñaHash,
 		input.CUIL,
 		input.actividadesArcaCodigo ?? null,
 		input.fotoDniUrl ?? null,
@@ -87,18 +88,12 @@ export async function registrarUsuarioRepository(input: RegistrarUsuarioReposito
 	return usuarioRegistradoSchema.parse(firstRow);
 }
 
-const usuarioAuthDBRowSchema = usuarioDBRowSchema.extend({
-	contraseña: z.string(),
-});
+export async function obtenerUsuarioPorFirebaseUidRepository(firebaseUid: string): Promise<UsuarioRegistrado | null> {
+	const procedureName = 'sp_publico_obtener_usuario_por_firebase_uid';
 
-export type UsuarioAuthDBRow = z.infer<typeof usuarioAuthDBRowSchema>;
+	const result: unknown = await pool.query('CALL sp_publico_obtener_usuario_por_firebase_uid(?)', [firebaseUid]);
 
-export async function obtenerUsuarioPorEmailRepository(email: string): Promise<UsuarioAuthDBRow | null> {
-	const procedureName = 'sp_publico_obtener_usuario_por_email';
-
-	const result: unknown = await pool.query('CALL sp_publico_obtener_usuario_por_email(?)', [email]);
-
-	const rows = z.array(usuarioAuthDBRowSchema).parse(getResultSet(result, 0, procedureName));
+	const rows = z.array(usuarioDBRowSchema).parse(getResultSet(result, 0, procedureName));
 
 	return rows[0] ?? null;
 }

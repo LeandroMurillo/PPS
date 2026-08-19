@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loginBodySchema, registrarUsuarioBodySchema } from '../src/modules/auth/auth.schemas.js';
-import { hashPassword, verifyPassword } from '../src/modules/auth/auth.service.js';
+import { registrarUsuarioBodySchema } from '../src/modules/auth/auth.schemas.js';
 import { openApiDocument } from '../src/openapi/document.js';
 
 describe('validación del registro y login de usuario', () => {
@@ -11,8 +10,6 @@ describe('validación del registro y login de usuario', () => {
 		genero: 'F',
 		fechaNacimiento: '1992-08-15',
 		nacionalidad: '  Argentina  ',
-		email: '  MARIA.GONZALEZ@EXAMPLE.COM  ',
-		contraseña: 'miPasswordSegura123',
 		CUIL: '27359998886',
 		actividadesArcaCodigo: '900012',
 		documentoIdentidad:
@@ -27,8 +24,6 @@ describe('validación del registro y login de usuario', () => {
 			genero: 'F',
 			fechaNacimiento: '1992-08-15',
 			nacionalidad: 'Argentina',
-			email: 'maria.gonzalez@example.com',
-			contraseña: 'miPasswordSegura123',
 			CUIL: '27359998886',
 			actividadesArcaCodigo: '900012',
 			documentoIdentidad: validPayload.documentoIdentidad,
@@ -49,66 +44,14 @@ describe('validación del registro y login de usuario', () => {
 		expect(parsedEmpty.actividadesArcaCodigo).toBeNull();
 	});
 
-	it('valida el esquema de inicio de sesión (login)', () => {
-		const parsed = loginBodySchema.parse({
-			email: '  USUARIO@EXAMPLE.COM  ',
-			contraseña: 'miPasswordSegura123',
-		});
-		expect(parsed).toEqual({
-			email: 'usuario@example.com',
-			contraseña: 'miPasswordSegura123',
-		});
-
-		expect(loginBodySchema.safeParse({ email: 'invalido', contraseña: '123' }).success).toBe(false);
-	});
-
-	it('genera y verifica hashes de contraseña con scrypt', () => {
-		const pass = 'miClaveSecreta123';
-		const hash = hashPassword(pass);
-		expect(hash.length).toBeGreaterThanOrEqual(60);
-		expect(verifyPassword(pass, hash)).toBe(true);
-		expect(verifyPassword('claveErronea', hash)).toBe(false);
-	});
-
-	it('verifica correctamente hashes bcrypt reales y rechaza contraseñas incorrectas de cualquier longitud', () => {
-		const bcryptHash = '$2b$10$OCyVSAecz0oX3vLGLkrh8uyWAdH60Ac9vg0CI.W.yS0oQrnU8kUVa';
-		expect(verifyPassword('clave123', bcryptHash)).toBe(true);
-		expect(verifyPassword('123456', bcryptHash)).toBe(false);
-		expect(verifyPassword('otraClave99', bcryptHash)).toBe(false);
-	});
-
-	it('rechaza contraseñas con menos de 6 caracteres o sin letras y números en registro', () => {
-		const result1 = registrarUsuarioBodySchema.safeParse({
+	it('no acepta identidad ni contraseña desde el cuerpo público', () => {
+		const parsed = registrarUsuarioBodySchema.parse({
 			...validPayload,
-			contraseña: '12345',
-		});
-		expect(result1.success).toBe(false);
-
-		const result2 = registrarUsuarioBodySchema.safeParse({
-			...validPayload,
-			contraseña: 'sololetras',
-		});
-		expect(result2.success).toBe(false);
-
-		const result3 = registrarUsuarioBodySchema.safeParse({
-			...validPayload,
-			contraseña: '123456',
-		});
-		expect(result3.success).toBe(false);
-
-		const resultValid = registrarUsuarioBodySchema.safeParse({
-			...validPayload,
+			email: 'suplantado@example.com',
 			contraseña: 'clave1',
 		});
-		expect(resultValid.success).toBe(true);
-	});
-
-	it('rechaza correos electrónicos inválidos', () => {
-		const result = registrarUsuarioBodySchema.safeParse({
-			...validPayload,
-			email: 'correo-invalido',
-		});
-		expect(result.success).toBe(false);
+		expect(parsed).not.toHaveProperty('email');
+		expect(parsed).not.toHaveProperty('contraseña');
 	});
 
 	it('rechaza CUIL con formato incorrecto o dígito verificador inválido', () => {
@@ -178,6 +121,6 @@ describe('validación del registro y login de usuario', () => {
 	it('genera el documento OpenAPI sin errores', () => {
 		expect(openApiDocument).toBeDefined();
 		expect(openApiDocument.paths?.['/api/publico/auth/registro']).toBeDefined();
-		expect(openApiDocument.paths?.['/api/publico/auth/login']).toBeDefined();
+		expect(openApiDocument.paths?.['/api/publico/auth/firebase/session']).toBeDefined();
 	});
 });

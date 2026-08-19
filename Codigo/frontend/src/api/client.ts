@@ -1,3 +1,5 @@
+import { firebaseAuth } from '../config/firebase';
+
 const API_BASE_URL = (import.meta as ImportMeta & { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? '';
 
 const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
@@ -10,16 +12,28 @@ type ApiErrorBody = {
 	};
 };
 
-export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-	const headers = new Headers(init?.headers);
+type ApiRequestInit = RequestInit & {
+	authMode?: 'application' | 'firebase' | 'none';
+};
 
-	const token = typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promise<T> {
+	const headers = new Headers(init?.headers);
+	const authMode = init?.authMode ?? 'application';
+	const { authMode: _authMode, ...requestInit } = init ?? {};
+	void _authMode;
+
+	const token =
+		authMode === 'firebase'
+			? await firebaseAuth.currentUser?.getIdToken()
+			: authMode === 'application' && typeof localStorage !== 'undefined'
+				? localStorage.getItem(TOKEN_STORAGE_KEY)
+				: null;
 	if (token && !headers.has('Authorization')) {
 		headers.set('Authorization', `Bearer ${token}`);
 	}
 
 	const response = await fetch(`${API_BASE_URL}${path}`, {
-		...init,
+		...requestInit,
 		headers,
 	});
 

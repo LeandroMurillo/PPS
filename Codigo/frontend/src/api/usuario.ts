@@ -1,4 +1,6 @@
 import type { GeneroCodigo } from '../constants/generos';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { firebaseAuth } from '../config/firebase';
 import type { UsuarioSession } from './auth';
 import { apiRequest } from './client';
 
@@ -59,13 +61,20 @@ export async function actualizarPerfilUsuarioApi(data: ActualizarPerfilPayload):
 }
 
 export async function cambiarContrasenaUsuarioApi(data: CambiarContrasenaPayload): Promise<CambiarContrasenaResponse> {
-	return apiRequest<CambiarContrasenaResponse>('/api/usuario/contrasena', {
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify(data),
-	});
+	const user = firebaseAuth.currentUser;
+	if (!user?.email) {
+		throw new Error('No hay una identidad de Firebase activa. Volvé a iniciar sesión.');
+	}
+
+	if (!user.providerData.some((provider) => provider.providerId === 'password')) {
+		throw new Error('La contraseña de una cuenta Google se administra desde Google.');
+	}
+
+	const credential = EmailAuthProvider.credential(user.email, data.contraseñaActual);
+	await reauthenticateWithCredential(user, credential);
+	await updatePassword(user, data.nuevaContraseña);
+
+	return { mensaje: 'Contraseña actualizada correctamente.' };
 }
 
 export async function eliminarCuentaUsuarioApi(): Promise<EliminarCuentaResponse> {

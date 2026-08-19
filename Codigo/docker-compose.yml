@@ -21,6 +21,9 @@ services:
       DB_NAME: ${DB_NAME}
       DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-10}
       JWT_SECRET: ${JWT_SECRET}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:?}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:?}
     volumes:
       - actor-uploads:/app/uploads
     networks:
@@ -42,6 +45,12 @@ services:
       context: ./frontend
       target: production
       dockerfile: Dockerfile
+      args:
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:?}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:?}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:?}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:?}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]

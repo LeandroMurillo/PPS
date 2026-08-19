@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import {
+	sendEmailVerification,
+	sendPasswordResetEmail,
+	signInWithEmailAndPassword,
+	signInWithPopup,
+	signOut,
+} from 'firebase/auth';
 
 import {
 	Alert,
@@ -7,6 +14,7 @@ import {
 	Button,
 	CircularProgress,
 	Container,
+	Divider,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -18,8 +26,10 @@ import {
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 
-import { loginApi } from '../api/auth';
+import { crearSesionFirebaseApi } from '../api/auth';
+import { firebaseAuth, googleAuthProvider } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
+import { getFirebaseErrorMessage } from '../utils/firebaseError';
 import { notify } from '../utils/toast';
 
 export default function LoginPage() {
@@ -48,12 +58,28 @@ export default function LoginPage() {
 		setForgotPasswordOpen(false);
 	};
 
-	const handleSendForgotPassword = (e: React.FormEvent) => {
+	const handleSendForgotPassword = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (forgotEmail.trim()) {
-			setForgotSubmitted(true);
-			notify.info('Si el correo está registrado, recibirás las instrucciones.', { scope: 'forgot-password' });
+			try {
+				await sendPasswordResetEmail(firebaseAuth, forgotEmail.trim().toLowerCase());
+				setForgotSubmitted(true);
+				notify.info('Si el correo está registrado, recibirás las instrucciones.', {
+					scope: 'forgot-password',
+				});
+			} catch (error) {
+				notify.error(getFirebaseErrorMessage(error, 'No se pudo enviar el correo de recuperación.'), {
+					scope: 'forgot-password',
+				});
+			}
 		}
+	};
+
+	const completeApplicationLogin = async () => {
+		const response = await crearSesionFirebaseApi();
+		login(response.usuario, response.token);
+		notify.success(`¡Hola, ${response.usuario.nombre || 'usuario'}!`, { scope: 'login' });
+		navigate('/');
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -84,15 +110,36 @@ export default function LoginPage() {
 
 		setLoading(true);
 		try {
-			const response = await loginApi({ email: trimmedEmail, contraseña: password });
-			login(response.usuario, response.token);
-			notify.success(`¡Hola, ${response.usuario.nombre || 'usuario'}!`, { scope: 'login' });
-			navigate('/');
+			const credential = await signInWithEmailAndPassword(firebaseAuth, trimmedEmail, password);
+			await credential.user.reload();
+			if (!credential.user.emailVerified) {
+				await sendEmailVerification(credential.user, { url: `${window.location.origin}/login` });
+				await signOut(firebaseAuth);
+				throw new Error('Debés verificar tu correo. Te enviamos un nuevo enlace de verificación.');
+			}
+			await completeApplicationLogin();
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
+			const msg = getFirebaseErrorMessage(err, 'Error al iniciar sesión');
 			setEmailError('Verifique sus credenciales');
 			setPasswordError('Verifique sus credenciales');
 			notify.error(msg, { scope: 'login' });
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleGoogleLogin = async () => {
+		setLoading(true);
+		try {
+			await signInWithPopup(firebaseAuth, googleAuthProvider);
+			await completeApplicationLogin();
+		} catch (error) {
+			const message = getFirebaseErrorMessage(error, 'No se pudo iniciar sesión con Google.');
+			if (message.includes('completar el registro')) {
+				navigate('/registro');
+			} else {
+				notify.error(message, { scope: 'login-google' });
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -134,6 +181,18 @@ export default function LoginPage() {
 					</Box>
 
 					<Box component="form" onSubmit={handleSubmit} noValidate>
+						<Button
+							fullWidth
+							variant="outlined"
+							size="large"
+							onClick={handleGoogleLogin}
+							disabled={loading}
+							sx={{ py: 1.5, mb: 2 }}
+						>
+							Continuar con Google
+						</Button>
+
+						<Divider sx={{ mb: 2 }}>o ingresá con correo</Divider>
 						<TextField
 							required
 							fullWidth

@@ -1,9 +1,13 @@
 import { Router } from 'express';
 
-import { listarActividadesArcaController, loginController, registrarUsuarioController } from './auth.controller.js';
+import {
+	crearSesionFirebaseController,
+	listarActividadesArcaController,
+	registrarUsuarioController,
+} from './auth.controller.js';
 
 export const authRouter = Router();
 
 authRouter.post('/registro', registrarUsuarioController);
-authRouter.post('/login', loginController);
+authRouter.post('/firebase/session', crearSesionFirebaseController);
 authRouter.get('/actividades-arca', listarActividadesArcaController);

@@ -25,6 +25,12 @@ const envSchema = z
 		JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
 
 		JWT_EXPIRES_IN_SECONDS: z.coerce.number().int().min(60).max(86400).default(900),
+
+		FIREBASE_PROJECT_ID: z.string().trim().min(1).optional(),
+
+		FIREBASE_CLIENT_EMAIL: z.string().trim().email().optional(),
+
+		FIREBASE_PRIVATE_KEY: z.string().min(1).optional(),
 	})
 	.superRefine((data, ctx) => {
 		if (data.NODE_ENV === 'production') {
@@ -35,6 +41,16 @@ const envSchema = z
 					message:
 						'En producción se debe configurar una variable JWT_SECRET segura y diferente al valor por defecto.',
 				});
+			}
+
+			for (const key of ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'] as const) {
+				if (!data[key]) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						path: [key],
+						message: `En producción se debe configurar ${key}.`,
+					});
+				}
 			}
 		}
 	});

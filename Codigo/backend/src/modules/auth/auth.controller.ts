@@ -1,7 +1,32 @@
 import type { RequestHandler } from 'express';
 
-import { loginBodySchema, registrarUsuarioBodySchema } from './auth.schemas.js';
-import { loginService, listarActividadesArcaService, registrarUsuarioService } from './auth.service.js';
+import { verifyFirebaseIdToken } from '../../config/firebase-admin.js';
+import { registrarUsuarioBodySchema } from './auth.schemas.js';
+import {
+	crearSesionFirebaseService,
+	listarActividadesArcaService,
+	registrarUsuarioService,
+	type FirebaseIdentity,
+} from './auth.service.js';
+
+function getBearerToken(request: Parameters<RequestHandler>[0]): string | null {
+	const authorization = request.headers.authorization;
+	return authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+}
+
+async function getFirebaseIdentity(request: Parameters<RequestHandler>[0]): Promise<FirebaseIdentity> {
+	const token = getBearerToken(request);
+	if (!token) throw new Error('FIREBASE_TOKEN_REQUIRED');
+
+	const decoded = await verifyFirebaseIdToken(token);
+	if (!decoded.email) throw new Error('FIREBASE_EMAIL_REQUIRED');
+
+	return {
+		uid: decoded.uid,
+		email: decoded.email.trim().toLowerCase(),
+		emailVerified: decoded.email_verified === true,
+	};
+}
 
 export const registrarUsuarioController: RequestHandler = async (request, response, next) => {
 	try {
@@ -22,9 +47,38 @@ export const registrarUsuarioController: RequestHandler = async (request, respon
 			return;
 		}
 
-		const result = await registrarUsuarioService(validationResult.data);
+		const identity = await getFirebaseIdentity(request);
+		const result = await registrarUsuarioService(validationResult.data, identity);
 		response.status(201).json(result);
 	} catch (error) {
+		if (error instanceof Error && error.message === 'FIREBASE_NOT_CONFIGURED') {
+			response.status(503).json({
+				error: { code: 'FIREBASE_NOT_CONFIGURED', message: 'Firebase no está configurado en el servidor.' },
+			});
+			return;
+		}
+
+		if (
+			error instanceof Error &&
+			(['FIREBASE_TOKEN_REQUIRED', 'FIREBASE_EMAIL_REQUIRED'].includes(error.message) ||
+				error.name === 'FirebaseAuthError')
+		) {
+			response.status(401).json({
+				error: { code: 'INVALID_FIREBASE_TOKEN', message: 'No se pudo validar la identidad de Firebase.' },
+			});
+			return;
+		}
+
+		if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') {
+			response.status(403).json({
+				error: {
+					code: 'EMAIL_NOT_VERIFIED',
+					message: 'Debés verificar tu correo antes de completar el registro.',
+				},
+			});
+			return;
+		}
+
 		if (error instanceof Error && (error.message.includes('registrado') || error.message.includes('existe'))) {
 			response.status(409).json({
 				error: {
@@ -39,34 +93,28 @@ export const registrarUsuarioController: RequestHandler = async (request, respon
 	}
 };
 
-export const loginController: RequestHandler = async (request, response, next) => {
+export const crearSesionFirebaseController: RequestHandler = async (request, response) => {
 	try {
-		const validationResult = loginBodySchema.safeParse(request.body);
-
-		if (!validationResult.success) {
-			response.status(400).json({
-				error: {
-					code: 'INVALID_LOGIN_DATA',
-					message: 'Los datos de inicio de sesión no son válidos.',
-					details: validationResult.error.issues.map((issue) => ({
-						field: issue.path.join('.'),
-						code: issue.code,
-						message: issue.message,
-					})),
-				},
-			});
-			return;
-		}
-
-		const result = await loginService(validationResult.data);
+		const identity = await getFirebaseIdentity(request);
+		const result = await crearSesionFirebaseService(identity);
 		response.status(200).json(result);
 	} catch (error) {
 		if (error instanceof Error) {
-			if (error.message === 'CREDENTIALS_INVALID') {
-				response.status(401).json({
+			if (error.message === 'EMAIL_NOT_VERIFIED') {
+				response.status(403).json({
 					error: {
-						code: 'CREDENTIALS_INVALID',
-						message: 'El correo electrónico o la contraseña ingresados son incorrectos.',
+						code: 'EMAIL_NOT_VERIFIED',
+						message: 'Debés verificar tu correo electrónico antes de iniciar sesión.',
+					},
+				});
+				return;
+			}
+
+			if (error.message === 'PROFILE_INCOMPLETE') {
+				response.status(404).json({
+					error: {
+						code: 'PROFILE_INCOMPLETE',
+						message: 'Tu identidad está verificada, pero todavía debés completar el registro.',
 					},
 				});
 				return;
@@ -76,8 +124,7 @@ export const loginController: RequestHandler = async (request, response, next) =
 				response.status(401).json({
 					error: {
 						code: 'ACCOUNT_PENDING',
-						message:
-							'Su cuenta se encuentra pendiente de activación. Por favor, revise su correo electrónico.',
+						message: 'Tu registro se encuentra pendiente de aprobación administrativa.',
 					},
 				});
 				return;
@@ -94,7 +141,25 @@ export const loginController: RequestHandler = async (request, response, next) =
 			}
 		}
 
-		next(error);
+		if (error instanceof Error && error.message === 'FIREBASE_NOT_CONFIGURED') {
+			response.status(503).json({
+				error: { code: 'FIREBASE_NOT_CONFIGURED', message: 'Firebase no está configurado en el servidor.' },
+			});
+			return;
+		}
+
+		if (error instanceof Error && ['FIREBASE_TOKEN_REQUIRED', 'FIREBASE_EMAIL_REQUIRED'].includes(error.message)) {
+			response
+				.status(401)
+				.json({ error: { code: 'INVALID_FIREBASE_TOKEN', message: 'Identidad de Firebase inválida.' } });
+			return;
+		}
+
+		response
+			.status(401)
+			.json({
+				error: { code: 'INVALID_FIREBASE_TOKEN', message: 'No se pudo validar la identidad de Firebase.' },
+			});
 	}
 };
 

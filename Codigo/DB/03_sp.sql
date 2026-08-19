@@ -3836,25 +3836,27 @@ END //
 -- sp_publico_registrar_usuario
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_publico_registrar_usuario`(
+    IN pFirebaseUid VARCHAR(128),
     IN pNombre VARCHAR(45),
     IN pApellido VARCHAR(45),
     IN pGenero ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N'),
     IN pFechaNacimiento DATE,
     IN pNacionalidad VARCHAR(45),
     IN pEmail VARCHAR(99),
-    IN pContrasena VARCHAR(255),
     IN pCUIL VARCHAR(11),
     IN pActividadesArcaCodigo CHAR(6),
     IN pFotoDniUrl VARCHAR(255)
 )
 MODIFIES SQL DATA
-COMMENT 'Registra un nuevo usuario en la plataforma en estado Activo (A) con rol USUARIO.'
+COMMENT 'Registra una identidad Firebase verificada en estado Pendiente (P) con rol USUARIO.'
 BEGIN
     DECLARE vEmailExistente INT DEFAULT 0;
     DECLARE vCUILExistente INT DEFAULT 0;
+    DECLARE vFirebaseUidExistente INT DEFAULT 0;
     DECLARE vNuevoId INT DEFAULT 0;
 
     SET pEmail = LOWER(TRIM(pEmail));
+    SET pFirebaseUid = TRIM(pFirebaseUid);
     SET pNombre = TRIM(pNombre);
     SET pApellido = TRIM(pApellido);
     SET pNacionalidad = TRIM(pNacionalidad);
@@ -3869,6 +3871,15 @@ BEGIN
     IF vEmailExistente > 0 THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'El correo electrónico ya se encuentra registrado.';
+    END IF;
+
+    SELECT COUNT(*) INTO vFirebaseUidExistente
+    FROM `Usuarios`
+    WHERE `firebaseUid` = pFirebaseUid;
+
+    IF vFirebaseUidExistente > 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'La identidad de Firebase ya se encuentra registrada.';
     END IF;
 
     SELECT COUNT(*) INTO vCUILExistente
@@ -3887,7 +3898,7 @@ BEGIN
         `fechaNacimiento`,
         `nacionalidad`,
         `email`,
-        `contraseña`,
+        `firebaseUid`,
         `CUIL`,
         `actividadesArcaCodigo`,
         `fotoDniUrl`,
@@ -3900,12 +3911,12 @@ BEGIN
         pFechaNacimiento,
         pNacionalidad,
         pEmail,
-        pContrasena,
+        pFirebaseUid,
         pCUIL,
         pActividadesArcaCodigo,
         pFotoDniUrl,
         'USUARIO',
-        'A'
+        'P'
     );
 
     SET vNuevoId = LAST_INSERT_ID();
@@ -3929,6 +3940,33 @@ BEGIN
 END //
 
 -- -----------------------------------------------------
+-- sp_publico_obtener_usuario_por_firebase_uid
+-- -----------------------------------------------------
+CREATE OR REPLACE PROCEDURE `sp_publico_obtener_usuario_por_firebase_uid`(
+    IN pFirebaseUid VARCHAR(128)
+)
+READS SQL DATA
+COMMENT 'Obtiene un usuario por la identidad validada por Firebase Authentication.'
+BEGIN
+    SELECT
+        u.idUsuario,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.genero,
+        u.fechaNacimiento,
+        u.nacionalidad,
+        u.CUIL,
+        u.actividadesArcaCodigo,
+        u.fotoDniUrl,
+        u.rol,
+        u.estado,
+        u.fechaRegistro
+    FROM `Usuarios` u
+    WHERE u.firebaseUid = TRIM(pFirebaseUid);
+END //
+
+-- -----------------------------------------------------
 -- sp_auth_obtener_usuario_sesion
 -- -----------------------------------------------------
 CREATE OR REPLACE PROCEDURE `sp_auth_obtener_usuario_sesion`(
@@ -3944,34 +3982,6 @@ BEGIN
 		u.estado
 	FROM `Usuarios` u
 	WHERE u.idUsuario = pIdUsuario;
-END //
-
--- -----------------------------------------------------
--- sp_publico_obtener_usuario_por_email
--- -----------------------------------------------------
-CREATE OR REPLACE PROCEDURE `sp_publico_obtener_usuario_por_email`(
-    IN pEmail VARCHAR(99)
-)
-READS SQL DATA
-COMMENT 'Obtiene los datos de un usuario por su dirección de correo electrónico para la autenticación.'
-BEGIN
-    SELECT
-        u.idUsuario,
-        u.nombre,
-        u.apellido,
-        u.email,
-        u.contraseña,
-        u.genero,
-        u.fechaNacimiento,
-        u.nacionalidad,
-        u.CUIL,
-        u.actividadesArcaCodigo,
-        u.fotoDniUrl,
-        u.rol,
-        u.estado,
-        u.fechaRegistro
-    FROM `Usuarios` u
-    WHERE u.email = LOWER(TRIM(pEmail));
 END //
 
 -- -----------------------------------------------------
@@ -4857,7 +4867,6 @@ BEGIN
         u.fechaRegistro,
         u.rol,
         u.estado,
-        u.contraseña,
         (SELECT COUNT(*) FROM `Integrantes` i WHERE i.idUsuario = u.idUsuario AND i.esDueño = 1) AS actoresDuenoCount
     FROM `Usuarios` u
     LEFT JOIN `ActividadesArca` aa
@@ -4914,35 +4923,6 @@ BEGIN
     WHERE idUsuario = pIdUsuario;
 
     CALL `sp_usuario_obtener_perfil`(pIdUsuario);
-END //
-
--- -----------------------------------------------------
--- sp_usuario_actualizar_contrasena
--- -----------------------------------------------------
-CREATE OR REPLACE PROCEDURE `sp_usuario_actualizar_contrasena`(
-    IN pIdUsuario INT,
-    IN pNuevaContrasenaHash VARCHAR(255)
-)
-MODIFIES SQL DATA
-COMMENT 'Actualiza el hash de contraseña del usuario autenticado comprobando su estado.'
-BEGIN
-    DECLARE vEstado VARCHAR(1);
-
-    SELECT estado INTO vEstado
-    FROM `Usuarios`
-    WHERE idUsuario = pIdUsuario;
-
-    IF vEstado IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o no tiene autorización.';
-    END IF;
-
-    IF vEstado = 'I' THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No podés modificar la clave de una cuenta inactiva.';
-    END IF;
-
-    UPDATE `Usuarios`
-    SET contraseña = pNuevaContrasenaHash
-    WHERE idUsuario = pIdUsuario;
 END //
 
 -- -----------------------------------------------------

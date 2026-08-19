@@ -94,16 +94,6 @@ export const actualizarPerfilBodySchema = z.object({
 
 export type ActualizarPerfilBody = z.infer<typeof actualizarPerfilBodySchema>;
 
-export const cambiarContraseñaBodySchema = z.object({
-	contraseñaActual: z.string().min(1, 'Debés ingresar tu contraseña actual'),
-	nuevaContraseña: z
-		.string()
-		.min(6, 'La nueva contraseña debe tener una longitud mínima de 6 caracteres')
-		.regex(/^(?=.*[a-zA-Z])(?=.*\d)/, 'La nueva contraseña debe incluir al menos una letra y un número'),
-});
-
-export type CambiarContraseñaBody = z.infer<typeof cambiarContraseñaBodySchema>;
-
 export const perfilUsuarioSchema = z.object({
 	idUsuario: z.number().int().positive(),
 	nombre: z.string(),

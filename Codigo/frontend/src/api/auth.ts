@@ -7,8 +7,6 @@ export type RegistrarUsuarioPayload = {
 	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
-	email: string;
-	contraseña: string;
 	CUIL: string;
 	actividadesArcaCodigo?: string | null;
 	documentoIdentidad: string;
@@ -44,11 +42,6 @@ export type UsuarioRegistradoResponse = {
 	mensaje: string;
 };
 
-export type LoginPayload = {
-	email: string;
-	contraseña: string;
-};
-
 export type LoginResponse = {
 	usuario: UsuarioSession;
 	token: string;
@@ -58,6 +51,7 @@ export type LoginResponse = {
 export async function registrarUsuarioApi(data: RegistrarUsuarioPayload): Promise<UsuarioRegistradoResponse> {
 	return apiRequest<UsuarioRegistradoResponse>('/api/publico/auth/registro', {
 		method: 'POST',
+		authMode: 'firebase',
 		headers: {
 			'Content-Type': 'application/json',
 		},
@@ -65,17 +59,16 @@ export async function registrarUsuarioApi(data: RegistrarUsuarioPayload): Promis
 	});
 }
 
-export async function loginApi(data: LoginPayload): Promise<LoginResponse> {
-	return apiRequest<LoginResponse>('/api/publico/auth/login', {
+export async function crearSesionFirebaseApi(): Promise<LoginResponse> {
+	return apiRequest<LoginResponse>('/api/publico/auth/firebase/session', {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify(data),
+		authMode: 'firebase',
 	});
 }
 
 export async function obtenerActividadesArcaApi(): Promise<ActividadArca[]> {
-	const res = await apiRequest<ObtenerActividadesArcaResponse>('/api/publico/auth/actividades-arca');
+	const res = await apiRequest<ObtenerActividadesArcaResponse>('/api/publico/auth/actividades-arca', {
+		authMode: 'none',
+	});
 	return res.actividades;
 }

@@ -1,11 +1,6 @@
 import { internalErrorResponseSchema, validationErrorResponseSchema } from '../../openapi/common.schemas.js';
 import { openApiRegistry } from '../../openapi/registry.js';
-import {
-	loginBodySchema,
-	loginResponseSchema,
-	registrarUsuarioBodySchema,
-	registroUsuarioResponseSchema,
-} from './auth.schemas.js';
+import { loginResponseSchema, registrarUsuarioBodySchema, registroUsuarioResponseSchema } from './auth.schemas.js';
 
 export function registerAuthOpenApi(): void {
 	openApiRegistry.registerPath({
@@ -18,7 +13,7 @@ export function registerAuthOpenApi(): void {
 		summary: 'Registrar un nuevo usuario',
 
 		description:
-			'Permite a un nuevo usuario registrarse en la plataforma ingresando sus datos personales, credenciales y adjuntando una imagen de su documento de identidad. El usuario se crea en estado Activo (A).',
+			'Completa el perfil de una identidad previamente autenticada y verificada por Firebase. Requiere un ID token de Firebase en Authorization: Bearer y crea la cuenta en estado Pendiente (P).',
 
 		request: {
 			body: {
@@ -72,24 +67,14 @@ export function registerAuthOpenApi(): void {
 	openApiRegistry.registerPath({
 		method: 'post',
 
-		path: '/api/publico/auth/login',
+		path: '/api/publico/auth/firebase/session',
 
 		tags: ['Autenticación y Registro'],
 
-		summary: 'Iniciar sesión de usuario',
+		summary: 'Crear una sesión desde Firebase',
 
 		description:
-			'Verifica las credenciales de un usuario (correo electrónico y contraseña) y retorna la información de perfil.',
-
-		request: {
-			body: {
-				content: {
-					'application/json': {
-						schema: loginBodySchema,
-					},
-				},
-			},
-		},
+			'Valida un ID token de Firebase recibido en Authorization: Bearer y emite la sesión interna de la aplicación.',
 
 		responses: {
 			200: {

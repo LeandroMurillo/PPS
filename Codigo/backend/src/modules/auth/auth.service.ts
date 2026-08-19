@@ -1,51 +1,14 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import bcrypt from 'bcryptjs';
 
 import {
 	listarActividadesArcaRepository,
-	obtenerUsuarioPorEmailRepository,
+	obtenerUsuarioPorFirebaseUidRepository,
 	registrarUsuarioRepository,
 } from './auth.repository.js';
 import { createSessionToken } from './session-token.js';
-import type {
-	ActividadArca,
-	LoginBody,
-	LoginResponse,
-	RegistrarUsuarioBody,
-	RegistroUsuarioResponse,
-} from './auth.schemas.js';
-
-export function hashPassword(password: string): string {
-	const salt = crypto.randomBytes(16).toString('hex');
-	const hash = crypto.scryptSync(password, salt, 32).toString('hex');
-	return `${salt}:${hash}`;
-}
-
-export function verifyPassword(password: string, storedHash: string): boolean {
-	if (storedHash.startsWith('$2b$') || storedHash.startsWith('$2a$')) {
-		try {
-			return bcrypt.compareSync(password, storedHash);
-		} catch {
-			return false;
-		}
-	}
-
-	if (storedHash.includes(':')) {
-		const [salt, hash] = storedHash.split(':');
-		if (salt && hash) {
-			try {
-				const calculatedHash = crypto.scryptSync(password, salt, 32).toString('hex');
-				return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(calculatedHash));
-			} catch {
-				return false;
-			}
-		}
-	}
-
-	return password === storedHash;
-}
+import type { ActividadArca, LoginResponse, RegistrarUsuarioBody, RegistroUsuarioResponse } from './auth.schemas.js';
 
 export function saveDniImage(base64Data: string): string | null {
 	if (!base64Data || typeof base64Data !== 'string') {
@@ -84,34 +47,50 @@ export function saveDniImage(base64Data: string): string | null {
 	}
 }
 
-export async function registrarUsuarioService(input: RegistrarUsuarioBody): Promise<RegistroUsuarioResponse> {
-	const contraseñaHash = hashPassword(input.contraseña);
+export type FirebaseIdentity = {
+	uid: string;
+	email: string;
+	emailVerified: boolean;
+};
+
+export async function registrarUsuarioService(
+	input: RegistrarUsuarioBody,
+	identity: FirebaseIdentity,
+): Promise<RegistroUsuarioResponse> {
+	if (!identity.emailVerified) {
+		throw new Error('EMAIL_NOT_VERIFIED');
+	}
+
 	const fotoDniUrl = saveDniImage(input.documentoIdentidad);
 
 	const usuario = await registrarUsuarioRepository({
+		firebaseUid: identity.uid,
+		email: identity.email,
 		nombre: input.nombre,
 		apellido: input.apellido,
 		genero: input.genero,
 		fechaNacimiento: input.fechaNacimiento,
 		nacionalidad: input.nacionalidad,
-		email: input.email,
 		CUIL: input.CUIL,
 		actividadesArcaCodigo: input.actividadesArcaCodigo,
-		contraseñaHash,
 		fotoDniUrl,
 	});
 
 	return {
 		usuario,
-		mensaje: 'Usuario registrado correctamente. Ya podés iniciar sesión.',
+		mensaje: 'Registro enviado correctamente. La cuenta quedó pendiente de aprobación.',
 	};
 }
 
-export async function loginService(input: LoginBody): Promise<LoginResponse> {
-	const user = await obtenerUsuarioPorEmailRepository(input.email);
+export async function crearSesionFirebaseService(identity: FirebaseIdentity): Promise<LoginResponse> {
+	if (!identity.emailVerified) {
+		throw new Error('EMAIL_NOT_VERIFIED');
+	}
+
+	const user = await obtenerUsuarioPorFirebaseUidRepository(identity.uid);
 
 	if (!user) {
-		throw new Error('CREDENTIALS_INVALID');
+		throw new Error('PROFILE_INCOMPLETE');
 	}
 
 	if (user.estado === 'P') {
@@ -122,19 +101,10 @@ export async function loginService(input: LoginBody): Promise<LoginResponse> {
 		throw new Error('ACCOUNT_INACTIVE');
 	}
 
-	const isPasswordValid = verifyPassword(input.contraseña, user.contraseña);
-
-	if (!isPasswordValid) {
-		throw new Error('CREDENTIALS_INVALID');
-	}
-
-	const { contraseña: unusedContraseña, ...usuarioSinContraseña } = user;
-	void unusedContraseña;
-
 	const token = createSessionToken(user.idUsuario);
 
 	return {
-		usuario: usuarioSinContraseña,
+		usuario: user,
 		token,
 		mensaje: 'Inicio de sesión exitoso.',
 	};

@@ -35,8 +35,16 @@ ALTER TABLE `cultura`.`Usuarios`
     ),
   ADD CONSTRAINT `chk_Usuarios_contrasena_hash`
     CHECK (
-      `contraseña` = TRIM(`contraseña`)
-      AND CHAR_LENGTH(`contraseña`) >= 60
+      `contraseña` IS NULL
+      OR (
+        `contraseña` = TRIM(`contraseña`)
+        AND CHAR_LENGTH(`contraseña`) >= 60
+      )
+    ),
+  ADD CONSTRAINT `chk_Usuarios_firebase_uid`
+    CHECK (
+      `firebaseUid` IS NULL
+      OR (`firebaseUid` = TRIM(`firebaseUid`) AND `firebaseUid` <> '')
     ),
   ADD CONSTRAINT `chk_Usuarios_CUIL_formato`
     CHECK (`CUIL` REGEXP '^[0-9]{11}$'),
