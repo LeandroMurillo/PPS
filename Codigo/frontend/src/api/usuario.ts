@@ -61,6 +61,7 @@ export async function actualizarPerfilUsuarioApi(data: ActualizarPerfilPayload):
 }
 
 export async function cambiarContrasenaUsuarioApi(data: CambiarContrasenaPayload): Promise<CambiarContrasenaResponse> {
+	await firebaseAuth.authStateReady();
 	const user = firebaseAuth.currentUser;
 	if (!user?.email) {
 		throw new Error('No hay una identidad de Firebase activa. Volvé a iniciar sesión.');
@@ -78,7 +79,22 @@ export async function cambiarContrasenaUsuarioApi(data: CambiarContrasenaPayload
 }
 
 export async function eliminarCuentaUsuarioApi(): Promise<EliminarCuentaResponse> {
-	return apiRequest<EliminarCuentaResponse>('/api/usuario/cuenta', {
+	const res = await apiRequest<EliminarCuentaResponse>('/api/usuario/cuenta', {
 		method: 'DELETE',
 	});
+
+	try {
+		await firebaseAuth.authStateReady();
+		const user = firebaseAuth.currentUser;
+		if (user) {
+			await user.delete();
+		}
+	} catch (fbErr) {
+		console.warn(
+			'[Firebase] No se pudo eliminar la identidad de Firebase en el cliente (el backend ya la procesó):',
+			fbErr,
+		);
+	}
+
+	return res;
 }

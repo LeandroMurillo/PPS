@@ -27,6 +27,7 @@ export type ArchivoPersonalUsuario = z.infer<typeof archivoPersonalRowSchema>;
 
 const perfilUsuarioDBRowSchema = z.object({
 	idUsuario: databaseIntegerSchema,
+	firebaseUid: z.string().nullable().optional(),
 	nombre: z.string(),
 	apellido: z.string(),
 	email: z.string(),

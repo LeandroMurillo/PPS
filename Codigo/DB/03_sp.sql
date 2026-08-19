@@ -4854,6 +4854,7 @@ BEGIN
 
     SELECT
         u.idUsuario,
+        u.firebaseUid,
         u.actividadesArcaCodigo,
         aa.descripcion AS actividadArca,
         u.nombre,

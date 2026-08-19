@@ -9,7 +9,9 @@ const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
 	'auth/popup-blocked': 'El navegador bloqueó la ventana de acceso con Google.',
 	'auth/too-many-requests': 'Hubo demasiados intentos. Esperá unos minutos y volvé a intentar.',
 	'auth/user-disabled': 'La cuenta de autenticación se encuentra deshabilitada.',
-	'auth/weak-password': 'La contraseña debe tener al menos seis caracteres.',
+	'auth/weak-password': 'La nueva contraseña debe tener al menos seis caracteres.',
+	'auth/wrong-password': 'La contraseña actual ingresada es incorrecta.',
+	'auth/requires-recent-login': 'Esta operación requiere volver a iniciar sesión por seguridad.',
 };
 
 export function getFirebaseErrorMessage(error: unknown, fallback: string): string {

@@ -1,3 +1,4 @@
+import { deleteFirebaseUser } from '../../config/firebase-admin.js';
 import { saveDniImage } from '../auth/auth.service.js';
 import {
 	actualizarPerfilUsuarioRepository,
@@ -57,6 +58,10 @@ export async function eliminarCuentaUsuarioService(idUsuario: number): Promise<{
 	const user = await obtenerPerfilUsuarioRepository(idUsuario);
 	if (!user) {
 		throw new Error('USUARIO_NO_ENCONTRADO');
+	}
+
+	if (user.firebaseUid) {
+		await deleteFirebaseUser(user.firebaseUid);
 	}
 
 	const result = await eliminarCuentaUsuarioRepository(idUsuario);

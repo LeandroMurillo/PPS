@@ -56,6 +56,7 @@ import DatePickerSpanish from '../components/datePickerSpanish';
 import { GENEROS, type GeneroCodigo } from '../constants/generos';
 import { useAuth } from '../context/AuthContext';
 import { fileToBase64, validateImageFile } from '../utils/file';
+import { getFirebaseErrorMessage } from '../utils/firebaseError';
 import { notify } from '../utils/toast';
 
 function validarCUIL(cuil: string): boolean {
@@ -311,7 +312,7 @@ export default function PerfilUsuarioPage() {
 			notify.success(res.mensaje || 'Contraseña actualizada correctamente.', { scope: 'password' });
 		} catch (err) {
 			console.error('Error al cambiar contraseña:', err);
-			notify.error(err instanceof Error ? err.message : 'No se pudo cambiar la contraseña.', {
+			notify.error(getFirebaseErrorMessage(err, 'No se pudo cambiar la contraseña.'), {
 				scope: 'password',
 			});
 		} finally {

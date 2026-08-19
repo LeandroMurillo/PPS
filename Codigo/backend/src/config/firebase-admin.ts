@@ -23,3 +23,12 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<DecodedIdT
 	initializeFirebaseAdmin();
 	return getAuth().verifyIdToken(idToken, true);
 }
+
+export async function deleteFirebaseUser(uid: string): Promise<void> {
+	try {
+		initializeFirebaseAdmin();
+		await getAuth().deleteUser(uid);
+	} catch (error) {
+		console.warn(`[Firebase Admin] No se pudo eliminar el usuario ${uid} de Firebase:`, error);
+	}
+}
