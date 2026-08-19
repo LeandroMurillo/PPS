@@ -60,7 +60,7 @@
   )
 }
 
-= Anexo: Listado de Stored Procedures
+= Anexo: Listado de procedimientos almacenados
 
 /*TODO
 - sp_publico_dame_ficha_actor
