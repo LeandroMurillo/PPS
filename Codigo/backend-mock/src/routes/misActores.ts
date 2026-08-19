@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import type { ActorMock } from '../types';
+import { getAuthUser } from './auth';
 
 export const misActoresRouter = Router();
 
@@ -219,20 +220,6 @@ misActoresRouter.get('/:id/formularios', (req, res) => {
 
 	return res.json({ data });
 });
-
-function getAuthUser(req: { headers: { authorization?: string } }) {
-	const auth = req.headers.authorization;
-	if (!auth) return null;
-	const token = auth.replace(/^Bearer\s+/i, '').trim();
-	if (!token) return null;
-
-	const match = token.match(/mock-token-(\d+)/);
-	if (match) {
-		const userId = Number(match[1]);
-		return db.usuarios.find((u) => u.id === userId) || null;
-	}
-	return null;
-}
 
 // POST /api/mis-actores
 misActoresRouter.post('/', (req, res) => {

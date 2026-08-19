@@ -17,6 +17,6 @@ healthRouter.get('/health', async (_request, response) => {
 		database: rows[0]?.ok === 1 ? 'connected' : 'unknown',
 		uptime: `${hours}h ${minutes}m ${seconds}s`,
 		uptimeSeconds,
-		timestamp: new Date().toISOString()
+		timestamp: new Date().toISOString(),
 	});
 });

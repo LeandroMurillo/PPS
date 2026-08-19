@@ -5,9 +5,7 @@ import { estadoUsuarioSchema, rolUsuarioSchema } from '../modules/auth/auth.sche
 import type { AuthUser } from './auth.middleware.js';
 
 const sessionUserRowSchema = z.object({
-	idUsuario: z
-		.union([z.number().int(), z.bigint(), z.string().regex(/^\d+$/)])
-		.transform((value) => Number(value)),
+	idUsuario: z.union([z.number().int(), z.bigint(), z.string().regex(/^\d+$/)]).transform((value) => Number(value)),
 	email: z.string().email(),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,

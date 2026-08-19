@@ -155,11 +155,9 @@ export const crearSesionFirebaseController: RequestHandler = async (request, res
 			return;
 		}
 
-		response
-			.status(401)
-			.json({
-				error: { code: 'INVALID_FIREBASE_TOKEN', message: 'No se pudo validar la identidad de Firebase.' },
-			});
+		response.status(401).json({
+			error: { code: 'INVALID_FIREBASE_TOKEN', message: 'No se pudo validar la identidad de Firebase.' },
+		});
 	}
 };
 

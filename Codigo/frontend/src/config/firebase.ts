@@ -1,7 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
-const firebaseConfig = {
+const rawConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
 	authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
 	projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -9,11 +9,23 @@ const firebaseConfig = {
 	messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
 };
 
-for (const [key, value] of Object.entries(firebaseConfig)) {
-	if (!value && key !== 'messagingSenderId') {
-		throw new Error(`Falta configurar Firebase: ${key}`);
-	}
+export const isFirebaseConfigured = Boolean(
+	rawConfig.apiKey && rawConfig.authDomain && rawConfig.projectId && rawConfig.appId,
+);
+
+if (!isFirebaseConfigured) {
+	console.warn(
+		'[Firebase] Faltan variables de entorno de Firebase (VITE_FIREBASE_*). Asegurate de configurar tu archivo .env.',
+	);
 }
+
+const firebaseConfig = {
+	apiKey: rawConfig.apiKey || 'mock-api-key',
+	authDomain: rawConfig.authDomain || 'mock-auth-domain.firebaseapp.com',
+	projectId: rawConfig.projectId || 'mock-project-id',
+	appId: rawConfig.appId || '1:123456789:web:mock',
+	messagingSenderId: rawConfig.messagingSenderId || '123456789',
+};
 
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 

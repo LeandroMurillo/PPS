@@ -1,18 +1,14 @@
+import type { Request, Response } from 'express';
 import { Router } from 'express';
 import { db } from '../db';
 import type { PostulacionMock } from '../types';
+import { getAuthUser } from './auth';
 
 export const convocatoriasRouter = Router();
 
-function getUserIdFromReq(req: any): number {
-	const authHeader = req.headers?.authorization;
-	if (authHeader && authHeader.startsWith('Bearer ')) {
-		const token = authHeader.substring(7);
-		if (token.includes('admin')) return 1;
-		if (token.includes('moderador')) return 2;
-		if (token.includes('usuario')) return 3;
-	}
-	return 3; // Default usuario mock
+function getUserIdFromReq(req: { headers?: { authorization?: string } }): number {
+	const user = getAuthUser({ headers: { authorization: req.headers?.authorization } });
+	return user?.id ?? 3; // Default usuario mock
 }
 
 // GET /api/convocatorias
@@ -115,7 +111,7 @@ convocatoriasRouter.get('/:id', (req, res) => {
 });
 
 // POST /api/convocatorias/:id/postular (y /postulaciones)
-function handlePostular(req: any, res: any) {
+function handlePostular(req: Request, res: Response) {
 	const idConvocatoria = Number(req.params.id);
 	const { idActor } = req.body || {};
 	const userId = getUserIdFromReq(req);

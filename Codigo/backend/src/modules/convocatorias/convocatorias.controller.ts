@@ -37,12 +37,7 @@ export async function listarConvocatoriasActivasController(req: Request, res: Re
 export async function listarConvocatoriasAdminController(req: Request, res: Response): Promise<void> {
 	try {
 		const query = listarAdminConvocatoriasQuerySchema.parse(req.query);
-		const result = await listarConvocatoriasAdminService(
-			query.busqueda,
-			query.estado,
-			query.limit,
-			query.offset,
-		);
+		const result = await listarConvocatoriasAdminService(query.busqueda, query.estado, query.limit, query.offset);
 		res.status(200).json({
 			data: result.data,
 			total: result.total,

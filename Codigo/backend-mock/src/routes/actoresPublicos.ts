@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
+import { getAuthUser } from './auth';
 
 export const actoresPublicosRouter = Router();
 
@@ -176,21 +177,6 @@ actoresPublicosRouter.get('/mapa', (req, res) => {
 
 	return res.json({ data });
 });
-
-// Helper para obtener el usuario autenticado desde el header Authorization
-function getAuthUser(req: { headers: { authorization?: string } }) {
-	const auth = req.headers.authorization;
-	if (!auth) return null;
-	const token = auth.replace(/^Bearer\s+/i, '').trim();
-	if (!token) return null;
-
-	const match = token.match(/mock-token-(\d+)/);
-	if (match) {
-		const userId = Number(match[1]);
-		return db.usuarios.find((u) => u.id === userId) || null;
-	}
-	return null;
-}
 
 // GET /api/publico/actores/:id
 actoresPublicosRouter.get('/:id', (req, res) => {

@@ -34,9 +34,13 @@ app.get('/health', (_req, res) => {
 	res.json({ status: 'ok', server: 'Mosaico Cultural Standalone Mock Backend' });
 });
 
-app.listen(PORT, () => {
-	console.log(`====================================================`);
-	console.log(`🚀 Standalone Mock Backend listening on port ${PORT}`);
-	console.log(`👉 http://localhost:${PORT}`);
-	console.log(`====================================================`);
-});
+export { app };
+
+if (process.env.NODE_ENV !== 'test') {
+	app.listen(PORT, () => {
+		console.log(`====================================================`);
+		console.log(`🚀 Standalone Mock Backend listening on port ${PORT}`);
+		console.log(`👉 http://localhost:${PORT}`);
+		console.log(`====================================================`);
+	});
+}

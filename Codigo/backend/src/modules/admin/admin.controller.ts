@@ -309,11 +309,7 @@ export const cambiarEstadoUsuarioAdminController: RequestHandler = async (reques
 		return;
 	}
 
-	const result = await cambiarEstadoUsuarioAdminService(
-		request.user!.idUsuario,
-		params.data.id,
-		body.data.estado,
-	);
+	const result = await cambiarEstadoUsuarioAdminService(request.user!.idUsuario, params.data.id, body.data.estado);
 
 	if (!result) {
 		userNotFound(response);

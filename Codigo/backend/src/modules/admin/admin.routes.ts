@@ -72,12 +72,20 @@ adminRouter.put(
 );
 adminRouter.get('/categorias/:idCategoria/subcategorias/:id', requireRole('ADMIN'), obtenerSubcategoriaAdminController);
 adminRouter.put('/categorias/:idCategoria/subcategorias/:id', requireRole('ADMIN'), editarSubcategoriaAdminController);
-adminRouter.delete('/categorias/:idCategoria/subcategorias/:id', requireRole('ADMIN'), eliminarSubcategoriaAdminController);
+adminRouter.delete(
+	'/categorias/:idCategoria/subcategorias/:id',
+	requireRole('ADMIN'),
+	eliminarSubcategoriaAdminController,
+);
 adminRouter.get('/preguntas', requireRole('ADMIN'), listarPreguntasAdminController);
 adminRouter.post('/preguntas', requireRole('ADMIN'), crearPreguntaBancoAdminController);
 adminRouter.put('/preguntas/:idPregunta', requireRole('ADMIN'), editarPreguntaAdminController);
 adminRouter.post('/formularios/:idFormulario/preguntas', requireRole('ADMIN'), crearPreguntaFormularioAdminController);
-adminRouter.post('/formularios/:idFormulario/preguntas/existente', requireRole('ADMIN'), asociarPreguntaFormularioAdminController);
+adminRouter.post(
+	'/formularios/:idFormulario/preguntas/existente',
+	requireRole('ADMIN'),
+	asociarPreguntaFormularioAdminController,
+);
 adminRouter.post(
 	'/formularios/:idFormulario/preguntas/:idPregunta/reemplazar',
 	requireRole('ADMIN'),
