@@ -54,6 +54,7 @@ import {
 import { obtenerActividadesArcaApi, type ActividadArca } from '../api/auth';
 import DatePickerSpanish from '../components/datePickerSpanish';
 import { GENEROS, type GeneroCodigo } from '../constants/generos';
+import { firebaseAuth } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 import { fileToBase64, validateImageFile } from '../utils/file';
 import { getFirebaseErrorMessage } from '../utils/firebaseError';
@@ -113,6 +114,18 @@ export default function PerfilUsuarioPage() {
 	const [showConfirmPass, setShowConfirmPass] = React.useState(false);
 	const [savingPassword, setSavingPassword] = React.useState(false);
 	const [passValidationAttempted, setPassValidationAttempted] = React.useState(false);
+	const [isGoogleUser, setIsGoogleUser] = React.useState(false);
+
+	React.useEffect(() => {
+		void firebaseAuth.authStateReady().then(() => {
+			const currentUser = firebaseAuth.currentUser;
+			if (currentUser) {
+				const hasPassword = currentUser.providerData.some((p) => p.providerId === 'password');
+				const hasGoogle = currentUser.providerData.some((p) => p.providerId === 'google.com');
+				setIsGoogleUser(hasGoogle && !hasPassword);
+			}
+		});
+	}, []);
 
 	// Modal de eliminación de cuenta
 	const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -484,7 +497,11 @@ export default function PerfilUsuarioPage() {
 						}}
 					>
 						<Tab icon={<PersonIcon fontSize="small" />} iconPosition="start" label="Datos personales" />
-						<Tab icon={<LockIcon fontSize="small" />} iconPosition="start" label="Seguridad y contraseña" />
+						<Tab
+							icon={<LockIcon fontSize="small" />}
+							iconPosition="start"
+							label={isGoogleUser ? 'Seguridad y cuenta' : 'Seguridad y contraseña'}
+						/>
 						<Tab
 							icon={<DeleteForeverIcon fontSize="small" />}
 							iconPosition="start"
@@ -822,192 +839,234 @@ export default function PerfilUsuarioPage() {
 						{/* ========================================================================= */}
 						{/* PESTAÑA 1: SEGURIDAD Y CONTRASEÑA                                         */}
 						{/* ========================================================================= */}
-						{activeTab === 1 && (
-							<Box component="form" onSubmit={handleCambiarContraseña} noValidate>
+						{activeTab === 1 &&
+							(isGoogleUser ? (
 								<Stack spacing={3}>
 									<Box>
 										<Typography variant="h6" fontWeight={700}>
-											Cambiar contraseña
+											Seguridad y cuenta de acceso
 										</Typography>
 										<Typography variant="body2" color="text.secondary">
-											Actualizá tu clave de acceso para mantener segura tu cuenta.
+											Información sobre la seguridad y autenticación de tu cuenta.
 										</Typography>
 									</Box>
 
-									{/* Contraseña Actual */}
-									<TextField
-										fullWidth
-										required
-										type={showCurrentPass ? 'text' : 'password'}
-										label="Contraseña actual"
-										placeholder="Ingresá tu clave actual"
-										value={contraseñaActual}
-										onChange={(e) => setContraseñaActual(e.target.value)}
-										error={passValidationAttempted && !contraseñaActual}
-										helperText={
-											passValidationAttempted && !contraseñaActual
-												? 'Debés ingresar tu contraseña actual'
-												: undefined
-										}
-										InputProps={{
-											endAdornment: (
-												<InputAdornment position="end">
-													<IconButton
-														size="small"
-														onClick={() => setShowCurrentPass(!showCurrentPass)}
-														edge="end"
-													>
-														{showCurrentPass ? <VisibilityOff /> : <Visibility />}
-													</IconButton>
-												</InputAdornment>
-											),
-										}}
-									/>
-
-									{/* Nueva Contraseña */}
-									<TextField
-										fullWidth
-										required
-										type={showNewPass ? 'text' : 'password'}
-										label="Nueva contraseña"
-										placeholder="Ingresá tu nueva clave"
-										value={nuevaContraseña}
-										onChange={(e) => setNuevaContraseña(e.target.value)}
-										error={
-											passValidationAttempted &&
-											(!passHasMinLength || !passHasLetter || !passHasNumber)
-										}
-										InputProps={{
-											endAdornment: (
-												<InputAdornment position="end">
-													<IconButton
-														size="small"
-														onClick={() => setShowNewPass(!showNewPass)}
-														edge="end"
-													>
-														{showNewPass ? <VisibilityOff /> : <Visibility />}
-													</IconButton>
-												</InputAdornment>
-											),
-										}}
-									/>
-
-									{/* Confirmar Nueva Contraseña */}
-									<TextField
-										fullWidth
-										required
-										type={showConfirmPass ? 'text' : 'password'}
-										label="Confirmar nueva contraseña"
-										placeholder="Reingresá tu nueva clave"
-										value={confirmarContraseña}
-										onChange={(e) => setConfirmarContraseña(e.target.value)}
-										error={passValidationAttempted && !passMatch}
-										helperText={
-											passValidationAttempted && !passMatch
-												? 'Las contraseñas no coinciden'
-												: undefined
-										}
-										InputProps={{
-											endAdornment: (
-												<InputAdornment position="end">
-													<IconButton
-														size="small"
-														onClick={() => setShowConfirmPass(!showConfirmPass)}
-														edge="end"
-													>
-														{showConfirmPass ? <VisibilityOff /> : <Visibility />}
-													</IconButton>
-												</InputAdornment>
-											),
-										}}
-									/>
-
-									{/* Requisitos de contraseña en tiempo real */}
-									<Paper
-										variant="outlined"
-										sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default' }}
-									>
-										<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-											Requisitos de seguridad:
+									<Alert severity="info" icon={<ShieldIcon />} sx={{ borderRadius: 2 }}>
+										<Typography variant="subtitle2" fontWeight={700} gutterBottom>
+											Inicio de sesión con Google
 										</Typography>
-										<Stack spacing={0.75}>
-											<Stack direction="row" spacing={1} alignItems="center">
-												{passHasMinLength ? (
-													<CheckCircleOutlineIcon fontSize="small" color="success" />
-												) : (
-													<ErrorOutlineIcon fontSize="small" color="disabled" />
-												)}
-												<Typography
-													variant="caption"
-													color={passHasMinLength ? 'success.main' : 'text.secondary'}
-													fontWeight={passHasMinLength ? 600 : 400}
-												>
-													Mínimo 6 caracteres
-												</Typography>
-											</Stack>
+										<Typography variant="body2" sx={{ mb: 1.5 }}>
+											Tu cuenta está vinculada a Google (
+											<strong>{firebaseAuth.currentUser?.email || perfil?.email}</strong>). Tu
+											contraseña, verificación en dos pasos y métodos de recuperación son
+											administrados directamente y de forma segura por Google.
+										</Typography>
+										<Typography variant="caption" color="text.secondary">
+											No es necesario configurar una contraseña local para acceder a Mosaico
+											Cultural.
+										</Typography>
+									</Alert>
 
-											<Stack direction="row" spacing={1} alignItems="center">
-												{passHasLetter ? (
-													<CheckCircleOutlineIcon fontSize="small" color="success" />
-												) : (
-													<ErrorOutlineIcon fontSize="small" color="disabled" />
-												)}
-												<Typography
-													variant="caption"
-													color={passHasLetter ? 'success.main' : 'text.secondary'}
-													fontWeight={passHasLetter ? 600 : 400}
-												>
-													Al menos una letra (a-z, A-Z)
-												</Typography>
-											</Stack>
-
-											<Stack direction="row" spacing={1} alignItems="center">
-												{passHasNumber ? (
-													<CheckCircleOutlineIcon fontSize="small" color="success" />
-												) : (
-													<ErrorOutlineIcon fontSize="small" color="disabled" />
-												)}
-												<Typography
-													variant="caption"
-													color={passHasNumber ? 'success.main' : 'text.secondary'}
-													fontWeight={passHasNumber ? 600 : 400}
-												>
-													Al menos un número (0-9)
-												</Typography>
-											</Stack>
-
-											<Stack direction="row" spacing={1} alignItems="center">
-												{passMatch ? (
-													<CheckCircleOutlineIcon fontSize="small" color="success" />
-												) : (
-													<ErrorOutlineIcon fontSize="small" color="disabled" />
-												)}
-												<Typography
-													variant="caption"
-													color={passMatch ? 'success.main' : 'text.secondary'}
-													fontWeight={passMatch ? 600 : 400}
-												>
-													Las contraseñas coinciden
-												</Typography>
-											</Stack>
-										</Stack>
-									</Paper>
-
-									<Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 1 }}>
+									<Box>
 										<Button
-											type="submit"
-											variant="contained"
+											variant="outlined"
 											color="primary"
+											href="https://myaccount.google.com/security"
+											target="_blank"
+											rel="noopener noreferrer"
+											startIcon={<ShieldIcon />}
 											size="large"
-											disabled={savingPassword || !passIsValid}
-											sx={{ minWidth: 200, fontWeight: 700 }}
 										>
-											{savingPassword ? 'Actualizando clave…' : 'Actualizar contraseña'}
+											Administrar seguridad en mi cuenta de Google
 										</Button>
 									</Box>
 								</Stack>
-							</Box>
-						)}
+							) : (
+								<Box component="form" onSubmit={handleCambiarContraseña} noValidate>
+									<Stack spacing={3}>
+										<Box>
+											<Typography variant="h6" fontWeight={700}>
+												Cambiar contraseña
+											</Typography>
+											<Typography variant="body2" color="text.secondary">
+												Actualizá tu clave de acceso para mantener segura tu cuenta.
+											</Typography>
+										</Box>
+
+										{/* Contraseña Actual */}
+										<TextField
+											fullWidth
+											required
+											type={showCurrentPass ? 'text' : 'password'}
+											label="Contraseña actual"
+											placeholder="Ingresá tu clave actual"
+											value={contraseñaActual}
+											onChange={(e) => setContraseñaActual(e.target.value)}
+											error={passValidationAttempted && !contraseñaActual}
+											helperText={
+												passValidationAttempted && !contraseñaActual
+													? 'Debés ingresar tu contraseña actual'
+													: undefined
+											}
+											InputProps={{
+												endAdornment: (
+													<InputAdornment position="end">
+														<IconButton
+															size="small"
+															onClick={() => setShowCurrentPass(!showCurrentPass)}
+															edge="end"
+														>
+															{showCurrentPass ? <VisibilityOff /> : <Visibility />}
+														</IconButton>
+													</InputAdornment>
+												),
+											}}
+										/>
+
+										{/* Nueva Contraseña */}
+										<TextField
+											fullWidth
+											required
+											type={showNewPass ? 'text' : 'password'}
+											label="Nueva contraseña"
+											placeholder="Ingresá tu nueva clave"
+											value={nuevaContraseña}
+											onChange={(e) => setNuevaContraseña(e.target.value)}
+											error={
+												passValidationAttempted &&
+												(!passHasMinLength || !passHasLetter || !passHasNumber)
+											}
+											InputProps={{
+												endAdornment: (
+													<InputAdornment position="end">
+														<IconButton
+															size="small"
+															onClick={() => setShowNewPass(!showNewPass)}
+															edge="end"
+														>
+															{showNewPass ? <VisibilityOff /> : <Visibility />}
+														</IconButton>
+													</InputAdornment>
+												),
+											}}
+										/>
+
+										{/* Confirmar Nueva Contraseña */}
+										<TextField
+											fullWidth
+											required
+											type={showConfirmPass ? 'text' : 'password'}
+											label="Confirmar nueva contraseña"
+											placeholder="Reingresá tu nueva clave"
+											value={confirmarContraseña}
+											onChange={(e) => setConfirmarContraseña(e.target.value)}
+											error={passValidationAttempted && !passMatch}
+											helperText={
+												passValidationAttempted && !passMatch
+													? 'Las contraseñas no coinciden'
+													: undefined
+											}
+											InputProps={{
+												endAdornment: (
+													<InputAdornment position="end">
+														<IconButton
+															size="small"
+															onClick={() => setShowConfirmPass(!showConfirmPass)}
+															edge="end"
+														>
+															{showConfirmPass ? <VisibilityOff /> : <Visibility />}
+														</IconButton>
+													</InputAdornment>
+												),
+											}}
+										/>
+
+										{/* Requisitos de contraseña en tiempo real */}
+										<Paper
+											variant="outlined"
+											sx={{ p: 2, borderRadius: 2, bgcolor: 'background.default' }}
+										>
+											<Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+												Requisitos de seguridad:
+											</Typography>
+											<Stack spacing={0.75}>
+												<Stack direction="row" spacing={1} alignItems="center">
+													{passHasMinLength ? (
+														<CheckCircleOutlineIcon fontSize="small" color="success" />
+													) : (
+														<ErrorOutlineIcon fontSize="small" color="disabled" />
+													)}
+													<Typography
+														variant="caption"
+														color={passHasMinLength ? 'success.main' : 'text.secondary'}
+														fontWeight={passHasMinLength ? 600 : 400}
+													>
+														Mínimo 6 caracteres
+													</Typography>
+												</Stack>
+
+												<Stack direction="row" spacing={1} alignItems="center">
+													{passHasLetter ? (
+														<CheckCircleOutlineIcon fontSize="small" color="success" />
+													) : (
+														<ErrorOutlineIcon fontSize="small" color="disabled" />
+													)}
+													<Typography
+														variant="caption"
+														color={passHasLetter ? 'success.main' : 'text.secondary'}
+														fontWeight={passHasLetter ? 600 : 400}
+													>
+														Al menos una letra (a-z, A-Z)
+													</Typography>
+												</Stack>
+
+												<Stack direction="row" spacing={1} alignItems="center">
+													{passHasNumber ? (
+														<CheckCircleOutlineIcon fontSize="small" color="success" />
+													) : (
+														<ErrorOutlineIcon fontSize="small" color="disabled" />
+													)}
+													<Typography
+														variant="caption"
+														color={passHasNumber ? 'success.main' : 'text.secondary'}
+														fontWeight={passHasNumber ? 600 : 400}
+													>
+														Al menos un número (0-9)
+													</Typography>
+												</Stack>
+
+												<Stack direction="row" spacing={1} alignItems="center">
+													{passMatch ? (
+														<CheckCircleOutlineIcon fontSize="small" color="success" />
+													) : (
+														<ErrorOutlineIcon fontSize="small" color="disabled" />
+													)}
+													<Typography
+														variant="caption"
+														color={passMatch ? 'success.main' : 'text.secondary'}
+														fontWeight={passMatch ? 600 : 400}
+													>
+														Las contraseñas coinciden
+													</Typography>
+												</Stack>
+											</Stack>
+										</Paper>
+
+										<Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 1 }}>
+											<Button
+												type="submit"
+												variant="contained"
+												color="primary"
+												size="large"
+												disabled={savingPassword || !passIsValid}
+												sx={{ minWidth: 200, fontWeight: 700 }}
+											>
+												{savingPassword ? 'Actualizando clave…' : 'Actualizar contraseña'}
+											</Button>
+										</Box>
+									</Stack>
+								</Box>
+							))}
 
 						{/* ========================================================================= */}
 						{/* PESTAÑA 2: ZONA DE PELIGRO (BORRAR CUENTA)                                */}

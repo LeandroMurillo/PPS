@@ -31,6 +31,7 @@ import Licencia from './pages/licencia';
 import LoginPage from './pages/login';
 import Mapa from './pages/mapa';
 import RegistroPage from './pages/registro';
+import AuthActionPage from './pages/authAction';
 
 function DocsApiRedirect() {
 	React.useEffect(() => {
@@ -95,6 +96,14 @@ const router = createBrowserRouter([
 					{
 						path: 'registro',
 						Component: RegistroPage,
+					},
+					{
+						path: 'auth/action',
+						Component: AuthActionPage,
+					},
+					{
+						path: 'verificar-correo',
+						Component: AuthActionPage,
 					},
 					{
 						path: 'actores/nuevo',

@@ -18,15 +18,11 @@ docker compose --env-file .env -f compose.yml up --build
 
 Si la base local ya existía antes de Firebase, ejecutar una vez `DB/06_migracion_firebase_auth.sql`. Una base nueva recibe la estructura actualizada desde `01_cultura.sql`, `02_checks.sql` y `03_sp.sql`.
 
-Las cuentas nuevas quedan en estado `P`. Para habilitar el primer administrador de desarrollo, registrarlo normalmente y luego ejecutar en MariaDB:
+Las cuentas nuevas quedan activadas automáticamente tras verificar el correo.
 
-```sql
-UPDATE Usuarios
-SET rol = 'ADMIN', estado = 'A'
-WHERE email = 'correo-del-administrador@example.com';
-```
+### Acciones de Correo y Redirección en la Aplicación
 
-Los usuarios comunes deben ser aprobados desde la administración antes de iniciar sesión.
+Opcionalmente, se puede personalizar la URL base del controlador de acciones desde [Firebase Console](https://console.firebase.google.com/) (**Authentication > Templates > Personalizar URL de acción**).
 
 ## Coolify
 
