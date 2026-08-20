@@ -5,7 +5,7 @@ import {
 	getAuth,
 	GoogleAuthProvider,
 	indexedDBLocalPersistence,
-	initializeAuth,
+	setPersistence,
 } from 'firebase/auth';
 
 const rawConfig = {
@@ -36,16 +36,18 @@ const firebaseConfig = {
 
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const firebaseAuth = (() => {
-	try {
-		return initializeAuth(firebaseApp, {
-			persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
-		});
-	} catch {
-		return getAuth(firebaseApp);
-	}
-})();
+export const firebaseAuth = getAuth(firebaseApp);
 
+// La persistencia se configura sobre la única instancia de Auth. Si el navegador
+// no ofrece IndexedDB (por ejemplo, en navegación privada), se usan alternativas.
+void setPersistence(firebaseAuth, indexedDBLocalPersistence).catch(() =>
+	setPersistence(firebaseAuth, browserLocalPersistence).catch(() =>
+		setPersistence(firebaseAuth, browserSessionPersistence).catch(() => undefined),
+	),
+);
+
+// Localiza los correos generados por Firebase. La interfaz del controlador de
+// acciones se sirve desde nuestra ruta /auth/action y se configura en Console.
 firebaseAuth.languageCode = 'es-419';
 export const googleAuthProvider = new GoogleAuthProvider();
 googleAuthProvider.setCustomParameters({ prompt: 'select_account' });

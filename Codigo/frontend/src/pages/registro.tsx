@@ -5,7 +5,6 @@ import {
 	onAuthStateChanged,
 	reload,
 	sendEmailVerification,
-	signInWithPopup,
 	signOut,
 	updateProfile,
 } from 'firebase/auth';
@@ -50,9 +49,10 @@ import {
 	type ActividadArca,
 	type RegistrarUsuarioPayload,
 } from '../api/auth';
-import { firebaseAuth, googleAuthProvider } from '../config/firebase';
+import { firebaseAuth } from '../config/firebase';
 import { fileToBase64, validateImageFile } from '../utils/file';
 import { getFirebaseErrorMessage } from '../utils/firebaseError';
+import { getGoogleRedirectResult, signInWithGoogle } from '../utils/googleAuth';
 import { notify } from '../utils/toast';
 
 function validarCUIL(cuil: string): boolean {
@@ -109,6 +109,14 @@ export default function RegistroPage() {
 		});
 	}, []);
 
+	useEffect(() => {
+		void getGoogleRedirectResult().catch((error) => {
+			notify.error(getFirebaseErrorMessage(error, 'No se pudo continuar con Google.'), {
+				scope: 'registro-google',
+			});
+		});
+	}, []);
+
 	// Form state
 	const [formData, setFormData] = useState({
 		nombre: '',
@@ -146,8 +154,8 @@ export default function RegistroPage() {
 	const handleGoogleRegistration = async () => {
 		setLoading(true);
 		try {
-			await signInWithPopup(firebaseAuth, googleAuthProvider);
-			prepareVerifiedIdentity();
+			const credential = await signInWithGoogle();
+			if (credential) prepareVerifiedIdentity();
 		} catch (error) {
 			notify.error(getFirebaseErrorMessage(error, 'No se pudo continuar con Google.'), {
 				scope: 'registro-google',

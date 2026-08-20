@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
 	sendEmailVerification,
 	sendPasswordResetEmail,
 	signInWithEmailAndPassword,
-	signInWithPopup,
 	signOut,
 } from 'firebase/auth';
 
@@ -27,9 +26,10 @@ import {
 import { useColorScheme } from '@mui/material/styles';
 
 import { crearSesionFirebaseApi } from '../api/auth';
-import { firebaseAuth, googleAuthProvider } from '../config/firebase';
+import { firebaseAuth } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 import { getFirebaseErrorMessage } from '../utils/firebaseError';
+import { getGoogleRedirectResult, signInWithGoogle } from '../utils/googleAuth';
 import { notify } from '../utils/toast';
 
 export default function LoginPage() {
@@ -82,6 +82,18 @@ export default function LoginPage() {
 		navigate('/');
 	};
 
+	useEffect(() => {
+		void getGoogleRedirectResult()
+			.then((credential) => {
+				if (credential) return completeApplicationLogin();
+			})
+			.catch((error) => {
+				notify.error(getFirebaseErrorMessage(error, 'No se pudo iniciar sesión con Google.'), {
+					scope: 'login-google',
+				});
+			});
+	}, []);
+
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
@@ -131,8 +143,8 @@ export default function LoginPage() {
 	const handleGoogleLogin = async () => {
 		setLoading(true);
 		try {
-			await signInWithPopup(firebaseAuth, googleAuthProvider);
-			await completeApplicationLogin();
+			const credential = await signInWithGoogle();
+			if (credential) await completeApplicationLogin();
 		} catch (error) {
 			const message = getFirebaseErrorMessage(error, 'No se pudo iniciar sesión con Google.');
 			if (message.includes('completar el registro')) {
