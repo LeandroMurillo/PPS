@@ -4,6 +4,7 @@ import { signOut } from 'firebase/auth';
 import type { UsuarioSession } from '../api/auth';
 import { SESSION_INVALIDATED_EVENT } from '../api/client';
 import { firebaseAuth } from '../config/firebase';
+import { AVATAR_STYLE_CHANGED_EVENT, getUserAvatarUrl } from '../utils/avatar';
 
 const STORAGE_KEY = 'mosaico_cultural_user_session';
 const TOKEN_STORAGE_KEY = 'mosaico_cultural_token';
@@ -27,14 +28,14 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 function sanitizeUserForStorage(user: UsuarioSession): Partial<UsuarioSession> {
-	const { CUIL: _c, fechaNacimiento: _f, fotoDniUrl: _d, ...safeUser } = user;
-	void _c;
-	void _f;
-	void _d;
-	return safeUser;
+	const sanitized: Partial<UsuarioSession> = { ...user };
+	delete (sanitized as { contrasenia?: string }).contrasenia;
+	return sanitized;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const [avatarVersion, setAvatarVersion] = useState(0);
+
 	const [user, setUser] = useState<UsuarioSession | null>(() => {
 		try {
 			const stored = localStorage.getItem(STORAGE_KEY);
@@ -53,18 +54,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 	});
 
 	useEffect(() => {
-		if (user) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeUserForStorage(user)));
-		} else {
-			localStorage.removeItem(STORAGE_KEY);
+		try {
+			if (user) {
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeUserForStorage(user)));
+			} else {
+				localStorage.removeItem(STORAGE_KEY);
+			}
+		} catch {
+			// ignore storage errors
 		}
 	}, [user]);
 
 	useEffect(() => {
-		if (token) {
-			localStorage.setItem(TOKEN_STORAGE_KEY, token);
-		} else {
-			localStorage.removeItem(TOKEN_STORAGE_KEY);
+		try {
+			if (token) {
+				localStorage.setItem(TOKEN_STORAGE_KEY, token);
+			} else {
+				localStorage.removeItem(TOKEN_STORAGE_KEY);
+			}
+		} catch {
+			// ignore storage errors
 		}
 	}, [token]);
 
@@ -76,6 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 		window.addEventListener(SESSION_INVALIDATED_EVENT, invalidateSession);
 		return () => window.removeEventListener(SESSION_INVALIDATED_EVENT, invalidateSession);
+	}, []);
+
+	useEffect(() => {
+		const handleAvatarChange = () => {
+			setAvatarVersion((v) => v + 1);
+		};
+		window.addEventListener(AVATAR_STYLE_CHANGED_EVENT, handleAvatarChange);
+		return () => window.removeEventListener(AVATAR_STYLE_CHANGED_EVENT, handleAvatarChange);
 	}, []);
 
 	const login = (newUser: UsuarioSession, newToken: string) => {
@@ -93,39 +110,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		setUser((prev) => (prev ? { ...prev, ...updatedFields } : null));
 	};
 
-	const getAvatarConfig = (genero?: string) => {
-		if (genero === 'F' || genero === 'MF') {
-			return {
-				style: 'lorelei',
-				backgroundColor: ['f9d5e5', 'f7c6d9', 'f2d7d5'],
-			};
-		}
-		if (genero === 'M' || genero === 'FM') {
-			return {
-				style: 'micah',
-				backgroundColor: ['dbeafe', 'c7d2fe', 'e0f2fe'],
-			};
-		}
+	const session: Session | null = React.useMemo(() => {
+		if (!user) return null;
 		return {
-			style: 'initials',
-			backgroundColor: ['e5e7eb', 'd1d5db', 'f3f4f6'],
+			user: {
+				id: String(user.idUsuario),
+				name: `${user.nombre} ${user.apellido}`,
+				email: user.email,
+				image: getUserAvatarUrl(user),
+			},
 		};
-	};
-
-	const avatarConfig = getAvatarConfig(user?.genero);
-
-	const session: Session | null = user
-		? {
-				user: {
-					id: String(user.idUsuario),
-					name: `${user.nombre} ${user.apellido}`,
-					email: user.email,
-					image: `https://api.dicebear.com/10.x/${avatarConfig.style}/svg?seed=${encodeURIComponent(
-						`${user.nombre} ${user.apellido}`,
-					)}&backgroundColor=${avatarConfig.backgroundColor.join(',')}`,
-				},
-			}
-		: null;
+	}, [user, avatarVersion]);
 
 	return (
 		<AuthContext.Provider value={{ user, token, session, login, logout, updateUser }}>

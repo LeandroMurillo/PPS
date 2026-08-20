@@ -8,6 +8,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
+import PaletteIcon from '@mui/icons-material/Palette';
 import ShieldIcon from '@mui/icons-material/Shield';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -53,9 +54,11 @@ import {
 } from '../api/usuario';
 import { obtenerActividadesArcaApi, type ActividadArca } from '../api/auth';
 import DatePickerSpanish from '../components/datePickerSpanish';
+import { AvatarStyleDialog } from '../components/avatarStyleDialog';
 import { GENEROS, type GeneroCodigo } from '../constants/generos';
 import { firebaseAuth } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
+import { getUserAvatarUrl } from '../utils/avatar';
 import { fileToBase64, validateImageFile } from '../utils/file';
 import { getFirebaseErrorMessage } from '../utils/firebaseError';
 import { notify } from '../utils/toast';
@@ -104,6 +107,10 @@ export default function PerfilUsuarioPage() {
 	const [profileDragging, setProfileDragging] = React.useState<boolean>(false);
 	const [savingProfile, setSavingProfile] = React.useState<boolean>(false);
 	const [profileValidationAttempted, setProfileValidationAttempted] = React.useState<boolean>(false);
+
+	// Personalización de Avatar
+	const [avatarDialogOpen, setAvatarDialogOpen] = React.useState<boolean>(false);
+	const [avatarRefresh, setAvatarRefresh] = React.useState<number>(0);
 
 	// Formulario de cambio de contraseña
 	const [contraseñaActual, setContraseñaActual] = React.useState('');
@@ -339,6 +346,8 @@ export default function PerfilUsuarioPage() {
 		return clean === 'BORRAR MI CUENTA' || clean === 'ELIMINAR';
 	}, [deleteConfirmInput]);
 
+	const avatarUrl = React.useMemo(() => getUserAvatarUrl(perfil), [perfil, avatarRefresh]);
+
 	const handleEliminarCuenta = async () => {
 		if (!isDeleteConfirmed) return;
 
@@ -376,31 +385,6 @@ export default function PerfilUsuarioPage() {
 
 	const roleLabel = perfil?.rol === 'ADMIN' ? 'Administrador' : perfil?.rol === 'MODERADOR' ? 'Moderador' : 'Usuario';
 
-	// Configuración de avatar dinámico por género
-	const getAvatarConfig = (genero?: string) => {
-		if (genero === 'F' || genero === 'MF') {
-			return {
-				style: 'lorelei',
-				backgroundColor: ['f9d5e5', 'f7c6d9', 'f2d7d5'],
-			};
-		}
-		if (genero === 'M' || genero === 'FM') {
-			return {
-				style: 'micah',
-				backgroundColor: ['dbeafe', 'c7d2fe', 'e0f2fe'],
-			};
-		}
-		return {
-			style: 'initials',
-			backgroundColor: ['e5e7eb', 'd1d5db', 'f3f4f6'],
-		};
-	};
-
-	const avatarConfig = getAvatarConfig(perfil?.genero);
-	const avatarUrl = `https://api.dicebear.com/10.x/${avatarConfig.style}/svg?seed=${encodeURIComponent(
-		`${perfil?.nombre} ${perfil?.apellido}`,
-	)}&backgroundColor=${avatarConfig.backgroundColor.join(',')}`;
-
 	return (
 		<PageContainer title="Mi perfil">
 			<Stack spacing={3} sx={{ width: '100%', maxWidth: 960, mx: 'auto', pb: 6 }}>
@@ -421,21 +405,48 @@ export default function PerfilUsuarioPage() {
 						justifyContent="space-between"
 					>
 						<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems="center">
-							<Avatar
-								src={avatarUrl}
-								alt={`${perfil?.nombre} ${perfil?.apellido}`}
-								sx={{
-									width: 80,
-									height: 80,
-									fontSize: '1.8rem',
-									fontWeight: 700,
-									bgcolor: 'primary.main',
-									boxShadow: 2,
-								}}
-							>
-								{perfil?.nombre?.charAt(0)}
-								{perfil?.apellido?.charAt(0)}
-							</Avatar>
+							<Box sx={{ position: 'relative', display: 'inline-block' }}>
+								<Avatar
+									src={avatarUrl}
+									alt={`${perfil?.nombre} ${perfil?.apellido}`}
+									sx={{
+										width: 84,
+										height: 84,
+										fontSize: '1.8rem',
+										fontWeight: 700,
+										bgcolor: 'primary.main',
+										boxShadow: 2,
+										border: '2px solid',
+										borderColor: 'divider',
+									}}
+								>
+									{perfil?.nombre?.charAt(0)}
+									{perfil?.apellido?.charAt(0)}
+								</Avatar>
+								<Tooltip title="Personalizar estilo de avatar" arrow>
+									<IconButton
+										size="small"
+										onClick={() => setAvatarDialogOpen(true)}
+										sx={{
+											position: 'absolute',
+											bottom: -4,
+											right: -4,
+											bgcolor: 'background.paper',
+											boxShadow: 2,
+											border: '1.5px solid',
+											borderColor: 'divider',
+											p: 0.6,
+											'&:hover': {
+												bgcolor: 'primary.50',
+												borderColor: 'primary.main',
+											},
+										}}
+									>
+										<PaletteIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+									</IconButton>
+								</Tooltip>
+							</Box>
+
 							<Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
 								<Typography variant="h5" fontWeight={700}>
 									{perfil?.nombre} {perfil?.apellido}
@@ -473,13 +484,31 @@ export default function PerfilUsuarioPage() {
 							</Box>
 						</Stack>
 
-						{perfil?.fechaRegistro && (
-							<Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-								Miembro desde {dayjs(perfil.fechaRegistro).format('DD/MM/YYYY')}
-							</Typography>
-						)}
+						<Stack spacing={1} alignItems={{ xs: 'center', sm: 'flex-end' }}>
+							<Button
+								variant="outlined"
+								size="small"
+								startIcon={<PaletteIcon />}
+								onClick={() => setAvatarDialogOpen(true)}
+								sx={{ textTransform: 'none', borderRadius: 2 }}
+							>
+								Personalizar avatar
+							</Button>
+							{perfil?.fechaRegistro && (
+								<Typography variant="caption" color="text.secondary">
+									Miembro desde {dayjs(perfil.fechaRegistro).format('DD/MM/YYYY')}
+								</Typography>
+							)}
+						</Stack>
 					</Stack>
 				</Paper>
+
+				<AvatarStyleDialog
+					open={avatarDialogOpen}
+					onClose={() => setAvatarDialogOpen(false)}
+					user={perfil}
+					onStyleSaved={() => setAvatarRefresh((v) => v + 1)}
+				/>
 
 				{/* Pestañas de Navegación del Perfil */}
 				<Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
