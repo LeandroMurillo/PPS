@@ -139,6 +139,8 @@ export const usuarioRegistradoSchema = z.object({
 	CUIL: z.string(),
 	actividadesArcaCodigo: z.string().nullable(),
 	fotoDniUrl: z.string().nullable(),
+	avatarEstilo: z.string().nullable().optional(),
+	avatarSeed: z.string().nullable().optional(),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.string(),

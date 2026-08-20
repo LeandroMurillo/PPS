@@ -23,6 +23,8 @@ export type UsuarioSession = {
 	CUIL: string;
 	actividadesArcaCodigo: string | null;
 	fotoDniUrl?: string | null;
+	avatarEstilo?: string | null;
+	avatarSeed?: string | null;
 	rol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 	estado: 'A' | 'P' | 'I';
 	fechaRegistro: string;

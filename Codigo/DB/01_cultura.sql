@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS `cultura`.`Usuarios` (
   `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',
   `CUIL` VARCHAR(11) NOT NULL,
   `fotoDniUrl` VARCHAR(255) NULL,
+  `avatarEstilo` VARCHAR(50) NULL DEFAULT NULL,
+  `avatarSeed` VARCHAR(100) NULL DEFAULT NULL,
   PRIMARY KEY (`idUsuario`),
   UNIQUE INDEX `uq_Usuarios_email` (`email` ASC) VISIBLE,
   UNIQUE INDEX `uq_Usuarios_firebase_uid` (`firebaseUid` ASC) VISIBLE,

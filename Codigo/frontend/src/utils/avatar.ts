@@ -190,37 +190,89 @@ export interface UserForAvatar {
 	apellido?: string;
 	email?: string;
 	genero?: string;
+	avatarEstilo?: string | null;
+	avatarSeed?: string | null;
 }
 
 // Caché en memoria para evitar recalcular SVGs ya renderizados
 const avatarCache = new Map<string, string>();
 
 /**
- * Genera el avatar en formato Data URI (SVG local en memoria) para el usuario dado.
- * Si se especifica `customStyle`, fuerza ese estilo (útil para vistas previas en selectores).
+ * Genera una semilla aleatoria amigable para el avatar del usuario.
  */
-export function getUserAvatarUrl(user?: UserForAvatar | null, customStyle?: AvatarStyleKey): string {
+export function generateRandomSeed(): string {
+	const adjectives = [
+		'mosaico',
+		'astro',
+		'luna',
+		'sol',
+		'rio',
+		'viento',
+		'eco',
+		'onda',
+		'rayo',
+		'fuego',
+		'magia',
+		'arte',
+	];
+	const nouns = [
+		'tucuman',
+		'norte',
+		'cerro',
+		'selva',
+		'valle',
+		'jardin',
+		'estrella',
+		'puma',
+		'pajaro',
+		'flor',
+		'creativo',
+		'cultura',
+	];
+	const adj = adjectives[Math.floor(Math.random() * adjectives.length)]!;
+	const noun = nouns[Math.floor(Math.random() * nouns.length)]!;
+	const num = Math.floor(Math.random() * 900) + 100;
+	return `${adj}-${noun}-${num}`;
+}
+
+/**
+ * Genera el avatar en formato Data URI (SVG local en memoria) para el usuario dado.
+ * Soporta estilos personalizados y semillas personalizadas.
+ */
+export function getUserAvatarUrl(
+	user?: UserForAvatar | null,
+	customStyle?: AvatarStyleKey,
+	customSeed?: string,
+): string {
 	if (!user) return '';
 
+	// Estilo: prioridad customStyle > user.avatarEstilo > localStorage > género
+	const userDbStyle =
+		user.avatarEstilo && user.avatarEstilo in AVATAR_STYLES ? (user.avatarEstilo as AvatarStyleKey) : null;
 	const styleKey =
-		customStyle ||
-		getSavedAvatarStyle(user.idUsuario) ||
-		getDefaultAvatarStyle(user.genero);
+		customStyle || userDbStyle || getSavedAvatarStyle(user.idUsuario) || getDefaultAvatarStyle(user.genero);
 
 	const styleOption = AVATAR_STYLES[styleKey] || AVATAR_STYLES.botttsNeutral;
 
-	// Generamos una semilla inmutable basada en id / datos anonimizados
-	const rawData = `salt_mosaico_${user.idUsuario ?? ''}_${user.email ?? ''}_${user.nombre ?? ''}_${user.apellido ?? ''}`;
-	const seedHash = hashString(rawData.trim() || 'default_seed');
+	// Semilla: prioridad customSeed > user.avatarSeed > hash inmutable
+	let finalSeed: string;
+	if (customSeed !== undefined && customSeed !== null && customSeed.trim() !== '') {
+		finalSeed = customSeed.trim();
+	} else if (user.avatarSeed && user.avatarSeed.trim() !== '') {
+		finalSeed = user.avatarSeed.trim();
+	} else {
+		const rawData = `salt_mosaico_${user.idUsuario ?? ''}_${user.email ?? ''}_${user.nombre ?? ''}_${user.apellido ?? ''}`;
+		finalSeed = hashString(rawData.trim() || 'default_seed');
+	}
 
-	const cacheKey = `${styleKey}:${seedHash}`;
+	const cacheKey = `${styleKey}:${finalSeed}`;
 	if (avatarCache.has(cacheKey)) {
 		return avatarCache.get(cacheKey)!;
 	}
 
 	try {
 		const avatar = createAvatar(styleOption.collection, {
-			seed: seedHash,
+			seed: finalSeed,
 			backgroundColor: styleOption.defaultColors,
 			size: 128,
 			radius: 50,

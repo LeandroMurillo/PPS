@@ -3932,6 +3932,8 @@ BEGIN
         u.CUIL,
         u.actividadesArcaCodigo,
         u.fotoDniUrl,
+        u.avatarEstilo,
+        u.avatarSeed,
         u.rol,
         u.estado,
         u.fechaRegistro
@@ -3959,6 +3961,8 @@ BEGIN
         u.CUIL,
         u.actividadesArcaCodigo,
         u.fotoDniUrl,
+        u.avatarEstilo,
+        u.avatarSeed,
         u.rol,
         u.estado,
         u.fechaRegistro
@@ -4865,6 +4869,8 @@ BEGIN
         u.nacionalidad,
         u.email,
         u.fotoDniUrl,
+        u.avatarEstilo,
+        u.avatarSeed,
         u.fechaRegistro,
         u.rol,
         u.estado,
@@ -4887,7 +4893,9 @@ CREATE OR REPLACE PROCEDURE `sp_usuario_actualizar_perfil`(
     IN pNacionalidad VARCHAR(45),
     IN pCUIL VARCHAR(11),
     IN pActividadesArcaCodigo CHAR(6),
-    IN pFotoDniUrl VARCHAR(255)
+    IN pFotoDniUrl VARCHAR(255),
+    IN pAvatarEstilo VARCHAR(50),
+    IN pAvatarSeed VARCHAR(100)
 )
 MODIFIES SQL DATA
 COMMENT 'Actualiza los datos personales del usuario autenticado previa comprobación de autorización y estado.'
@@ -4920,7 +4928,9 @@ BEGIN
         nacionalidad = TRIM(pNacionalidad),
         CUIL = TRIM(pCUIL),
         actividadesArcaCodigo = NULLIF(TRIM(pActividadesArcaCodigo), ''),
-        fotoDniUrl = COALESCE(pFotoDniUrl, fotoDniUrl)
+        fotoDniUrl = COALESCE(pFotoDniUrl, fotoDniUrl),
+        avatarEstilo = NULLIF(TRIM(pAvatarEstilo), ''),
+        avatarSeed = NULLIF(TRIM(pAvatarSeed), '')
     WHERE idUsuario = pIdUsuario;
 
     CALL `sp_usuario_obtener_perfil`(pIdUsuario);

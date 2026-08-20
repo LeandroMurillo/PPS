@@ -47,6 +47,16 @@ const perfilUsuarioDBRowSchema = z.object({
 		.nullable()
 		.optional()
 		.transform((val) => val ?? null),
+	avatarEstilo: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((val) => val ?? null),
+	avatarSeed: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((val) => val ?? null),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.union([z.string(), z.date()]).transform((val) => {
@@ -87,6 +97,8 @@ export type ActualizarPerfilRepositoryInput = {
 	CUIL: string;
 	actividadesArcaCodigo: string | null;
 	fotoDniUrl?: string | null;
+	avatarEstilo?: string | null;
+	avatarSeed?: string | null;
 };
 
 export async function actualizarPerfilUsuarioRepository(
@@ -95,7 +107,7 @@ export async function actualizarPerfilUsuarioRepository(
 ): Promise<PerfilUsuarioDBRow | null> {
 	const procedureName = 'sp_usuario_actualizar_perfil';
 
-	const result: unknown = await pool.query('CALL sp_usuario_actualizar_perfil(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+	const result: unknown = await pool.query('CALL sp_usuario_actualizar_perfil(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
 		idUsuario,
 		input.nombre,
 		input.apellido,
@@ -105,6 +117,8 @@ export async function actualizarPerfilUsuarioRepository(
 		input.CUIL,
 		input.actividadesArcaCodigo ?? null,
 		input.fotoDniUrl ?? null,
+		input.avatarEstilo ?? null,
+		input.avatarSeed ?? null,
 	]);
 
 	const rows = z.array(perfilUsuarioDBRowSchema).parse(getResultSet(result, 0, procedureName));

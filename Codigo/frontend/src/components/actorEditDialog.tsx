@@ -486,7 +486,7 @@ export default function ActorEditDialog({
 			const controller = new AbortController();
 			obtenerOpcionesRegistroApi(controller.signal)
 				.then((res) => setLoadedCategoryOptions(res.data))
-				.catch(() => { });
+				.catch(() => {});
 			return () => controller.abort();
 		}
 	}, [propCategoryOptions]);
@@ -496,7 +496,7 @@ export default function ActorEditDialog({
 		fetch('/data/tucuman_departamentos.json', { signal: controller.signal })
 			.then((res) => res.json())
 			.then((data: TucumanDataMap) => setTucumanData(data))
-			.catch(() => { });
+			.catch(() => {});
 		return () => controller.abort();
 	}, []);
 
@@ -516,8 +516,8 @@ export default function ActorEditDialog({
 		const cat = category?.nombre ?? actor.categoria;
 		const sub = actor.subcategoria
 			? (category?.subcategorias.find(
-				(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
-			)?.nombre ?? actor.subcategoria)
+					(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
+				)?.nombre ?? actor.subcategoria)
 			: '';
 
 		const initialValues = {
@@ -570,7 +570,7 @@ export default function ActorEditDialog({
 					const subId = getSubcategoryIdByName(categoryOptions, cat, sub);
 					obtenerFormulariosAplicablesApi({ idCategoria: catId, idSubcategoria: subId })
 						.then((res) => setEditForms(res.data))
-						.catch(() => { });
+						.catch(() => {});
 				}
 			})
 			.finally(() => {
@@ -1678,7 +1678,7 @@ export default function ActorEditDialog({
 										variant="contained"
 										color="primary"
 										onClick={handleRequestEditSave}
-									// disabled={!hasChanges}
+										// disabled={!hasChanges}
 									>
 										Guardar cambios
 									</Button>

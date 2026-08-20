@@ -22,6 +22,8 @@ export type ActualizarPerfilPayload = {
 	CUIL: string;
 	actividadesArcaCodigo?: string | null;
 	documentoIdentidad?: string;
+	avatarEstilo?: string | null;
+	avatarSeed?: string | null;
 };
 
 export type ActualizarPerfilResponse = {

@@ -37,6 +37,16 @@ const usuarioDBRowSchema = z.object({
 		.nullable()
 		.optional()
 		.transform((val) => val ?? null),
+	avatarEstilo: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((val) => val ?? null),
+	avatarSeed: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((val) => val ?? null),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.union([z.string(), z.date()]).transform((val) => {

@@ -29,6 +29,8 @@ usuarioRouter.get('/perfil', (req, res) => {
 		actividadesArcaCodigo: user.actividadesArcaCodigo ?? null,
 		actividadArca: arca?.descripcion ?? null,
 		fotoDniUrl: user.fotoDniUrl ?? null,
+		avatarEstilo: user.avatarEstilo ?? null,
+		avatarSeed: user.avatarSeed ?? null,
 		rol: user.rol,
 		estado: user.estado,
 		fechaRegistro: user.fechaRegistro,
@@ -58,6 +60,9 @@ usuarioRouter.put('/perfil', (req, res) => {
 	if (body.nacionalidad) user.nacionalidad = body.nacionalidad.trim();
 	if (body.CUIL) user.cuil = body.CUIL.trim();
 	user.actividadesArcaCodigo = body.actividadesArcaCodigo ?? null;
+	if (body.avatarEstilo !== undefined)
+		user.avatarEstilo = body.avatarEstilo ? String(body.avatarEstilo).trim() : null;
+	if (body.avatarSeed !== undefined) user.avatarSeed = body.avatarSeed ? String(body.avatarSeed).trim() : null;
 
 	if (body.documentoIdentidad) {
 		user.fotoDniUrl = body.documentoIdentidad.startsWith('data:')
@@ -83,6 +88,8 @@ usuarioRouter.put('/perfil', (req, res) => {
 		actividadesArcaCodigo: user.actividadesArcaCodigo ?? null,
 		actividadArca: arca?.descripcion ?? null,
 		fotoDniUrl: user.fotoDniUrl ?? null,
+		avatarEstilo: user.avatarEstilo ?? null,
+		avatarSeed: user.avatarSeed ?? null,
 		rol: user.rol,
 		estado: user.estado,
 		fechaRegistro: user.fechaRegistro,

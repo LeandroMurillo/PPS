@@ -40,6 +40,8 @@ export async function actualizarPerfilUsuarioService(
 		CUIL: input.CUIL,
 		actividadesArcaCodigo: input.actividadesArcaCodigo,
 		...(fotoDniUrl ? { fotoDniUrl } : {}),
+		avatarEstilo: input.avatarEstilo !== undefined ? input.avatarEstilo : existingUser.avatarEstilo,
+		avatarSeed: input.avatarSeed !== undefined ? input.avatarSeed : existingUser.avatarSeed,
 	});
 
 	if (!updated) {

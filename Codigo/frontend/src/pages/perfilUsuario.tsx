@@ -485,15 +485,6 @@ export default function PerfilUsuarioPage() {
 						</Stack>
 
 						<Stack spacing={1} alignItems={{ xs: 'center', sm: 'flex-end' }}>
-							<Button
-								variant="outlined"
-								size="small"
-								startIcon={<PaletteIcon />}
-								onClick={() => setAvatarDialogOpen(true)}
-								sx={{ textTransform: 'none', borderRadius: 2 }}
-							>
-								Personalizar avatar
-							</Button>
 							{perfil?.fechaRegistro && (
 								<Typography variant="caption" color="text.secondary">
 									Miembro desde {dayjs(perfil.fechaRegistro).format('DD/MM/YYYY')}
@@ -507,7 +498,10 @@ export default function PerfilUsuarioPage() {
 					open={avatarDialogOpen}
 					onClose={() => setAvatarDialogOpen(false)}
 					user={perfil}
-					onStyleSaved={() => setAvatarRefresh((v) => v + 1)}
+					onStyleSaved={(newStyle, newSeed) => {
+						setPerfil((prev) => (prev ? { ...prev, avatarEstilo: newStyle, avatarSeed: newSeed } : null));
+						setAvatarRefresh((v) => v + 1);
+					}}
 				/>
 
 				{/* Pestañas de Navegación del Perfil */}

@@ -90,6 +90,8 @@ export const actualizarPerfilBodySchema = z.object({
 		.transform((val) => val ?? null),
 
 	documentoIdentidad: z.string().optional(),
+	avatarEstilo: z.string().max(50).nullable().optional(),
+	avatarSeed: z.string().max(100).nullable().optional(),
 });
 
 export type ActualizarPerfilBody = z.infer<typeof actualizarPerfilBodySchema>;
@@ -106,6 +108,8 @@ export const perfilUsuarioSchema = z.object({
 	actividadesArcaCodigo: z.string().nullable(),
 	actividadArca: z.string().nullable().optional(),
 	fotoDniUrl: z.string().nullable(),
+	avatarEstilo: z.string().nullable().optional(),
+	avatarSeed: z.string().nullable().optional(),
 	rol: rolUsuarioSchema,
 	estado: estadoUsuarioSchema,
 	fechaRegistro: z.string(),
