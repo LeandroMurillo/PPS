@@ -7,6 +7,16 @@ const theme = createTheme({
 	},
 	colorSchemes: { light: true, dark: true },
 	defaultColorScheme: 'dark',
+	components: {
+		MuiTextField: {
+			defaultProps: {
+				inputProps: {
+					spellCheck: 'true',
+					autoCorrect: 'on',
+				},
+			},
+		},
+	},
 });
 
 export default theme;
