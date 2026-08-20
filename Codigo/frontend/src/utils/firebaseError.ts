@@ -14,9 +14,29 @@ const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
 	'auth/requires-recent-login': 'Esta operación requiere volver a iniciar sesión por seguridad.',
 };
 
+function isBrowserStorageError(message: string): boolean {
+	const normalizedMessage = message.toLowerCase();
+	return (
+		normalizedMessage.includes('database is closing') ||
+		normalizedMessage.includes('database is closed') ||
+		normalizedMessage.includes('database is hidden') ||
+		normalizedMessage.includes('indexeddb')
+	);
+}
+
 export function getFirebaseErrorMessage(error: unknown, fallback: string): string {
 	if (error instanceof FirebaseError) {
+		if (
+			error.code === 'auth/internal-error' ||
+			isBrowserStorageError(error.message) ||
+			isBrowserStorageError(String(error.customData?._serverResponse ?? ''))
+		) {
+			return 'El navegador tuvo un problema temporal con el almacenamiento de la sesión. Reintentá iniciar sesión.';
+		}
 		return FIREBASE_ERROR_MESSAGES[error.code] ?? fallback;
+	}
+	if (error instanceof Error && isBrowserStorageError(error.message)) {
+		return 'El navegador tuvo un problema temporal con el almacenamiento de la sesión. Reintentá iniciar sesión.';
 	}
 	return error instanceof Error ? error.message : fallback;
 }

@@ -1,5 +1,12 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import {
+	browserLocalPersistence,
+	browserSessionPersistence,
+	getAuth,
+	GoogleAuthProvider,
+	indexedDBLocalPersistence,
+	initializeAuth,
+} from 'firebase/auth';
 
 const rawConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -29,6 +36,16 @@ const firebaseConfig = {
 
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const firebaseAuth = getAuth(firebaseApp);
+export const firebaseAuth = (() => {
+	try {
+		return initializeAuth(firebaseApp, {
+			persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+		});
+	} catch {
+		return getAuth(firebaseApp);
+	}
+})();
+
+firebaseAuth.languageCode = 'es-419';
 export const googleAuthProvider = new GoogleAuthProvider();
 googleAuthProvider.setCustomParameters({ prompt: 'select_account' });
