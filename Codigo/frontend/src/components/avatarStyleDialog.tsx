@@ -187,7 +187,7 @@ export const AvatarStyleDialog: React.FC<AvatarStyleDialogProps> = ({ open, onCl
 				<Box
 					sx={{
 						p: 2.5,
-						mb: 3,
+						my: 3,
 						borderRadius: 2,
 						bgcolor: 'action.hover',
 						border: '1px dashed',

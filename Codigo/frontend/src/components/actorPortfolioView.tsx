@@ -11,6 +11,7 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LinkIcon from '@mui/icons-material/Link';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MapIcon from '@mui/icons-material/Map';
@@ -353,6 +354,17 @@ export default function ActorPortfolioView({
 	const mostrarMultimedia = mostrarImagenes || ubicacionMapa !== null;
 	const mostrarAmbasColumnas = mostrarImagenes && ubicacionMapa !== null;
 
+	const mostrarDireccion = Boolean(
+		actor.ubicacion.direccion && (actor.ubicacion.esPublica !== false || effectiveShowAll),
+	);
+	const textoUbicacion = [
+		mostrarDireccion ? actor.ubicacion.direccion : null,
+		actor.ubicacion.localidad,
+		actor.ubicacion.departamento,
+	]
+		.filter(Boolean)
+		.join(', ');
+
 	return (
 		<Box sx={{ width: '100%', maxWidth: 1200, margin: '0 auto', p: { xs: 2, sm: 3, md: 4 } }}>
 			{/* --- BARRA SUPERIOR (Botón Volver) --- */}
@@ -445,17 +457,8 @@ export default function ActorPortfolioView({
 				{actor.tipoActor && (
 					<Chip label={`Tipo: ${getTipoActorEtiqueta(actor.tipoActor)}`} variant="outlined" />
 				)}
-				{actor.ubicacion.departamento && (
-					<Chip
-						label={[
-							effectiveShowAll ? actor.ubicacion.direccion : null,
-							actor.ubicacion.localidad,
-							actor.ubicacion.departamento,
-						]
-							.filter(Boolean)
-							.join(', ')}
-						variant="outlined"
-					/>
+				{textoUbicacion && (
+					<Chip icon={<LocationOnIcon fontSize="small" />} label={textoUbicacion} variant="outlined" />
 				)}
 				{effectiveShowAll && actor.ubicacion.esPublica === false && (
 					<Chip
