@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import {
-	sendEmailVerification,
-	sendPasswordResetEmail,
-	signInWithEmailAndPassword,
-	signOut,
-} from 'firebase/auth';
+import { sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 import {
 	Alert,

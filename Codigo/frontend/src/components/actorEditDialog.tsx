@@ -170,6 +170,18 @@ function MapClickHandler({ onPointChange }: { onPointChange: (point: MapPoint) =
 	return null;
 }
 
+function MapPointFocuser({ point }: { point: MapPoint | null }) {
+	const map = useMap();
+
+	React.useEffect(() => {
+		if (point) {
+			map.flyTo([point.lat, point.lng], 16, { duration: 0.8 });
+		}
+	}, [map, point]);
+
+	return null;
+}
+
 function InvalidateMapSize() {
 	const map = useMap();
 	React.useEffect(() => {
@@ -474,7 +486,7 @@ export default function ActorEditDialog({
 			const controller = new AbortController();
 			obtenerOpcionesRegistroApi(controller.signal)
 				.then((res) => setLoadedCategoryOptions(res.data))
-				.catch(() => {});
+				.catch(() => { });
 			return () => controller.abort();
 		}
 	}, [propCategoryOptions]);
@@ -484,7 +496,7 @@ export default function ActorEditDialog({
 		fetch('/data/tucuman_departamentos.json', { signal: controller.signal })
 			.then((res) => res.json())
 			.then((data: TucumanDataMap) => setTucumanData(data))
-			.catch(() => {});
+			.catch(() => { });
 		return () => controller.abort();
 	}, []);
 
@@ -504,8 +516,8 @@ export default function ActorEditDialog({
 		const cat = category?.nombre ?? actor.categoria;
 		const sub = actor.subcategoria
 			? (category?.subcategorias.find(
-					(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
-				)?.nombre ?? actor.subcategoria)
+				(option) => normalizeCatalogName(option.nombre) === normalizeCatalogName(actor.subcategoria ?? ''),
+			)?.nombre ?? actor.subcategoria)
 			: '';
 
 		const initialValues = {
@@ -558,7 +570,7 @@ export default function ActorEditDialog({
 					const subId = getSubcategoryIdByName(categoryOptions, cat, sub);
 					obtenerFormulariosAplicablesApi({ idCategoria: catId, idSubcategoria: subId })
 						.then((res) => setEditForms(res.data))
-						.catch(() => {});
+						.catch(() => { });
 				}
 			})
 			.finally(() => {
@@ -1397,6 +1409,7 @@ export default function ActorEditDialog({
 									borderRadius: 2,
 									overflow: 'hidden',
 									borderColor: 'divider',
+									'& .leaflet-container': { cursor: 'crosshair' },
 								}}
 							>
 								<MapContainer
@@ -1422,6 +1435,13 @@ export default function ActorEditDialog({
 												: null
 										}
 										tucumanData={tucumanData}
+									/>
+									<MapPointFocuser
+										point={
+											formValues.latitud !== null && formValues.longitud !== null
+												? { lat: formValues.latitud, lng: formValues.longitud }
+												: null
+										}
 									/>
 									<MapClickHandler
 										onPointChange={(p) =>
@@ -1658,7 +1678,7 @@ export default function ActorEditDialog({
 										variant="contained"
 										color="primary"
 										onClick={handleRequestEditSave}
-										// disabled={!hasChanges}
+									// disabled={!hasChanges}
 									>
 										Guardar cambios
 									</Button>
