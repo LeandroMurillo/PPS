@@ -101,6 +101,7 @@ export type ActorDetalle = {
 	respuestas: {
 		pregunta: string;
 		respuesta: string | null;
+		tipoDato?: string | null;
 		publica?: boolean;
 	}[];
 	integrantes: {
@@ -220,7 +221,17 @@ export type OpcionCategoriaRegistro = {
 };
 
 export type TipoPreguntaFormulario =
-	'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
+	| 'TEXTO'
+	| 'NUMERO'
+	| 'BOOLEANO'
+	| 'FECHA'
+	| 'URL'
+	| 'EMAIL'
+	| 'TELEFONO'
+	| 'OPCION_UNICA'
+	| 'OPCION_MULTIPLE'
+	| 'OPCION_MULTIPLE_CHIPS'
+	| 'TAGS';
 
 export type PreguntaFormularioAplicable = {
 	id: number;

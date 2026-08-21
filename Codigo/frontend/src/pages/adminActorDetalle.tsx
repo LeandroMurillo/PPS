@@ -13,14 +13,11 @@ import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
-import Radio from '@mui/material/Radio';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -28,78 +25,17 @@ import Typography from '@mui/material/Typography';
 
 import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
 import MarkdownContent from '../components/markdownContent';
+import SurveyAnswerDisplay from '../components/surveyAnswerDisplay';
 import { ESTADO_COLORS as stateColors, ESTADO_LABELS as stateLabels } from '../constants/estados';
 import { formatDate } from '../utils/date';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
 
 import 'leaflet/dist/leaflet.css';
 
-type SurveyAnswer = ActorDetalleAdmin['encuestas'][number]['secciones'][number]['respuestas'][number];
-
 function formatCuit(value: string | null) {
 	if (!value) return 'No informado';
 	const digits = value.replace(/\D/g, '');
 	return digits.length === 11 ? `${digits.slice(0, 2)}-${digits.slice(2, 10)}-${digits.slice(10)}` : value;
-}
-
-function SurveyAnswerValue({ answer }: { answer: SurveyAnswer }) {
-	const isSingleChoice = answer.tipoDato === 'OPCION_UNICA';
-	const isMultipleChoice = answer.tipoDato === 'OPCION_MULTIPLE';
-	const isBoolean = answer.tipoDato === 'BOOLEANO';
-
-	if (isSingleChoice || isMultipleChoice || isBoolean) {
-		const options = isBoolean ? ['Sí', 'No'] : (answer.opciones ?? []);
-		const selectedValues = Array.isArray(answer.respuesta)
-			? answer.respuesta
-			: answer.respuesta === null
-				? []
-				: [answer.respuesta];
-
-		if (options.length > 0) {
-			return (
-				<Stack spacing={0.25}>
-					{options.map((option) => {
-						const control =
-							isSingleChoice || isBoolean ? (
-								<Radio checked={selectedValues.includes(option)} disabled size="small" />
-							) : (
-								<Checkbox checked={selectedValues.includes(option)} disabled size="small" />
-							);
-
-						return (
-							<FormControlLabel
-								key={option}
-								control={control}
-								label={option}
-								disabled
-								sx={{
-									m: 0,
-									width: 'fit-content',
-									'&.Mui-disabled': { opacity: 1 },
-									'& .MuiFormControlLabel-label': { fontSize: '1rem' },
-									'& .MuiFormControlLabel-label.Mui-disabled': { color: 'text.primary' },
-									'& .MuiButtonBase-root.Mui-disabled': {
-										color: selectedValues.includes(option) ? 'primary.main' : 'action.disabled',
-									},
-								}}
-							/>
-						);
-					})}
-					{answer.respuesta === null && (
-						<Typography variant="body2" color="text.secondary">
-							Sin respuesta
-						</Typography>
-					)}
-				</Stack>
-			);
-		}
-	}
-
-	return (
-		<Typography variant="body1" color={answer.respuesta === null ? 'text.secondary' : 'text.primary'}>
-			{Array.isArray(answer.respuesta) ? answer.respuesta.join(', ') : (answer.respuesta ?? 'Sin respuesta')}
-		</Typography>
-	);
 }
 
 function Section({
@@ -461,7 +397,7 @@ function SurveysTab({ actor }: { actor: ActorDetalleAdmin }) {
 									/>
 								)}
 							</Stack>
-							<SurveyAnswerValue answer={answer} />
+							<SurveyAnswerDisplay value={answer.respuesta} tipoDato={answer.tipoDato} />
 						</Box>
 					))}
 					{answers.length === 0 && (

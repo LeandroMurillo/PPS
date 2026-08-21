@@ -76,9 +76,21 @@ const questionTypeLabels: Record<TipoPreguntaAdmin, string> = {
 	TELEFONO: 'Teléfono',
 	OPCION_UNICA: 'Opción única',
 	OPCION_MULTIPLE: 'Opciones múltiples',
+	OPCION_MULTIPLE_CHIPS: 'Opciones múltiples con chips',
+	TAGS: 'Etiquetas',
 };
 
 const questionTypes = Object.keys(questionTypeLabels) as TipoPreguntaAdmin[];
+const optionBasedQuestionTypes: TipoPreguntaAdmin[] = [
+	'OPCION_UNICA',
+	'OPCION_MULTIPLE',
+	'OPCION_MULTIPLE_CHIPS',
+	'TAGS',
+];
+
+function questionTypeUsesOptions(type: TipoPreguntaAdmin) {
+	return optionBasedQuestionTypes.includes(type);
+}
 
 export default function AdminCategoriaFormularioPage() {
 	const { categoriaSlug = '', subcategoriaSlug = '' } = useParams<{
@@ -162,7 +174,7 @@ export default function AdminCategoriaFormularioPage() {
 		if (!formulario || !editingQuestion) return;
 
 		if (editMode === 'global') {
-			const usesOpts = editQuestionType === 'OPCION_UNICA' || editQuestionType === 'OPCION_MULTIPLE';
+			const usesOpts = questionTypeUsesOptions(editQuestionType);
 			const opts = usesOpts
 				? editQuestionOptions
 						.split('\n')
@@ -214,7 +226,7 @@ export default function AdminCategoriaFormularioPage() {
 				}
 				newQuestionId = replaceSelectedBankQuestion.id;
 			} else {
-				const usesOpts = replaceQuestionType === 'OPCION_UNICA' || replaceQuestionType === 'OPCION_MULTIPLE';
+				const usesOpts = questionTypeUsesOptions(replaceQuestionType);
 				const opts = usesOpts
 					? replaceQuestionOptions
 							.split('\n')
@@ -391,7 +403,7 @@ export default function AdminCategoriaFormularioPage() {
 		formulario?.preguntas?.filter((question) =>
 			questionTab === 'activas' ? question.estado === 'A' : question.estado === 'I',
 		) ?? [];
-	const usesOptions = questionType === 'OPCION_UNICA' || questionType === 'OPCION_MULTIPLE';
+	const usesOptions = questionTypeUsesOptions(questionType);
 
 	const activeQuestionIds = React.useMemo(
 		() => new Set(formulario?.preguntas?.filter((q) => q.estado === 'A').map((q) => q.id) ?? []),
@@ -966,8 +978,7 @@ export default function AdminCategoriaFormularioPage() {
 											))}
 										</Select>
 									</FormControl>
-									{(editQuestionType === 'OPCION_UNICA' ||
-										editQuestionType === 'OPCION_MULTIPLE') && (
+									{questionTypeUsesOptions(editQuestionType) && (
 										<TextField
 											label="Opciones (una por línea)"
 											required
@@ -1053,8 +1064,7 @@ export default function AdminCategoriaFormularioPage() {
 													))}
 												</Select>
 											</FormControl>
-											{(replaceQuestionType === 'OPCION_UNICA' ||
-												replaceQuestionType === 'OPCION_MULTIPLE') && (
+											{questionTypeUsesOptions(replaceQuestionType) && (
 												<TextField
 													label="Opciones (una por línea)"
 													required

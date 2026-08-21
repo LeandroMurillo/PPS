@@ -45,6 +45,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatEventDate } from '../utils/date';
 import { detectarTipoEnlace, esImagenPortafolio, obtenerIdYoutube, type TipoEnlace } from '../utils/links';
 import MarkdownContent from './markdownContent';
+import SurveyAnswerDisplay from './surveyAnswerDisplay';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -146,6 +147,7 @@ export type ActorPortfolioViewData = {
 	respuestas?: {
 		pregunta: string;
 		respuesta?: string | number | boolean | string[] | null;
+		tipoDato?: string | null;
 		publica?: boolean;
 	}[];
 	integrantes?: {
@@ -822,11 +824,7 @@ export default function ActorPortfolioView({
 												/>
 											)}
 										</Stack>
-										<Typography variant="body2" color="text.secondary">
-											{Array.isArray(p.respuesta)
-												? p.respuesta.join(', ')
-												: String(p.respuesta ?? '')}
-										</Typography>
+										<SurveyAnswerDisplay value={p.respuesta} tipoDato={p.tipoDato} emptyText="" />
 									</Box>
 								))}
 							</Stack>

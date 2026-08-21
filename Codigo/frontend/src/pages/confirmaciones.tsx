@@ -266,6 +266,7 @@ export default function ConfirmacionesPage() {
 						sec.respuestas.map((r) => ({
 							pregunta: r.pregunta,
 							respuesta: r.respuesta,
+							tipoDato: r.tipoDato,
 							publica: r.publica,
 						})),
 					),

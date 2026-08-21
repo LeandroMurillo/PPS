@@ -129,7 +129,9 @@ export type ActorDetalleAdmin = ActorAdmin & {
 					| 'EMAIL'
 					| 'TELEFONO'
 					| 'OPCION_UNICA'
-					| 'OPCION_MULTIPLE';
+					| 'OPCION_MULTIPLE'
+					| 'OPCION_MULTIPLE_CHIPS'
+					| 'TAGS';
 				opciones: string[] | null;
 				respuesta: string | string[] | null;
 				obligatoria: boolean;
@@ -162,7 +164,17 @@ export type SubcategoriaAdmin = {
 export type SubcategoriaAdminSortBy = 'idSubcategoria' | 'nombre' | 'estado' | 'cantidadActores';
 
 export type TipoPreguntaAdmin =
-	'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
+	| 'TEXTO'
+	| 'NUMERO'
+	| 'BOOLEANO'
+	| 'FECHA'
+	| 'URL'
+	| 'EMAIL'
+	| 'TELEFONO'
+	| 'OPCION_UNICA'
+	| 'OPCION_MULTIPLE'
+	| 'OPCION_MULTIPLE_CHIPS'
+	| 'TAGS';
 
 export type PreguntaBancoAdmin = {
 	id: number;

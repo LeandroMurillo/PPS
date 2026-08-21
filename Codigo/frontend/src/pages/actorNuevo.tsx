@@ -30,13 +30,10 @@ import {
 	Button,
 	Card,
 	CardContent,
-	Checkbox,
-	Chip,
 	CircularProgress,
 	Divider,
 	FormControl,
 	FormControlLabel,
-	FormGroup,
 	FormHelperText,
 	Grid,
 	IconButton,
@@ -51,13 +48,14 @@ import {
 	StepLabel,
 	Stepper,
 	TextField,
-	Tooltip,
 	Typography,
 } from '@mui/material';
 import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
 import MarkdownEditor from '../components/markdownEditor';
+import QuestionField from '../components/questionField';
 import { fileToBase64 } from '../utils/file';
 import { normalizarUrl } from '../utils/links';
+import { validateSurveyAnswer } from '../utils/surveyValidation';
 import { notify } from '../utils/toast';
 
 import {
@@ -67,7 +65,6 @@ import {
 	obtenerOpcionesRegistroApi,
 	type FormularioAplicable,
 	type OpcionCategoriaRegistro,
-	type PreguntaFormularioAplicable,
 } from '../api/actores';
 
 import RequiredAsterisk from '../components/requiredAsterisk';
@@ -336,14 +333,13 @@ export default function ActorNuevoPage() {
 		}
 		if (activeStep === 1) {
 			setFormValidationAttempted(true);
-			const hasMissingRequiredAnswer = forms.some((form) =>
+			const hasInvalidAnswer = forms.some((form) =>
 				form.preguntas.some((question) => {
-					if (!question.esObligatorio) return false;
 					const value = answers[`${form.id}:${question.id}`];
-					return Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim();
+					return Boolean(validateSurveyAnswer(question.tipoDato, value, question.esObligatorio));
 				}),
 			);
-			if (hasMissingRequiredAnswer) {
+			if (hasInvalidAnswer) {
 				scrollToTop();
 				return;
 			}
@@ -1213,6 +1209,7 @@ function PublicProfilePreview({
 			.map((question) => ({
 				pregunta: question.pregunta,
 				respuesta: answers[`${form.id}:${question.id}`],
+				tipoDato: question.tipoDato,
 				publica: question.esPublico,
 			}))
 			.filter(({ respuesta }) =>
@@ -1342,7 +1339,9 @@ function CategoryForms({
 								const isMissing =
 									question.esObligatorio &&
 									(Array.isArray(value) ? value.length === 0 : !String(value ?? '').trim());
-								const hasError = validationAttempted && isMissing;
+								const hasError =
+									validationAttempted &&
+									(isMissing || Boolean(validateSurveyAnswer(question.tipoDato, value, false)));
 
 								return (
 									<QuestionField
@@ -1358,173 +1357,6 @@ function CategoryForms({
 					)}
 				</Box>
 			))}
-		</Stack>
-	);
-}
-
-function QuestionField({
-	question,
-	value,
-	hasError = false,
-	onChange,
-}: {
-	question: PreguntaFormularioAplicable;
-	value: FormAnswer;
-	hasError?: boolean;
-	onChange: (value: FormAnswer) => void;
-}) {
-	const label = question.pregunta;
-
-	if (question.tipoDato === 'BOOLEANO') {
-		return (
-			<FormControl error={hasError} component="fieldset" fullWidth>
-				<Stack spacing={1}>
-					<QuestionHeading question={question} hasError={hasError} />
-					<RadioGroup
-						row
-						aria-label={label}
-						value={typeof value === 'string' ? value : ''}
-						onChange={(event) => onChange(event.target.value)}
-					>
-						<FormControlLabel
-							value="true"
-							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
-							label="Sí"
-						/>
-						<FormControlLabel
-							value="false"
-							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
-							label="No"
-						/>
-					</RadioGroup>
-					{hasError && <FormHelperText error>Esta pregunta es obligatoria.</FormHelperText>}
-				</Stack>
-			</FormControl>
-		);
-	}
-
-	if (question.tipoDato === 'OPCION_UNICA') {
-		return (
-			<FormControl fullWidth required={question.esObligatorio} error={hasError}>
-				<Stack spacing={1}>
-					<QuestionHeading question={question} hasError={hasError} />
-					<Select
-						displayEmpty
-						error={hasError}
-						value={typeof value === 'string' ? value : ''}
-						onChange={(event) => onChange(event.target.value)}
-						inputProps={{ 'aria-label': label }}
-					>
-						<MenuItem value="" disabled>
-							Seleccioná una opción
-						</MenuItem>
-						{question.opciones?.map((option) => (
-							<MenuItem key={option} value={option}>
-								{option}
-							</MenuItem>
-						))}
-					</Select>
-					{hasError && <FormHelperText error>Seleccioná una opción.</FormHelperText>}
-				</Stack>
-			</FormControl>
-		);
-	}
-
-	if (question.tipoDato === 'OPCION_MULTIPLE') {
-		const selected = Array.isArray(value) ? value : [];
-		return (
-			<FormControl error={hasError} component="fieldset" fullWidth>
-				<Stack spacing={1}>
-					<QuestionHeading question={question} hasError={hasError} />
-					<FormGroup aria-label={label}>
-						{question.opciones?.map((option) => (
-							<FormControlLabel
-								key={option}
-								label={option}
-								control={
-									<Checkbox
-										checked={selected.includes(option)}
-										color={hasError ? 'error' : 'primary'}
-										onChange={(event) =>
-											onChange(
-												event.target.checked
-													? [...selected, option]
-													: selected.filter((item) => item !== option),
-											)
-										}
-									/>
-								}
-							/>
-						))}
-					</FormGroup>
-					{hasError && <FormHelperText error>Seleccioná al menos una opción.</FormHelperText>}
-				</Stack>
-			</FormControl>
-		);
-	}
-
-	const inputType: Record<string, string> = {
-		NUMERO: 'number',
-		FECHA: 'date',
-		URL: 'url',
-		EMAIL: 'email',
-		TELEFONO: 'tel',
-	};
-
-	return (
-		<Stack spacing={1}>
-			<QuestionHeading question={question} hasError={hasError} />
-			<TextField
-				fullWidth
-				required={question.esObligatorio}
-				error={hasError}
-				helperText={hasError ? 'Esta pregunta es obligatoria.' : undefined}
-				type={inputType[question.tipoDato] ?? 'text'}
-				placeholder={question.tipoDato === 'FECHA' ? undefined : 'Ingresá tu respuesta'}
-				value={typeof value === 'string' ? value : ''}
-				onChange={(event) => onChange(event.target.value)}
-				slotProps={{ htmlInput: { 'aria-label': label } }}
-			/>
-		</Stack>
-	);
-}
-
-function QuestionHeading({
-	question,
-	hasError = false,
-}: {
-	question: PreguntaFormularioAplicable;
-	hasError?: boolean;
-}) {
-	return (
-		<Stack
-			direction={{ xs: 'column', sm: 'row' }}
-			spacing={1}
-			alignItems={{ xs: 'flex-start', sm: 'center' }}
-			justifyContent="space-between"
-		>
-			<Typography
-				variant="subtitle2"
-				fontWeight={700}
-				color={hasError ? 'error.main' : 'text.primary'}
-				sx={{ transition: 'color 0.2s ease' }}
-			>
-				{question.pregunta}
-				{question.esObligatorio && <RequiredAsterisk tooltipTitle="Pregunta obligatoria" />}
-			</Typography>
-			{question.esPublico && (
-				<Tooltip title="Esta respuesta podrá mostrarse en el perfil público del actor cultural." arrow>
-					<Chip
-						size="small"
-						variant="outlined"
-						color="success"
-						icon={<PublicIcon />}
-						label="Respuesta pública"
-						tabIndex={0}
-						sx={{ cursor: 'help' }}
-					/>
-				</Tooltip>
-			)}
 		</Stack>
 	);
 }

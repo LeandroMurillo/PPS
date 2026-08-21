@@ -13,7 +13,6 @@ import {
 	Autocomplete,
 	Box,
 	Button,
-	Checkbox,
 	Chip,
 	CircularProgress,
 	Dialog,
@@ -24,7 +23,6 @@ import {
 	Divider,
 	FormControl,
 	FormControlLabel,
-	FormGroup,
 	FormHelperText,
 	Grid,
 	InputLabel,
@@ -47,7 +45,7 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-lea
 import 'leaflet/dist/leaflet.css';
 
 import { PortfolioMapControls } from './actorPortfolioView';
-import RequiredAsterisk from './requiredAsterisk';
+import QuestionField from './questionField';
 import {
 	editarMiActorApi,
 	obtenerFormulariosActorApi,
@@ -55,12 +53,12 @@ import {
 	obtenerOpcionesRegistroApi,
 	type FormularioActor,
 	type OpcionCategoriaRegistro,
-	type PreguntaFormularioActor,
 } from '../api/actores';
 import { DEPARTAMENTOS_TUCUMAN } from '../constants/departamentos';
 import { TIPO_ACTOR_LABELS as typeLabels } from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
 import { fileToBase64, validateImageFile } from '../utils/file';
+import { validateSurveyAnswer } from '../utils/surveyValidation';
 import { notify } from '../utils/toast';
 import type { MyActor } from '../pages/misActores';
 
@@ -191,207 +189,6 @@ function InvalidateMapSize() {
 		return () => clearTimeout(timer);
 	}, [map]);
 	return null;
-}
-
-function QuestionHeading({
-	question,
-	hasError = false,
-	isNew = false,
-}: {
-	question: PreguntaFormularioActor;
-	hasError?: boolean;
-	isNew?: boolean;
-}) {
-	return (
-		<Stack
-			direction={{ xs: 'column', sm: 'row' }}
-			spacing={1}
-			alignItems={{ xs: 'flex-start', sm: 'center' }}
-			justifyContent="space-between"
-		>
-			<Typography
-				variant="subtitle2"
-				fontWeight={600}
-				color={hasError ? 'error.main' : 'text.primary'}
-				sx={{ transition: 'color 0.2s ease' }}
-			>
-				{question.pregunta}
-				{question.esObligatorio && <RequiredAsterisk tooltipTitle="Pregunta obligatoria" />}
-			</Typography>
-			<Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
-				{isNew && (
-					<Tooltip title="Pregunta nueva: incorporada al catálogo del sector." arrow>
-						<Chip
-							size="small"
-							color="info"
-							variant="outlined"
-							label="Nueva"
-							sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
-						/>
-					</Tooltip>
-				)}
-				{question.esObligatorio && (
-					<Chip
-						size="small"
-						color="warning"
-						variant="outlined"
-						label="Obligatoria"
-						sx={{ height: 22, fontSize: '0.7rem' }}
-					/>
-				)}
-				{question.esPublico ? (
-					<Tooltip title="Esta respuesta podrá mostrarse en el perfil público del actor cultural." arrow>
-						<Chip
-							size="small"
-							variant="outlined"
-							color="success"
-							icon={<PublicIcon sx={{ fontSize: 14 }} />}
-							label="Pública"
-							sx={{ height: 22, fontSize: '0.7rem' }}
-						/>
-					</Tooltip>
-				) : (
-					<Tooltip title="Esta respuesta solo es visible para moderación y administración." arrow>
-						<Chip
-							size="small"
-							variant="outlined"
-							color="default"
-							label="Interna"
-							sx={{ height: 22, fontSize: '0.7rem' }}
-						/>
-					</Tooltip>
-				)}
-			</Stack>
-		</Stack>
-	);
-}
-
-function QuestionField({
-	question,
-	value,
-	hasError = false,
-	isNew = false,
-	onChange,
-}: {
-	question: PreguntaFormularioActor;
-	value: string | string[];
-	hasError?: boolean;
-	isNew?: boolean;
-	onChange: (value: string | string[]) => void;
-}) {
-	const label = question.pregunta;
-
-	if (question.tipoDato === 'BOOLEANO') {
-		return (
-			<FormControl error={hasError} component="fieldset" fullWidth>
-				<Stack spacing={1}>
-					<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
-					<RadioGroup
-						row
-						aria-label={label}
-						value={typeof value === 'string' ? value : ''}
-						onChange={(event) => onChange(event.target.value)}
-					>
-						<FormControlLabel
-							value="true"
-							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
-							label="Sí"
-						/>
-						<FormControlLabel
-							value="false"
-							control={<Radio size="small" color={hasError ? 'error' : 'primary'} />}
-							label="No"
-						/>
-					</RadioGroup>
-					{hasError && <FormHelperText error>Esta pregunta es obligatoria.</FormHelperText>}
-				</Stack>
-			</FormControl>
-		);
-	}
-
-	if (question.tipoDato === 'OPCION_UNICA') {
-		return (
-			<FormControl fullWidth required={question.esObligatorio} error={hasError}>
-				<Stack spacing={1}>
-					<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
-					<Select
-						displayEmpty
-						error={hasError}
-						value={typeof value === 'string' ? value : ''}
-						onChange={(event) => onChange(event.target.value)}
-						inputProps={{ 'aria-label': label }}
-					>
-						<MenuItem value="" disabled>
-							Seleccioná una opción
-						</MenuItem>
-						{question.opciones?.map((option) => (
-							<MenuItem key={option} value={option}>
-								{option}
-							</MenuItem>
-						))}
-					</Select>
-					{hasError && <FormHelperText error>Seleccioná una opción.</FormHelperText>}
-				</Stack>
-			</FormControl>
-		);
-	}
-
-	if (question.tipoDato === 'OPCION_MULTIPLE') {
-		const selected = Array.isArray(value) ? value : [];
-		return (
-			<FormControl error={hasError} component="fieldset" fullWidth>
-				<Stack spacing={1}>
-					<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
-					<FormGroup aria-label={label}>
-						{question.opciones?.map((option) => (
-							<FormControlLabel
-								key={option}
-								label={option}
-								control={
-									<Checkbox
-										checked={selected.includes(option)}
-										color={hasError ? 'error' : 'primary'}
-										onChange={(event) =>
-											onChange(
-												event.target.checked
-													? [...selected, option]
-													: selected.filter((item) => item !== option),
-											)
-										}
-									/>
-								}
-							/>
-						))}
-					</FormGroup>
-					{hasError && <FormHelperText error>Seleccioná al menos una opción.</FormHelperText>}
-				</Stack>
-			</FormControl>
-		);
-	}
-
-	const inputType: Record<string, string> = {
-		NUMERO: 'number',
-		FECHA: 'date',
-		URL: 'url',
-		EMAIL: 'email',
-		TELEFONO: 'tel',
-	};
-
-	return (
-		<Stack spacing={1}>
-			<QuestionHeading question={question} hasError={hasError} isNew={isNew} />
-			<TextField
-				fullWidth
-				required={question.esObligatorio}
-				error={hasError}
-				helperText={hasError ? 'Esta pregunta es obligatoria.' : undefined}
-				type={inputType[question.tipoDato] ?? 'text'}
-				placeholder={question.tipoDato === 'FECHA' ? undefined : 'Ingresá tu respuesta'}
-				value={typeof value === 'string' ? value : ''}
-				onChange={(event) => onChange(event.target.value)}
-			/>
-		</Stack>
-	);
 }
 
 type Props = {
@@ -820,26 +617,21 @@ export default function ActorEditDialog({
 			return;
 		}
 
-		// Validar preguntas obligatorias
+		// Validar preguntas obligatorias y formatos
 		for (const form of editForms) {
 			const formId = form.id ?? form.idFormulario;
 			for (const q of form.preguntas) {
-				if (q.esObligatorio) {
-					const qId = q.id ?? q.idPregunta;
-					const key = `${formId}:${qId}`;
-					const val = editFormAnswers[key];
-					const isMissing =
-						val === null ||
-						val === undefined ||
-						(Array.isArray(val) ? val.length === 0 : !String(val).trim());
-					if (isMissing) {
-						setEditValidationAttempted(true);
-						notify.error(`Falta responder la pregunta obligatoria: "${q.pregunta}"`, {
-							scope: 'actor-edit',
-						});
-						setEditActiveTab(2);
-						return;
-					}
+				const qId = q.id ?? q.idPregunta;
+				const key = `${formId}:${qId}`;
+				const val = editFormAnswers[key];
+				const validationMessage = validateSurveyAnswer(q.tipoDato, val, q.esObligatorio);
+				if (validationMessage) {
+					setEditValidationAttempted(true);
+					notify.error(`${validationMessage} Revisá la pregunta: "${q.pregunta}"`, {
+						scope: 'actor-edit',
+					});
+					setEditActiveTab(2);
+					return;
 				}
 			}
 		}
@@ -966,14 +758,9 @@ export default function ActorEditDialog({
 											editForms.some((f) => {
 												const fId = f.id ?? f.idFormulario;
 												return f.preguntas.some((q) => {
-													if (!q.esObligatorio) return false;
 													const qId = q.id ?? q.idPregunta;
 													const val = editFormAnswers[`${fId}:${qId}`];
-													return (
-														val === null ||
-														val === undefined ||
-														(Array.isArray(val) ? val.length === 0 : !String(val).trim())
-													);
+													return Boolean(validateSurveyAnswer(q.tipoDato, val, q.esObligatorio));
 												});
 											})
 												? 'warning'
@@ -1602,7 +1389,10 @@ export default function ActorEditDialog({
 														(Array.isArray(value)
 															? value.length === 0
 															: !String(value ?? '').trim());
-													const hasError = editValidationAttempted && isMissing;
+													const hasError =
+														editValidationAttempted &&
+														(isMissing ||
+															Boolean(validateSurveyAnswer(question.tipoDato, value, false)));
 													const isNew =
 														question.valor === null || question.valor === undefined;
 
