@@ -476,7 +476,7 @@ export default function PerfilUsuarioPage() {
 									/>
 									<Chip
 										size="small"
-										label={`Dueño de ${perfil?.actoresDuenoCount ?? 0} actor${(perfil?.actoresDuenoCount ?? 0) === 1 ? '' : 'es'}`}
+										label={`Titular de ${perfil?.actoresDuenoCount ?? 0} actor${(perfil?.actoresDuenoCount ?? 0) === 1 ? '' : 'es'}`}
 										color="primary"
 										variant="outlined"
 									/>
@@ -1112,7 +1112,7 @@ export default function PerfilUsuarioPage() {
 										<li>
 											<strong>
 												Se eliminarán automáticamente todos los actores culturales de los que
-												sos dueño/a ({perfil?.actoresDuenoCount ?? 0} actor
+												sos titular ({perfil?.actoresDuenoCount ?? 0} actor
 												{(perfil?.actoresDuenoCount ?? 0) === 1 ? '' : 'es'})
 											</strong>
 											, junto con sus portafolios, fotos, eventos, integrantes y postulaciones.

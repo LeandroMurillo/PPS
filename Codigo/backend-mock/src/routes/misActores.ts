@@ -529,7 +529,7 @@ misActoresRouter.delete('/:id/integrantes/:idUsuario', (req, res) => {
 
 	if (integrante.esDueno) {
 		return res.status(400).json({
-			error: { code: 'BAD_REQUEST', message: 'No se puede eliminar al dueño principal del actor cultural.' },
+			error: { code: 'BAD_REQUEST', message: 'No se puede eliminar al titular del actor cultural.' },
 		});
 	}
 

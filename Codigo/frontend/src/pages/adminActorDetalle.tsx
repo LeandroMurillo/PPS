@@ -310,7 +310,7 @@ function ProfileTab({ actor }: { actor: ActorDetalleAdmin }) {
 												<Chip label="Sin cuenta" size="small" variant="outlined" />
 											)}
 											{integrante.esDueno && (
-												<Chip label="Dueño" size="small" variant="outlined" />
+												<Chip label="Titular" size="small" variant="outlined" />
 											)}
 										</Stack>
 										<Typography variant="caption" color="text.secondary">

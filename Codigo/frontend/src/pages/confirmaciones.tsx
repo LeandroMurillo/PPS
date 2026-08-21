@@ -358,7 +358,7 @@ export default function ConfirmacionesPage() {
 		},
 		{
 			id: 'dueno',
-			label: 'Contacto / Dueño',
+			label: 'Contacto / Titular',
 			sortBy: 'usuarioDueno',
 			minWidth: 190,
 			render: (row) => (

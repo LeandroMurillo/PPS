@@ -414,7 +414,7 @@ export const actorDetalleIntegranteSchema = z
 		}),
 
 		esDueno: z.boolean().optional().meta({
-			description: 'Indica si el integrante es el creador/dueño de la ficha.',
+			description: 'Indica si el integrante es el titular de la ficha.',
 			example: true,
 		}),
 	})
@@ -484,7 +484,7 @@ export const actorDetallePublicoSchema = z
 			.nullable()
 			.optional()
 			.meta({
-				description: 'Información del dueño / creador del actor cultural (solo visible para autorizados).',
+				description: 'Información del titular del actor cultural (solo visible para autorizados).',
 			}),
 
 		ubicacion: z.strictObject({

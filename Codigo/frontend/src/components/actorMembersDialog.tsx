@@ -464,7 +464,7 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 													</Typography>
 													{member.esDueño && (
 														<Chip
-															label="Dueño Principal"
+															label="Titular"
 															size="small"
 															color="primary"
 															sx={{ height: 20, fontSize: 10 }}

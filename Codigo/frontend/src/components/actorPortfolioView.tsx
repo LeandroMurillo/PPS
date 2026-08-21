@@ -529,7 +529,7 @@ export default function ActorPortfolioView({
 
 						<Grid size={{ xs: 12, sm: 6, md: 3 }}>
 							<Typography variant="caption" color="text.secondary" display="block">
-								Creador / Dueño de la ficha
+								Creador / Titular de la ficha
 							</Typography>
 							<Typography variant="body2" fontWeight={600}>
 								{actor.dueno ? (
@@ -857,7 +857,7 @@ export default function ActorPortfolioView({
 											{effectiveShowAll && integrante.esDueno && (
 												<Chip
 													size="small"
-													label="Dueño"
+													label="Titular"
 													color="primary"
 													sx={{ height: 20, fontSize: '0.7rem' }}
 												/>
