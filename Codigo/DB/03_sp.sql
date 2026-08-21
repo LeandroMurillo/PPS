@@ -5352,12 +5352,13 @@ CREATE OR REPLACE PROCEDURE `sp_convocatoria_postular_actor`(
     IN pIdUsuario INT
 )
 MODIFIES SQL DATA
-COMMENT 'Postula un actor cultural a una convocatoria activa verificando pertenencia.'
+COMMENT 'Postula un actor cultural a una convocatoria activa verificando pertenencia y estado activo.'
 BEGIN
     DECLARE vCerrada INT DEFAULT 0;
     DECLARE vEsMiembro INT DEFAULT 0;
     DECLARE vYaPostulado INT DEFAULT 0;
     DECLARE vRolUsuario VARCHAR(20);
+    DECLARE vEstadoActor ENUM('A', 'P', 'I');
 
     -- 1. Verificar si la convocatoria existe y esta abierta
     SELECT CASE WHEN fechaCierre < NOW() THEN 1 ELSE 0 END INTO vCerrada
@@ -5372,12 +5373,25 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La convocatoria ya se encuentra cerrada y no recibe más postulaciones.';
     END IF;
 
-    -- 2. Obtener rol del usuario
+    -- 2. Obtener estado del actor cultural
+    SELECT estado INTO vEstadoActor
+    FROM `Actores`
+    WHERE idActor = pIdActor;
+
+    IF vEstadoActor IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El actor cultural no existe.';
+    END IF;
+
+    IF vEstadoActor <> 'A' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Solo se pueden postular actores culturales activos.';
+    END IF;
+
+    -- 3. Obtener rol del usuario
     SELECT rol INTO vRolUsuario
     FROM `Usuarios`
     WHERE idUsuario = pIdUsuario;
 
-    -- 3. Verificar que el usuario tenga permisos sobre el actor (sea miembro o admin)
+    -- 4. Verificar que el usuario tenga permisos sobre el actor (sea miembro o admin)
     IF vRolUsuario NOT IN ('ADMIN', 'MODERADOR') THEN
         SELECT COUNT(*) INTO vEsMiembro
         FROM `Integrantes`
@@ -5388,7 +5402,7 @@ BEGIN
         END IF;
     END IF;
 
-    -- 4. Verificar si ya esta postulado
+    -- 5. Verificar si ya esta postulado
     SELECT COUNT(*) INTO vYaPostulado
     FROM `Postulaciones`
     WHERE idConvocatoria = pIdConvocatoria AND idActor = pIdActor;

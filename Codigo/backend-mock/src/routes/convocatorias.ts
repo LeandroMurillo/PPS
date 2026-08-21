@@ -125,6 +125,15 @@ function handlePostular(req: Request, res: Response) {
 		return res.status(400).json({ error: { message: 'La convocatoria ya se encuentra cerrada.' } });
 	}
 
+	const actor = db.actores.find((item) => item.id === Number(idActor));
+	if (!actor) {
+		return res.status(404).json({ error: { message: 'El actor cultural no existe.' } });
+	}
+
+	if (actor.estado !== 'A') {
+		return res.status(400).json({ error: { message: 'Solo se pueden postular actores culturales activos.' } });
+	}
+
 	const existing = db.postulaciones.find((p) => p.idConvocatoria === idConvocatoria && p.idActor === Number(idActor));
 	if (existing) {
 		return res.status(400).json({ error: { message: 'Este actor ya está postulado a esta convocatoria.' } });

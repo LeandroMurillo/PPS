@@ -128,9 +128,16 @@ export default function ConvocatoriasUsuario() {
 		setSelectedConvocatoria(null);
 	};
 
+	const misActoresActivos = React.useMemo(() => misActores.filter((a) => a.estado === 'A'), [misActores]);
+
 	const handleToggleActor = async (convocatoriaId: number, actor: MisActorApiItem) => {
 		const actuales = postulacionesMap[convocatoriaId] || [];
 		const estaPostulado = actuales.includes(actor.id);
+
+		if (!estaPostulado && actor.estado !== 'A') {
+			notify.error('Solo podés postular actores culturales que estén activos.', { scope: 'convocatorias' });
+			return;
+		}
 
 		setTogglingActorId(actor.id);
 		try {
@@ -475,25 +482,46 @@ export default function ConvocatoriasUsuario() {
 							Seleccioná cuáles de tus perfiles culturales querés inscribir:
 						</Typography>
 
-						{misActores.length === 0 ? (
+						{misActoresActivos.length === 0 ? (
 							<Paper variant="outlined" sx={{ p: 3, textAlign: 'center', bgcolor: 'action.hover' }}>
-								<Typography variant="body2" color="text.secondary" paragraph>
-									No tenés ningún actor cultural registrado aún en tu cuenta.
-								</Typography>
-								<Button
-									variant="contained"
-									startIcon={<AddCircleOutlineIcon />}
-									onClick={() => {
-										handleCloseDialog();
-										navigate('/actores/nuevo');
-									}}
-								>
-									Registrar mi primer actor cultural
-								</Button>
+								{misActores.length === 0 ? (
+									<>
+										<Typography variant="body2" color="text.secondary" paragraph>
+											No tenés ningún actor cultural registrado aún en tu cuenta.
+										</Typography>
+										<Button
+											variant="contained"
+											startIcon={<AddCircleOutlineIcon />}
+											onClick={() => {
+												handleCloseDialog();
+												navigate('/actores/nuevo');
+											}}
+										>
+											Registrar mi primer actor cultural
+										</Button>
+									</>
+								) : (
+									<>
+										<Typography variant="body2" color="text.secondary" paragraph>
+											No tenés ningún actor cultural activo para postular. Recordá que tus
+											perfiles culturales deben estar aprobados para poder participar en
+											convocatorias.
+										</Typography>
+										<Button
+											variant="outlined"
+											onClick={() => {
+												handleCloseDialog();
+												navigate('/mis-actores');
+											}}
+										>
+											Ver mis perfiles culturales
+										</Button>
+									</>
+								)}
 							</Paper>
 						) : (
 							<Stack spacing={1.5}>
-								{misActores.map((actor) => {
+								{misActoresActivos.map((actor) => {
 									const convId = selectedConvocatoria?.idConvocatoria ?? 0;
 									const isChecked = (postulacionesMap[convId] || []).includes(actor.id);
 									const isPending = togglingActorId === actor.id;
