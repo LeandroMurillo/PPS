@@ -515,7 +515,9 @@ class MockDatabase {
 						| 'EMAIL'
 						| 'TELEFONO'
 						| 'OPCION_UNICA'
-						| 'OPCION_MULTIPLE';
+						| 'OPCION_MULTIPLE'
+						| 'OPCION_MULTIPLE_CHIPS'
+						| 'TAGS';
 					opciones: string[] | null;
 					esObligatorio: boolean;
 					esPublico: boolean;

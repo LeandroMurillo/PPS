@@ -129,7 +129,17 @@ export type PreguntaBancoMock = {
 	id: number;
 	pregunta: string;
 	tipoDato:
-		'TEXTO' | 'NUMERO' | 'BOOLEANO' | 'FECHA' | 'URL' | 'EMAIL' | 'TELEFONO' | 'OPCION_UNICA' | 'OPCION_MULTIPLE';
+		| 'TEXTO'
+		| 'NUMERO'
+		| 'BOOLEANO'
+		| 'FECHA'
+		| 'URL'
+		| 'EMAIL'
+		| 'TELEFONO'
+		| 'OPCION_UNICA'
+		| 'OPCION_MULTIPLE'
+		| 'OPCION_MULTIPLE_CHIPS'
+		| 'TAGS';
 	opciones: string[] | null;
 };
 

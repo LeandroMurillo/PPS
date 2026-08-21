@@ -158,17 +158,7 @@ const actorEncuestaRespuestaDatabaseRowSchema = z.object({
 	idPregunta: databaseIntegerSchema,
 	orden: databaseIntegerSchema,
 	pregunta: z.string(),
-	tipoDato: z.enum([
-		'TEXTO',
-		'NUMERO',
-		'BOOLEANO',
-		'FECHA',
-		'URL',
-		'EMAIL',
-		'TELEFONO',
-		'OPCION_UNICA',
-		'OPCION_MULTIPLE',
-	]),
+	tipoDato: tipoPreguntaAdminSchema,
 	opciones: databaseQuestionOptionsSchema,
 	esObligatorio: databaseBooleanSchema,
 	esPublico: databaseBooleanSchema,
@@ -217,17 +207,7 @@ const preguntaFormularioAdminDatabaseRowSchema = z.object({
 	idFormulario: databaseIntegerSchema,
 	idPregunta: databaseIntegerSchema,
 	pregunta: z.string(),
-	tipoDato: z.enum([
-		'TEXTO',
-		'NUMERO',
-		'BOOLEANO',
-		'FECHA',
-		'URL',
-		'EMAIL',
-		'TELEFONO',
-		'OPCION_UNICA',
-		'OPCION_MULTIPLE',
-	]),
+	tipoDato: tipoPreguntaAdminSchema,
 	opciones: databaseQuestionOptionsSchema,
 	idPreguntaReemplazada: databaseIntegerSchema.nullable(),
 	preguntaReemplazada: z.string().nullable(),
@@ -874,32 +854,14 @@ export async function asociarPreguntaFormularioAdminRepository(
 }
 
 export async function listarPreguntasAdminRepository(query: ListarPreguntasAdminQuery): Promise<PreguntaBancoAdmin[]> {
-	let sql = 'SELECT idPregunta AS id, pregunta, tipoDato, opciones FROM `Preguntas`';
-	const params: unknown[] = [];
-
-	if (query.busqueda) {
-		sql += ' WHERE pregunta LIKE ?';
-		params.push(`%${query.busqueda}%`);
-	}
-
-	sql += ' ORDER BY pregunta ASC';
-
-	const rows = (await pool.query(sql, params)) as unknown[];
+	const procedureName = 'sp_admin_listar_preguntas';
+	const result: unknown = await pool.query('CALL sp_admin_listar_preguntas(?)', [query.busqueda ?? null]);
+	const rows = getResultSet(result, 0, procedureName);
 
 	const preguntaBancoRowSchema = z.object({
 		id: databaseIntegerSchema,
 		pregunta: z.string(),
-		tipoDato: z.enum([
-			'TEXTO',
-			'NUMERO',
-			'BOOLEANO',
-			'FECHA',
-			'URL',
-			'EMAIL',
-			'TELEFONO',
-			'OPCION_UNICA',
-			'OPCION_MULTIPLE',
-		]),
+		tipoDato: tipoPreguntaAdminSchema,
 		opciones: databaseQuestionOptionsSchema,
 	});
 

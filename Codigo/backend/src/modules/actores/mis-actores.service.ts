@@ -43,6 +43,8 @@ function validarValorRespuesta(
 			if (typeof valor !== 'boolean') invalid();
 			return;
 		case 'OPCION_MULTIPLE':
+		case 'OPCION_MULTIPLE_CHIPS':
+		case 'TAGS':
 			if (
 				!Array.isArray(valor) ||
 				valor.some((item) => typeof item !== 'string' || !pregunta.opciones?.includes(item))

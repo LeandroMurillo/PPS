@@ -113,13 +113,13 @@ ADD CONSTRAINT `chk_Preguntas_texto` CHECK (
 ),
 ADD CONSTRAINT `chk_Preguntas_opciones_segun_tipo` CHECK (
   (
-    `tipoDato` IN ('OPCION_UNICA', 'OPCION_MULTIPLE')
+    `tipoDato` IN ('OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS')
     AND `opciones` IS NOT NULL
     AND JSON_TYPE(`opciones`) = 'ARRAY'
     AND JSON_LENGTH(`opciones`) >= 2
   )
   OR (
-    `tipoDato` NOT IN ('OPCION_UNICA', 'OPCION_MULTIPLE')
+    `tipoDato` NOT IN ('OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS')
     AND `opciones` IS NULL
   )
 );

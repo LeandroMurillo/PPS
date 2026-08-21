@@ -224,6 +224,27 @@ describe('consultas administrativas', () => {
 		).toBe(false);
 		expect(
 			crearPreguntaFormularioAdminBodySchema.safeParse({
+				pregunta: 'Instrumentos ejecutados',
+				tipoDato: 'OPCION_MULTIPLE_CHIPS',
+				opciones: ['Guitarra', 'Piano'],
+			}).success,
+		).toBe(true);
+		expect(
+			crearPreguntaFormularioAdminBodySchema.safeParse({
+				pregunta: 'Técnicas artesanales',
+				tipoDato: 'TAGS',
+				opciones: ['Cerámica', 'Telar'],
+			}).success,
+		).toBe(true);
+		expect(
+			crearPreguntaFormularioAdminBodySchema.safeParse({
+				pregunta: 'Instrumentos ejecutados',
+				tipoDato: 'OPCION_MULTIPLE_CHIPS',
+				opciones: null,
+			}).success,
+		).toBe(false);
+		expect(
+			crearPreguntaFormularioAdminBodySchema.safeParse({
 				pregunta: 'Trayectoria',
 				tipoDato: 'TEXTO',
 				opciones: ['No corresponde', 'Otra'],

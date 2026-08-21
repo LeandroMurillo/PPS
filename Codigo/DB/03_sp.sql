@@ -2784,8 +2784,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_interno_validar_opciones_pregunta` (IN pTipoDato VARCHAR(20), IN pOpciones JSON) READS SQL DATA COMMENT 'Valida que las opciones de una pregunta sean coherentes con su tipo de dato, no estén vacías y no contengan duplicados.'
-BEGIN IF pTipoDato IN ('OPCION_UNICA', 'OPCION_MULTIPLE') THEN IF pOpciones IS NULL
+  PROCEDURE `sp_interno_validar_opciones_pregunta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON) READS SQL DATA COMMENT 'Valida que las opciones de una pregunta sean coherentes con su tipo de dato, no estén vacías y no contengan duplicados.'
+BEGIN IF pTipoDato IN ('OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN IF pOpciones IS NULL
 OR pOpciones IS NOT JSON ARRAY
 OR JSON_LENGTH(pOpciones) < 2
 OR JSON_LENGTH(pOpciones) > 100 THEN
@@ -2847,7 +2847,7 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_interno_validar_valor_respuesta` (IN pTipoDato VARCHAR(20), IN pOpciones JSON, IN pValor JSON) READS SQL DATA COMMENT 'Valida el tipo y el contenido JSON de una respuesta según la definición de la pregunta.'
+  PROCEDURE `sp_interno_validar_valor_respuesta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON, IN pValor JSON) READS SQL DATA COMMENT 'Valida el tipo y el contenido JSON de una respuesta según la definición de la pregunta.'
 BEGIN DECLARE vTexto LONGTEXT;
 
 IF pValor IS NULL
@@ -2929,7 +2929,7 @@ SET
 
 END IF;
 
-ELSEIF pTipoDato = 'OPCION_MULTIPLE' THEN IF pOpciones IS NULL
+ELSEIF pTipoDato IN ('OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN IF pOpciones IS NULL
 OR pOpciones IS NOT JSON ARRAY THEN
 SIGNAL SQLSTATE '45000'
 SET
@@ -3361,15 +3361,41 @@ WHERE
 
 END //
 -- -----------------------------------------------------
+-- sp_admin_listar_preguntas
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_admin_listar_preguntas` (IN pBusqueda VARCHAR(255) DEFAULT NULL) READS SQL DATA COMMENT 'Lista el banco reutilizable de preguntas con filtro opcional por texto.'
+BEGIN DECLARE vBusqueda VARCHAR(255);
+
+SET
+  vBusqueda = NULLIF(TRIM(pBusqueda), '');
+
+SELECT
+  p.idPregunta AS id,
+  p.pregunta,
+  p.tipoDato,
+  p.opciones
+FROM
+  `Preguntas` p
+WHERE
+  vBusqueda IS NULL
+  OR p.pregunta LIKE CONCAT('%', vBusqueda, '%')
+ORDER BY
+  p.pregunta ASC;
+
+END //
+-- -----------------------------------------------------
 -- sp_admin_crear_pregunta
 -- -----------------------------------------------------
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_crear_pregunta` (IN pPregunta VARCHAR(500), IN pTipoDato VARCHAR(20), IN pOpciones JSON DEFAULT NULL) MODIFIES SQL DATA COMMENT 'Crea una pregunta reutilizable después de validar el tipo de dato y sus posibles opciones.'
+  PROCEDURE `sp_admin_crear_pregunta` (IN pPregunta VARCHAR(500), IN pTipoDato VARCHAR(50), IN pOpciones JSON DEFAULT NULL) MODIFIES SQL DATA COMMENT 'Crea una pregunta reutilizable después de validar el tipo de dato y sus posibles opciones.'
 BEGIN DECLARE vPregunta VARCHAR(500);
 
-DECLARE vTipoDato VARCHAR(20);
+DECLARE vTipoDato VARCHAR(50);
 
 DECLARE vIdPregunta INT;
 
@@ -3388,7 +3414,7 @@ SET
 END IF;
 
 IF vTipoDato IS NULL
-OR vTipoDato NOT IN ('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE') THEN
+OR vTipoDato NOT IN ('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN
 SIGNAL SQLSTATE '45000'
 SET
   MESSAGE_TEXT = 'El tipo de dato de la pregunta no es válido.';
@@ -3440,7 +3466,7 @@ REPLACE
   PROCEDURE `sp_admin_editar_pregunta` (
     IN pIdPregunta INT,
     IN pPregunta VARCHAR(500),
-    IN pTipoDato ENUM('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE'),
+    IN pTipoDato ENUM('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS'),
     IN pOpciones JSON DEFAULT NULL
   ) MODIFIES SQL DATA COMMENT 'Edita una pregunta existente globalmente. Si la pregunta ya posee respuestas registradas en Respuestas, prohíbe cambios de tipoDato u opciones.'
 BEGIN DECLARE vPregunta VARCHAR(500);

@@ -339,6 +339,8 @@ export const actorDetalleEncuestaRespuestaAdminSchema = z.object({
 		'TELEFONO',
 		'OPCION_UNICA',
 		'OPCION_MULTIPLE',
+		'OPCION_MULTIPLE_CHIPS',
+		'TAGS',
 	]),
 	opciones: z.array(z.string()).nullable(),
 	respuesta: z.union([z.string(), z.array(z.string())]).nullable(),
@@ -543,6 +545,15 @@ export const tipoPreguntaAdminSchema = z.enum([
 	'TELEFONO',
 	'OPCION_UNICA',
 	'OPCION_MULTIPLE',
+	'OPCION_MULTIPLE_CHIPS',
+	'TAGS',
+]);
+
+const tiposPreguntaConOpciones = new Set([
+	'OPCION_UNICA',
+	'OPCION_MULTIPLE',
+	'OPCION_MULTIPLE_CHIPS',
+	'TAGS',
 ]);
 
 export const crearPreguntaFormularioAdminBodySchema = z
@@ -555,7 +566,7 @@ export const crearPreguntaFormularioAdminBodySchema = z
 		esPublico: z.boolean().default(true),
 	})
 	.superRefine((value, context) => {
-		const requiereOpciones = value.tipoDato === 'OPCION_UNICA' || value.tipoDato === 'OPCION_MULTIPLE';
+		const requiereOpciones = tiposPreguntaConOpciones.has(value.tipoDato);
 
 		if (requiereOpciones && value.opciones === null) {
 			context.addIssue({
@@ -669,7 +680,7 @@ export const editarPreguntaAdminBodySchema = z
 		opciones: z.array(z.string().trim().min(1).max(255)).min(2).max(100).nullable().optional(),
 	})
 	.superRefine((data, ctx) => {
-		const esOpcion = data.tipoDato === 'OPCION_UNICA' || data.tipoDato === 'OPCION_MULTIPLE';
+		const esOpcion = tiposPreguntaConOpciones.has(data.tipoDato);
 		if (esOpcion && (!data.opciones || data.opciones.length < 2)) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,

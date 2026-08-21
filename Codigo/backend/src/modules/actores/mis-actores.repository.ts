@@ -59,6 +59,8 @@ const tipoPreguntaSchema = z.enum([
 	'TELEFONO',
 	'OPCION_UNICA',
 	'OPCION_MULTIPLE',
+	'OPCION_MULTIPLE_CHIPS',
+	'TAGS',
 ]);
 
 const formularioAplicableRowSchema = z.object({
