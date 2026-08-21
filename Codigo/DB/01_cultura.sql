@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS
     `nacionalidad` VARCHAR(45) NOT NULL,
     `email` VARCHAR(99) NOT NULL,
     `firebaseUid` VARCHAR(128) NULL COMMENT 'Identificador estable de Firebase Authentication',
-    `contraseña` VARCHAR(255) NULL COMMENT 'Hash legado; las cuentas Firebase no almacenan contraseña local',
     `fechaRegistro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `rol` ENUM('USUARIO', 'MODERADOR', 'ADMIN') NOT NULL,
     `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',

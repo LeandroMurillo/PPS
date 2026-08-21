@@ -6967,4 +6967,4 @@ WHERE
   AND idActor = pIdActor;
 
 END //
-DELIMITER;
+DELIMITER ;

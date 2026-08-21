@@ -29,13 +29,6 @@ ADD CONSTRAINT `chk_Usuarios_email` CHECK (
   `email` = TRIM(`email`)
   AND `email` REGEXP '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
 ),
-ADD CONSTRAINT `chk_Usuarios_contrasena_hash` CHECK (
-  `contraseña` IS NULL
-  OR (
-    `contraseña` = TRIM(`contraseña`)
-    AND CHAR_LENGTH(`contraseña`) >= 60
-  )
-),
 ADD CONSTRAINT `chk_Usuarios_firebase_uid` CHECK (
   `firebaseUid` IS NULL
   OR (

@@ -15,7 +15,9 @@ Servidor HTTP de prueba independiente desarrollado en **Node.js + Express** para
 
 ---
 
-## 🔑 Credenciales de Prueba
+## 🔑 Cuentas Firebase de prueba
+
+La autenticación se realiza en Firebase. El backend mock recibe el ID token y no almacena ni valida contraseñas.
 
 | Rol                   | Email                 | Contraseña |
 | --------------------- | --------------------- | ---------- |

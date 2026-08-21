@@ -157,46 +157,6 @@ authRouter.post('/firebase/session', (req, res) => {
 	});
 });
 
-// POST /api/publico/auth/login (para retrocompatibilidad / pruebas)
-authRouter.post('/login', (req, res) => {
-	const { email, contraseña } = req.body || {};
-	const cleanEmail = email?.trim().toLowerCase();
-
-	if (!cleanEmail || !contraseña) {
-		return res.status(400).json({ error: { message: 'Debe ingresar email y contraseña.' } });
-	}
-
-	const user = db.usuarios.find((u) => u.email.toLowerCase() === cleanEmail);
-	if (!user) {
-		return res.status(401).json({ error: { message: 'Credenciales inválidas.' } });
-	}
-
-	const token = `mock-token-${user.id}-${Date.now()}`;
-	const usuarioSession = {
-		idUsuario: user.id,
-		nombre: user.nombre,
-		apellido: user.apellido,
-		email: user.email,
-		genero: user.genero,
-		fechaNacimiento: user.fechaNacimiento,
-		nacionalidad: user.nacionalidad,
-		CUIL: user.cuil,
-		actividadesArcaCodigo: user.actividadesArcaCodigo ?? null,
-		fotoDniUrl: user.fotoDniUrl ?? null,
-		avatarEstilo: user.avatarEstilo ?? null,
-		avatarSeed: user.avatarSeed ?? null,
-		rol: user.rol,
-		estado: user.estado,
-		fechaRegistro: user.fechaRegistro,
-	};
-
-	return res.json({
-		usuario: usuarioSession,
-		token,
-		mensaje: 'Inicio de sesión exitoso',
-	});
-});
-
 // POST /api/publico/auth/registro
 authRouter.post('/registro', (req, res) => {
 	const body = req.body || {};

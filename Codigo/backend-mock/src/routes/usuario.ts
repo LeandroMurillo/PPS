@@ -99,26 +99,6 @@ usuarioRouter.put('/perfil', (req, res) => {
 	return res.json({ data: perfil, mensaje: 'Perfil actualizado correctamente.' });
 });
 
-// PUT /api/usuario/contrasena
-usuarioRouter.put('/contrasena', (req, res) => {
-	const user = getAuthUser(req);
-	if (!user) {
-		return res.status(401).json({ error: { message: 'Acceso no autorizado. Se requiere iniciar sesión.' } });
-	}
-
-	const { contraseñaActual, nuevaContraseña } = req.body || {};
-
-	if (!contraseñaActual) {
-		return res.status(400).json({ error: { message: 'Debés ingresar tu contraseña actual.' } });
-	}
-
-	if (!nuevaContraseña || nuevaContraseña.length < 6) {
-		return res.status(400).json({ error: { message: 'La nueva contraseña debe tener al menos 6 caracteres.' } });
-	}
-
-	return res.json({ mensaje: 'Contraseña actualizada correctamente.' });
-});
-
 // DELETE /api/usuario/cuenta
 usuarioRouter.delete('/cuenta', (req, res) => {
 	const user = getAuthUser(req);
