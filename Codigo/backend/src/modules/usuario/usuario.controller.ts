@@ -54,6 +54,26 @@ export const eliminarCuentaUsuarioController: RequestHandler = async (req, res, 
 		const result = await eliminarCuentaUsuarioService(userId);
 		res.status(200).json(result);
 	} catch (err) {
+		if (err instanceof Error && err.message === 'ADMIN_NO_PUEDE_ELIMINAR_CUENTA') {
+			res.status(403).json({
+				error: {
+					code: 'FORBIDDEN',
+					message: 'Los administradores no pueden eliminar su cuenta.',
+				},
+			});
+			return;
+		}
+
+		if (err instanceof Error && err.message === 'USUARIO_NO_ENCONTRADO') {
+			res.status(404).json({
+				error: {
+					code: 'NOT_FOUND',
+					message: 'Usuario no encontrado.',
+				},
+			});
+			return;
+		}
+
 		next(err);
 	}
 };

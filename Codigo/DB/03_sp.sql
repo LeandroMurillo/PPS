@@ -4964,6 +4964,10 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario no existe o ya fue eliminado.';
     END IF;
 
+    IF (SELECT rol FROM `Usuarios` WHERE idUsuario = pIdUsuario) = 'ADMIN' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Los administradores no pueden eliminar su cuenta.';
+    END IF;
+
     CREATE TEMPORARY TABLE IF NOT EXISTS tmp_actores_eliminar (
         idActor INT PRIMARY KEY,
         idUbicacion INT

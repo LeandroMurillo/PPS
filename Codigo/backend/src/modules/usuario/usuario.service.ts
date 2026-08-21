@@ -62,6 +62,10 @@ export async function eliminarCuentaUsuarioService(idUsuario: number): Promise<{
 		throw new Error('USUARIO_NO_ENCONTRADO');
 	}
 
+	if (user.rol === 'ADMIN') {
+		throw new Error('ADMIN_NO_PUEDE_ELIMINAR_CUENTA');
+	}
+
 	if (user.firebaseUid) {
 		await deleteFirebaseUser(user.firebaseUid);
 	}

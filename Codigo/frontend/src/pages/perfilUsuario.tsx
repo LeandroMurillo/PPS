@@ -349,7 +349,7 @@ export default function PerfilUsuarioPage() {
 	const avatarUrl = React.useMemo(() => getUserAvatarUrl(perfil), [perfil, avatarRefresh]);
 
 	const handleEliminarCuenta = async () => {
-		if (!isDeleteConfirmed) return;
+		if (!isDeleteConfirmed || perfil?.rol === 'ADMIN') return;
 
 		setDeletingAccount(true);
 		try {
@@ -409,6 +409,7 @@ export default function PerfilUsuarioPage() {
 								<Avatar
 									src={avatarUrl}
 									alt={`${perfil?.nombre} ${perfil?.apellido}`}
+									onClick={() => setAvatarDialogOpen(true)}
 									sx={{
 										width: 84,
 										height: 84,
@@ -418,6 +419,13 @@ export default function PerfilUsuarioPage() {
 										boxShadow: 2,
 										border: '2px solid',
 										borderColor: 'divider',
+										cursor: 'pointer',
+										transition: 'all 0.2s ease-in-out',
+										'&:hover': {
+											opacity: 0.9,
+											boxShadow: 4,
+											borderColor: 'primary.main',
+										},
 									}}
 								>
 									{perfil?.nombre?.charAt(0)}
@@ -437,7 +445,7 @@ export default function PerfilUsuarioPage() {
 											borderColor: 'divider',
 											p: 0.6,
 											'&:hover': {
-												bgcolor: 'primary.50',
+												bgcolor: 'background.paper',
 												borderColor: 'primary.main',
 											},
 										}}
@@ -525,12 +533,14 @@ export default function PerfilUsuarioPage() {
 							iconPosition="start"
 							label={isGoogleUser ? 'Seguridad y cuenta' : 'Seguridad y contraseña'}
 						/>
-						<Tab
-							icon={<DeleteForeverIcon fontSize="small" />}
-							iconPosition="start"
-							label="Zona de peligro"
-							sx={{ color: 'error.main', '&.Mui-selected': { color: 'error.main' } }}
-						/>
+						{perfil?.rol !== 'ADMIN' && (
+							<Tab
+								icon={<DeleteForeverIcon fontSize="small" />}
+								iconPosition="start"
+								label="Zona de peligro"
+								sx={{ color: 'error.main', '&.Mui-selected': { color: 'error.main' } }}
+							/>
+						)}
 					</Tabs>
 
 					<Box sx={{ p: { xs: 2.5, sm: 4 } }}>
@@ -1094,7 +1104,7 @@ export default function PerfilUsuarioPage() {
 						{/* ========================================================================= */}
 						{/* PESTAÑA 2: ZONA DE PELIGRO (BORRAR CUENTA)                                */}
 						{/* ========================================================================= */}
-						{activeTab === 2 && (
+						{activeTab === 2 && perfil?.rol !== 'ADMIN' && (
 							<Stack spacing={3}>
 								<Box>
 									<Typography variant="h6" fontWeight={700} color="error.main">
@@ -1166,55 +1176,58 @@ export default function PerfilUsuarioPage() {
 			</Stack>
 
 			{/* MODAL: Confirmación estricta de eliminación de cuenta */}
-			<Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} maxWidth="sm" fullWidth>
-				<DialogTitle fontWeight={700} color="error.main">
-					¿Confirmar eliminación definitiva de tu cuenta?
-				</DialogTitle>
-				<DialogContent dividers>
-					<Stack spacing={2.5}>
-						<Alert severity="error">
-							<strong>¡Esta acción no se puede deshacer!</strong> Se eliminará permanentemente tu cuenta{' '}
-							<strong>{perfil?.email}</strong> y{' '}
-							<strong>
-								todos los actores culturales bajo tu titularidad ({perfil?.actoresDuenoCount ?? 0} actor
-								{(perfil?.actoresDuenoCount ?? 0) === 1 ? '' : 'es'})
-							</strong>
-							.
-						</Alert>
-						<DialogContentText style={{ userSelect: 'none' }}>
-							Para confirmar la eliminación, escribí <strong>BORRAR MI CUENTA</strong> en el siguiente
-							campo:
-						</DialogContentText>
-						<TextField
-							fullWidth
-							autoFocus
-							size="small"
-							placeholder="Escribí BORRAR MI CUENTA para confirmar"
-							value={deleteConfirmInput}
-							onChange={(e) => setDeleteConfirmInput(e.target.value)}
-							color={isDeleteConfirmed ? 'error' : 'primary'}
-							helperText={
-								isDeleteConfirmed
-									? 'Confirmación detectada. Hacé clic en el botón rojo para proceder.'
-									: 'Ingresá el texto de confirmación para habilitar el botón.'
-							}
-						/>
-					</Stack>
-				</DialogContent>
-				<DialogActions sx={{ p: 2 }}>
-					<Button onClick={() => setDeleteModalOpen(false)} disabled={deletingAccount}>
-						Cancelar
-					</Button>
-					<Button
-						variant="contained"
-						color="error"
-						disabled={!isDeleteConfirmed || deletingAccount}
-						onClick={handleEliminarCuenta}
-					>
-						{deletingAccount ? 'Eliminando cuenta…' : 'Eliminar definitivamente mi cuenta'}
-					</Button>
-				</DialogActions>
-			</Dialog>
+			{perfil?.rol !== 'ADMIN' && (
+				<Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} maxWidth="sm" fullWidth>
+					<DialogTitle fontWeight={700} color="error.main">
+						¿Confirmar eliminación definitiva de tu cuenta?
+					</DialogTitle>
+					<DialogContent dividers>
+						<Stack spacing={2.5}>
+							<Alert severity="error">
+								<strong>¡Esta acción no se puede deshacer!</strong> Se eliminará permanentemente tu
+								cuenta <strong>{perfil?.email}</strong> y{' '}
+								<strong>
+									todos los actores culturales bajo tu titularidad ({perfil?.actoresDuenoCount ?? 0}{' '}
+									actor
+									{(perfil?.actoresDuenoCount ?? 0) === 1 ? '' : 'es'})
+								</strong>
+								.
+							</Alert>
+							<DialogContentText style={{ userSelect: 'none' }}>
+								Para confirmar la eliminación, escribí <strong>BORRAR MI CUENTA</strong> en el siguiente
+								campo:
+							</DialogContentText>
+							<TextField
+								fullWidth
+								autoFocus
+								size="small"
+								placeholder="Escribí BORRAR MI CUENTA para confirmar"
+								value={deleteConfirmInput}
+								onChange={(e) => setDeleteConfirmInput(e.target.value)}
+								color={isDeleteConfirmed ? 'error' : 'primary'}
+								helperText={
+									isDeleteConfirmed
+										? 'Confirmación detectada. Hacé clic en el botón rojo para proceder.'
+										: 'Ingresá el texto de confirmación para habilitar el botón.'
+								}
+							/>
+						</Stack>
+					</DialogContent>
+					<DialogActions sx={{ p: 2 }}>
+						<Button onClick={() => setDeleteModalOpen(false)} disabled={deletingAccount}>
+							Cancelar
+						</Button>
+						<Button
+							variant="contained"
+							color="error"
+							disabled={!isDeleteConfirmed || deletingAccount}
+							onClick={handleEliminarCuenta}
+						>
+							{deletingAccount ? 'Eliminando cuenta…' : 'Eliminar definitivamente mi cuenta'}
+						</Button>
+					</DialogActions>
+				</Dialog>
+			)}
 		</PageContainer>
 	);
 }
