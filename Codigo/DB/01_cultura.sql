@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS
     `idSubcategoria` INT NULL,
     `idUbicacion` INT NOT NULL,
     `nombre` VARCHAR(100) NOT NULL,
-    `descripcion` VARCHAR(500) NOT NULL,
+    `descripcion` TEXT NOT NULL,
     `fotoPerfilUrl` VARCHAR(245) NULL,
     `cuit` CHAR(11) NULL,
     `tipoActor` ENUM('INDIVIDUO', 'COLECTIVO', 'ESPACIO') NOT NULL,
@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS
   `cultura`.`Convocatorias` (
     `idConvocatoria` INT NOT NULL AUTO_INCREMENT,
     `titulo` VARCHAR(145) NOT NULL,
-    `descripcion` VARCHAR(445) NOT NULL,
+    `descripcion` TEXT NOT NULL,
     `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `fechaCierre` DATETIME NOT NULL,
     PRIMARY KEY (`idConvocatoria`),

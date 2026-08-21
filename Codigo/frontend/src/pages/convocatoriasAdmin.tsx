@@ -498,12 +498,12 @@ export default function ConvocatoriasAdminPage() {
 									required
 									fullWidth
 									multiline
-									rows={4}
+									minRows={6}
 									value={formDescripcion}
 									onChange={(e) => setFormDescripcion(e.target.value)}
 									placeholder="Detallá los requisitos, perfil de artistas convocados y condiciones del evento…"
-									slotProps={{ htmlInput: { maxLength: 445 } }}
-									helperText={`${formDescripcion.length} / 445 caracteres`}
+									slotProps={{ htmlInput: { maxLength: 5000 } }}
+									helperText={`${formDescripcion.length} / 5000 caracteres`}
 								/>
 
 								<DatePickerSpanish

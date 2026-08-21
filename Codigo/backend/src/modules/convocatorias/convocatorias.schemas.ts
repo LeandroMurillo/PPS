@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { publicDescriptionSchema } from '../../shared/public-description.schema.js';
+
 export const convocatoriaIdParamSchema = z.object({
 	id: z.coerce.number().int().positive({ message: 'El ID de convocatoria debe ser un número entero positivo.' }),
 });
@@ -19,11 +21,7 @@ export const crearConvocatoriaBodySchema = z.object({
 		.trim()
 		.min(1, { message: 'El título es obligatorio.' })
 		.max(145, { message: 'El título no puede superar los 145 caracteres.' }),
-	descripcion: z
-		.string()
-		.trim()
-		.min(1, { message: 'La descripción es obligatoria.' })
-		.max(445, { message: 'La descripción no puede superar los 445 caracteres.' }),
+	descripcion: publicDescriptionSchema,
 	fechaCierre: z.string().datetime({ message: 'La fecha de cierre debe tener un formato ISO válido.' }),
 });
 
@@ -33,11 +31,7 @@ export const editarConvocatoriaBodySchema = z.object({
 		.trim()
 		.min(1, { message: 'El título es obligatorio.' })
 		.max(145, { message: 'El título no puede superar los 145 caracteres.' }),
-	descripcion: z
-		.string()
-		.trim()
-		.min(1, { message: 'La descripción es obligatoria.' })
-		.max(445, { message: 'La descripción no puede superar los 445 caracteres.' }),
+	descripcion: publicDescriptionSchema,
 	fechaCierre: z.string().datetime({ message: 'La fecha de cierre debe tener un formato ISO válido.' }),
 });
 

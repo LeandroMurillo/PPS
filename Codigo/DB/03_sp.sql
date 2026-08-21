@@ -5039,7 +5039,7 @@ REPLACE
     IN pIdCategoria INT,
     IN pIdSubcategoria INT,
     IN pNombre VARCHAR(100),
-    IN pDescripcion VARCHAR(500),
+    IN pDescripcion TEXT,
     IN pFotoPerfilUrl VARCHAR(245),
     IN pCuit CHAR(11),
     IN pTipoActor VARCHAR(20),
@@ -5128,7 +5128,7 @@ REPLACE
     IN pIdCategoria INT,
     IN pIdSubcategoria INT,
     IN pNombre VARCHAR(100),
-    IN pDescripcion VARCHAR(500),
+    IN pDescripcion TEXT,
     IN pFotoPerfilUrl VARCHAR(245),
     IN pCuit CHAR(11),
     IN pTipoActor VARCHAR(20),
@@ -6604,10 +6604,10 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_crear` (IN pTitulo VARCHAR(145), IN pDescripcion VARCHAR(445), IN pFechaCierre DATETIME, OUT pIdConvocatoria INT) MODIFIES SQL DATA COMMENT 'Crea una nueva convocatoria cultural validando fechas y titulo unico.'
+  PROCEDURE `sp_convocatoria_crear` (IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME, OUT pIdConvocatoria INT) MODIFIES SQL DATA COMMENT 'Crea una nueva convocatoria cultural validando fechas y titulo unico.'
 BEGIN DECLARE vTitulo VARCHAR(145);
 
-DECLARE vDescripcion VARCHAR(445);
+DECLARE vDescripcion TEXT;
 
 SET
   vTitulo = TRIM(pTitulo);
@@ -6667,10 +6667,10 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_editar` (IN pIdConvocatoria INT, IN pTitulo VARCHAR(145), IN pDescripcion VARCHAR(445), IN pFechaCierre DATETIME) MODIFIES SQL DATA COMMENT 'Modifica los datos de una convocatoria existente.'
+  PROCEDURE `sp_convocatoria_editar` (IN pIdConvocatoria INT, IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME) MODIFIES SQL DATA COMMENT 'Modifica los datos de una convocatoria existente.'
 BEGIN DECLARE vTitulo VARCHAR(145);
 
-DECLARE vDescripcion VARCHAR(445);
+DECLARE vDescripcion TEXT;
 
 DECLARE vExiste INT;
 

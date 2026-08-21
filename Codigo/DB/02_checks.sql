@@ -78,6 +78,7 @@ ADD CONSTRAINT `chk_Actores_nombre` CHECK (
 ADD CONSTRAINT `chk_Actores_descripcion` CHECK (
   `descripcion` = TRIM(`descripcion`)
   AND `descripcion` <> ''
+  AND CHAR_LENGTH(`descripcion`) <= 5000
 ),
 ADD CONSTRAINT `chk_Actores_fotoPerfilUrl` CHECK (
   `fotoPerfilUrl` IS NULL
@@ -162,6 +163,7 @@ ADD CONSTRAINT `chk_Convocatorias_titulo` CHECK (
 ADD CONSTRAINT `chk_Convocatorias_descripcion` CHECK (
   `descripcion` = TRIM(`descripcion`)
   AND `descripcion` <> ''
+  AND CHAR_LENGTH(`descripcion`) <= 5000
 ),
 ADD CONSTRAINT `chk_Convocatorias_fechas` CHECK (`fechaCierre` > `fechaCreacion`);
 

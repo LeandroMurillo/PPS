@@ -381,6 +381,7 @@ VALUES
 -- -----------------------------------------------------
 -- 7. Actores culturales
 -- La FK a Subcategorias requiere idCategoria e idSubcategoria.
+-- Las primeras descripciones incluyen Markdown para probar el contenido público.
 -- -----------------------------------------------------
 INSERT INTO
   `cultura`.`Actores` (
@@ -403,7 +404,7 @@ VALUES
     1,
     3,
     'Tejidos Ancestrales María',
-    'Producción de ponchos y ruanas en telar criollo. Utilizando técnicas heredadas de generaciones pasadas, cada pieza es única, tejida con lana de oveja hilada a mano y teñida con pigmentos naturales del cerro. Las carpinchas, con sus anteojos de lectura y ovillos de colores, tejen los lazos de la comunidad.',
+    '**Tejidos Ancestrales María** produce ponchos y ruanas en telar criollo, recuperando técnicas heredadas de generaciones pasadas.\n\nCada pieza es única y combina:\n\n- Lana de oveja hilada a mano\n- Pigmentos naturales del cerro\n- Diseños inspirados en la memoria de los Valles Calchaquíes',
     'https://images.unsplash.com/photo-1606722590583-6951b5ea92ad?auto=format&fit=crop&w=600&q=80',
     '27351112229',
     'INDIVIDUO',
@@ -416,7 +417,7 @@ VALUES
     1,
     1,
     'Los Tucu Cantores',
-    'Agrupación folclórica con más de 10 años de trayectoria. Llevamos el sonido vibrante de las zambas y chacareras a cada rincón del país, manteniendo vivo el espíritu tradicional del norte.',
+    'Agrupación folclórica con **más de 10 años de trayectoria**. Llevamos el sonido de las zambas y chacareras a cada rincón del país, manteniendo vivo el espíritu tradicional del norte.\n\nNuestro repertorio incluye:\n\n- Zambas tucumanas\n- Chacareras tradicionales\n- Composiciones propias\n\n[Conocé nuestras próximas presentaciones](https://example.com/los-tucu-cantores).',
     'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
     '30777888991',
     'COLECTIVO',
@@ -429,7 +430,7 @@ VALUES
     1,
     5,
     'Teatro Alberdi',
-    'Espacio cultural histórico administrado por la UNT. Epicentro de la vida escénica tucumana, ofreciendo una cartelera diversa que va desde el teatro clásico hasta propuestas independientes contemporáneas.',
+    '**Teatro Alberdi** es un espacio cultural histórico administrado por la UNT y uno de los principales escenarios de la vida artística tucumana.\n\nSu cartelera reúne teatro clásico, danza, música y propuestas independientes contemporáneas. El edificio también ofrece visitas guiadas para instituciones educativas.',
     'https://images.unsplash.com/photo-1773332598451-8a0a59941912?auto=format&fit=crop&w=600&q=80',
     '30500011122',
     'ESPACIO',
@@ -442,7 +443,7 @@ VALUES
     1,
     4,
     'Los Carpinchos del Alba',
-    'Banda de indie rock emergente de Yerba Buena. Melenas al viento que harían envidiar al mismísimo Ariel, aparecen Los Carpinchos del Alba.',
+    'Banda de *indie rock* emergente de Yerba Buena. Los Carpinchos del Alba combinan guitarras atmosféricas, letras urbanas y ritmos inspirados en el paisaje tucumano.\n\n**Formato habitual:** banda completa o presentación acústica.',
     'https://images.unsplash.com/photo-1614793351079-11dd79b922ba?auto=format&fit=crop&w=600&q=80',
     '33666555449',
     'COLECTIVO',
@@ -455,7 +456,7 @@ VALUES
     1,
     6,
     'Casino Royale Producciones',
-    'Productora audiovisual independiente dedicada a la creación de cortometrajes y documentales que exploran temáticas sociales e historias locales con una mirada cinematográfica íntima.',
+    'Productora audiovisual independiente dedicada a contar historias locales con una mirada cinematográfica íntima.\n\nTrabajamos en:\n\n- Cortometrajes de ficción\n- Documentales sociales\n- Registro de patrimonio cultural\n\nPodés consultar nuestro [reel de producciones](https://vimeo.com/casinoroyale).',
     'https://images.unsplash.com/photo-1601506521937-0121a7fc2a6b?auto=format&fit=crop&w=600&q=80',
     '20311113337',
     'INDIVIDUO',
@@ -468,7 +469,7 @@ VALUES
     1,
     2,
     'Compañía Circo Fuego',
-    'Colectivo de artistas callejeros y teatro de calle. Intervenimos espacios públicos con espectáculos de malabares, acrobacias y humor, llevando magia y sonrisas a grandes y chicos.',
+    'Colectivo de artistas callejeros y teatro de calle. Intervenimos espacios públicos con propuestas para **todas las edades**.\n\nNuestros espectáculos integran:\n\n- Malabares y acrobacias\n- Humor y clown\n- Música en vivo\n\nTambién desarrollamos talleres participativos para escuelas y organizaciones comunitarias.',
     'https://images.unsplash.com/photo-1531058240690-006c446962d8?auto=format&fit=crop&w=600&q=80',
     '30111222334',
     'COLECTIVO',
@@ -1695,6 +1696,7 @@ VALUES
 
 -- -----------------------------------------------------
 -- 10. Convocatorias
+-- Las bases usan Markdown para representar secciones, listas y enlaces.
 -- -----------------------------------------------------
 INSERT INTO
   `cultura`.`Convocatorias` (`idConvocatoria`, `titulo`, `descripcion`, `fechaCreacion`, `fechaCierre`)
@@ -1702,21 +1704,21 @@ VALUES
   (
     1,
     'Festival Nacional del Limón 2026',
-    'Convocatoria oficial para artistas musicales de Tafí Viejo y la provincia.',
+    '**Destinatarios**\n\nArtistas solistas y agrupaciones musicales de Tafí Viejo y de toda la provincia.\n\n**Requisitos**\n\n- Presentar una propuesta de hasta 45 minutos\n- Contar con repertorio propio o de autores tucumanos\n- Adjuntar ficha técnica y enlaces a material audiovisual\n\nLa selección priorizará la diversidad de géneros y la participación de proyectos emergentes. Consultá las [bases completas](https://example.com/festival-limon-2026).',
     '2026-06-01 08:00:00',
     '2026-08-30 23:59:59'
   ),
   (
     2,
     'Mercado Artesanal Calchaquí - Edición Invierno',
-    'Espacio de exposición y venta para artesanos de la ruta 307.',
+    '**Objetivo**\n\nConformar un espacio de exposición y venta para artesanos vinculados con la Ruta 307 y los Valles Calchaquíes.\n\n**Rubros admitidos**\n\n- Textiles y tejidos\n- Cerámica\n- Cuero, madera y fibras naturales\n- Diseño con identidad regional\n\nCada postulante deberá enviar fotografías de sus productos, una breve reseña de su técnica y acreditar producción propia.',
     '2026-06-10 08:00:00',
     '2026-07-05 23:59:59'
   ),
   (
     3,
     'Fomento a la Producción Audiovisual Independiente',
-    'Subsidio provincial para finalización de cortometrajes.',
+    '**Línea de fomento para producción audiovisual independiente** destinada a cortometrajes de ficción, documental o animación en etapa de posproducción.\n\nEl apoyo podrá aplicarse a:\n\n- Montaje y corrección de color\n- Diseño y mezcla de sonido\n- Música original\n- Accesibilidad y subtitulado\n\nSe deberá presentar un corte de trabajo, presupuesto, cronograma y plan de circulación. Descargá el [reglamento de la convocatoria](https://example.com/fomento-audiovisual).',
     '2026-06-15 10:00:00',
     '2026-10-15 23:59:59'
   );

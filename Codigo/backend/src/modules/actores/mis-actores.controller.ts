@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 import { getPublicErrorMessage } from '../../shared/public-error.js';
+import { publicDescriptionSchema } from '../../shared/public-description.schema.js';
 
 import {
 	agregarEventoService,
@@ -97,7 +98,7 @@ const crearBodySchema = z.object({
 	idCategoria: z.number().int().positive(),
 	idSubcategoria: z.number().int().positive().nullable().optional(),
 	nombre: z.string().trim().min(1).max(100),
-	descripcion: z.string().trim().min(1).max(500),
+	descripcion: publicDescriptionSchema,
 	fotoPerfilUrl: z.string().trim().nullable().optional(),
 	fotoPerfilBase64: actorImageDataUrlSchema.nullable().optional(),
 	cuit: z.string().trim().nullable().optional(),
@@ -117,7 +118,7 @@ const editarBodySchema = z.object({
 	idCategoria: z.number().int().positive(),
 	idSubcategoria: z.number().int().positive().nullable().optional(),
 	nombre: z.string().trim().min(1).max(100),
-	descripcion: z.string().trim().min(1).max(500),
+	descripcion: publicDescriptionSchema,
 	fotoPerfilUrl: z.string().trim().nullable().optional(),
 	fotoPerfilBase64: actorImageDataUrlSchema.nullable().optional(),
 	cuit: z.string().trim().nullable().optional(),

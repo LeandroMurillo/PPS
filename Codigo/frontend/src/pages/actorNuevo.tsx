@@ -815,11 +815,12 @@ function GeneralActorFields({
 					required
 					value={value.descripcion}
 					onChange={(event) => onChange({ descripcion: event.target.value })}
+					slotProps={{ htmlInput: { maxLength: 5000 } }}
 					error={errors.descripcion}
 					helperText={
 						errors.descripcion
 							? 'Contanos brevemente sobre tu actividad cultural.'
-							: 'Esta descripción se mostrará en listados, mapas y tarjetas.'
+							: `Esta descripción se mostrará públicamente. ${value.descripcion.length} / 5000 caracteres.`
 					}
 				/>
 			</Grid>
