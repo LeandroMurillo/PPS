@@ -1,96 +1,96 @@
 USE cultura;
 
-SET SESSION group_concat_max_len = 100000;
+SET
+  SESSION group_concat_max_len = 100000;
 
 -- Respaldo basado en information_schema.
 -- Para el informe final usar Codigo/DB/generar_listado_sp.mjs, que infiere
 -- automaticamente los resultsets desde Codigo/DB/03_sp.sql.
 SELECT
-	r.ROUTINE_NAME AS `stored procedure`,
-	CASE
-		WHEN r.ROUTINE_COMMENT IS NULL
-		OR r.ROUTINE_COMMENT = '' THEN 'Sin descripción'
-		WHEN LOCATE('Resultsets:', r.ROUTINE_COMMENT) > 0 THEN TRIM(
-			SUBSTRING(
-				REPLACE (
-					REPLACE (
-						REPLACE (
-							r.ROUTINE_COMMENT,
-							CHAR(13),
-							' '
-						),
-						CHAR(10),
-						' '
-					),
-					CHAR(9),
-					' '
-				),
-				1,
-				LOCATE('Resultsets:', r.ROUTINE_COMMENT) - 1
-			)
-		)
-		ELSE TRIM(
-			REPLACE (
-					REPLACE (
-							REPLACE (
-									r.ROUTINE_COMMENT,
-									CHAR(13),
-									' '
-								),
-								CHAR(10),
-								' '
-						),
-						CHAR(9),
-						' '
-				)
-		)
-	END AS descripcion,
-	COALESCE(
-		p.parametros_entrada,
-		'Sin parámetros de entrada'
-	) AS parametros_entrada,
-	CASE
-		WHEN r.ROUTINE_COMMENT IS NULL
-		OR r.ROUTINE_COMMENT = ''
-		OR LOCATE('Resultsets:', r.ROUTINE_COMMENT) = 0 THEN 'Sin resultsets'
-		ELSE TRIM(
-			SUBSTRING(
-				REPLACE (
-					REPLACE (
-						REPLACE (
-							r.ROUTINE_COMMENT,
-							CHAR(13),
-							' '
-						),
-						CHAR(10),
-						' '
-					),
-					CHAR(9),
-					' '
-				),
-				LOCATE('Resultsets:', r.ROUTINE_COMMENT) + CHAR_LENGTH('Resultsets:')
-			)
-		)
-	END AS resultsets
-FROM information_schema.ROUTINES r
-	LEFT JOIN (
-		SELECT
-			SPECIFIC_SCHEMA, SPECIFIC_NAME, GROUP_CONCAT(
-				CASE
-					WHEN PARAMETER_MODE IN ('IN', 'INOUT') THEN CONCAT(
-						PARAMETER_NAME, ' ', DTD_IDENTIFIER
-					)
-				END
-				ORDER BY ORDINAL_POSITION SEPARATOR ' | '
-			) AS parametros_entrada
-		FROM information_schema.PARAMETERS
-		WHERE
-			SPECIFIC_SCHEMA = DATABASE()
-		GROUP BY
-			SPECIFIC_SCHEMA, SPECIFIC_NAME
-	) p ON p.SPECIFIC_SCHEMA = r.ROUTINE_SCHEMA
-	AND p.SPECIFIC_NAME = r.SPECIFIC_NAME
+  r.ROUTINE_NAME AS `stored procedure`,
+  CASE
+    WHEN r.ROUTINE_COMMENT IS NULL
+    OR r.ROUTINE_COMMENT = '' THEN 'Sin descripción'
+    WHEN LOCATE('Resultsets:', r.ROUTINE_COMMENT) > 0 THEN TRIM(
+      SUBSTRING(
+        REPLACE
+          (
+            REPLACE
+              (
+                REPLACE
+                  (r.ROUTINE_COMMENT, CHAR(13), ' '),
+                  CHAR(10),
+                  ' '
+              ),
+              CHAR(9),
+              ' '
+          ),
+          1,
+          LOCATE('Resultsets:', r.ROUTINE_COMMENT) - 1
+      )
+    )
+    ELSE TRIM(
+      REPLACE
+        (
+          REPLACE
+            (
+              REPLACE
+                (r.ROUTINE_COMMENT, CHAR(13), ' '),
+                CHAR(10),
+                ' '
+            ),
+            CHAR(9),
+            ' '
+        )
+    )
+  END AS descripcion,
+  COALESCE(p.parametros_entrada, 'Sin parámetros de entrada') AS parametros_entrada,
+  CASE
+    WHEN r.ROUTINE_COMMENT IS NULL
+    OR r.ROUTINE_COMMENT = ''
+    OR LOCATE('Resultsets:', r.ROUTINE_COMMENT) = 0 THEN 'Sin resultsets'
+    ELSE TRIM(
+      SUBSTRING(
+        REPLACE
+          (
+            REPLACE
+              (
+                REPLACE
+                  (r.ROUTINE_COMMENT, CHAR(13), ' '),
+                  CHAR(10),
+                  ' '
+              ),
+              CHAR(9),
+              ' '
+          ),
+          LOCATE('Resultsets:', r.ROUTINE_COMMENT) + CHAR_LENGTH('Resultsets:')
+      )
+    )
+  END AS resultsets
+FROM
+  information_schema.ROUTINES r
+  LEFT JOIN (
+    SELECT
+      SPECIFIC_SCHEMA,
+      SPECIFIC_NAME,
+      GROUP_CONCAT(
+        CASE
+          WHEN PARAMETER_MODE IN ('IN', 'INOUT') THEN CONCAT(PARAMETER_NAME, ' ', DTD_IDENTIFIER)
+        END
+        ORDER BY
+          ORDINAL_POSITION SEPARATOR ' | '
+      ) AS parametros_entrada
+    FROM
+      information_schema.PARAMETERS
+    WHERE
+      SPECIFIC_SCHEMA = DATABASE ()
+    GROUP BY
+      SPECIFIC_SCHEMA,
+      SPECIFIC_NAME
+  ) p ON p.SPECIFIC_SCHEMA = r.ROUTINE_SCHEMA
+  AND p.SPECIFIC_NAME = r.SPECIFIC_NAME
 WHERE
-	r.ROUTINE_SCHEMA = DATABASE()
-	AND r.ROUTINE_TYPE = 'PROCEDURE'
-ORDER BY r.ROUTINE_NAME;
+  r.ROUTINE_SCHEMA = DATABASE ()
+  AND r.ROUTINE_TYPE = 'PROCEDURE'
+ORDER BY
+  r.ROUTINE_NAME;

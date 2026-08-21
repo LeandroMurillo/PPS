@@ -6,389 +6,323 @@
 
 -- MySQL Workbench Forward Engineering
 
-SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
-SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
-SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+SET
+  @OLD_UNIQUE_CHECKS = @@UNIQUE_CHECKS,
+  UNIQUE_CHECKS = 0;
+
+SET
+  @OLD_FOREIGN_KEY_CHECKS = @@FOREIGN_KEY_CHECKS,
+  FOREIGN_KEY_CHECKS = 0;
+
+SET
+  @OLD_SQL_MODE = @@SQL_MODE,
+  SQL_MODE = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
 -- Schema cultura
 -- -----------------------------------------------------
-DROP SCHEMA IF EXISTS `cultura` ;
+DROP SCHEMA IF EXISTS `cultura`;
 
 -- -----------------------------------------------------
 -- Schema cultura
 -- -----------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS `cultura`;
-USE `cultura` ;
+
+USE `cultura`;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`ActividadesArca`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`ActividadesArca` (
-  `codigo` CHAR(6) NOT NULL,
-  `descripcion` VARCHAR(255) NOT NULL,
-  PRIMARY KEY (`codigo`),
-  UNIQUE INDEX `descripcion_UNIQUE` (`descripcion` ASC) VISIBLE)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`ActividadesArca` (
+    `codigo` CHAR(6) NOT NULL,
+    `descripcion` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`codigo`),
+    UNIQUE INDEX `descripcion_UNIQUE` (`descripcion` ASC) VISIBLE
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Usuarios`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Usuarios` (
-  `idUsuario` INT NOT NULL AUTO_INCREMENT,
-  `actividadesArcaCodigo` CHAR(6) NULL COMMENT 'Si es NULL, no está registrado.',
-  `nombre` VARCHAR(45) NOT NULL,
-  `apellido` VARCHAR(45) NOT NULL,
-  `genero` ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N') NOT NULL,
-  `fechaNacimiento` DATE NOT NULL,
-  `nacionalidad` VARCHAR(45) NOT NULL,
-  `email` VARCHAR(99) NOT NULL,
-  `firebaseUid` VARCHAR(128) NULL COMMENT 'Identificador estable de Firebase Authentication',
-  `contraseña` VARCHAR(255) NULL COMMENT 'Hash legado; las cuentas Firebase no almacenan contraseña local',
-  `fechaRegistro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `rol` ENUM('USUARIO', 'MODERADOR', 'ADMIN') NOT NULL,
-  `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',
-  `CUIL` VARCHAR(11) NOT NULL,
-  `fotoDniUrl` VARCHAR(255) NULL,
-  `avatarEstilo` VARCHAR(50) NULL DEFAULT NULL,
-  `avatarSeed` VARCHAR(100) NULL DEFAULT NULL,
-  PRIMARY KEY (`idUsuario`),
-  UNIQUE INDEX `uq_Usuarios_email` (`email` ASC) VISIBLE,
-  UNIQUE INDEX `uq_Usuarios_firebase_uid` (`firebaseUid` ASC) VISIBLE,
-  INDEX `fk_Usuarios_actividades_arca_idx` (`actividadesArcaCodigo` ASC) VISIBLE,
-  CONSTRAINT `fk_Usuarios_actividades_arca`
-    FOREIGN KEY (`actividadesArcaCodigo`)
-    REFERENCES `cultura`.`ActividadesArca` (`codigo`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Usuarios` (
+    `idUsuario` INT NOT NULL AUTO_INCREMENT,
+    `actividadesArcaCodigo` CHAR(6) NULL COMMENT 'Si es NULL, no está registrado.',
+    `nombre` VARCHAR(45) NOT NULL,
+    `apellido` VARCHAR(45) NOT NULL,
+    `genero` ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N') NOT NULL,
+    `fechaNacimiento` DATE NOT NULL,
+    `nacionalidad` VARCHAR(45) NOT NULL,
+    `email` VARCHAR(99) NOT NULL,
+    `firebaseUid` VARCHAR(128) NULL COMMENT 'Identificador estable de Firebase Authentication',
+    `contraseña` VARCHAR(255) NULL COMMENT 'Hash legado; las cuentas Firebase no almacenan contraseña local',
+    `fechaRegistro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `rol` ENUM('USUARIO', 'MODERADOR', 'ADMIN') NOT NULL,
+    `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',
+    `CUIL` VARCHAR(11) NOT NULL,
+    `fotoDniUrl` VARCHAR(255) NULL,
+    `avatarEstilo` VARCHAR(50) NULL DEFAULT NULL,
+    `avatarSeed` VARCHAR(100) NULL DEFAULT NULL,
+    PRIMARY KEY (`idUsuario`),
+    UNIQUE INDEX `uq_Usuarios_email` (`email` ASC) VISIBLE,
+    UNIQUE INDEX `uq_Usuarios_firebase_uid` (`firebaseUid` ASC) VISIBLE,
+    INDEX `fk_Usuarios_actividades_arca_idx` (`actividadesArcaCodigo` ASC) VISIBLE,
+    CONSTRAINT `fk_Usuarios_actividades_arca` FOREIGN KEY (`actividadesArcaCodigo`) REFERENCES `cultura`.`ActividadesArca` (`codigo`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Ubicaciones`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Ubicaciones` (
-  `idUbicacion` INT NOT NULL AUTO_INCREMENT,
-  `provincia` VARCHAR(45) NOT NULL,
-  `departamento` VARCHAR(45) NOT NULL,
-  `localidad` VARCHAR(45) NOT NULL,
-  `direccion` VARCHAR(205) NOT NULL,
-  `latitud` DECIMAL(10,8) NOT NULL,
-  `longitud` DECIMAL(11,8) NOT NULL,
-  `esPublica` TINYINT NOT NULL,
-  PRIMARY KEY (`idUbicacion`))
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Ubicaciones` (
+    `idUbicacion` INT NOT NULL AUTO_INCREMENT,
+    `provincia` VARCHAR(45) NOT NULL,
+    `departamento` VARCHAR(45) NOT NULL,
+    `localidad` VARCHAR(45) NOT NULL,
+    `direccion` VARCHAR(205) NOT NULL,
+    `latitud` DECIMAL(10, 8) NOT NULL,
+    `longitud` DECIMAL(11, 8) NOT NULL,
+    `esPublica` TINYINT NOT NULL,
+    PRIMARY KEY (`idUbicacion`)
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Categorias`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Categorias` (
-  `idCategoria` INT NOT NULL AUTO_INCREMENT,
-  `nombre` VARCHAR(45) NOT NULL,
-  `icono` VARCHAR(64) NOT NULL DEFAULT 'Category',
-  `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
-  PRIMARY KEY (`idCategoria`),
-  UNIQUE INDEX `uq_nombre` (`nombre` ASC) VISIBLE)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Categorias` (
+    `idCategoria` INT NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(45) NOT NULL,
+    `icono` VARCHAR(64) NOT NULL DEFAULT 'Category',
+    `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
+    PRIMARY KEY (`idCategoria`),
+    UNIQUE INDEX `uq_nombre` (`nombre` ASC) VISIBLE
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Subcategorias`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Subcategorias` (
-  `idCategoria` INT NOT NULL,
-  `idSubcategoria` INT NOT NULL,
-  `nombre` VARCHAR(100) NOT NULL,
-  `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
-  PRIMARY KEY (`idCategoria`, `idSubcategoria`),
-  UNIQUE INDEX `uq_idCategoria_nombre` (`idCategoria` ASC, `nombre` ASC) VISIBLE,
-  INDEX `FK_Categorias_idCategoria2_idx` (`idCategoria` ASC) VISIBLE,
-  CONSTRAINT `FK_Categorias_idCategoria2`
-    FOREIGN KEY (`idCategoria`)
-    REFERENCES `cultura`.`Categorias` (`idCategoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Subcategorias` (
+    `idCategoria` INT NOT NULL,
+    `idSubcategoria` INT NOT NULL,
+    `nombre` VARCHAR(100) NOT NULL,
+    `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
+    PRIMARY KEY (`idCategoria`, `idSubcategoria`),
+    UNIQUE INDEX `uq_idCategoria_nombre` (`idCategoria` ASC, `nombre` ASC) VISIBLE,
+    INDEX `FK_Categorias_idCategoria2_idx` (`idCategoria` ASC) VISIBLE,
+    CONSTRAINT `FK_Categorias_idCategoria2` FOREIGN KEY (`idCategoria`) REFERENCES `cultura`.`Categorias` (`idCategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Actores`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Actores` (
-  `idActor` INT NOT NULL AUTO_INCREMENT,
-  `idCategoria` INT NOT NULL,
-  `idSubcategoria` INT NULL,
-  `idUbicacion` INT NOT NULL,
-  `nombre` VARCHAR(100) NOT NULL,
-  `descripcion` VARCHAR(500) NOT NULL,
-  `fotoPerfilUrl` VARCHAR(245) NULL,
-  `cuit` CHAR(11) NULL,
-  `tipoActor` ENUM('INDIVIDUO', 'COLECTIVO', 'ESPACIO') NOT NULL,
-  `fechaCreacion` DATETIME NOT NULL,
-  `estado` ENUM('A', 'P', 'I') NOT NULL,
-  PRIMARY KEY (`idActor`),
-  INDEX `fk_Actores_Ubicaciones1_idx` (`idUbicacion` ASC) VISIBLE,
-  INDEX `FK_Categorias_idCategoria1_idx` (`idCategoria` ASC) VISIBLE,
-  INDEX `FK_Subcategorias_idSubcategoria1_idx` (`idCategoria` ASC, `idSubcategoria` ASC) VISIBLE,
-  CONSTRAINT `fk_Actores_Ubicaciones1`
-    FOREIGN KEY (`idUbicacion`)
-    REFERENCES `cultura`.`Ubicaciones` (`idUbicacion`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_Subcategorias_idSubcategoria1`
-    FOREIGN KEY (`idCategoria` , `idSubcategoria`)
-    REFERENCES `cultura`.`Subcategorias` (`idCategoria` , `idSubcategoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_Categorias_idCategoria1`
-    FOREIGN KEY (`idCategoria`)
-    REFERENCES `cultura`.`Categorias` (`idCategoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Actores` (
+    `idActor` INT NOT NULL AUTO_INCREMENT,
+    `idCategoria` INT NOT NULL,
+    `idSubcategoria` INT NULL,
+    `idUbicacion` INT NOT NULL,
+    `nombre` VARCHAR(100) NOT NULL,
+    `descripcion` VARCHAR(500) NOT NULL,
+    `fotoPerfilUrl` VARCHAR(245) NULL,
+    `cuit` CHAR(11) NULL,
+    `tipoActor` ENUM('INDIVIDUO', 'COLECTIVO', 'ESPACIO') NOT NULL,
+    `fechaCreacion` DATETIME NOT NULL,
+    `estado` ENUM('A', 'P', 'I') NOT NULL,
+    PRIMARY KEY (`idActor`),
+    INDEX `fk_Actores_Ubicaciones1_idx` (`idUbicacion` ASC) VISIBLE,
+    INDEX `FK_Categorias_idCategoria1_idx` (`idCategoria` ASC) VISIBLE,
+    INDEX `FK_Subcategorias_idSubcategoria1_idx` (`idCategoria` ASC, `idSubcategoria` ASC) VISIBLE,
+    CONSTRAINT `fk_Actores_Ubicaciones1` FOREIGN KEY (`idUbicacion`) REFERENCES `cultura`.`Ubicaciones` (`idUbicacion`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `FK_Subcategorias_idSubcategoria1` FOREIGN KEY (`idCategoria`, `idSubcategoria`) REFERENCES `cultura`.`Subcategorias` (`idCategoria`, `idSubcategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `FK_Categorias_idCategoria1` FOREIGN KEY (`idCategoria`) REFERENCES `cultura`.`Categorias` (`idCategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Eventos`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Eventos` (
-  `idEvento` INT NOT NULL AUTO_INCREMENT,
-  `idActor` INT NOT NULL,
-  `nombre` VARCHAR(45) NOT NULL,
-  `descripcion` VARCHAR(455) NOT NULL,
-  `fecha` DATETIME NOT NULL,
-  `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `estado` ENUM('A', 'I') NOT NULL,
-  PRIMARY KEY (`idEvento`),
-  INDEX `fk_Eventos_Actores1_idx` (`idActor` ASC) VISIBLE,
-  CONSTRAINT `fk_Eventos_Actores1`
-    FOREIGN KEY (`idActor`)
-    REFERENCES `cultura`.`Actores` (`idActor`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Eventos` (
+    `idEvento` INT NOT NULL AUTO_INCREMENT,
+    `idActor` INT NOT NULL,
+    `nombre` VARCHAR(45) NOT NULL,
+    `descripcion` VARCHAR(455) NOT NULL,
+    `fecha` DATETIME NOT NULL,
+    `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `estado` ENUM('A', 'I') NOT NULL,
+    PRIMARY KEY (`idEvento`),
+    INDEX `fk_Eventos_Actores1_idx` (`idActor` ASC) VISIBLE,
+    CONSTRAINT `fk_Eventos_Actores1` FOREIGN KEY (`idActor`) REFERENCES `cultura`.`Actores` (`idActor`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`ItemsPortafolio`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`ItemsPortafolio` (
-  `idItem` INT NOT NULL AUTO_INCREMENT,
-  `idActor` INT NOT NULL,
-  `tipo` ENUM('IMAGEN', 'LINK', 'RRSS') NOT NULL,
-  `descripcion` VARCHAR(455) NOT NULL COMMENT 'Ejemplo: \"Ultimo recital del Indio (2000). El pogo más grande de la historia\"\n               \"Enlace a Facebook:\"',
-  `url` VARCHAR(245) NOT NULL,
-  `fechaCreacion` DATETIME NOT NULL,
-  PRIMARY KEY (`idItem`),
-  INDEX `fk_ItemsPortafolio_Actores1_idx` (`idActor` ASC) VISIBLE,
-  CONSTRAINT `fk_ItemsPortafolio_Actores1`
-    FOREIGN KEY (`idActor`)
-    REFERENCES `cultura`.`Actores` (`idActor`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`ItemsPortafolio` (
+    `idItem` INT NOT NULL AUTO_INCREMENT,
+    `idActor` INT NOT NULL,
+    `tipo` ENUM('IMAGEN', 'LINK', 'RRSS') NOT NULL,
+    `descripcion` VARCHAR(455) NOT NULL COMMENT 'Ejemplo: \"Ultimo recital del Indio (2000). El pogo más grande de la historia\"\n               \"Enlace a Facebook:\"',
+    `url` VARCHAR(245) NOT NULL,
+    `fechaCreacion` DATETIME NOT NULL,
+    PRIMARY KEY (`idItem`),
+    INDEX `fk_ItemsPortafolio_Actores1_idx` (`idActor` ASC) VISIBLE,
+    CONSTRAINT `fk_ItemsPortafolio_Actores1` FOREIGN KEY (`idActor`) REFERENCES `cultura`.`Actores` (`idActor`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Preguntas`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Preguntas` (
-  `idPregunta` INT NOT NULL AUTO_INCREMENT,
-  `pregunta` VARCHAR(500) NOT NULL,
-  `tipoDato` ENUM('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE') NOT NULL,
-  `opciones` JSON NULL,
-  PRIMARY KEY (`idPregunta`))
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Preguntas` (
+    `idPregunta` INT NOT NULL AUTO_INCREMENT,
+    `pregunta` VARCHAR(500) NOT NULL,
+    `tipoDato` ENUM('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE') NOT NULL,
+    `opciones` JSON NULL,
+    PRIMARY KEY (`idPregunta`)
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Integrantes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Integrantes` (
-  `idUsuario` INT NOT NULL,
-  `idActor` INT NOT NULL,
-  `rol` VARCHAR(45) NOT NULL,
-  `esDueño` TINYINT NOT NULL,
-  PRIMARY KEY (`idUsuario`, `idActor`),
-  INDEX `fk_Usuarios_has_Actores_Actores1_idx` (`idActor` ASC) VISIBLE,
-  INDEX `fk_Usuarios_has_Actores_Usuarios1_idx` (`idUsuario` ASC) VISIBLE,
-  CONSTRAINT `fk_Usuarios_has_Actores_Usuarios1`
-    FOREIGN KEY (`idUsuario`)
-    REFERENCES `cultura`.`Usuarios` (`idUsuario`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Usuarios_has_Actores_Actores1`
-    FOREIGN KEY (`idActor`)
-    REFERENCES `cultura`.`Actores` (`idActor`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Integrantes` (
+    `idUsuario` INT NOT NULL,
+    `idActor` INT NOT NULL,
+    `rol` VARCHAR(45) NOT NULL,
+    `esDueño` TINYINT NOT NULL,
+    PRIMARY KEY (`idUsuario`, `idActor`),
+    INDEX `fk_Usuarios_has_Actores_Actores1_idx` (`idActor` ASC) VISIBLE,
+    INDEX `fk_Usuarios_has_Actores_Usuarios1_idx` (`idUsuario` ASC) VISIBLE,
+    CONSTRAINT `fk_Usuarios_has_Actores_Usuarios1` FOREIGN KEY (`idUsuario`) REFERENCES `cultura`.`Usuarios` (`idUsuario`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `fk_Usuarios_has_Actores_Actores1` FOREIGN KEY (`idActor`) REFERENCES `cultura`.`Actores` (`idActor`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`IntegrantesNoRegistrados`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`IntegrantesNoRegistrados` (
-  `idIntegranteNoRegistrado` INT NOT NULL AUTO_INCREMENT,
-  `idActor` INT NOT NULL,
-  `nombre` VARCHAR(45) NOT NULL,
-  `apellido` VARCHAR(45) NOT NULL,
-  `email` VARCHAR(99) NULL,
-  `rol` VARCHAR(45) NOT NULL,
-  PRIMARY KEY (`idIntegranteNoRegistrado`),
-  UNIQUE INDEX `uq_IntegrantesNoRegistrados_actor_email` (`idActor` ASC, `email` ASC) VISIBLE,
-  INDEX `fk_IntegrantesNoRegistrados_Actores_idx` (`idActor` ASC) VISIBLE,
-  CONSTRAINT `fk_IntegrantesNoRegistrados_Actores`
-    FOREIGN KEY (`idActor`)
-    REFERENCES `cultura`.`Actores` (`idActor`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`IntegrantesNoRegistrados` (
+    `idIntegranteNoRegistrado` INT NOT NULL AUTO_INCREMENT,
+    `idActor` INT NOT NULL,
+    `nombre` VARCHAR(45) NOT NULL,
+    `apellido` VARCHAR(45) NOT NULL,
+    `email` VARCHAR(99) NULL,
+    `rol` VARCHAR(45) NOT NULL,
+    PRIMARY KEY (`idIntegranteNoRegistrado`),
+    UNIQUE INDEX `uq_IntegrantesNoRegistrados_actor_email` (`idActor` ASC, `email` ASC) VISIBLE,
+    INDEX `fk_IntegrantesNoRegistrados_Actores_idx` (`idActor` ASC) VISIBLE,
+    CONSTRAINT `fk_IntegrantesNoRegistrados_Actores` FOREIGN KEY (`idActor`) REFERENCES `cultura`.`Actores` (`idActor`) ON DELETE CASCADE ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`ModeradoresCategorias`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`ModeradoresCategorias` (
-  `idCategoria` INT NOT NULL,
-  `idUsuario` INT NOT NULL,
-  PRIMARY KEY (`idCategoria`, `idUsuario`),
-  INDEX `fk_Categorias_has_Usuarios_Usuarios1_idx` (`idUsuario` ASC) VISIBLE,
-  INDEX `fk_Categorias_has_Usuarios_Categorias1_idx` (`idCategoria` ASC) VISIBLE,
-  CONSTRAINT `fk_Categorias_has_Usuarios_Categorias1`
-    FOREIGN KEY (`idCategoria`)
-    REFERENCES `cultura`.`Categorias` (`idCategoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Categorias_has_Usuarios_Usuarios1`
-    FOREIGN KEY (`idUsuario`)
-    REFERENCES `cultura`.`Usuarios` (`idUsuario`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`ModeradoresCategorias` (
+    `idCategoria` INT NOT NULL,
+    `idUsuario` INT NOT NULL,
+    PRIMARY KEY (`idCategoria`, `idUsuario`),
+    INDEX `fk_Categorias_has_Usuarios_Usuarios1_idx` (`idUsuario` ASC) VISIBLE,
+    INDEX `fk_Categorias_has_Usuarios_Categorias1_idx` (`idCategoria` ASC) VISIBLE,
+    CONSTRAINT `fk_Categorias_has_Usuarios_Categorias1` FOREIGN KEY (`idCategoria`) REFERENCES `cultura`.`Categorias` (`idCategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `fk_Categorias_has_Usuarios_Usuarios1` FOREIGN KEY (`idUsuario`) REFERENCES `cultura`.`Usuarios` (`idUsuario`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Convocatorias`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Convocatorias` (
-  `idConvocatoria` INT NOT NULL AUTO_INCREMENT,
-  `titulo` VARCHAR(145) NOT NULL,
-  `descripcion` VARCHAR(445) NOT NULL,
-  `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `fechaCierre` DATETIME NOT NULL,
-  PRIMARY KEY (`idConvocatoria`),
-  UNIQUE INDEX `titulo_UNIQUE` (`titulo` ASC) VISIBLE)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Convocatorias` (
+    `idConvocatoria` INT NOT NULL AUTO_INCREMENT,
+    `titulo` VARCHAR(145) NOT NULL,
+    `descripcion` VARCHAR(445) NOT NULL,
+    `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `fechaCierre` DATETIME NOT NULL,
+    PRIMARY KEY (`idConvocatoria`),
+    UNIQUE INDEX `titulo_UNIQUE` (`titulo` ASC) VISIBLE
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Postulaciones`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Postulaciones` (
-  `idConvocatoria` INT NOT NULL,
-  `idActor` INT NOT NULL,
-  `fechaPostulacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`idConvocatoria`, `idActor`),
-  INDEX `FK_Convocatorias_idConvocatoria1_idx` (`idConvocatoria` ASC) VISIBLE,
-  INDEX `fk_Postulaciones_Actores1_idx` (`idActor` ASC) VISIBLE,
-  CONSTRAINT `FK_Convocatorias_idConvocatoria1`
-    FOREIGN KEY (`idConvocatoria`)
-    REFERENCES `cultura`.`Convocatorias` (`idConvocatoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_Postulaciones_Actores1`
-    FOREIGN KEY (`idActor`)
-    REFERENCES `cultura`.`Actores` (`idActor`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Postulaciones` (
+    `idConvocatoria` INT NOT NULL,
+    `idActor` INT NOT NULL,
+    `fechaPostulacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`idConvocatoria`, `idActor`),
+    INDEX `FK_Convocatorias_idConvocatoria1_idx` (`idConvocatoria` ASC) VISIBLE,
+    INDEX `fk_Postulaciones_Actores1_idx` (`idActor` ASC) VISIBLE,
+    CONSTRAINT `FK_Convocatorias_idConvocatoria1` FOREIGN KEY (`idConvocatoria`) REFERENCES `cultura`.`Convocatorias` (`idConvocatoria`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `fk_Postulaciones_Actores1` FOREIGN KEY (`idActor`) REFERENCES `cultura`.`Actores` (`idActor`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Formularios`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Formularios` (
-  `idFormulario` INT NOT NULL AUTO_INCREMENT,
-  `idCategoria` INT NOT NULL,
-  `idSubcategoria` INT NOT NULL DEFAULT 0,
-  `titulo` VARCHAR(150) NOT NULL,
-  `descripcion` VARCHAR(1000) NULL,
-  `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`idFormulario`),
-  UNIQUE INDEX `uq_Formularios_ambito` (`idCategoria` ASC, `idSubcategoria` ASC) VISIBLE,
-  CONSTRAINT `FK_Categorias_idCategoria3`
-    FOREIGN KEY (`idCategoria`)
-    REFERENCES `cultura`.`Categorias` (`idCategoria`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Formularios` (
+    `idFormulario` INT NOT NULL AUTO_INCREMENT,
+    `idCategoria` INT NOT NULL,
+    `idSubcategoria` INT NOT NULL DEFAULT 0,
+    `titulo` VARCHAR(150) NOT NULL,
+    `descripcion` VARCHAR(1000) NULL,
+    `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`idFormulario`),
+    UNIQUE INDEX `uq_Formularios_ambito` (`idCategoria` ASC, `idSubcategoria` ASC) VISIBLE,
+    CONSTRAINT `FK_Categorias_idCategoria3` FOREIGN KEY (`idCategoria`) REFERENCES `cultura`.`Categorias` (`idCategoria`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`PreguntasFormulario`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`PreguntasFormulario` (
-  `idFormulario` INT NOT NULL,
-  `idPregunta` INT NOT NULL,
-  `idPreguntaReemplazada` INT NULL,
-  `orden` INT NOT NULL,
-  `esObligatorio` TINYINT NOT NULL,
-  `esPublico` TINYINT NOT NULL,
-  `fechaIncorporacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `fechaDesactivacion` DATETIME NULL,
-  `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
-  PRIMARY KEY (`idFormulario`, `idPregunta`),
-  INDEX `FK_Preguntas_idPregunta_idx` (`idPregunta` ASC) VISIBLE,
-  INDEX `FK_Formularios_idFormulario1_idx` (`idFormulario` ASC) VISIBLE,
-  INDEX `FK_PreguntasFormulario_idPreguntaReemplazada_idx` (`idFormulario` ASC, `idPreguntaReemplazada` ASC) VISIBLE,
-  CONSTRAINT `FK_Formularios_idFormulario1`
-    FOREIGN KEY (`idFormulario`)
-    REFERENCES `cultura`.`Formularios` (`idFormulario`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_Preguntas_idCampo1`
-    FOREIGN KEY (`idPregunta`)
-    REFERENCES `cultura`.`Preguntas` (`idPregunta`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_FormulariosCamposFormulario_idFormulario2`
-    FOREIGN KEY (`idFormulario` , `idPreguntaReemplazada`)
-    REFERENCES `cultura`.`PreguntasFormulario` (`idFormulario` , `idPreguntaReemplazada`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`PreguntasFormulario` (
+    `idFormulario` INT NOT NULL,
+    `idPregunta` INT NOT NULL,
+    `idPreguntaReemplazada` INT NULL,
+    `orden` INT NOT NULL,
+    `esObligatorio` TINYINT NOT NULL,
+    `esPublico` TINYINT NOT NULL,
+    `fechaIncorporacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `fechaDesactivacion` DATETIME NULL,
+    `estado` ENUM('A', 'I') NOT NULL DEFAULT 'A',
+    PRIMARY KEY (`idFormulario`, `idPregunta`),
+    INDEX `FK_Preguntas_idPregunta_idx` (`idPregunta` ASC) VISIBLE,
+    INDEX `FK_Formularios_idFormulario1_idx` (`idFormulario` ASC) VISIBLE,
+    INDEX `FK_PreguntasFormulario_idPreguntaReemplazada_idx` (`idFormulario` ASC, `idPreguntaReemplazada` ASC) VISIBLE,
+    CONSTRAINT `FK_Formularios_idFormulario1` FOREIGN KEY (`idFormulario`) REFERENCES `cultura`.`Formularios` (`idFormulario`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `FK_Preguntas_idCampo1` FOREIGN KEY (`idPregunta`) REFERENCES `cultura`.`Preguntas` (`idPregunta`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `FK_FormulariosCamposFormulario_idFormulario2` FOREIGN KEY (`idFormulario`, `idPreguntaReemplazada`) REFERENCES `cultura`.`PreguntasFormulario` (`idFormulario`, `idPreguntaReemplazada`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `cultura`.`Respuestas`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `cultura`.`Respuestas` (
-  `idFormulario` INT NOT NULL,
-  `idPregunta` INT NOT NULL,
-  `idActor` INT NOT NULL,
-  `valor` JSON NOT NULL,
-  `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `fechaUltimaModificacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `fechaUltimaConfirmacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`idFormulario`, `idPregunta`, `idActor`),
-  INDEX `FK_Actores_idActor1_idx` (`idActor` ASC) VISIBLE,
-  INDEX `FK_FormulariosCamposFormulario_idFormulario1_idx` (`idFormulario` ASC, `idPregunta` ASC) VISIBLE,
-  CONSTRAINT `FK_FormulariosCamposFormulario_idFormulario1`
-    FOREIGN KEY (`idFormulario` , `idPregunta`)
-    REFERENCES `cultura`.`PreguntasFormulario` (`idFormulario` , `idPregunta`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `FK_Actores_idActor1`
-    FOREIGN KEY (`idActor`)
-    REFERENCES `cultura`.`Actores` (`idActor`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS
+  `cultura`.`Respuestas` (
+    `idFormulario` INT NOT NULL,
+    `idPregunta` INT NOT NULL,
+    `idActor` INT NOT NULL,
+    `valor` JSON NOT NULL,
+    `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `fechaUltimaModificacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `fechaUltimaConfirmacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`idFormulario`, `idPregunta`, `idActor`),
+    INDEX `FK_Actores_idActor1_idx` (`idActor` ASC) VISIBLE,
+    INDEX `FK_FormulariosCamposFormulario_idFormulario1_idx` (`idFormulario` ASC, `idPregunta` ASC) VISIBLE,
+    CONSTRAINT `FK_FormulariosCamposFormulario_idFormulario1` FOREIGN KEY (`idFormulario`, `idPregunta`) REFERENCES `cultura`.`PreguntasFormulario` (`idFormulario`, `idPregunta`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+    CONSTRAINT `FK_Actores_idActor1` FOREIGN KEY (`idActor`) REFERENCES `cultura`.`Actores` (`idActor`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  ) ENGINE = InnoDB;
 
+SET
+  SQL_MODE = @OLD_SQL_MODE;
 
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+SET
+  FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;
+
+SET
+  UNIQUE_CHECKS = @OLD_UNIQUE_CHECKS;
