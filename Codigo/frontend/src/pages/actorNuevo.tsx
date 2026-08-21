@@ -808,7 +808,7 @@ function GeneralActorFields({
 
 			<Grid size={{ xs: 12 }}>
 				<MarkdownEditor
-					minRows={4}
+					minRows={6}
 					label="Contanos brevemente sobre tu actividad cultural"
 					placeholder="Qué hacés, a quién está dirigida tu propuesta y qué la distingue."
 					required

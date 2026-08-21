@@ -6,7 +6,6 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
-import InsertLinkIcon from '@mui/icons-material/InsertLink';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
@@ -85,7 +84,25 @@ export default function MarkdownEditor({
 			return;
 		}
 
-		const content = selectedText || placeholderText;
+		if (selectedText) {
+			const leadingWhitespace = selectedText.match(/^\s+/)?.[0] ?? '';
+			const trailingWhitespace = selectedText.match(/\s+$/)?.[0] ?? '';
+			const trimmedContent = selectedText.trim();
+
+			if (trimmedContent) {
+				const wrappedContent = `${leadingWhitespace}${prefix}${trimmedContent}${suffix}${trailingWhitespace}`;
+				const nextValue = `${value.slice(0, start)}${wrappedContent}${value.slice(end)}`;
+				const contentStart = start + leadingWhitespace.length + prefix.length;
+
+				commitChange(nextValue, {
+					start: contentStart,
+					end: contentStart + trimmedContent.length,
+				});
+				return;
+			}
+		}
+
+		const content = placeholderText;
 		const nextValue = `${value.slice(0, start)}${prefix}${content}${suffix}${value.slice(end)}`;
 		const contentStart = start + prefix.length;
 
@@ -115,17 +132,6 @@ export default function MarkdownEditor({
 		commitChange(nextValue, { start: lineStart, end: lineStart + transformed.length });
 	};
 
-	const insertLink = () => {
-		const { start, end } = getSelection();
-		const selectedText = value.slice(start, end) || 'texto del enlace';
-		const nextValue = `${value.slice(0, start)}[${selectedText}](https://)${value.slice(end)}`;
-
-		commitChange(nextValue, {
-			start: start + 1,
-			end: start + 1 + selectedText.length,
-		});
-	};
-
 	const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
 		if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
 
@@ -135,9 +141,6 @@ export default function MarkdownEditor({
 		} else if (event.code === 'KeyI' && !event.shiftKey) {
 			event.preventDefault();
 			wrapSelection('*', '*', 'texto en cursiva');
-		} else if (event.code === 'KeyK' && !event.shiftKey) {
-			event.preventDefault();
-			insertLink();
 		} else if (event.code === 'Digit7' && event.shiftKey) {
 			event.preventDefault();
 			applyList(true);
@@ -168,11 +171,6 @@ export default function MarkdownEditor({
 			icon: <FormatListBulletedIcon fontSize="small" />,
 			action: () => applyList(false),
 		},
-		{
-			label: 'Enlace (Ctrl/Cmd+K)',
-			icon: <InsertLinkIcon fontSize="small" />,
-			action: insertLink,
-		},
 	];
 
 	return (
@@ -188,6 +186,7 @@ export default function MarkdownEditor({
 					bgcolor: 'action.hover',
 					px: 1,
 					py: 0.5,
+					mb: 0.75,
 				}}
 			>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
@@ -274,6 +273,10 @@ export default function MarkdownEditor({
 						'& .MuiOutlinedInput-root': {
 							borderTopLeftRadius: 0,
 							borderTopRightRadius: 0,
+						},
+						'& .MuiInputLabel-root': {
+							bgcolor: 'background.paper',
+							px: 0.5,
 						},
 					}}
 				/>
