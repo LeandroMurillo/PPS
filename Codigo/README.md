@@ -16,7 +16,7 @@ Para ejecutar con Docker:
 docker compose --env-file .env -f compose.yml up --build
 ```
 
-Si la base local ya existía antes de Firebase, ejecutar una vez `DB/06_migracion_firebase_auth.sql`. Una base nueva recibe la estructura actualizada desde `01_cultura.sql`, `02_checks.sql` y `03_sp.sql`.
+Si la base local ya existía antes de Firebase, ejecutar una vez `DB/06_migracion_firebase_auth.sql`. Una base nueva recibe la estructura actualizada desde `01_cultura.sql`, `02_checks.sql`, `03_sp.sql` y `06_triggers.sql`.
 
 Las cuentas nuevas quedan activadas automáticamente tras verificar el correo.
 

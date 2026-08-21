@@ -19,6 +19,7 @@ services:
       - ./DB/01_cultura.sql:/docker-entrypoint-initdb.d/01_cultura.sql
       - ./DB/02_checks.sql:/docker-entrypoint-initdb.d/02_checks.sql
       - ./DB/03_sp.sql:/docker-entrypoint-initdb.d/03_sp.sql
+      - ./DB/06_triggers.sql:/docker-entrypoint-initdb.d/03_triggers.sql
       - ./DB/04_datos.sql:/docker-entrypoint-initdb.d/04_datos.sql
       - ./DB/05_exportar_listado_sp.sql:/docker-entrypoint-initdb.d/05_exportar_listado_sp.sql
     healthcheck:
