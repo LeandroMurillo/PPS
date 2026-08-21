@@ -55,6 +55,7 @@ import {
 } from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { markdownToPlainText } from '../utils/markdown';
 import { buildSlugConId } from '../utils/slug';
 
 function normalizeCatalogName(value: string): string {
@@ -638,7 +639,7 @@ export default function MisActoresPage() {
 												WebkitBoxOrient: 'vertical',
 											}}
 										>
-											{actor.descripcion}
+											{markdownToPlainText(actor.descripcion)}
 										</Typography>
 									</CardContent>
 

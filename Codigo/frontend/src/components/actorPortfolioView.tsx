@@ -44,6 +44,7 @@ import { ESTADO_COLORS, getEstadoEtiqueta, getTipoActorEtiqueta } from '../const
 import { useAuth } from '../context/AuthContext';
 import { formatEventDate } from '../utils/date';
 import { detectarTipoEnlace, esImagenPortafolio, obtenerIdYoutube, type TipoEnlace } from '../utils/links';
+import MarkdownContent from './markdownContent';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -707,9 +708,7 @@ export default function ActorPortfolioView({
 
 			{/* --- DESCRIPCIÓN --- */}
 			{actor.descripcion && (
-				<Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb: 4 }}>
-					{actor.descripcion}
-				</Typography>
+				<MarkdownContent sx={{ mb: 4 }}>{actor.descripcion}</MarkdownContent>
 			)}
 
 			{/* --- ENLACES --- */}

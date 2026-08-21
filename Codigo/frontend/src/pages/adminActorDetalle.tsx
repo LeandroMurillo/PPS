@@ -27,6 +27,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 
 import { obtenerActorAdmin, type ActorDetalleAdmin } from '../api/admin';
+import MarkdownContent from '../components/markdownContent';
 import { ESTADO_COLORS as stateColors, ESTADO_LABELS as stateLabels } from '../constants/estados';
 import { formatDate } from '../utils/date';
 import { buildSlugConId, parseIdDesdeSlug } from '../utils/slug';
@@ -235,7 +236,7 @@ function ProfileTab({ actor }: { actor: ActorDetalleAdmin }) {
 			<Stack spacing={2}>
 				<Section title="Información general">
 					<Stack spacing={2}>
-						<DataRow label="Descripción" value={actor.descripcion} />
+						<DataRow label="Descripción" value={<MarkdownContent>{actor.descripcion}</MarkdownContent>} />
 						<Divider />
 						<Box
 							sx={{

@@ -53,6 +53,8 @@ import {
 	type PostulanteDetalle,
 } from '../api/convocatorias';
 import DatePickerSpanish from '../components/datePickerSpanish';
+import MarkdownEditor from '../components/markdownEditor';
+import { markdownToPlainText } from '../utils/markdown';
 import { notify } from '../utils/toast';
 
 export default function ConvocatoriasAdminPage() {
@@ -379,7 +381,7 @@ export default function ConvocatoriasAdminPage() {
 															maxWidth: 550,
 														}}
 													>
-														{c.descripcion}
+												{markdownToPlainText(c.descripcion)}
 													</Typography>
 												</TableCell>
 
@@ -493,16 +495,14 @@ export default function ConvocatoriasAdminPage() {
 									helperText={`${formTitulo.length} / 145 caracteres`}
 								/>
 
-								<TextField
+								<MarkdownEditor
 									label="Descripción y bases"
 									required
-									fullWidth
-									multiline
 									minRows={6}
 									value={formDescripcion}
-									onChange={(e) => setFormDescripcion(e.target.value)}
+									onChange={setFormDescripcion}
 									placeholder="Detallá los requisitos, perfil de artistas convocados y condiciones del evento…"
-									slotProps={{ htmlInput: { maxLength: 5000 } }}
+									maxLength={5000}
 									helperText={`${formDescripcion.length} / 5000 caracteres`}
 								/>
 

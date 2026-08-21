@@ -55,6 +55,7 @@ import {
 	Typography,
 } from '@mui/material';
 import ActorPortfolioView, { type ActorPortfolioViewData } from '../components/actorPortfolioView';
+import MarkdownEditor from '../components/markdownEditor';
 import { fileToBase64 } from '../utils/file';
 import { normalizarUrl } from '../utils/links';
 import { notify } from '../utils/toast';
@@ -806,16 +807,14 @@ function GeneralActorFields({
 			</Grid>
 
 			<Grid size={{ xs: 12 }}>
-				<TextField
-					fullWidth
-					multiline
+				<MarkdownEditor
 					minRows={4}
 					label="Contanos brevemente sobre tu actividad cultural"
 					placeholder="Qué hacés, a quién está dirigida tu propuesta y qué la distingue."
 					required
 					value={value.descripcion}
-					onChange={(event) => onChange({ descripcion: event.target.value })}
-					slotProps={{ htmlInput: { maxLength: 5000 } }}
+					onChange={(descripcion) => onChange({ descripcion })}
+					maxLength={5000}
 					error={errors.descripcion}
 					helperText={
 						errors.descripcion

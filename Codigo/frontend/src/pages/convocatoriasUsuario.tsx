@@ -43,6 +43,8 @@ import {
 	type Convocatoria,
 } from '../api/convocatorias';
 import { useAuth } from '../context/AuthContext';
+import MarkdownContent from '../components/markdownContent';
+import { markdownToPlainText } from '../utils/markdown';
 import { notify } from '../utils/toast';
 
 function formatDaysRemaining(fechaCierreStr: string) {
@@ -374,7 +376,7 @@ export default function ConvocatoriasUsuario() {
 														overflow: 'hidden',
 													}}
 												>
-													{convocatoria.descripcion}
+											{markdownToPlainText(convocatoria.descripcion)}
 												</Typography>
 											</Box>
 
@@ -461,9 +463,9 @@ export default function ConvocatoriasUsuario() {
 								<Typography variant="subtitle1" fontWeight={700} color="primary" gutterBottom>
 									{selectedConvocatoria.titulo}
 								</Typography>
-								<Typography variant="body2" color="text.secondary" paragraph>
+								<MarkdownContent sx={{ color: 'text.secondary', mb: 2 }}>
 									{selectedConvocatoria.descripcion}
-								</Typography>
+								</MarkdownContent>
 								<Alert severity="info" variant="outlined" sx={{ py: 0.5 }}>
 									Fecha límite de recepción:{' '}
 									<strong>

@@ -1,0 +1,52 @@
+import type { ComponentProps } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+import Link from '@mui/material/Link';
+import Box from '@mui/material/Box';
+import type { SxProps, Theme } from '@mui/material/styles';
+
+const ALLOWED_MARKDOWN_ELEMENTS = ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a'] as const;
+
+type MarkdownContentProps = {
+	children: string;
+	sx?: SxProps<Theme>;
+};
+
+function MarkdownLink({ node, ...props }: ComponentProps<'a'> & { node?: unknown }) {
+	void node;
+
+	return <Link {...props} target="_blank" rel="noopener noreferrer" underline="hover" />;
+}
+
+export default function MarkdownContent({ children, sx }: MarkdownContentProps) {
+	return (
+		<Box
+			sx={[
+				{
+					color: 'text.primary',
+					lineHeight: 1.7,
+					overflowWrap: 'anywhere',
+					'& > :first-of-type': { mt: 0 },
+					'& > :last-child': { mb: 0 },
+					'& p': { my: 1.25 },
+					'& ul, & ol': { my: 1.25, pl: 3.5 },
+					'& li': { pl: 0.5 },
+					'& li + li': { mt: 0.5 },
+					'& strong': { fontWeight: 700 },
+				},
+				...(Array.isArray(sx) ? sx : [sx]),
+			]}
+		>
+			<ReactMarkdown
+				remarkPlugins={[remarkGfm]}
+				skipHtml
+				allowedElements={[...ALLOWED_MARKDOWN_ELEMENTS]}
+				unwrapDisallowed
+				components={{ a: MarkdownLink }}
+			>
+				{children}
+			</ReactMarkdown>
+		</Box>
+	);
+}

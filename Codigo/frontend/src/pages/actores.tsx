@@ -33,6 +33,7 @@ import {
 import CategoryIcon from '../components/categoryIcon';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { markdownToPlainText } from '../utils/markdown';
 import { buildSlugConId } from '../utils/slug';
 
 export default function ListaActoresPublica() {
@@ -316,7 +317,7 @@ function ActorCard({ actor }: { actor: ActorResumen }) {
 							WebkitBoxOrient: 'vertical',
 						}}
 					>
-						{actor.descripcion}
+									{markdownToPlainText(actor.descripcion ?? '')}
 					</Typography>
 				</CardContent>
 			</CardActionArea>
