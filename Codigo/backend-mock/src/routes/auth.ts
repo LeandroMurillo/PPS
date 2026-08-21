@@ -19,8 +19,7 @@ export function parseTokenIdentity(authHeader?: string): DecodedIdentity | null 
 		const match = token.match(/mock-token-(\d+)/);
 		if (match) {
 			const u = db.usuarios.find((user) => user.id === Number(match[1]));
-			if (u)
-				return { uid: u.firebaseUid ?? `mock-uid-${u.id}`, email: u.email, name: `${u.nombre} ${u.apellido}` };
+			if (u) return { uid: u.idFirebase, email: u.email, name: `${u.nombre} ${u.apellido}` };
 		}
 	}
 
@@ -71,7 +70,7 @@ export function getAuthUser(req: { headers: { authorization?: string } }): Usuar
 			}
 			if (payload.user_id || payload.sub) {
 				const uid = String(payload.user_id || payload.sub);
-				const u = db.usuarios.find((user) => user.firebaseUid === uid);
+				const u = db.usuarios.find((user) => user.idFirebase === uid);
 				if (u) return u;
 			}
 		} catch {
@@ -100,7 +99,7 @@ authRouter.post('/firebase/session', (req, res) => {
 
 	const user = db.usuarios.find((u) => {
 		if (identity.email && u.email.toLowerCase() === identity.email.toLowerCase()) return true;
-		if (identity.uid && u.firebaseUid === identity.uid) return true;
+		if (identity.uid && u.idFirebase === identity.uid) return true;
 		return false;
 	});
 
@@ -205,7 +204,7 @@ authRouter.post('/registro', (req, res) => {
 		nombre: body.nombre.trim(),
 		apellido: body.apellido.trim(),
 		email: cleanEmail || `usuario${newId}@mosaico.com`,
-		firebaseUid: identity?.uid ?? null,
+		idFirebase: identity?.uid ?? `mock-firebase-usuario-${newId}`,
 		genero: body.genero,
 		fechaNacimiento: body.fechaNacimiento,
 		nacionalidad: body.nacionalidad?.trim() || 'Argentina',

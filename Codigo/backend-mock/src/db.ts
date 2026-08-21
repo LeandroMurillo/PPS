@@ -119,6 +119,7 @@ class MockDatabase {
 				nombre: 'Carlos',
 				apellido: 'Admin',
 				email: 'admin@mosaico.com',
+				idFirebase: 'mock-firebase-admin',
 				genero: 'M',
 				fechaNacimiento: '1985-05-12',
 				nacionalidad: 'Argentina',
@@ -135,6 +136,7 @@ class MockDatabase {
 				nombre: 'María',
 				apellido: 'Moderadora',
 				email: 'mod@mosaico.com',
+				idFirebase: 'mock-firebase-moderadora',
 				genero: 'F',
 				fechaNacimiento: '1990-08-20',
 				nacionalidad: 'Argentina',
@@ -151,6 +153,7 @@ class MockDatabase {
 				nombre: 'Gonzalo',
 				apellido: 'Pérez',
 				email: 'artista@mosaico.com',
+				idFirebase: 'mock-firebase-artista',
 				genero: 'M',
 				fechaNacimiento: '1995-11-15',
 				nacionalidad: 'Argentina',
@@ -167,6 +170,7 @@ class MockDatabase {
 				nombre: 'asd',
 				apellido: 'asd',
 				email: 'asd@asd.com',
+				idFirebase: 'mock-firebase-asd',
 				genero: 'M',
 				fechaNacimiento: '1995-11-15',
 				nacionalidad: 'Argentina',
@@ -180,12 +184,13 @@ class MockDatabase {
 			},
 		];
 
-		for (let u = 4; u <= 40; u++) {
+		for (let u = 5; u <= 40; u++) {
 			this.usuarios.push({
 				id: u,
 				nombre: `Gestor${u}`,
 				apellido: `Tucumano${u}`,
 				email: `usuario${u}@mosaico.com`,
+				idFirebase: `mock-firebase-usuario-${u}`,
 				genero: u % 2 === 0 ? 'F' : 'M',
 				fechaNacimiento: '1993-06-15',
 				nacionalidad: 'Argentina',

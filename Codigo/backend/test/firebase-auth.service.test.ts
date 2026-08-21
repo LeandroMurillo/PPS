@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const obtenerUsuarioPorFirebaseUidRepositoryMock = vi.hoisted(() => vi.fn());
+const obtenerUsuarioPorIdFirebaseRepositoryMock = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/modules/auth/auth.repository.js', () => ({
-	obtenerUsuarioPorFirebaseUidRepository: obtenerUsuarioPorFirebaseUidRepositoryMock,
+	obtenerUsuarioPorIdFirebaseRepository: obtenerUsuarioPorIdFirebaseRepositoryMock,
 	registrarUsuarioRepository: vi.fn(),
 	listarActividadesArcaRepository: vi.fn(),
 }));
@@ -35,31 +35,31 @@ const activeUser = {
 
 describe('sesión interna basada en Firebase', () => {
 	beforeEach(() => {
-		obtenerUsuarioPorFirebaseUidRepositoryMock.mockReset();
+		obtenerUsuarioPorIdFirebaseRepositoryMock.mockReset();
 	});
 
 	it('rechaza identidades cuyo correo no está verificado', async () => {
 		await expect(crearSesionFirebaseService({ ...identity, emailVerified: false })).rejects.toThrow(
 			'EMAIL_NOT_VERIFIED',
 		);
-		expect(obtenerUsuarioPorFirebaseUidRepositoryMock).not.toHaveBeenCalled();
+		expect(obtenerUsuarioPorIdFirebaseRepositoryMock).not.toHaveBeenCalled();
 	});
 
 	it('informa que falta completar el perfil cuando el UID no existe', async () => {
-		obtenerUsuarioPorFirebaseUidRepositoryMock.mockResolvedValue(null);
+		obtenerUsuarioPorIdFirebaseRepositoryMock.mockResolvedValue(null);
 
 		await expect(crearSesionFirebaseService(identity)).rejects.toThrow('PROFILE_INCOMPLETE');
-		expect(obtenerUsuarioPorFirebaseUidRepositoryMock).toHaveBeenCalledWith(identity.uid);
+		expect(obtenerUsuarioPorIdFirebaseRepositoryMock).toHaveBeenCalledWith(identity.uid);
 	});
 
 	it('mantiene la aprobación administrativa como requisito', async () => {
-		obtenerUsuarioPorFirebaseUidRepositoryMock.mockResolvedValue({ ...activeUser, estado: 'P' });
+		obtenerUsuarioPorIdFirebaseRepositoryMock.mockResolvedValue({ ...activeUser, estado: 'P' });
 
 		await expect(crearSesionFirebaseService(identity)).rejects.toThrow('ACCOUNT_PENDING');
 	});
 
 	it('emite el JWT interno sólo para una identidad verificada y activa', async () => {
-		obtenerUsuarioPorFirebaseUidRepositoryMock.mockResolvedValue(activeUser);
+		obtenerUsuarioPorIdFirebaseRepositoryMock.mockResolvedValue(activeUser);
 
 		const result = await crearSesionFirebaseService(identity);
 

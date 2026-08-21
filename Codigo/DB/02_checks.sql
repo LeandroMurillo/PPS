@@ -29,12 +29,9 @@ ADD CONSTRAINT `chk_Usuarios_email` CHECK (
   `email` = TRIM(`email`)
   AND `email` REGEXP '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
 ),
-ADD CONSTRAINT `chk_Usuarios_firebase_uid` CHECK (
-  `firebaseUid` IS NULL
-  OR (
-    `firebaseUid` = TRIM(`firebaseUid`)
-    AND `firebaseUid` <> ''
-  )
+ADD CONSTRAINT `chk_Usuarios_idFirebase` CHECK (
+  `idFirebase` = TRIM(`idFirebase`)
+  AND `idFirebase` <> ''
 ),
 ADD CONSTRAINT `chk_Usuarios_CUIL_formato` CHECK (`CUIL` REGEXP '^[0-9]{11}$'),
 ADD CONSTRAINT `chk_Usuarios_fechas` CHECK (`fechaNacimiento` < `fechaRegistro`);

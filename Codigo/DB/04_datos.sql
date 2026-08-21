@@ -58,6 +58,7 @@ VALUES
 INSERT INTO
   `cultura`.`Usuarios` (
     `idUsuario`,
+    `idFirebase`,
     `actividadesArcaCodigo`,
     `nombre`,
     `apellido`,
@@ -73,6 +74,7 @@ INSERT INTO
 VALUES
   (
     1,
+    1,
     NULL,
     'Ana',
     'Gómez',
@@ -86,6 +88,7 @@ VALUES
     '27301234567'
   ),
   (
+    2,
     2,
     NULL,
     'Carlos',
@@ -101,6 +104,7 @@ VALUES
   ),
   (
     3,
+    3,
     '321011',
     'María',
     'Sosa',
@@ -114,6 +118,7 @@ VALUES
     '27351112229'
   ),
   (
+    4,
     4,
     '900012',
     'Juan',
@@ -129,6 +134,7 @@ VALUES
   ),
   (
     5,
+    5,
     NULL,
     'Jane',
     'Doe',
@@ -142,6 +148,7 @@ VALUES
     '27281110004'
   ),
   (
+    6,
     6,
     '591110',
     'Daniel',
@@ -157,6 +164,7 @@ VALUES
   ),
   (
     7,
+    7,
     '900011',
     'Milo',
     'Herrera',
@@ -170,6 +178,7 @@ VALUES
     '20391114441'
   ),
   (
+    8,
     8,
     '900012',
     'Fito',
@@ -185,6 +194,7 @@ VALUES
   ),
   (
     9,
+    9,
     '900091',
     'Sofía',
     'García',
@@ -198,6 +208,7 @@ VALUES
     '27341116663'
   ),
   (
+    10,
     10,
     NULL,
     'Roberto',
@@ -213,6 +224,7 @@ VALUES
   ),
   (
     11,
+    11,
     '900011',
     'Cesar',
     'H',
@@ -227,6 +239,7 @@ VALUES
   ),
   (
     12,
+    12,
     '900011',
     'Leandro',
     'M',
@@ -240,6 +253,7 @@ VALUES
     '20411119997'
   ),
   (
+    13,
     13,
     NULL,
     'asd',

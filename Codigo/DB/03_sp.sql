@@ -4682,7 +4682,7 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_registrar_usuario` (
-    IN pFirebaseUid VARCHAR(128),
+    IN pIdFirebase VARCHAR(128),
     IN pNombre VARCHAR(45),
     IN pApellido VARCHAR(45),
     IN pGenero ENUM('F', 'M', 'MF', 'FM', 'B', 'O', 'N'),
@@ -4697,7 +4697,7 @@ BEGIN DECLARE vEmailExistente INT DEFAULT 0;
 
 DECLARE vCUILExistente INT DEFAULT 0;
 
-DECLARE vFirebaseUidExistente INT DEFAULT 0;
+DECLARE vIdFirebaseExistente INT DEFAULT 0;
 
 DECLARE vNuevoId INT DEFAULT 0;
 
@@ -4705,7 +4705,7 @@ SET
   pEmail = LOWER(TRIM(pEmail));
 
 SET
-  pFirebaseUid = TRIM(pFirebaseUid);
+  pIdFirebase = TRIM(pIdFirebase);
 
 SET
   pNombre = TRIM(pNombre);
@@ -4740,13 +4740,13 @@ SET
 END IF;
 
 SELECT
-  COUNT(*) INTO vFirebaseUidExistente
+  COUNT(*) INTO vIdFirebaseExistente
 FROM
   `Usuarios`
 WHERE
-  `firebaseUid` = pFirebaseUid;
+  `idFirebase` = pIdFirebase;
 
-IF vFirebaseUidExistente > 0 THEN
+IF vIdFirebaseExistente > 0 THEN
 SIGNAL SQLSTATE '45000'
 SET
   MESSAGE_TEXT = 'La identidad de Firebase ya se encuentra registrada.';
@@ -4775,7 +4775,7 @@ INSERT INTO
     `fechaNacimiento`,
     `nacionalidad`,
     `email`,
-    `firebaseUid`,
+    `idFirebase`,
     `CUIL`,
     `actividadesArcaCodigo`,
     `fotoDniUrl`,
@@ -4790,7 +4790,7 @@ VALUES
     pFechaNacimiento,
     pNacionalidad,
     pEmail,
-    pFirebaseUid,
+    pIdFirebase,
     pCUIL,
     pActividadesArcaCodigo,
     pFotoDniUrl,
@@ -4824,12 +4824,12 @@ WHERE
 
 END //
 -- -----------------------------------------------------
--- sp_publico_obtener_usuario_por_firebase_uid
+-- sp_publico_obtener_usuario_por_id_firebase
 -- -----------------------------------------------------
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_publico_obtener_usuario_por_firebase_uid` (IN pFirebaseUid VARCHAR(128)) READS SQL DATA COMMENT 'Obtiene un usuario por la identidad validada por Firebase Authentication.'
+  PROCEDURE `sp_publico_obtener_usuario_por_id_firebase` (IN pIdFirebase VARCHAR(128)) READS SQL DATA COMMENT 'Obtiene un usuario por la identidad validada por Firebase Authentication.'
 BEGIN
 SELECT
   u.idUsuario,
@@ -4850,7 +4850,7 @@ SELECT
 FROM
   `Usuarios` u
 WHERE
-  u.firebaseUid = TRIM(pFirebaseUid);
+  u.idFirebase = TRIM(pIdFirebase);
 
 END //
 -- -----------------------------------------------------
@@ -6053,7 +6053,7 @@ END IF;
 
 SELECT
   u.idUsuario,
-  u.firebaseUid,
+  u.idFirebase,
   u.actividadesArcaCodigo,
   aa.descripcion AS actividadArca,
   u.nombre,

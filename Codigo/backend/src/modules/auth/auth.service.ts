@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import {
 	listarActividadesArcaRepository,
-	obtenerUsuarioPorFirebaseUidRepository,
+	obtenerUsuarioPorIdFirebaseRepository,
 	registrarUsuarioRepository,
 } from './auth.repository.js';
 import { createSessionToken } from './session-token.js';
@@ -64,7 +64,7 @@ export async function registrarUsuarioService(
 	const fotoDniUrl = saveDniImage(input.documentoIdentidad);
 
 	const usuario = await registrarUsuarioRepository({
-		firebaseUid: identity.uid,
+		idFirebase: identity.uid,
 		email: identity.email,
 		nombre: input.nombre,
 		apellido: input.apellido,
@@ -87,7 +87,7 @@ export async function crearSesionFirebaseService(identity: FirebaseIdentity): Pr
 		throw new Error('EMAIL_NOT_VERIFIED');
 	}
 
-	const user = await obtenerUsuarioPorFirebaseUidRepository(identity.uid);
+	const user = await obtenerUsuarioPorIdFirebaseRepository(identity.uid);
 
 	if (!user) {
 		throw new Error('PROFILE_INCOMPLETE');

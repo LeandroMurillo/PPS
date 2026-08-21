@@ -66,9 +66,7 @@ export async function eliminarCuentaUsuarioService(idUsuario: number): Promise<{
 		throw new Error('ADMIN_NO_PUEDE_ELIMINAR_CUENTA');
 	}
 
-	if (user.firebaseUid) {
-		await deleteFirebaseUser(user.firebaseUid);
-	}
+	await deleteFirebaseUser(user.idFirebase);
 
 	const result = await eliminarCuentaUsuarioRepository(idUsuario);
 	const filesResult = eliminarArchivosPersonalesUsuario(result.archivos);

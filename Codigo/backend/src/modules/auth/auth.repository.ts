@@ -66,7 +66,7 @@ function getResultSet(procedureResult: unknown, index: number, procedureName: st
 }
 
 export type RegistrarUsuarioRepositoryInput = Omit<RegistrarUsuarioBody, 'documentoIdentidad'> & {
-	firebaseUid: string;
+	idFirebase: string;
 	email: string;
 	fotoDniUrl: string | null;
 };
@@ -75,7 +75,7 @@ export async function registrarUsuarioRepository(input: RegistrarUsuarioReposito
 	const procedureName = 'sp_publico_registrar_usuario';
 
 	const result: unknown = await pool.query('CALL sp_publico_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-		input.firebaseUid,
+		input.idFirebase,
 		input.nombre,
 		input.apellido,
 		input.genero,
@@ -98,10 +98,10 @@ export async function registrarUsuarioRepository(input: RegistrarUsuarioReposito
 	return usuarioRegistradoSchema.parse(firstRow);
 }
 
-export async function obtenerUsuarioPorFirebaseUidRepository(firebaseUid: string): Promise<UsuarioRegistrado | null> {
-	const procedureName = 'sp_publico_obtener_usuario_por_firebase_uid';
+export async function obtenerUsuarioPorIdFirebaseRepository(idFirebase: string): Promise<UsuarioRegistrado | null> {
+	const procedureName = 'sp_publico_obtener_usuario_por_id_firebase';
 
-	const result: unknown = await pool.query('CALL sp_publico_obtener_usuario_por_firebase_uid(?)', [firebaseUid]);
+	const result: unknown = await pool.query('CALL sp_publico_obtener_usuario_por_id_firebase(?)', [idFirebase]);
 
 	const rows = z.array(usuarioDBRowSchema).parse(getResultSet(result, 0, procedureName));
 

@@ -39,7 +39,7 @@ export type UsuarioMock = {
 	nombre: string;
 	apellido: string;
 	email: string;
-	firebaseUid?: string | null;
+	idFirebase: string;
 	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;

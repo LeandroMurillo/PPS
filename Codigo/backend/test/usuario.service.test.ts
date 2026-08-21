@@ -25,7 +25,7 @@ describe('eliminarCuentaUsuarioService', () => {
 	it('lanza error y no elimina al usuario si tiene rol ADMIN', async () => {
 		mockObtenerPerfilUsuarioRepository.mockResolvedValueOnce({
 			idUsuario: 1,
-			firebaseUid: 'admin-uid-123',
+			idFirebase: 'admin-uid-123',
 			rol: 'ADMIN',
 			nombre: 'Admin',
 			apellido: 'User',
@@ -41,7 +41,7 @@ describe('eliminarCuentaUsuarioService', () => {
 	it('elimina cuenta correctamente si el usuario tiene rol USUARIO', async () => {
 		mockObtenerPerfilUsuarioRepository.mockResolvedValueOnce({
 			idUsuario: 2,
-			firebaseUid: 'user-uid-456',
+			idFirebase: 'user-uid-456',
 			rol: 'USUARIO',
 			nombre: 'Normal',
 			apellido: 'User',

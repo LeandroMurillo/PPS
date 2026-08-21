@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS
     `fechaNacimiento` DATE NOT NULL,
     `nacionalidad` VARCHAR(45) NOT NULL,
     `email` VARCHAR(99) NOT NULL,
-    `firebaseUid` VARCHAR(128) NULL COMMENT 'Identificador estable de Firebase Authentication',
+    `idFirebase` VARCHAR(128) NOT NULL COMMENT 'Identificador estable de Firebase Authentication',
     `fechaRegistro` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `rol` ENUM('USUARIO', 'MODERADOR', 'ADMIN') NOT NULL,
     `estado` ENUM('A', 'P', 'I') NOT NULL DEFAULT 'P',
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS
     `avatarSeed` VARCHAR(100) NULL DEFAULT NULL,
     PRIMARY KEY (`idUsuario`),
     UNIQUE INDEX `uq_Usuarios_email` (`email` ASC) VISIBLE,
-    UNIQUE INDEX `uq_Usuarios_firebase_uid` (`firebaseUid` ASC) VISIBLE,
+    UNIQUE INDEX `uq_Usuarios_idFirebase` (`idFirebase` ASC) VISIBLE,
     INDEX `fk_Usuarios_actividades_arca_idx` (`actividadesArcaCodigo` ASC) VISIBLE,
     CONSTRAINT `fk_Usuarios_actividades_arca` FOREIGN KEY (`actividadesArcaCodigo`) REFERENCES `cultura`.`ActividadesArca` (`codigo`) ON DELETE NO ACTION ON UPDATE NO ACTION
   ) ENGINE = InnoDB;
