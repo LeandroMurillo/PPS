@@ -99,6 +99,8 @@ export function YoutubeThumbnailLink({ videoId, titulo }: { videoId: string; tit
 
 export function iconoParaEnlace(tipo: TipoEnlace) {
 	switch (tipo) {
+		case 'youtube':
+			return <YouTubeIcon fontSize="small" color="error" />;
 		case 'instagram':
 			return <InstagramIcon fontSize="small" sx={{ color: '#E1306C' }} />;
 		case 'facebook':
@@ -711,59 +713,87 @@ export default function ActorPortfolioView({
 			{/* --- DESCRIPCIÓN --- */}
 			{actor.descripcion && <MarkdownContent sx={{ mb: 4 }}>{actor.descripcion}</MarkdownContent>}
 
-			{/* --- ENLACES --- */}
-			{enlacesPortafolio.length > 0 && (
-				<Box sx={{ mb: 6 }}>
-					<Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
-						Enlaces
-					</Typography>
-					<Stack spacing={1} sx={{ mb: 3 }}>
-						{enlacesPortafolio
-							.filter((enlace) => detectarTipoEnlace(enlace.url) !== 'youtube')
-							.map((enlace, idx) => {
-								const tipo = detectarTipoEnlace(enlace.url);
-								return (
-									<Stack key={enlace.url || idx} direction="row" spacing={1} alignItems="center">
-										{iconoParaEnlace(tipo)}
-										<MuiLink href={enlace.url} target="_blank" rel="noopener" underline="hover">
-											{enlace.descripcion || enlace.titulo || enlace.url}
-										</MuiLink>
-									</Stack>
-								);
-							})}
-					</Stack>
+			{/* --- ENLACES Y VIDEOS --- */}
+			{enlacesPortafolio.length > 0 &&
+				(() => {
+					const videos = enlacesPortafolio
+						.map((enlace, idx) => ({
+							...enlace,
+							videoId: obtenerIdYoutube(enlace.url),
+							key: enlace.url || `yt-${idx}`,
+						}))
+						.filter((item): item is typeof item & { videoId: string } => Boolean(item.videoId));
 
-					{/* Embeds de YouTube */}
-					<Grid container spacing={3}>
-						{enlacesPortafolio
-							.filter((enlace) => detectarTipoEnlace(enlace.url) === 'youtube')
-							.map((enlace, idx) => {
-								const videoId = obtenerIdYoutube(enlace.url);
-								if (!videoId) return null;
-								return (
-									<Grid size={{ xs: 12, sm: 6 }} key={`yt-${enlace.url || idx}`}>
-										<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2 }}>
-											<YoutubeThumbnailLink
-												videoId={videoId}
-												titulo={enlace.descripcion || enlace.titulo || actor.nombre}
-											/>
-											<Typography
-												variant="caption"
-												color="text.secondary"
-												sx={{ display: 'block', p: 1 }}
-											>
-												<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-													<YouTubeIcon fontSize="small" color="error" />
-													{enlace.descripcion || enlace.titulo || enlace.url}
-												</Box>
-											</Typography>
-										</Paper>
+					const enlacesTexto = enlacesPortafolio.filter((enlace) => !obtenerIdYoutube(enlace.url));
+
+					return (
+						<Box sx={{ mb: 6 }}>
+							{enlacesTexto.length > 0 && (
+								<>
+									<Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
+										Enlaces
+									</Typography>
+									<Stack spacing={1} sx={{ mb: videos.length > 0 ? 3 : 0 }}>
+										{enlacesTexto.map((enlace, idx) => {
+											const tipo = detectarTipoEnlace(enlace.url);
+											return (
+												<Stack
+													key={enlace.url || idx}
+													direction="row"
+													spacing={1}
+													alignItems="center"
+												>
+													{iconoParaEnlace(tipo)}
+													<MuiLink
+														href={enlace.url}
+														target="_blank"
+														rel="noopener"
+														underline="hover"
+													>
+														{enlace.descripcion || enlace.titulo || enlace.url}
+													</MuiLink>
+												</Stack>
+											);
+										})}
+									</Stack>
+								</>
+							)}
+
+							{/* Embeds de videos (YouTube) */}
+							{videos.length > 0 && (
+								<>
+									{enlacesTexto.length === 0 && (
+										<Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
+											Videos
+										</Typography>
+									)}
+									<Grid container spacing={3}>
+										{videos.map((item) => (
+											<Grid size={{ xs: 12, sm: 6 }} key={item.key}>
+												<Paper elevation={1} sx={{ overflow: 'hidden', borderRadius: 2 }}>
+													<YoutubeThumbnailLink
+														videoId={item.videoId}
+														titulo={item.descripcion || item.titulo || actor.nombre}
+													/>
+													<Typography
+														variant="caption"
+														color="text.secondary"
+														sx={{ display: 'block', p: 1 }}
+													>
+														<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+															<YouTubeIcon fontSize="small" color="error" />
+															{item.descripcion || item.titulo || item.url}
+														</Box>
+													</Typography>
+												</Paper>
+											</Grid>
+										))}
 									</Grid>
-								);
-							})}
-					</Grid>
-				</Box>
-			)}
+								</>
+							)}
+						</Box>
+					);
+				})()}
 
 			{/* --- EVENTOS --- */}
 			{eventos.length > 0 && (

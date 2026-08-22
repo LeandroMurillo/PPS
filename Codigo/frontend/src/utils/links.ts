@@ -26,7 +26,7 @@ export function detectarTipoEnlace(url: string): TipoEnlace {
 export function obtenerIdYoutube(url: string): string | null {
 	if (!url) return null;
 	try {
-		const parsed = new URL(url);
+		const parsed = new URL(normalizarUrl(url));
 		if (parsed.hostname.includes('youtu.be')) {
 			return parsed.pathname.replace('/', '') || null;
 		}
@@ -34,7 +34,7 @@ export function obtenerIdYoutube(url: string): string | null {
 			const v = parsed.searchParams.get('v');
 			if (v) return v;
 			const partes = parsed.pathname.split('/').filter(Boolean);
-			if (partes[0] === 'embed' || partes[0] === 'shorts') {
+			if (partes[0] === 'embed' || partes[0] === 'shorts' || partes[0] === 'v' || partes[0] === 'live') {
 				return partes[1] || null;
 			}
 		}
