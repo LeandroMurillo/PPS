@@ -13,10 +13,29 @@ type MarkdownContentProps = {
 	sx?: SxProps<Theme>;
 };
 
-function MarkdownLink({ node, ...props }: ComponentProps<'a'> & { node?: unknown }) {
+function isSafeUrl(url?: string): boolean {
+	if (!url) return false;
+	const trimmed = url.trim();
+	try {
+		const parsed = new URL(trimmed, 'https://culturatucuman.gob.ar');
+		return ['http:', 'https:', 'mailto:'].includes(parsed.protocol);
+	} catch {
+		return false;
+	}
+}
+
+function MarkdownLink({ node, href, children, ...props }: ComponentProps<'a'> & { node?: unknown }) {
 	void node;
 
-	return <Link {...props} target="_blank" rel="noopener noreferrer" underline="hover" />;
+	if (!href || !isSafeUrl(href)) {
+		return <span>{children}</span>;
+	}
+
+	return (
+		<Link href={href} {...props} target="_blank" rel="noopener noreferrer" underline="hover">
+			{children}
+		</Link>
+	);
 }
 
 export default function MarkdownContent({ children, sx }: MarkdownContentProps) {

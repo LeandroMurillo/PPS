@@ -23,11 +23,7 @@ import {
 import type { PreguntaFormularioAplicable, TipoPreguntaFormulario } from '../api/actores';
 import DatePickerSpanish from './datePickerSpanish';
 import RequiredAsterisk from './requiredAsterisk';
-import {
-	normalizeSurveyUrl,
-	validateSurveyAnswer,
-	type SurveyAnswerValue,
-} from '../utils/surveyValidation';
+import { normalizeSurveyUrl, validateSurveyAnswer, type SurveyAnswerValue } from '../utils/surveyValidation';
 
 export type QuestionAnswer = string | string[];
 
@@ -37,7 +33,9 @@ export type SharedQuestion = Omit<PreguntaFormularioAplicable, 'tipoDato'> & {
 
 function questionError(question: SharedQuestion, value: SurveyAnswerValue, externalError: boolean): string | null {
 	if (externalError) {
-		return validateSurveyAnswer(question.tipoDato, value, question.esObligatorio) ?? 'Esta pregunta es obligatoria.';
+		return (
+			validateSurveyAnswer(question.tipoDato, value, question.esObligatorio) ?? 'Esta pregunta es obligatoria.'
+		);
 	}
 	return validateSurveyAnswer(question.tipoDato, value, false);
 }
@@ -216,23 +214,26 @@ export default function QuestionField({
 				}}
 				slotProps={{
 					htmlInput: { 'aria-label': label },
-					input: question.tipoDato === 'URL' && isValidUrl ? {
-						endAdornment: (
-							<InputAdornment position="end">
-								<Tooltip title="Abrir enlace en una pestaña nueva">
-									<IconButton
-										aria-label="Abrir enlace"
-										edge="end"
-										href={normalizeSurveyUrl(scalarValue)}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										<OpenInNewIcon fontSize="small" />
-									</IconButton>
-								</Tooltip>
-							</InputAdornment>
-						),
-					} : undefined,
+					input:
+						question.tipoDato === 'URL' && isValidUrl
+							? {
+									endAdornment: (
+										<InputAdornment position="end">
+											<Tooltip title="Abrir enlace en una pestaña nueva">
+												<IconButton
+													aria-label="Abrir enlace"
+													edge="end"
+													href={normalizeSurveyUrl(scalarValue)}
+													target="_blank"
+													rel="noopener noreferrer"
+												>
+													<OpenInNewIcon fontSize="small" />
+												</IconButton>
+											</Tooltip>
+										</InputAdornment>
+									),
+								}
+							: undefined,
 				}}
 			/>
 		</Stack>
@@ -267,11 +268,23 @@ function QuestionHeading({
 			<Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ gap: 0.5 }}>
 				{isNew && (
 					<Tooltip title="Pregunta nueva: incorporada al catálogo del sector." arrow>
-						<Chip size="small" color="info" variant="outlined" label="Nueva" sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }} />
+						<Chip
+							size="small"
+							color="info"
+							variant="outlined"
+							label="Nueva"
+							sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+						/>
 					</Tooltip>
 				)}
 				{question.esObligatorio && (
-					<Chip size="small" color="warning" variant="outlined" label="Obligatoria" sx={{ height: 22, fontSize: '0.7rem' }} />
+					<Chip
+						size="small"
+						color="warning"
+						variant="outlined"
+						label="Obligatoria"
+						sx={{ height: 22, fontSize: '0.7rem' }}
+					/>
 				)}
 				{question.esPublico && (
 					<Tooltip title="Esta respuesta podrá mostrarse en el perfil público del actor cultural." arrow>

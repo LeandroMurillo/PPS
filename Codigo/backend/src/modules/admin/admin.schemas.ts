@@ -549,12 +549,7 @@ export const tipoPreguntaAdminSchema = z.enum([
 	'TAGS',
 ]);
 
-const tiposPreguntaConOpciones = new Set([
-	'OPCION_UNICA',
-	'OPCION_MULTIPLE',
-	'OPCION_MULTIPLE_CHIPS',
-	'TAGS',
-]);
+const tiposPreguntaConOpciones = new Set(['OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS']);
 
 export const crearPreguntaFormularioAdminBodySchema = z
 	.strictObject({

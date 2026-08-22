@@ -709,9 +709,7 @@ export default function ActorPortfolioView({
 			)}
 
 			{/* --- DESCRIPCIÓN --- */}
-			{actor.descripcion && (
-				<MarkdownContent sx={{ mb: 4 }}>{actor.descripcion}</MarkdownContent>
-			)}
+			{actor.descripcion && <MarkdownContent sx={{ mb: 4 }}>{actor.descripcion}</MarkdownContent>}
 
 			{/* --- ENLACES --- */}
 			{enlacesPortafolio.length > 0 && (

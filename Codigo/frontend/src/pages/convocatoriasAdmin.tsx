@@ -381,7 +381,7 @@ export default function ConvocatoriasAdminPage() {
 															maxWidth: 550,
 														}}
 													>
-												{markdownToPlainText(c.descripcion)}
+														{markdownToPlainText(c.descripcion)}
 													</Typography>
 												</TableCell>
 

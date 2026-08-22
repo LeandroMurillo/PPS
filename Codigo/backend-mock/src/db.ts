@@ -182,9 +182,26 @@ class MockDatabase {
 				fechaRegistro: '2025-03-05T09:15:00Z',
 				categoriasModeracion: [],
 			},
+			{
+				id: 5,
+				nombre: 'Admin',
+				apellido: 'Kjkpc',
+				email: 'vunhdkepckhrhudttw@kjkpc.net',
+				idFirebase: 'Zs3xLjdOXmdgbDa5lFycWPjGsrB3',
+				genero: 'M',
+				fechaNacimiento: '1990-01-01',
+				nacionalidad: 'Argentina',
+				cuil: '20309998881',
+				actividadesArcaCodigo: '900010',
+				actividadArca: 'Servicios de espectáculos artísticos y culturales',
+				rol: 'ADMIN',
+				estado: 'A',
+				fechaRegistro: '2026-06-25T12:00:00Z',
+				categoriasModeracion: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+			},
 		];
 
-		for (let u = 5; u <= 40; u++) {
+		for (let u = 6; u <= 40; u++) {
 			this.usuarios.push({
 				id: u,
 				nombre: `Gestor${u}`,

@@ -376,7 +376,7 @@ export default function ConvocatoriasUsuario() {
 														overflow: 'hidden',
 													}}
 												>
-											{markdownToPlainText(convocatoria.descripcion)}
+													{markdownToPlainText(convocatoria.descripcion)}
 												</Typography>
 											</Box>
 

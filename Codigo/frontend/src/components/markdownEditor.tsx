@@ -1,6 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
-import CodeIcon from '@mui/icons-material/Code';
 import EditIcon from '@mui/icons-material/Edit';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
@@ -191,7 +190,6 @@ export default function MarkdownEditor({
 			>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
 					<Stack direction="row" alignItems="center" spacing={0.25} sx={{ overflowX: 'auto' }}>
-						<CodeIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
 						{tools.map((tool) => (
 							<Tooltip key={tool.label} title={tool.label} arrow>
 								<IconButton
@@ -213,7 +211,7 @@ export default function MarkdownEditor({
 							color="text.secondary"
 							sx={{ display: { xs: 'none', sm: 'block' } }}
 						>
-							Markdown
+							{showPreview ? 'Previsualización' : 'Edición de texto'}
 						</Typography>
 						<Divider orientation="vertical" flexItem />
 						<Tooltip title={showPreview ? 'Volver a editar' : 'Vista previa'} arrow>
@@ -221,7 +219,7 @@ export default function MarkdownEditor({
 								type="button"
 								size="small"
 								color={showPreview ? 'primary' : 'default'}
-								aria-label={showPreview ? 'Volver a editar' : 'Vista previa del Markdown'}
+								aria-label={showPreview ? 'Volver a editar' : 'Vista previa'}
 								aria-pressed={showPreview}
 								onClick={() => setShowPreview((current) => !current)}
 							>
@@ -232,55 +230,55 @@ export default function MarkdownEditor({
 				</Stack>
 			</Paper>
 
-			{showPreview ? (
-				<Paper
-					variant="outlined"
-					aria-label={`Vista previa de ${label}`}
-					sx={{
-						minHeight: minRows * 24 + 32,
-						borderColor: error ? 'error.main' : 'divider',
-						borderTop: 0,
+			<Paper
+				variant="outlined"
+				aria-label={`Vista previa de ${label}`}
+				sx={{
+					display: showPreview ? 'block' : 'none',
+					minHeight: minRows * 24 + 32,
+					borderColor: error ? 'error.main' : 'divider',
+					borderTop: 0,
+					borderTopLeftRadius: 0,
+					borderTopRightRadius: 0,
+					p: 2,
+				}}
+			>
+				<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+					{label}
+					{required ? ' *' : ''}
+				</Typography>
+				{value ? (
+					<MarkdownContent>{value}</MarkdownContent>
+				) : (
+					<Typography color="text.secondary">Todavía no hay contenido para previsualizar.</Typography>
+				)}
+			</Paper>
+
+			<TextField
+				fullWidth
+				multiline
+				minRows={minRows}
+				label={label}
+				placeholder={placeholder}
+				required={required}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				onKeyDown={handleKeyDown}
+				inputRef={textareaRef}
+				error={error}
+				slotProps={{ htmlInput: { maxLength } }}
+				sx={{
+					display: showPreview ? 'none' : 'block',
+					'& .MuiOutlinedInput-root': {
 						borderTopLeftRadius: 0,
 						borderTopRightRadius: 0,
-						p: 2,
-					}}
-				>
-					<Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-						{label}
-						{required ? ' *' : ''}
-					</Typography>
-					{value ? (
-						<MarkdownContent>{value}</MarkdownContent>
-					) : (
-						<Typography color="text.secondary">Todavía no hay contenido para previsualizar.</Typography>
-					)}
-				</Paper>
-			) : (
-				<TextField
-					fullWidth
-					multiline
-					minRows={minRows}
-					label={label}
-					placeholder={placeholder}
-					required={required}
-					value={value}
-					onChange={(event) => onChange(event.target.value)}
-					onKeyDown={handleKeyDown}
-					inputRef={textareaRef}
-					error={error}
-					slotProps={{ htmlInput: { maxLength } }}
-					sx={{
-						'& .MuiOutlinedInput-root': {
-							borderTopLeftRadius: 0,
-							borderTopRightRadius: 0,
-						},
-						'& .MuiInputLabel-root': {
-							bgcolor: 'background.paper',
-							px: 0.5,
-						},
-					}}
-				/>
-			)}
+					},
+					'& .MuiInputLabel-root': {
+						bgcolor: 'background.paper',
+						px: 0.5,
+					},
+				}}
+			/>
 
 			{helperText && (
 				<FormHelperText error={error} sx={{ mx: 1.75 }}>

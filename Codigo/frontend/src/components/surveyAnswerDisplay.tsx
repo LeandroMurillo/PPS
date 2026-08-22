@@ -7,7 +7,7 @@ import { Box, Chip, Link, Stack, Typography } from '@mui/material';
 
 import {
 	formatSurveyDate,
-	getPhoneDigits,
+	getWhatsAppPhoneUrl,
 	isLikelyMobilePhone,
 	isValidSurveyEmail,
 	isValidSurveyPhone,
@@ -48,7 +48,11 @@ export default function SurveyAnswerDisplay({
 	const textValue = String(value).trim();
 
 	if (tipoDato === 'FECHA') {
-		return <Typography variant="body2" color="text.secondary">{formatSurveyDate(textValue)}</Typography>;
+		return (
+			<Typography variant="body2" color="text.secondary">
+				{formatSurveyDate(textValue)}
+			</Typography>
+		);
 	}
 
 	if (tipoDato === 'URL' || (!tipoDato && isValidSurveyUrl(textValue))) {
@@ -70,9 +74,10 @@ export default function SurveyAnswerDisplay({
 	}
 
 	if (tipoDato === 'TELEFONO' || (!tipoDato && isValidSurveyPhone(textValue))) {
-		const digits = getPhoneDigits(textValue);
-		const href = isLikelyMobilePhone(textValue) ? `https://wa.me/${digits}` : `tel:${textValue}`;
-		const icon = isLikelyMobilePhone(textValue) ? <WhatsAppIcon fontSize="small" /> : <PhoneOutlinedIcon fontSize="small" />;
+		const isMobile = isLikelyMobilePhone(textValue);
+		const waUrl = isMobile ? getWhatsAppPhoneUrl(textValue) : null;
+		const href = waUrl ?? `tel:${textValue}`;
+		const icon = waUrl ? <WhatsAppIcon fontSize="small" /> : <PhoneOutlinedIcon fontSize="small" />;
 		return (
 			<AnswerLink href={href} icon={icon}>
 				{textValue}
@@ -80,14 +85,24 @@ export default function SurveyAnswerDisplay({
 		);
 	}
 
-	return <Typography variant="body2" color="text.secondary">{textValue}</Typography>;
+	return (
+		<Typography variant="body2" color="text.secondary">
+			{textValue}
+		</Typography>
+	);
 }
 
 function AnswerLink({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
 	return (
 		<Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, maxWidth: '100%' }}>
 			{icon}
-			<Link href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" underline="hover" sx={{ overflowWrap: 'anywhere' }}>
+			<Link
+				href={href}
+				target={href.startsWith('http') ? '_blank' : undefined}
+				rel="noopener noreferrer"
+				underline="hover"
+				sx={{ overflowWrap: 'anywhere' }}
+			>
 				{children}
 			</Link>
 		</Box>

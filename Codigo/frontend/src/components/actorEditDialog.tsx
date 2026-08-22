@@ -760,7 +760,9 @@ export default function ActorEditDialog({
 												return f.preguntas.some((q) => {
 													const qId = q.id ?? q.idPregunta;
 													const val = editFormAnswers[`${fId}:${qId}`];
-													return Boolean(validateSurveyAnswer(q.tipoDato, val, q.esObligatorio));
+													return Boolean(
+														validateSurveyAnswer(q.tipoDato, val, q.esObligatorio),
+													);
 												});
 											})
 												? 'warning'
@@ -1392,7 +1394,9 @@ export default function ActorEditDialog({
 													const hasError =
 														editValidationAttempted &&
 														(isMissing ||
-															Boolean(validateSurveyAnswer(question.tipoDato, value, false)));
+															Boolean(
+																validateSurveyAnswer(question.tipoDato, value, false),
+															));
 													const isNew =
 														question.valor === null || question.valor === undefined;
 

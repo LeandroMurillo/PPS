@@ -34,11 +34,72 @@ export function isValidSurveyPhone(value: string): boolean {
 	return PHONE_PATTERN.test(trimmed) && digits.length >= 7 && digits.length <= 15;
 }
 
+function stripArgentine15(raw: string): string | null {
+	if (raw.length === 12) {
+		for (const areaLen of [2, 3, 4]) {
+			if (raw.slice(areaLen, areaLen + 2) === '15') {
+				const area = raw.slice(0, areaLen);
+				const subscriber = raw.slice(areaLen + 2);
+				return `${area}${subscriber}`;
+			}
+		}
+	}
+	return null;
+}
+
 export function isLikelyMobilePhone(value: string): boolean {
 	const digits = getPhoneDigits(value);
-	if (digits.startsWith('549')) return true;
-	if (digits.startsWith('54') && digits.slice(2).startsWith('9')) return true;
-	return digits.length >= 10 && digits.includes('15');
+	if (!digits) return false;
+
+	if (digits.startsWith('549') && digits.length >= 12) return true;
+	if (digits.startsWith('54') && digits.charAt(2) === '9') return true;
+
+	let raw = digits;
+	if (raw.startsWith('54')) raw = raw.slice(2);
+	if (raw.startsWith('0')) raw = raw.slice(1);
+
+	return stripArgentine15(raw) !== null;
+}
+
+export function getWhatsAppPhoneUrl(value: string): string | null {
+	const digits = getPhoneDigits(value);
+	if (!digits) return null;
+
+	if (digits.startsWith('549') && digits.length === 13) {
+		return `https://wa.me/${digits}`;
+	}
+
+	if (digits.startsWith('54') && digits.length === 13 && digits.charAt(2) === '9') {
+		return `https://wa.me/${digits}`;
+	}
+
+	if (digits.startsWith('54') && digits.length === 12) {
+		return `https://wa.me/549${digits.slice(2)}`;
+	}
+
+	if (digits.startsWith('54')) {
+		const without54 = digits.slice(2);
+		const stripped = stripArgentine15(without54);
+		if (stripped && stripped.length === 10) {
+			return `https://wa.me/549${stripped}`;
+		}
+	}
+
+	let raw = digits;
+	if (raw.startsWith('0')) {
+		raw = raw.slice(1);
+	}
+
+	const stripped = stripArgentine15(raw);
+	if (stripped && stripped.length === 10) {
+		return `https://wa.me/549${stripped}`;
+	}
+
+	if (raw.length === 10) {
+		return `https://wa.me/549${raw}`;
+	}
+
+	return null;
 }
 
 export function isValidSurveyDate(value: string): boolean {

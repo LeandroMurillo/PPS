@@ -317,7 +317,7 @@ function ActorCard({ actor }: { actor: ActorResumen }) {
 							WebkitBoxOrient: 'vertical',
 						}}
 					>
-									{markdownToPlainText(actor.descripcion ?? '')}
+						{markdownToPlainText(actor.descripcion ?? '')}
 					</Typography>
 				</CardContent>
 			</CardActionArea>
