@@ -500,9 +500,43 @@ export async function agregarItemPortafolioService(input: {
 	idActor: number;
 	tipo: 'IMAGEN' | 'LINK' | 'RRSS';
 	descripcion: string;
-	url: string;
+	url?: string | null | undefined;
+	imagenBase64?: string | null | undefined;
 }) {
-	return agregarItemPortafolioRepository(input);
+	if (input.tipo === 'IMAGEN') {
+		const itemsActuales = await listarPortafolioRepository({ idUsuario: input.idUsuario, idActor: input.idActor });
+		const imagenesActuales = itemsActuales.filter((i) => i.tipo === 'IMAGEN');
+		if (imagenesActuales.length >= 10) {
+			throw new Error('El actor ya alcanzó el límite máximo de 10 imágenes en su portafolio.');
+		}
+	}
+
+	let finalUrl = input.url;
+	let savedImage: SavedActorImage | null = null;
+
+	if (input.tipo === 'IMAGEN' && input.imagenBase64) {
+		savedImage = saveActorImage(input.imagenBase64, 'portafolio');
+		finalUrl = savedImage.url;
+	}
+
+	if (!finalUrl) {
+		throw new Error('La URL o el archivo de imagen es obligatorio.');
+	}
+
+	try {
+		return await agregarItemPortafolioRepository({
+			idUsuario: input.idUsuario,
+			idActor: input.idActor,
+			tipo: input.tipo,
+			descripcion: input.descripcion,
+			url: finalUrl,
+		});
+	} catch (error) {
+		if (savedImage) {
+			removeSavedActorImages([savedImage]);
+		}
+		throw error;
+	}
 }
 
 export async function eliminarItemPortafolioService(input: { idUsuario: number; idItem: number }) {

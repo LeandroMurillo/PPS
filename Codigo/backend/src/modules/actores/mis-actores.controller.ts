@@ -111,7 +111,7 @@ const crearBodySchema = z.object({
 	longitud: z.number().min(-66.35).max(-64.45),
 	esPublica: z.boolean(),
 	respuestas: z.array(respuestaRegistroSchema).max(100).optional(),
-	portafolio: z.array(itemPortafolioRegistroSchema).max(6).optional(),
+	portafolio: z.array(itemPortafolioRegistroSchema).max(10).optional(),
 });
 
 const editarBodySchema = z.object({
@@ -136,15 +136,35 @@ const cambiarEstadoBodySchema = z.object({
 	nuevoEstado: z.enum(['A', 'P', 'I']),
 });
 
-const portafolioBodySchema = z.object({
-	tipo: z.enum(['IMAGEN', 'LINK', 'RRSS']),
-	descripcion: z.string().trim().min(1).max(255),
-	url: z
-		.string()
-		.trim()
-		.transform((v) => normalizeUrl(v) ?? '')
-		.pipe(z.string().url('El formato del enlace no es válido').max(245)),
-});
+const portafolioBodySchema = z
+	.object({
+		tipo: z.enum(['IMAGEN', 'LINK', 'RRSS']),
+		descripcion: z.string().trim().min(1).max(255),
+		url: z
+			.string()
+			.trim()
+			.transform((v) => normalizeUrl(v) ?? '')
+			.pipe(z.string().url('El formato del enlace no es válido').max(245))
+			.optional()
+			.nullable(),
+		imagenBase64: actorImageDataUrlSchema.optional().nullable(),
+	})
+	.superRefine((item, context) => {
+		if (item.tipo === 'IMAGEN' && !item.imagenBase64 && !item.url) {
+			context.addIssue({
+				code: 'custom',
+				path: ['imagenBase64'],
+				message: 'Debés subir una imagen.',
+			});
+		}
+		if (item.tipo !== 'IMAGEN' && !item.url) {
+			context.addIssue({
+				code: 'custom',
+				path: ['url'],
+				message: 'El enlace es obligatorio.',
+			});
+		}
+	});
 
 const eventoBodySchema = z.object({
 	nombre: z.string().trim().min(1).max(45),

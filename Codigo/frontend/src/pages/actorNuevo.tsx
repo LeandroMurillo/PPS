@@ -95,7 +95,7 @@ type PortfolioItemDraft = {
 	previewUrl?: string;
 };
 
-const MAX_PORTFOLIO_ITEMS = 6;
+const MAX_PORTFOLIO_ITEMS = 10;
 
 type TucumanDepartmentInfo = {
 	centroide?: { lat: number; lon: number };
@@ -1762,6 +1762,7 @@ function UploadBox({
 	maxSizeMB?: number;
 }) {
 	const [fileError, setFileError] = useState<string | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
 
 	const handleFileChange = (file: File | null) => {
 		if (!file) {
@@ -1784,13 +1785,67 @@ function UploadBox({
 		onFileSelect?.(file);
 	};
 
+	const handleDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!isDragging) setIsDragging(true);
+	};
+
+	const handleDragLeave = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(false);
+	};
+
+	const handleDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragging(false);
+
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0) {
+			const file = files[0];
+			if (file.type.startsWith('image/')) {
+				handleFileChange(file);
+			} else {
+				setFileError('El archivo debe ser una imagen en formato JPG, PNG o WebP.');
+			}
+		}
+	};
+
+	const handlePaste = (e: React.ClipboardEvent) => {
+		const items = e.clipboardData?.items;
+		if (!items) return;
+
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			if (item.type.startsWith('image/')) {
+				const file = item.getAsFile();
+				if (file) {
+					e.preventDefault();
+					handleFileChange(file);
+					break;
+				}
+			}
+		}
+	};
+
 	return (
-		<Box>
+		<Box onPaste={handlePaste} tabIndex={0} sx={{ outline: 'none' }}>
 			<Box
+				onDragOver={handleDragOver}
+				onDragLeave={handleDragLeave}
+				onDrop={handleDrop}
 				sx={{
-					border: '1px dashed',
-					borderColor: fileError ? 'error.main' : 'primary.main',
-					borderRadius: 1,
+					border: '2px dashed',
+					borderColor: fileError
+						? 'error.main'
+						: isDragging
+							? 'primary.main'
+							: previewUrl
+								? 'primary.light'
+								: 'divider',
+					borderRadius: 1.5,
 					p: 2,
 					minHeight: 140,
 					display: 'flex',
@@ -1798,7 +1853,8 @@ function UploadBox({
 					justifyContent: 'center',
 					alignItems: 'center',
 					textAlign: 'center',
-					bgcolor: 'action.hover',
+					bgcolor: isDragging ? 'action.selected' : 'action.hover',
+					transition: 'all 0.2s ease-in-out',
 				}}
 			>
 				{previewUrl ? (
@@ -1806,7 +1862,7 @@ function UploadBox({
 						component="img"
 						src={previewUrl}
 						alt="Vista previa de la imagen seleccionada"
-						sx={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 1 }}
+						sx={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 1, mb: 0.5 }}
 					/>
 				) : (
 					icon
@@ -1815,7 +1871,7 @@ function UploadBox({
 					{title}
 				</Typography>
 				<Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-					{fileName || detail} (Máximo {maxSizeMB} MB)
+					{fileName || detail} (Arrastrá, pegá con Ctrl+V o seleccioná - Máx. {maxSizeMB} MB)
 				</Typography>
 				<Button component="label" size="small" variant="outlined" startIcon={<CloudUploadIcon />}>
 					{fileName ? 'Cambiar imagen' : 'Adjuntar'}

@@ -8,6 +8,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import BadgeIcon from '@mui/icons-material/Badge';
+import CloseIcon from '@mui/icons-material/Close';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import LinkIcon from '@mui/icons-material/Link';
@@ -15,6 +16,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MapIcon from '@mui/icons-material/Map';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite';
 import RemoveIcon from '@mui/icons-material/Remove';
 import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
@@ -28,6 +30,9 @@ import {
 	Card,
 	CardContent,
 	Chip,
+	Dialog,
+	DialogContent,
+	DialogTitle,
 	Divider,
 	FormControlLabel,
 	Grid,
@@ -306,6 +311,9 @@ export default function ActorPortfolioView({
 	// Estado del switch: solo puede activarse si el usuario es privilegiado
 	const [showAllInfo, setShowAllInfo] = useState(Boolean(isPrivileged && initialShowAllInfo));
 	const [mapaSatelital, setMapaSatelital] = useState(false);
+	const [imageModalOpen, setImageModalOpen] = useState(false);
+	const [mapModalOpen, setMapModalOpen] = useState(false);
+	const [modalMapaSatelital, setModalMapaSatelital] = useState(false);
 
 	// Asegurar que si los permisos cambian, no se muestre información privada
 	const effectiveShowAll = isPrivileged && showAllInfo;
@@ -331,18 +339,32 @@ export default function ActorPortfolioView({
 			descripcion: item.descripcion || item.titulo || actor.nombre,
 		}));
 
-		return actor.foto
-			? [{ url: actor.foto, descripcion: `Foto de ${actor.nombre}` }, ...imagenesPortafolio]
-			: imagenesPortafolio;
+		return actor.foto ? [{ url: actor.foto, descripcion: `` }, ...imagenesPortafolio] : imagenesPortafolio;
 	}, [actor.foto, actor.nombre, portafolioItems]);
 
-	const handlePrevImage = () => {
+	const handlePrevImage = React.useCallback(() => {
 		setCurrentImageIndex((prev) => (prev === 0 ? imagenes.length - 1 : prev - 1));
-	};
+	}, [imagenes.length]);
 
-	const handleNextImage = () => {
+	const handleNextImage = React.useCallback(() => {
 		setCurrentImageIndex((prev) => (prev === imagenes.length - 1 ? 0 : prev + 1));
-	};
+	}, [imagenes.length]);
+
+	// Atajos de teclado para la vista ampliada de imágenes
+	React.useEffect(() => {
+		if (!imageModalOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'ArrowLeft') {
+				handlePrevImage();
+			} else if (e.key === 'ArrowRight') {
+				handleNextImage();
+			} else if (e.key === 'Escape') {
+				setImageModalOpen(false);
+			}
+		};
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [imageModalOpen, handlePrevImage, handleNextImage]);
 
 	// Visibilidad del mapa
 	const ubicacionEsVisible = (actor.ubicacion.esPublica ?? true) || effectiveShowAll;
@@ -578,13 +600,101 @@ export default function ActorPortfolioView({
 						>
 							<Paper
 								elevation={1}
-								sx={{ position: 'relative', overflow: 'hidden', borderRadius: 2, height: 300 }}
+								sx={{
+									position: 'relative',
+									overflow: 'hidden',
+									borderRadius: 2,
+									height: { xs: 260, sm: 300, md: 320 },
+								}}
 							>
-								<img
+								<Box
+									component="img"
 									src={imagenes[currentImageIndex]?.url}
 									alt={imagenes[currentImageIndex]?.descripcion}
-									style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+									onClick={() => setImageModalOpen(true)}
+									sx={{
+										width: '100%',
+										height: '100%',
+										objectFit: 'cover',
+										cursor: 'pointer',
+									}}
 								/>
+
+								{/* Botón para ampliar imagen en popup */}
+								<MuiTooltip title="Ver imagen ampliada" placement="left">
+									<IconButton
+										size="small"
+										onClick={(e) => {
+											e.stopPropagation();
+											setImageModalOpen(true);
+										}}
+										sx={{
+											position: 'absolute',
+											top: 8,
+											right: 8,
+											zIndex: 10,
+											bgcolor: 'background.default',
+											color: 'text.primary',
+											'&:hover': { transform: 'scale(1.15)', bgcolor: 'background.default' },
+										}}
+									>
+										<OpenInFullIcon fontSize="small" />
+									</IconButton>
+								</MuiTooltip>
+
+								{/* Título y pie de foto de la imagen en el carrusel */}
+								{imagenes[currentImageIndex]?.descripcion && (
+									<Box
+										sx={{
+											position: 'absolute',
+											bottom: 0,
+											left: 0,
+											right: 0,
+											background:
+												'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 65%, transparent 100%)',
+											pt: 3.5,
+											pb: 1.5,
+											px: 2,
+											display: 'flex',
+											alignItems: 'flex-end',
+											justifyContent: 'space-between',
+											gap: 1.5,
+											pointerEvents: 'none',
+										}}
+									>
+										<Typography
+											variant="subtitle2"
+											sx={{
+												fontWeight: 600,
+												color: '#ffffff',
+												textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+												overflow: 'hidden',
+												textOverflow: 'ellipsis',
+												whiteSpace: 'nowrap',
+												fontSize: { xs: '0.85rem', sm: '0.95rem' },
+											}}
+										>
+											{imagenes[currentImageIndex]?.descripcion}
+										</Typography>
+										{imagenes.length > 1 && (
+											<Typography
+												variant="caption"
+												sx={{
+													color: 'rgba(255,255,255,0.95)',
+													bgcolor: 'rgba(0,0,0,0.55)',
+													px: 1,
+													py: 0.25,
+													borderRadius: 1,
+													fontWeight: 700,
+													flexShrink: 0,
+													fontSize: '0.75rem',
+												}}
+											>
+												{currentImageIndex + 1} / {imagenes.length}
+											</Typography>
+										)}
+									</Box>
+								)}
 
 								{imagenes.length > 1 && (
 									<Box
@@ -602,8 +712,8 @@ export default function ActorPortfolioView({
 										<IconButton
 											onClick={handlePrevImage}
 											sx={{
-												bgcolor: 'rgba(255,255,255,0.7)',
-												'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+												bgcolor: 'rgba(255,255,255,0.75)',
+												'&:hover': { bgcolor: 'rgba(255,255,255,0.95)' },
 											}}
 										>
 											<ArrowBackIosNewIcon fontSize="small" />
@@ -611,8 +721,8 @@ export default function ActorPortfolioView({
 										<IconButton
 											onClick={handleNextImage}
 											sx={{
-												bgcolor: 'rgba(255,255,255,0.7)',
-												'&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
+												bgcolor: 'rgba(255,255,255,0.75)',
+												'&:hover': { bgcolor: 'rgba(255,255,255,0.95)' },
 											}}
 										>
 											<ArrowForwardIosIcon fontSize="small" />
@@ -635,7 +745,7 @@ export default function ActorPortfolioView({
 							<Paper
 								variant="outlined"
 								sx={{
-									height: { xs: 240, md: 320 },
+									height: { xs: 260, sm: 300, md: 320 },
 									borderRadius: 2,
 									overflow: 'hidden',
 									position: 'relative',
@@ -644,6 +754,29 @@ export default function ActorPortfolioView({
 									},
 								}}
 							>
+								{/* Botón para ampliar mapa en popup */}
+								<MuiTooltip title="Ver mapa ampliado" placement="left">
+									<IconButton
+										size="small"
+										onClick={(e) => {
+											e.stopPropagation();
+											setMapModalOpen(true);
+										}}
+										sx={{
+											position: 'absolute',
+											top: 8,
+											right: 8,
+											zIndex: 1000,
+											bgcolor: 'background.default',
+											color: 'text.primary',
+											boxShadow: 1,
+											'&:hover': { transform: 'scale(1.15)', bgcolor: 'background.default' },
+										}}
+									>
+										<OpenInFullIcon fontSize="small" />
+									</IconButton>
+								</MuiTooltip>
+
 								{effectiveShowAll && actor.ubicacion.esPublica === false && (
 									<Box
 										sx={{
@@ -901,6 +1034,205 @@ export default function ActorPortfolioView({
 						</Grid>
 					)}
 				</Grid>
+			)}
+
+			{/* --- MODAL POPUP PARA IMAGEN AMPLIADA (LIGHTBOX) --- */}
+			{mostrarImagenes && (
+				<Dialog
+					open={imageModalOpen}
+					onClose={() => setImageModalOpen(false)}
+					maxWidth="lg"
+					fullWidth
+					PaperProps={{
+						sx: {
+							bgcolor: '#141414',
+							color: '#ffffff',
+							borderRadius: 2,
+							overflow: 'hidden',
+						},
+					}}
+				>
+					<DialogTitle
+						sx={{
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							py: 1.5,
+							px: 2.5,
+							borderBottom: '1px solid rgba(255,255,255,0.12)',
+						}}
+					>
+						<Box sx={{ minWidth: 0 }}>
+							<Typography variant="subtitle1" fontWeight={700} noWrap sx={{ color: '#ffffff' }}>
+								{imagenes[currentImageIndex]?.descripcion || actor.nombre}
+							</Typography>
+						</Box>
+						<IconButton onClick={() => setImageModalOpen(false)} sx={{ color: 'rgba(255,255,255,0.8)' }}>
+							<CloseIcon />
+						</IconButton>
+					</DialogTitle>
+
+					<DialogContent
+						sx={{
+							p: 0,
+							position: 'relative',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							minHeight: 380,
+							maxHeight: '80vh',
+							bgcolor: '#080808',
+						}}
+					>
+						<Box
+							component="img"
+							src={imagenes[currentImageIndex]?.url}
+							alt={imagenes[currentImageIndex]?.descripcion}
+							sx={{
+								maxWidth: '100%',
+								maxHeight: '75vh',
+								objectFit: 'contain',
+								display: 'block',
+								margin: '0 auto',
+							}}
+						/>
+
+						{imagenes.length > 1 && (
+							<>
+								<IconButton
+									onClick={handlePrevImage}
+									sx={{
+										position: 'absolute',
+										left: 16,
+										top: '50%',
+										transform: 'translateY(-50%)',
+										bgcolor: 'rgba(0,0,0,0.65)',
+										color: '#ffffff',
+										'&:hover': { bgcolor: 'rgba(0,0,0,0.9)' },
+									}}
+								>
+									<ArrowBackIosNewIcon />
+								</IconButton>
+								<IconButton
+									onClick={handleNextImage}
+									sx={{
+										position: 'absolute',
+										right: 16,
+										top: '50%',
+										transform: 'translateY(-50%)',
+										bgcolor: 'rgba(0,0,0,0.65)',
+										color: '#ffffff',
+										'&:hover': { bgcolor: 'rgba(0,0,0,0.9)' },
+									}}
+								>
+									<ArrowForwardIosIcon />
+								</IconButton>
+							</>
+						)}
+					</DialogContent>
+				</Dialog>
+			)}
+
+			{/* --- MODAL POPUP PARA MAPA AMPLIADO --- */}
+			{ubicacionMapa && (
+				<Dialog
+					open={mapModalOpen}
+					onClose={() => setMapModalOpen(false)}
+					maxWidth="lg"
+					fullWidth
+					PaperProps={{
+						sx: {
+							borderRadius: 2,
+							overflow: 'hidden',
+						},
+					}}
+				>
+					<DialogTitle
+						sx={{
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							py: 1.5,
+							px: 2.5,
+							borderBottom: '1px solid',
+							borderColor: 'divider',
+						}}
+					>
+						<Box sx={{ minWidth: 0 }}>
+							<Typography variant="subtitle1" fontWeight={700} noWrap>
+								Ubicación de {actor.nombre}
+							</Typography>
+							{textoUbicacion && (
+								<Typography variant="caption" color="text.secondary" noWrap display="block">
+									{textoUbicacion}
+								</Typography>
+							)}
+						</Box>
+						<IconButton onClick={() => setMapModalOpen(false)} size="small">
+							<CloseIcon />
+						</IconButton>
+					</DialogTitle>
+
+					<DialogContent sx={{ p: 0, height: { xs: 450, md: 580 }, position: 'relative' }}>
+						{effectiveShowAll && actor.ubicacion.esPublica === false && (
+							<Box
+								sx={{
+									position: 'absolute',
+									top: 8,
+									left: 8,
+									zIndex: 1000,
+									bgcolor: 'warning.main',
+									color: 'warning.contrastText',
+									px: 1,
+									py: 0.25,
+									borderRadius: 1,
+									fontSize: '0.75rem',
+									fontWeight: 700,
+									display: 'flex',
+									alignItems: 'center',
+									gap: 0.5,
+									boxShadow: 1,
+								}}
+							>
+								<LockIcon sx={{ fontSize: 14 }} /> Ubicación privada
+							</Box>
+						)}
+						<MapContainer
+							center={ubicacionMapa}
+							zoom={15}
+							minZoom={7}
+							zoomControl={false}
+							style={{ height: '100%', width: '100%' }}
+						>
+							<PortfolioMapControls
+								isSatelital={modalMapaSatelital}
+								onToggleSatelital={() => setModalMapaSatelital((prev) => !prev)}
+							/>
+							<TileLayer
+								key={modalMapaSatelital ? 'modal-satellite' : 'modal-streets'}
+								attribution={
+									modalMapaSatelital
+										? 'Esri, TomTom, Garmin, FAO, NOAA, USGS, and the GIS User Community'
+										: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+								}
+								url={
+									modalMapaSatelital
+										? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+										: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+								}
+							/>
+							<CircleMarker
+								center={ubicacionMapa}
+								fillColor="#1976d2"
+								fillOpacity={0.85}
+								radius={12}
+								stroke
+								color="#ffffff"
+								weight={2}
+							/>
+						</MapContainer>
+					</DialogContent>
+				</Dialog>
 			)}
 		</Box>
 	);

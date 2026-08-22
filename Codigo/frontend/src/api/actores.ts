@@ -398,7 +398,7 @@ export async function listarPortafolioApi(idActor: number) {
 
 export async function agregarItemPortafolioApi(
 	idActor: number,
-	input: { tipo: 'IMAGEN' | 'LINK' | 'RRSS'; descripcion: string; url: string },
+	input: { tipo: 'IMAGEN' | 'LINK' | 'RRSS'; descripcion: string; url?: string; imagenBase64?: string },
 ) {
 	return apiRequest<{ data: { idItem: number } }>(`/api/mis-actores/${idActor}/portafolio`, {
 		method: 'POST',
