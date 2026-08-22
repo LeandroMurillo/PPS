@@ -53,4 +53,12 @@ describe('validación de la sesión contra la base de datos', () => {
 		expect(response.status).toBe(401);
 		expect(response.body.error.code).toBe('INVALID_TOKEN');
 	});
+
+	it('ignora tokens pasados por query params y responde 401', async () => {
+		const token = createSessionToken(7);
+		const response = await request(app).get(`/protected?token=${token}`);
+
+		expect(response.status).toBe(401);
+		expect(response.body.error.code).toBe('UNAUTHORIZED');
+	});
 });

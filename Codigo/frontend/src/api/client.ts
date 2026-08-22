@@ -63,6 +63,31 @@ export async function apiFetch<T>(path: string, signal?: AbortSignal): Promise<T
 	return apiRequest<T>(path, { signal });
 }
 
+export async function apiFetchBlob(path: string, signal?: AbortSignal): Promise<Blob> {
+	const token = typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_STORAGE_KEY) : null;
+	const headers = new Headers();
+	if (token) {
+		headers.set('Authorization', `Bearer ${token}`);
+	}
+
+	const response = await fetch(`${API_BASE_URL}${path}`, {
+		signal,
+		headers,
+	});
+
+	if (response.status === 401 && typeof window !== 'undefined') {
+		localStorage.removeItem(TOKEN_STORAGE_KEY);
+		localStorage.removeItem(USER_STORAGE_KEY);
+		window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT));
+	}
+
+	if (!response.ok) {
+		throw new Error('No se pudo cargar el archivo.');
+	}
+
+	return response.blob();
+}
+
 export function appendOptionalParam(params: URLSearchParams, key: string, value: string | number | null | undefined) {
 	if (value === null || value === undefined || value === '') {
 		return;

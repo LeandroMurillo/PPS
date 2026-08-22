@@ -86,7 +86,7 @@ function getRequestToken(req: Request): string | undefined {
 		return authHeader.substring(7);
 	}
 
-	return typeof req.query.token === 'string' && req.query.token ? req.query.token : undefined;
+	return undefined;
 }
 
 function invalidSession(res: Response): void {

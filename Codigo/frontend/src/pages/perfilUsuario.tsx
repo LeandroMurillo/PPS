@@ -52,6 +52,7 @@ import {
 	obtenerPerfilUsuarioApi,
 	type PerfilUsuarioData,
 } from '../api/usuario';
+import { apiFetchBlob } from '../api/client';
 import { obtenerActividadesArcaApi, type ActividadArca } from '../api/auth';
 import DatePickerSpanish from '../components/datePickerSpanish';
 import { AvatarStyleDialog } from '../components/avatarStyleDialog';
@@ -102,6 +103,7 @@ export default function PerfilUsuarioPage() {
 	const [cuil, setCuil] = React.useState('');
 	const [selectedArca, setSelectedArca] = React.useState<ActividadArca | null>(null);
 	const [fotoDniBase64, setFotoDniBase64] = React.useState<string | null>(null);
+	const [remoteDniBlobUrl, setRemoteDniBlobUrl] = React.useState<string | null>(null);
 	const [fotoDniNombre, setFotoDniNombre] = React.useState<string>('');
 	const [fotoDniError, setFotoDniError] = React.useState<string | null>(null);
 	const [profileDragging, setProfileDragging] = React.useState<boolean>(false);
@@ -143,6 +145,7 @@ export default function PerfilUsuarioPage() {
 	const cargarPerfil = React.useCallback(async () => {
 		try {
 			setLoading(true);
+			setActividadesLoading(true);
 			const [perfilData, arcaList] = await Promise.all([
 				obtenerPerfilUsuarioApi(),
 				obtenerActividadesArcaApi().catch(() => [] as ActividadArca[]),
@@ -174,6 +177,7 @@ export default function PerfilUsuarioPage() {
 			notify.error(err instanceof Error ? err.message : 'No se pudo cargar el perfil.', { scope: 'perfil' });
 		} finally {
 			setLoading(false);
+			setActividadesLoading(false);
 		}
 	}, []);
 
@@ -181,16 +185,32 @@ export default function PerfilUsuarioPage() {
 		void cargarPerfil();
 	}, [cargarPerfil]);
 
-	// Cargar actividades ARCA si no se cargaron antes
+	// Cargar imagen de DNI de forma autenticada mediante Blob URL
 	React.useEffect(() => {
-		if (actividadesArca.length === 0) {
-			setActividadesLoading(true);
-			obtenerActividadesArcaApi()
-				.then((list) => setActividadesArca(list))
-				.catch(() => {})
-				.finally(() => setActividadesLoading(false));
+		let active = true;
+		let blobUrl: string | null = null;
+
+		if (perfil?.fotoDniUrl) {
+			void apiFetchBlob(perfil.fotoDniUrl)
+				.then((blob) => {
+					if (!active) return;
+					blobUrl = URL.createObjectURL(blob);
+					setRemoteDniBlobUrl(blobUrl);
+				})
+				.catch(() => {
+					if (active) setRemoteDniBlobUrl(null);
+				});
+		} else {
+			setRemoteDniBlobUrl(null);
 		}
-	}, [actividadesArca.length]);
+
+		return () => {
+			active = false;
+			if (blobUrl) {
+				URL.revokeObjectURL(blobUrl);
+			}
+		};
+	}, [perfil?.fotoDniUrl]);
 
 	// Manejo de archivo DNI
 	const handleDniFile = async (file: File | null) => {
@@ -759,10 +779,10 @@ export default function PerfilUsuarioPage() {
 												alignItems="center"
 											>
 												{/* Vista previa */}
-												{fotoDniBase64 || perfil?.fotoDniUrl ? (
+												{fotoDniBase64 || remoteDniBlobUrl || perfil?.fotoDniUrl ? (
 													<Box
 														component="img"
-														src={fotoDniBase64 || perfil?.fotoDniUrl || ''}
+														src={fotoDniBase64 || remoteDniBlobUrl || ''}
 														alt="Foto DNI"
 														sx={{
 															width: 140,

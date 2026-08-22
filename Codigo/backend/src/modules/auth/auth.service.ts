@@ -10,28 +10,26 @@ import {
 import { createSessionToken } from './session-token.js';
 import type { ActividadArca, LoginResponse, RegistrarUsuarioBody, RegistroUsuarioResponse } from './auth.schemas.js';
 
+const DNI_DATA_URL_PATTERN = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=\r\n]+)$/;
+const MAX_DNI_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export function saveDniImage(base64Data: string): string | null {
 	if (!base64Data || typeof base64Data !== 'string') {
 		return null;
 	}
 
 	try {
-		const matches = base64Data.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-		let ext = 'png';
-		let base64String = base64Data;
-
-		if (matches && matches.length === 3) {
-			ext = matches[1] === 'jpeg' ? 'jpg' : matches[1]!;
-			base64String = matches[2]!;
-		} else if (base64Data.includes('base64,')) {
-			base64String = base64Data.split('base64,')[1]!;
-		}
-
-		const buffer = Buffer.from(base64String, 'base64');
-		if (buffer.length === 0) {
+		const match = DNI_DATA_URL_PATTERN.exec(base64Data.trim());
+		if (!match?.[1] || !match[2]) {
 			return null;
 		}
 
+		const buffer = Buffer.from(match[2], 'base64');
+		if (buffer.length === 0 || buffer.length > MAX_DNI_BYTES) {
+			return null;
+		}
+
+		const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
 		const uploadsDir = path.join(process.cwd(), 'uploads', 'dni');
 		if (!fs.existsSync(uploadsDir)) {
 			fs.mkdirSync(uploadsDir, { recursive: true });
@@ -39,7 +37,7 @@ export function saveDniImage(base64Data: string): string | null {
 
 		const filename = `dni_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
 		const filepath = path.join(uploadsDir, filename);
-		fs.writeFileSync(filepath, buffer);
+		fs.writeFileSync(filepath, buffer, { flag: 'wx' });
 
 		return `/uploads/dni/${filename}`;
 	} catch {

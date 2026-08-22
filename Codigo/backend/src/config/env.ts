@@ -24,7 +24,7 @@ const envSchema = z
 
 		JWT_SECRET: z.string().min(16).default('mosaico_cultural_jwt_secret_key_dev_mode_2026'),
 
-		JWT_EXPIRES_IN_SECONDS: z.coerce.number().int().min(60).max(86400).default(900),
+		JWT_EXPIRES_IN_SECONDS: z.coerce.number().int().min(60).max(604800).default(28800),
 
 		FIREBASE_PROJECT_ID: z.string().trim().min(1).optional(),
 
