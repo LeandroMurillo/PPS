@@ -27,6 +27,8 @@ const __dirname = path.dirname(__filename);
 
 export const app = express();
 
+app.set('trust proxy', 1);
+
 app.disable('x-powered-by');
 
 app.use(

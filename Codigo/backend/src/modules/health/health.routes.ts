@@ -5,7 +5,8 @@ import { pool } from '../../database/pool.js';
 export const healthRouter = Router();
 
 healthRouter.get('/health', async (_request, response) => {
-	const rows = await pool.query<Array<{ ok: number }>>('SELECT 1 AS ok');
+	const result: unknown = await pool.query('CALL sp_sistema_ping()');
+	const rows = Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as Array<{ ok?: number }>) : [];
 	const uptimeSeconds = process.uptime();
 	const hours = Math.floor(uptimeSeconds / 3600);
 	const minutes = Math.floor((uptimeSeconds % 3600) / 60);

@@ -663,3 +663,27 @@ export async function eliminarIntegranteNoRegistradoRepository(input: {
 		input.idIntegranteNoRegistrado,
 	]);
 }
+
+const itemPortafolioArchivoRowSchema = z.object({
+	url: z.string(),
+});
+
+const archivoActorRowSchema = z.object({
+	tipo: z.enum(['ACTOR_PERFIL', 'ACTOR_PORTAFOLIO']),
+	url: z.string(),
+});
+
+export async function obtenerArchivoItemPortafolioRepository(idItem: number): Promise<string | null> {
+	const procedureName = 'sp_actor_obtener_archivo_item_portafolio';
+	const result: unknown = await pool.query('CALL sp_actor_obtener_archivo_item_portafolio(?)', [idItem]);
+	const rows = z.array(itemPortafolioArchivoRowSchema).parse(getResultSet(result, 0, procedureName));
+	return rows[0]?.url ?? null;
+}
+
+export async function obtenerArchivosActorRepository(
+	idActor: number,
+): Promise<Array<{ tipo: 'ACTOR_PERFIL' | 'ACTOR_PORTAFOLIO'; url: string }>> {
+	const procedureName = 'sp_actor_obtener_archivos_actor';
+	const result: unknown = await pool.query('CALL sp_actor_obtener_archivos_actor(?)', [idActor]);
+	return z.array(archivoActorRowSchema).parse(getResultSet(result, 0, procedureName));
+}

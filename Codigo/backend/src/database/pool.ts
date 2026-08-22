@@ -17,7 +17,8 @@ export const pool: Pool = mariadb.createPool({
 });
 
 export async function checkDatabaseConnection(): Promise<void> {
-	const rows = await pool.query<Array<{ ok: number }>>('SELECT 1 AS ok');
+	const result: unknown = await pool.query('CALL sp_sistema_ping()');
+	const rows = Array.isArray(result) && Array.isArray(result[0]) ? (result[0] as Array<{ ok?: number }>) : [];
 
 	if (rows[0]?.ok !== 1) {
 		throw new Error('MariaDB respondió de manera inesperada');

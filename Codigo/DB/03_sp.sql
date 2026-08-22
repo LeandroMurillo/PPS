@@ -23,7 +23,8 @@ REPLACE
     IN pOffset INT DEFAULT 0,
     IN pSortBy VARCHAR(50) DEFAULT 'fechaRegistro',
     IN pSortDir VARCHAR(4) DEFAULT 'DESC'
-  ) READS SQL DATA COMMENT 'Lista usuarios para administración aplicando búsqueda, filtros opcionales por rol y estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de usuarios.'
+  ) READS SQL DATA
+COMMENT 'Lista usuarios para administración aplicando búsqueda, filtros opcionales por rol y estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de usuarios.'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -231,7 +232,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_obtener_usuario` (IN pIdUsuario INT) READS SQL DATA COMMENT 'Obtiene el detalle administrativo de un usuario y las categorías activas que puede moderar, indicando sus asignaciones actuales.'
+  PROCEDURE `sp_admin_obtener_usuario` (IN pIdUsuario INT) READS SQL DATA
+COMMENT 'Obtiene el detalle administrativo de un usuario y las categorías activas que puede moderar, indicando sus asignaciones actuales.'
 BEGIN
 SELECT
   u.idUsuario,
@@ -607,7 +609,8 @@ REPLACE
     IN pOffset INT DEFAULT 0,
     IN pSortBy VARCHAR(50) DEFAULT 'fechaCreacion',
     IN pSortDir VARCHAR(4) DEFAULT 'DESC'
-  ) READS SQL DATA COMMENT 'Lista actores para administración. Los moderadores solo ven actores de sus categorías asignadas.'
+  ) READS SQL DATA
+COMMENT 'Lista actores para administración. Los moderadores solo ven actores de sus categorías asignadas.'
 BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vLimit INT DEFAULT 25;
@@ -929,7 +932,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_obtener_actor` (IN pIdUsuarioSolicitante INT, IN pIdActor INT) READS SQL DATA COMMENT 'Obtiene el perfil administrativo de un actor si pertenece al alcance de moderación del solicitante.'
+  PROCEDURE `sp_admin_obtener_actor` (IN pIdUsuarioSolicitante INT, IN pIdActor INT) READS SQL DATA
+COMMENT 'Obtiene el perfil administrativo de un actor si pertenece al alcance de moderación del solicitante.'
 BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vPuedeAcceder TINYINT DEFAULT 0;
@@ -1100,7 +1104,8 @@ REPLACE
     IN pOffset INT DEFAULT 0,
     IN pSortBy VARCHAR(50) DEFAULT 'estado',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
-  ) READS SQL DATA COMMENT 'Lista categorías administrativas; para moderadores limita el resultado a sus categorías asignadas.'
+  ) READS SQL DATA
+COMMENT 'Lista categorías administrativas; para moderadores limita el resultado a sus categorías asignadas.'
 BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vLimit INT DEFAULT 25;
@@ -1275,7 +1280,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_obtener_categoria` (IN pIdCategoria INT) READS SQL DATA COMMENT 'Obtiene una categoría por identificador con icono, la cantidad de subcategorías y la cantidad de actores asociados.'
+  PROCEDURE `sp_admin_obtener_categoria` (IN pIdCategoria INT) READS SQL DATA
+COMMENT 'Obtiene una categoría por identificador con icono, la cantidad de subcategorías y la cantidad de actores asociados.'
 BEGIN
 SELECT
   c.idCategoria,
@@ -1485,7 +1491,8 @@ REPLACE
     IN pOffset INT DEFAULT 0,
     IN pSortBy VARCHAR(50) DEFAULT 'idSubcategoria',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
-  ) READS SQL DATA COMMENT 'Lista subcategorías de una categoría para administración con búsqueda, filtro de estado, orden y paginación.'
+  ) READS SQL DATA
+COMMENT 'Lista subcategorías de una categoría para administración con búsqueda, filtro de estado, orden y paginación.'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -1624,7 +1631,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_obtener_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT) READS SQL DATA COMMENT 'Obtiene una subcategoría por identificador.'
+  PROCEDURE `sp_admin_obtener_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT) READS SQL DATA
+COMMENT 'Obtiene una subcategoría por identificador.'
 BEGIN
 SELECT
   s.idCategoria,
@@ -1844,7 +1852,8 @@ REPLACE
     IN pOffset INT DEFAULT 0,
     IN pSortBy VARCHAR(50) DEFAULT 'idEvento',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
-  ) READS SQL DATA COMMENT 'Lista eventos para administración aplicando búsqueda, filtro opcional por estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de eventos.'
+  ) READS SQL DATA
+COMMENT 'Lista eventos para administración aplicando búsqueda, filtro opcional por estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de eventos.'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -2010,7 +2019,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_publico_mapa_filtros` () SQL SECURITY DEFINER READS SQL DATA COMMENT 'Devuelve los filtros disponibles para el mapa público. RS1: categorías. RS2: departamentos.'
+  PROCEDURE `sp_publico_mapa_filtros` () SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Devuelve los filtros disponibles para el mapa público. RS1: categorías. RS2: departamentos.'
 BEGIN
 /*
  * RESULT SET 1: categorías
@@ -2088,7 +2098,8 @@ REPLACE
     IN pBusqueda VARCHAR(255) DEFAULT NULL,
     IN pDepartamento VARCHAR(100) DEFAULT NULL,
     IN pCategoriasJson JSON DEFAULT NULL
-  ) READS SQL DATA COMMENT 'Busca actores culturales activos para el mapa público. Solo devuelve actores de categorías activas, con subcategoría activa cuando corresponda y ubicación pública.'
+  ) READS SQL DATA
+COMMENT 'Busca actores culturales activos para el mapa público. Solo devuelve actores de categorías activas, con subcategoría activa cuando corresponda y ubicación pública.'
 BEGIN IF pCategoriasJson IS NOT NULL
 AND pCategoriasJson IS NOT JSON ARRAY THEN
 SIGNAL SQLSTATE '45000'
@@ -2207,7 +2218,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_publico_listar_actores_filtros` () SQL SECURITY DEFINER READS SQL DATA COMMENT 'Devuelve los filtros disponibles para el directorio público de actores. RS1: categorías. RS2: departamentos.'
+  PROCEDURE `sp_publico_listar_actores_filtros` () SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Devuelve los filtros disponibles para el directorio público de actores. RS1: categorías. RS2: departamentos.'
 BEGIN
 /*
  * RESULT SET 1: categorías
@@ -2287,7 +2299,8 @@ REPLACE
     IN pIdCategoria INT UNSIGNED DEFAULT NULL,
     IN pLimit INT DEFAULT 20,
     IN pOffset INT DEFAULT 0
-  ) SQL SECURITY DEFINER READS SQL DATA COMMENT 'Lista actores culturales activos para el directorio público, con filtros opcionales por nombre, departamento y categoría. Devuelve el total y la página solicitada.'
+  ) SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Lista actores culturales activos para el directorio público, con filtros opcionales por nombre, departamento y categoría. Devuelve el total y la página solicitada.'
 BEGIN DECLARE vBusqueda VARCHAR(255);
 
 DECLARE vDepartamento VARCHAR(100);
@@ -2428,7 +2441,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_publico_obtener_actor` (IN pIdActor INT, IN pIdUsuario INT) SQL SECURITY DEFINER READS SQL DATA COMMENT 'Obtiene la ficha pública completa de un actor cultural. Si está activo es visible para todos. Si no está activo (P o I), solo es visible si pIdUsuario es integrante o admin/moderador.'
+  PROCEDURE `sp_publico_obtener_actor` (IN pIdActor INT, IN pIdUsuario INT) SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Obtiene la ficha pública completa de un actor cultural. Si está activo es visible para todos. Si no está activo (P o I), solo es visible si pIdUsuario es integrante o admin/moderador.'
 BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 DECLARE vEsAdmin INT DEFAULT 0;
@@ -2784,7 +2798,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_interno_validar_opciones_pregunta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON) READS SQL DATA COMMENT 'Valida que las opciones de una pregunta sean coherentes con su tipo de dato, no estén vacías y no contengan duplicados.'
+  PROCEDURE `sp_interno_validar_opciones_pregunta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON) READS SQL DATA
+COMMENT 'Valida que las opciones de una pregunta sean coherentes con su tipo de dato, no estén vacías y no contengan duplicados.'
 BEGIN IF pTipoDato IN ('OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN IF pOpciones IS NULL
 OR pOpciones IS NOT JSON ARRAY
 OR JSON_LENGTH(pOpciones) < 2
@@ -2847,7 +2862,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_interno_validar_valor_respuesta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON, IN pValor JSON) READS SQL DATA COMMENT 'Valida el tipo y el contenido JSON de una respuesta según la definición de la pregunta.'
+  PROCEDURE `sp_interno_validar_valor_respuesta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON, IN pValor JSON) READS SQL DATA
+COMMENT 'Valida el tipo y el contenido JSON de una respuesta según la definición de la pregunta.'
 BEGIN DECLARE vTexto LONGTEXT;
 
 IF pValor IS NULL
@@ -3001,7 +3017,8 @@ REPLACE
     IN pAmbito VARCHAR(20) DEFAULT 'TODOS',
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0
-  ) READS SQL DATA COMMENT 'Lista formularios para administración con filtros por texto, categoría y ámbito. Devuelve el total y la página solicitada.'
+  ) READS SQL DATA
+COMMENT 'Lista formularios para administración con filtros por texto, categoría y ámbito. Devuelve el total y la página solicitada.'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -3366,7 +3383,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_listar_preguntas` (IN pBusqueda VARCHAR(255) DEFAULT NULL) READS SQL DATA COMMENT 'Lista el banco reutilizable de preguntas con filtro opcional por texto.'
+  PROCEDURE `sp_admin_listar_preguntas` (IN pBusqueda VARCHAR(255) DEFAULT NULL) READS SQL DATA
+COMMENT 'Lista el banco reutilizable de preguntas con filtro opcional por texto.'
 BEGIN DECLARE vBusqueda VARCHAR(255);
 
 SET
@@ -3414,7 +3432,19 @@ SET
 END IF;
 
 IF vTipoDato IS NULL
-OR vTipoDato NOT IN ('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN
+OR vTipoDato NOT IN (
+  'TEXTO',
+  'NUMERO',
+  'BOOLEANO',
+  'FECHA',
+  'URL',
+  'EMAIL',
+  'TELEFONO',
+  'OPCION_UNICA',
+  'OPCION_MULTIPLE',
+  'OPCION_MULTIPLE_CHIPS',
+  'TAGS'
+) THEN
 SIGNAL SQLSTATE '45000'
 SET
   MESSAGE_TEXT = 'El tipo de dato de la pregunta no es válido.';
@@ -3466,7 +3496,19 @@ REPLACE
   PROCEDURE `sp_admin_editar_pregunta` (
     IN pIdPregunta INT,
     IN pPregunta VARCHAR(500),
-    IN pTipoDato ENUM('TEXTO', 'NUMERO', 'BOOLEANO', 'FECHA', 'URL', 'EMAIL', 'TELEFONO', 'OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS'),
+    IN pTipoDato ENUM(
+      'TEXTO',
+      'NUMERO',
+      'BOOLEANO',
+      'FECHA',
+      'URL',
+      'EMAIL',
+      'TELEFONO',
+      'OPCION_UNICA',
+      'OPCION_MULTIPLE',
+      'OPCION_MULTIPLE_CHIPS',
+      'TAGS'
+    ),
     IN pOpciones JSON DEFAULT NULL
   ) MODIFIES SQL DATA COMMENT 'Edita una pregunta existente globalmente. Si la pregunta ya posee respuestas registradas en Respuestas, prohíbe cambios de tipoDato u opciones.'
 BEGIN DECLARE vPregunta VARCHAR(500);
@@ -4006,7 +4048,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_obtener_formulario` (IN pIdFormulario INT) READS SQL DATA COMMENT 'Obtiene la cabecera de un formulario y todas sus preguntas, incluidas las inactivas y reemplazadas.'
+  PROCEDURE `sp_admin_obtener_formulario` (IN pIdFormulario INT) READS SQL DATA
+COMMENT 'Obtiene la cabecera de un formulario y todas sus preguntas, incluidas las inactivas y reemplazadas.'
 BEGIN IF pIdFormulario IS NULL
 OR NOT EXISTS (
   SELECT
@@ -4118,7 +4161,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_formularios` (IN pIdActor INT) READS SQL DATA COMMENT 'Lista los formularios aplicables a un actor: el de su categoría y, cuando existe, el de su subcategoría.'
+  PROCEDURE `sp_actor_listar_formularios` (IN pIdActor INT) READS SQL DATA
+COMMENT 'Lista los formularios aplicables a un actor: el de su categoría y, cuando existe, el de su subcategoría.'
 BEGIN IF pIdActor IS NULL
 OR NOT EXISTS (
   SELECT
@@ -4228,7 +4272,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_obtener_formulario` (IN pIdActor INT, IN pIdFormulario INT) READS SQL DATA COMMENT 'Obtiene un formulario aplicable al actor y sus preguntas activas junto con las respuestas vigentes.'
+  PROCEDURE `sp_actor_obtener_formulario` (IN pIdActor INT, IN pIdFormulario INT) READS SQL DATA
+COMMENT 'Obtiene un formulario aplicable al actor y sus preguntas activas junto con las respuestas vigentes.'
 BEGIN IF pIdActor IS NULL
 OR NOT EXISTS (
   SELECT
@@ -4646,7 +4691,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_preguntas_pendientes` (IN pIdActor INT) READS SQL DATA COMMENT 'Lista las preguntas obligatorias activas que el actor todavía no respondió en sus formularios aplicables.'
+  PROCEDURE `sp_actor_listar_preguntas_pendientes` (IN pIdActor INT) READS SQL DATA
+COMMENT 'Lista las preguntas obligatorias activas que el actor todavía no respondió en sus formularios aplicables.'
 BEGIN IF pIdActor IS NULL
 OR NOT EXISTS (
   SELECT
@@ -4855,7 +4901,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_publico_obtener_usuario_por_id_firebase` (IN pIdFirebase VARCHAR(128)) READS SQL DATA COMMENT 'Obtiene un usuario por la identidad validada por Firebase Authentication.'
+  PROCEDURE `sp_publico_obtener_usuario_por_id_firebase` (IN pIdFirebase VARCHAR(128)) READS SQL DATA
+COMMENT 'Obtiene un usuario por la identidad validada por Firebase Authentication.'
 BEGIN
 SELECT
   u.idUsuario,
@@ -4885,7 +4932,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_auth_obtener_usuario_sesion` (IN pIdUsuario INT) READS SQL DATA COMMENT 'Obtiene rol y estado vigentes para validar una sesión autenticada.'
+  PROCEDURE `sp_auth_obtener_usuario_sesion` (IN pIdUsuario INT) READS SQL DATA
+COMMENT 'Obtiene rol y estado vigentes para validar una sesión autenticada.'
 BEGIN
 SELECT
   u.idUsuario,
@@ -4904,7 +4952,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_publico_listar_actividades_arca` () READS SQL DATA COMMENT 'Obtiene el listado completo de actividades económicas ARCA para selección en formularios.'
+  PROCEDURE `sp_publico_listar_actividades_arca` () READS SQL DATA
+COMMENT 'Obtiene el listado completo de actividades económicas ARCA para selección en formularios.'
 BEGIN
 SELECT
   aa.codigo,
@@ -4921,7 +4970,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_opciones_registro` () READS SQL DATA COMMENT 'Lista categorías y subcategorías activas disponibles para registrar o editar un actor.'
+  PROCEDURE `sp_actor_listar_opciones_registro` () READS SQL DATA
+COMMENT 'Lista categorías y subcategorías activas disponibles para registrar o editar un actor.'
 BEGIN
 SELECT
   c.idCategoria,
@@ -4946,7 +4996,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_mis_actores` (IN pIdUsuario INT, IN pBusqueda VARCHAR(100), IN pIdCategoria INT, IN pEstado CHAR(1), IN pLimit INT, IN pOffset INT) READS SQL DATA COMMENT 'Lista los actores culturales pertenecientes al usuario autenticado (donde esDueño = 1).'
+  PROCEDURE `sp_actor_listar_mis_actores` (IN pIdUsuario INT, IN pBusqueda VARCHAR(100), IN pIdCategoria INT, IN pEstado CHAR(1), IN pLimit INT, IN pOffset INT) READS SQL DATA
+COMMENT 'Lista los actores culturales pertenecientes al usuario autenticado (donde esDueño = 1).'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -5498,7 +5549,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_portafolio` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA COMMENT 'Lista los ítems del portafolio de un actor para sus integrantes.'
+  PROCEDURE `sp_actor_listar_portafolio` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA
+COMMENT 'Lista los ítems del portafolio de un actor para sus integrantes.'
 BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 SELECT
@@ -5535,7 +5587,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_eventos` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA COMMENT 'Lista los eventos de un actor para sus integrantes.'
+  PROCEDURE `sp_actor_listar_eventos` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA
+COMMENT 'Lista los eventos de un actor para sus integrantes.'
 BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 SELECT
@@ -5654,7 +5707,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_integrantes` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA COMMENT 'Lista los integrantes de un actor cultural.'
+  PROCEDURE `sp_actor_listar_integrantes` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA
+COMMENT 'Lista los integrantes de un actor cultural.'
 BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 SELECT
@@ -6053,7 +6107,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_usuario_obtener_perfil` (IN pIdUsuario INT) READS SQL DATA COMMENT 'Obtiene los datos de perfil del usuario autenticado comprobando que exista y esté activo.'
+  PROCEDURE `sp_usuario_obtener_perfil` (IN pIdUsuario INT) READS SQL DATA
+COMMENT 'Obtiene los datos de perfil del usuario autenticado comprobando que exista y esté activo.'
 BEGIN DECLARE vEstado VARCHAR(1);
 
 SELECT
@@ -6416,7 +6471,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_listar_activas` (IN pIdUsuario INT DEFAULT NULL) READS SQL DATA COMMENT 'Lista convocatorias activas (fecha de cierre en el futuro) con cantidad total de postulaciones y lista de actores del usuario que estan postulados.'
+  PROCEDURE `sp_convocatoria_listar_activas` (IN pIdUsuario INT DEFAULT NULL) READS SQL DATA
+COMMENT 'Lista convocatorias activas (fecha de cierre en el futuro) con cantidad total de postulaciones y lista de actores del usuario que estan postulados.'
 BEGIN
 -- 1. Lista de convocatorias activas con conteo total de postulaciones
 SELECT
@@ -6476,7 +6532,8 @@ REPLACE
     IN pEstado VARCHAR(20) DEFAULT NULL,
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0
-  ) READS SQL DATA COMMENT 'Lista todas las convocatorias para el panel de administracion con filtros y paginacion.'
+  ) READS SQL DATA
+COMMENT 'Lista todas las convocatorias para el panel de administracion con filtros y paginacion.'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -6569,7 +6626,8 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_obtener_detalle` (IN pIdConvocatoria INT) READS SQL DATA COMMENT 'Obtiene los datos de una convocatoria y la lista completa de actores postulados.'
+  PROCEDURE `sp_convocatoria_obtener_detalle` (IN pIdConvocatoria INT) READS SQL DATA
+COMMENT 'Obtiene los datos de una convocatoria y la lista completa de actores postulados.'
 BEGIN
 -- 1. Detalle de la convocatoria
 SELECT
@@ -6991,6 +7049,68 @@ DELETE FROM `Postulaciones`
 WHERE
   idConvocatoria = pIdConvocatoria
   AND idActor = pIdActor;
+
+END //
+-- -----------------------------------------------------
+-- sp_sistema_ping
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_sistema_ping` () SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Verifica la conectividad con MariaDB retornando ok = 1.'
+BEGIN
+SELECT
+  1 AS ok;
+
+END //
+-- -----------------------------------------------------
+-- sp_actor_obtener_archivo_item_portafolio
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_actor_obtener_archivo_item_portafolio` (IN pIdItem INT) SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Obtiene la URL de un ítem de portafolio de tipo IMAGEN.'
+BEGIN
+SELECT
+  url
+FROM
+  `ItemsPortafolio`
+WHERE
+  idItem = pIdItem
+  AND tipo = 'IMAGEN';
+
+END //
+-- -----------------------------------------------------
+-- sp_actor_obtener_archivos_actor
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_actor_obtener_archivos_actor` (IN pIdActor INT) SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Obtiene las URLs de archivos asociados a un actor (foto de perfil y portafolio).'
+BEGIN
+SELECT
+  'ACTOR_PERFIL' AS tipo,
+  fotoPerfilUrl AS url
+FROM
+  `Actores`
+WHERE
+  idActor = pIdActor
+  AND fotoPerfilUrl IS NOT NULL
+  AND TRIM(fotoPerfilUrl) <> ''
+UNION ALL
+SELECT
+  'ACTOR_PORTAFOLIO' AS tipo,
+  url
+FROM
+  `ItemsPortafolio`
+WHERE
+  idActor = pIdActor
+  AND tipo = 'IMAGEN'
+  AND url IS NOT NULL
+  AND TRIM(url) <> '';
 
 END //
 DELIMITER ;

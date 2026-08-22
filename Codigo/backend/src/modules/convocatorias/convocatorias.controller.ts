@@ -52,9 +52,10 @@ export async function obtenerConvocatoriaDetalleController(req: Request, res: Re
 	try {
 		const params = convocatoriaIdParamSchema.parse(req.params);
 		const result = await obtenerConvocatoriaDetalleService(params.id);
+		const esAdminOModerador = req.user?.rol === 'ADMIN' || req.user?.rol === 'MODERADOR';
 		res.status(200).json({
 			data: result.convocatoria,
-			postulantes: result.postulantes,
+			postulantes: esAdminOModerador ? result.postulantes : [],
 		});
 	} catch (error) {
 		const message = getPublicErrorMessage(error, 'No se pudo obtener el detalle de la convocatoria.');

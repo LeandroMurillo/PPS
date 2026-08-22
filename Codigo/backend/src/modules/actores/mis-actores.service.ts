@@ -17,11 +17,14 @@ import {
 	listarIntegrantesRepository,
 	listarMisActoresRepository,
 	listarPortafolioRepository,
+	obtenerArchivoItemPortafolioRepository,
+	obtenerArchivosActorRepository,
 	obtenerFormulariosActorRepository,
 	obtenerFormulariosAplicablesRepository,
 	obtenerOpcionesRegistroRepository,
 } from './mis-actores.repository.js';
 import { removeSavedActorImages, saveActorImage, type SavedActorImage } from './actor-media.service.js';
+import { eliminarArchivosPersonalesUsuario } from '../usuario/usuario-files.service.js';
 
 function validarValorRespuesta(
 	pregunta: {
@@ -487,12 +490,17 @@ export async function eliminarActorService(input: {
 	userRol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 }) {
 	const esAdmin = input.userRol === 'ADMIN';
+	const archivos = await obtenerArchivosActorRepository(input.idActor);
 
 	await eliminarActorRepository({
 		idUsuario: input.idUsuario,
 		idActor: input.idActor,
 		esAdmin,
 	});
+
+	if (archivos.length > 0) {
+		eliminarArchivosPersonalesUsuario(archivos);
+	}
 }
 
 export async function agregarItemPortafolioService(input: {
@@ -540,7 +548,13 @@ export async function agregarItemPortafolioService(input: {
 }
 
 export async function eliminarItemPortafolioService(input: { idUsuario: number; idItem: number }) {
+	const itemUrl = await obtenerArchivoItemPortafolioRepository(input.idItem);
+
 	await eliminarItemPortafolioRepository(input);
+
+	if (itemUrl) {
+		eliminarArchivosPersonalesUsuario([{ tipo: 'ACTOR_PORTAFOLIO', url: itemUrl }]);
+	}
 }
 
 export async function listarPortafolioService(input: { idUsuario: number; idActor: number }) {
