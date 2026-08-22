@@ -33,7 +33,7 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
 
 	const token =
 		authMode === 'firebase'
-			? await firebaseAuth.currentUser?.getIdToken()
+			? await firebaseAuth.currentUser?.getIdToken(true)
 			: authMode === 'application' && typeof localStorage !== 'undefined'
 				? localStorage.getItem(TOKEN_STORAGE_KEY)
 				: null;

@@ -122,7 +122,9 @@ export default function LoginPage() {
 			if (!credential.user.emailVerified) {
 				await sendEmailVerification(credential.user, { url: `${window.location.origin}/login` });
 				await signOut(firebaseAuth);
-				throw new Error('Debés verificar tu correo. Te enviamos un nuevo enlace de verificación.');
+				throw new Error(
+					'Debés verificar tu correo. Te enviamos un nuevo enlace de verificación (revisá también en la carpeta de correo no deseado o spam).',
+				);
 			}
 			await completeApplicationLogin();
 		} catch (err) {
@@ -143,7 +145,7 @@ export default function LoginPage() {
 		} catch (error) {
 			const message = getFirebaseErrorMessage(error, 'No se pudo iniciar sesión con Google.');
 			if (message.includes('completar el registro')) {
-				navigate('/registro');
+				navigate('/registro/datos');
 			} else {
 				notify.error(message, { scope: 'login-google' });
 			}

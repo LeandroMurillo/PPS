@@ -208,8 +208,12 @@ export default function AuthActionPage() {
 								{successMessage}
 							</Typography>
 							<Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-								<Button variant="contained" onClick={() => navigate('/registro')} size="large">
-									Continuar Registro
+								<Button
+									variant="contained"
+									onClick={() => navigate(mode === 'verifyEmail' ? '/registro/datos' : '/login')}
+									size="large"
+								>
+									{mode === 'verifyEmail' ? 'Completar Datos de Registro' : 'Ir a Iniciar Sesión'}
 								</Button>
 							</Box>
 						</Stack>

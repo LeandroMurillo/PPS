@@ -31,6 +31,7 @@ import Licencia from './pages/licencia';
 import LoginPage from './pages/login';
 import Mapa from './pages/mapa';
 import RegistroPage from './pages/registro';
+import RegistroDatosPage from './pages/registroDatos';
 import AuthActionPage from './pages/authAction';
 
 function DocsApiRedirect() {
@@ -96,6 +97,10 @@ const router = createBrowserRouter([
 					{
 						path: 'registro',
 						Component: RegistroPage,
+					},
+					{
+						path: 'registro/datos',
+						Component: RegistroDatosPage,
 					},
 					{
 						path: 'auth/action',

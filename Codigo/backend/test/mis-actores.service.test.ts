@@ -22,8 +22,14 @@ describe('eliminarActorService', () => {
 
 	it('obtiene los archivos del actor y los elimina físicamente del disco tras borrar el actor de la BD', async () => {
 		const archivosMock = [
-			{ tipo: 'ACTOR_PERFIL' as const, url: 'https://mosaico.example/uploads/actores/perfil_1_aabbccddeeff.webp' },
-			{ tipo: 'ACTOR_PORTAFOLIO' as const, url: 'https://mosaico.example/uploads/actores/portafolio_1_112233aabbcc.jpg' },
+			{
+				tipo: 'ACTOR_PERFIL' as const,
+				url: 'https://mosaico.example/uploads/actores/perfil_1_aabbccddeeff.webp',
+			},
+			{
+				tipo: 'ACTOR_PORTAFOLIO' as const,
+				url: 'https://mosaico.example/uploads/actores/portafolio_1_112233aabbcc.jpg',
+			},
 		];
 
 		mockObtenerArchivosActorRepository.mockResolvedValueOnce(archivosMock);
