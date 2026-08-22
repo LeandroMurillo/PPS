@@ -16,6 +16,15 @@ type ApiRequestInit = RequestInit & {
 	authMode?: 'application' | 'firebase' | 'none';
 };
 
+function resolveUrl(path: string): string {
+	if (/^https?:\/\//i.test(path)) {
+		return path;
+	}
+	const base = API_BASE_URL.replace(/\/$/, '');
+	const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+	return `${base}${normalizedPath}`;
+}
+
 export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promise<T> {
 	const headers = new Headers(init?.headers);
 	const authMode = init?.authMode ?? 'application';
@@ -32,7 +41,7 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
 		headers.set('Authorization', `Bearer ${token}`);
 	}
 
-	const response = await fetch(`${API_BASE_URL}${path}`, {
+	const response = await fetch(resolveUrl(path), {
 		...requestInit,
 		headers,
 	});
@@ -70,7 +79,7 @@ export async function apiFetchBlob(path: string, signal?: AbortSignal): Promise<
 		headers.set('Authorization', `Bearer ${token}`);
 	}
 
-	const response = await fetch(`${API_BASE_URL}${path}`, {
+	const response = await fetch(resolveUrl(path), {
 		signal,
 		headers,
 	});

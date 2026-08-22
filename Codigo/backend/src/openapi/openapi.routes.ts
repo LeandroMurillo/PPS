@@ -2,17 +2,76 @@ import { apiReference } from '@scalar/express-api-reference';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { Router } from 'express';
 
-import { requireRole, verifyToken } from '../middleware/auth.middleware.js';
+import { obtenerUsuarioSesionRepository } from '../middleware/auth-session.repository.js';
+import { verifySessionToken } from '../modules/auth/session-token.js';
 import { openApiDocument } from './document.js';
 
 export const openApiRouter = Router();
 
-const adminAuthMiddleware = [verifyToken, requireRole('ADMIN')];
+async function docsAdminAuthMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const authHeader = req.headers.authorization;
+	const token = authHeader?.startsWith('Bearer ')
+		? authHeader.substring(7)
+		: typeof req.query.token === 'string' && req.query.token
+			? req.query.token
+			: undefined;
+
+	if (!token) {
+		res.status(401).json({
+			error: {
+				code: 'UNAUTHORIZED',
+				message: 'Acceso no autorizado. Se requiere un token de sesión con rol ADMIN.',
+			},
+		});
+		return;
+	}
+
+	let idUsuario: number;
+	try {
+		idUsuario = verifySessionToken(token);
+	} catch {
+		res.status(401).json({
+			error: {
+				code: 'INVALID_TOKEN',
+				message: 'Token de sesión inválido.',
+			},
+		});
+		return;
+	}
+
+	try {
+		const user = await obtenerUsuarioSesionRepository(idUsuario);
+		if (!user || user.estado !== 'A') {
+			res.status(401).json({
+				error: {
+					code: 'INVALID_TOKEN',
+					message: 'Token de sesión inválido.',
+				},
+			});
+			return;
+		}
+
+		if (user.rol !== 'ADMIN') {
+			res.status(403).json({
+				error: {
+					code: 'FORBIDDEN',
+					message: 'No posee los permisos necesarios para ver la documentación.',
+				},
+			});
+			return;
+		}
+
+		req.user = user;
+		next();
+	} catch (error) {
+		next(error);
+	}
+}
 
 /**
- * Documento OpenAPI en formato JSON (protegido para ADMIN y MODERADOR).
+ * Documento OpenAPI en formato JSON (protegido para ADMIN).
  */
-openApiRouter.get('/openapi.json', adminAuthMiddleware, (_request: Request, response: Response) => {
+openApiRouter.get('/openapi.json', docsAdminAuthMiddleware, (_request: Request, response: Response) => {
 	response.status(200).json(openApiDocument);
 });
 
@@ -24,7 +83,7 @@ openApiRouter.get('/openapi.json', adminAuthMiddleware, (_request: Request, resp
  */
 openApiRouter.use(
 	'/docs',
-	adminAuthMiddleware,
+	docsAdminAuthMiddleware,
 	(_request: Request, response: Response, next: NextFunction) => {
 		response.setHeader(
 			'Content-Security-Policy',

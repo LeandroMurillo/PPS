@@ -15,6 +15,18 @@ export default defineConfig({
 				target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
 				changeOrigin: true,
 			},
+			'/uploads': {
+				target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
+				changeOrigin: true,
+			},
+			'/docs': {
+				target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
+				changeOrigin: true,
+			},
+			'/openapi.json': {
+				target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3000',
+				changeOrigin: true,
+			},
 		},
 	},
 	build: {
