@@ -1,9 +1,7 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
-import { env } from '../src/config/env.js';
 import { convocatoriasRouter } from '../src/modules/convocatorias/convocatorias.routes.js';
 
 vi.mock('../src/middleware/auth-session.repository.js', () => ({
@@ -62,13 +60,15 @@ vi.mock('../src/modules/convocatorias/convocatorias.service.js', () => ({
 	cancelarPostulacionService: vi.fn(),
 }));
 
+import { createSessionToken } from '../src/modules/auth/session-token.js';
+
 const app = express();
 app.use(express.json());
 app.use('/api/convocatorias', convocatoriasRouter);
 
-const userToken = jwt.sign({}, env.JWT_SECRET, { subject: '1' });
-const moderatorToken = jwt.sign({}, env.JWT_SECRET, { subject: '10' });
-const adminToken = jwt.sign({}, env.JWT_SECRET, { subject: '20' });
+const userToken = createSessionToken(1);
+const moderatorToken = createSessionToken(10);
+const adminToken = createSessionToken(20);
 
 describe('Seguridad y privacidad en detalle de convocatorias (GET /api/convocatorias/:id)', () => {
 	it('oculta la lista de postulantes y sus datos personales a usuarios no autenticados', async () => {

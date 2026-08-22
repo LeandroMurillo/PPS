@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { logger } from '../shared/logger.js';
 import { verifySessionToken } from '../modules/auth/session-token.js';
 import { obtenerUsuarioSesionRepository } from './auth-session.repository.js';
 
@@ -22,6 +23,10 @@ declare global {
 export async function verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
 	const token = getRequestToken(req);
 	if (!token) {
+		logger.warn(
+			{ event: 'AUTH_TOKEN_MISSING', ip: req.ip, path: req.originalUrl },
+			'Petición rechazada: token ausente',
+		);
 		res.status(401).json({
 			error: {
 				code: 'UNAUTHORIZED',
@@ -35,7 +40,7 @@ export async function verifyToken(req: Request, res: Response, next: NextFunctio
 	try {
 		idUsuario = verifySessionToken(token);
 	} catch {
-		invalidSession(res);
+		invalidSession(req, res);
 		return;
 	}
 
@@ -43,7 +48,7 @@ export async function verifyToken(req: Request, res: Response, next: NextFunctio
 		const user = await obtenerUsuarioSesionRepository(idUsuario);
 
 		if (!user || user.estado !== 'A') {
-			invalidSession(res);
+			invalidSession(req, res);
 			return;
 		}
 
@@ -89,7 +94,11 @@ function getRequestToken(req: Request): string | undefined {
 	return undefined;
 }
 
-function invalidSession(res: Response): void {
+function invalidSession(req: Request, res: Response): void {
+	logger.warn(
+		{ event: 'AUTH_INVALID_SESSION', ip: req.ip, path: req.originalUrl },
+		'Sesión rechazada: token inválido o expirado',
+	);
 	res.status(401).json({
 		error: {
 			code: 'INVALID_TOKEN',
@@ -101,6 +110,10 @@ function invalidSession(res: Response): void {
 export function requireRole(...allowedRoles: string[]) {
 	return (req: Request, res: Response, next: NextFunction): void => {
 		if (!req.user) {
+			logger.warn(
+				{ event: 'AUTH_UNAUTHORIZED_NO_USER', ip: req.ip, path: req.originalUrl },
+				'Acceso denegado: usuario no autenticado',
+			);
 			res.status(401).json({
 				error: {
 					code: 'UNAUTHORIZED',
@@ -111,6 +124,17 @@ export function requireRole(...allowedRoles: string[]) {
 		}
 
 		if (!allowedRoles.includes(req.user.rol)) {
+			logger.warn(
+				{
+					event: 'AUTH_FORBIDDEN',
+					idUsuario: req.user.idUsuario,
+					rol: req.user.rol,
+					allowedRoles,
+					ip: req.ip,
+					path: req.originalUrl,
+				},
+				'Acceso denegado por rol insuficiente',
+			);
 			res.status(403).json({
 				error: {
 					code: 'FORBIDDEN',

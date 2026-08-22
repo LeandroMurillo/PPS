@@ -1,9 +1,7 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 
-import { env } from '../src/config/env.js';
 import { adminRouter } from '../src/modules/admin/admin.routes.js';
 
 vi.mock('../src/middleware/auth-session.repository.js', () => ({
@@ -15,13 +13,14 @@ vi.mock('../src/middleware/auth-session.repository.js', () => ({
 	})),
 }));
 
+import { createSessionToken } from '../src/modules/auth/session-token.js';
+
 const app = express();
 app.use(express.json());
 app.use('/api/admin', adminRouter);
 
-const moderatorToken = jwt.sign({}, env.JWT_SECRET, { subject: '10' });
-
-const adminToken = jwt.sign({}, env.JWT_SECRET, { subject: '20' });
+const moderatorToken = createSessionToken(10);
+const adminToken = createSessionToken(20);
 
 describe('autorización de rutas administrativas', () => {
 	it.each([

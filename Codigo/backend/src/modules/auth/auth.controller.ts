@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 
 import { verifyFirebaseIdToken } from '../../config/firebase-admin.js';
+import { logger } from '../../shared/logger.js';
 import { registrarUsuarioBodySchema } from './auth.schemas.js';
 import {
 	crearSesionFirebaseService,
@@ -33,6 +34,10 @@ export const registrarUsuarioController: RequestHandler = async (request, respon
 		const validationResult = registrarUsuarioBodySchema.safeParse(request.body);
 
 		if (!validationResult.success) {
+			logger.warn(
+				{ event: 'AUTH_REGISTER_VALIDATION_ERROR', ip: request.ip },
+				'Datos de registro inválidos recibidos',
+			);
 			response.status(400).json({
 				error: {
 					code: 'INVALID_REGISTRATION_DATA',
@@ -49,8 +54,20 @@ export const registrarUsuarioController: RequestHandler = async (request, respon
 
 		const identity = await getFirebaseIdentity(request);
 		const result = await registrarUsuarioService(validationResult.data, identity);
+		logger.info(
+			{
+				event: 'AUTH_REGISTER_SUCCESS',
+				idUsuario: result.usuario.idUsuario,
+				email: result.usuario.email,
+				ip: request.ip,
+			},
+			'Usuario registrado exitosamente',
+		);
 		response.status(201).json(result);
 	} catch (error) {
+		const reason = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+		logger.warn({ event: 'AUTH_REGISTER_FAILED', reason, ip: request.ip }, 'Fallo en registro de usuario');
+
 		if (error instanceof Error && error.message === 'FIREBASE_NOT_CONFIGURED') {
 			response.status(503).json({
 				error: { code: 'FIREBASE_NOT_CONFIGURED', message: 'Firebase no está configurado en el servidor.' },
@@ -97,8 +114,20 @@ export const crearSesionFirebaseController: RequestHandler = async (request, res
 	try {
 		const identity = await getFirebaseIdentity(request);
 		const result = await crearSesionFirebaseService(identity);
+		logger.info(
+			{
+				event: 'AUTH_LOGIN_SUCCESS',
+				idUsuario: result.usuario.idUsuario,
+				email: result.usuario.email,
+				ip: request.ip,
+			},
+			'Inicio de sesión exitoso',
+		);
 		response.status(200).json(result);
 	} catch (error) {
+		const reason = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+		logger.warn({ event: 'AUTH_LOGIN_FAILED', reason, ip: request.ip }, 'Intento de inicio de sesión fallido');
+
 		if (error instanceof Error) {
 			if (error.message === 'EMAIL_NOT_VERIFIED') {
 				response.status(403).json({
