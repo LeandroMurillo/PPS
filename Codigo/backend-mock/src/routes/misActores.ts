@@ -356,6 +356,10 @@ misActoresRouter.patch('/:id/estado', (req, res) => {
 misActoresRouter.delete('/:id', (req, res) => {
 	const id = Number(req.params.id);
 	db.actores = db.actores.filter((a) => a.id !== id);
+	db.portafolioItems = db.portafolioItems.filter((p) => p.idActor !== id);
+	db.eventos = db.eventos.filter((e) => e.idActor !== id);
+	db.integrantes = db.integrantes.filter((i) => i.idActor !== id);
+	db.postulaciones = db.postulaciones.filter((p) => p.idActor !== id);
 
 	return res.json({ message: 'Actor eliminado.' });
 });
