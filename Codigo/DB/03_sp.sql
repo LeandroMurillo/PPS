@@ -4773,6 +4773,12 @@ DECLARE vIdFirebaseExistente INT DEFAULT 0;
 
 DECLARE vNuevoId INT DEFAULT 0;
 
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+  ROLLBACK;
+  RESIGNAL;
+END;
+
 SET
   pEmail = LOWER(TRIM(pEmail));
 
@@ -4839,6 +4845,8 @@ SET
 
 END IF;
 
+START TRANSACTION;
+
 INSERT INTO
   `Usuarios` (
     `nombre`,
@@ -4891,6 +4899,8 @@ ON DUPLICATE KEY UPDATE
 DELETE FROM `IntegrantesNoRegistrados`
 WHERE
   email = pEmail;
+
+COMMIT;
 
 SELECT
   u.idUsuario,
@@ -6137,6 +6147,12 @@ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vNuevoEsIntegrante INT DEFAULT 0;
 
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+BEGIN
+  ROLLBACK;
+  RESIGNAL;
+END;
+
 SELECT
   COUNT(*) INTO vEsDueno
 FROM
@@ -6181,8 +6197,7 @@ UPDATE `Integrantes`
 SET
   esDueño = 0
 WHERE
-  idActor = pIdActor
-  AND idUsuario = pIdUsuarioActual;
+  idActor = pIdActor;
 
 UPDATE `Integrantes`
 SET

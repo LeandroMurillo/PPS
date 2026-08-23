@@ -52,9 +52,10 @@ type Props = {
 	open: boolean;
 	actor: MyActor | null;
 	onClose: () => void;
+	onOwnershipTransferred?: () => void;
 };
 
-export default function ActorMembersDialog({ open, actor, onClose }: Props) {
+export default function ActorMembersDialog({ open, actor, onClose, onOwnershipTransferred }: Props) {
 	const [integrantes, setIntegrantes] = React.useState<IntegranteApiItem[]>([]);
 	const [loading, setLoading] = React.useState(false);
 	const [submitting, setSubmitting] = React.useState(false);
@@ -249,7 +250,8 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 				scope: 'actor-members',
 			});
 			setTransferMember(null);
-			await loadMembers(actor.id);
+			onClose();
+			onOwnershipTransferred?.();
 		} catch (err) {
 			const errMsg = err instanceof Error ? err.message : 'Error al transferir titularidad.';
 			notify.error(errMsg, { scope: 'actor-members' });
@@ -584,8 +586,8 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 							?
 						</Typography>
 						<Alert severity="warning">
-							Perderás los privilegios de administración sobre este actor cultural (editar datos, portafolio, eventos
-							e integrantes). Pasarás a ser un integrante regular.
+							Perderás los privilegios de administración sobre este actor cultural (editar datos,
+							portafolio, eventos e integrantes). Pasarás a ser un integrante regular.
 						</Alert>
 					</Stack>
 				</DialogContent>

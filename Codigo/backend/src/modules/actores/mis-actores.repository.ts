@@ -682,14 +682,8 @@ export async function transferirTitularidadRepository(input: {
 	]);
 }
 
-export async function renunciarIntegranteRepository(input: {
-	idUsuario: number;
-	idActor: number;
-}) {
-	await pool.query('CALL sp_actor_renunciar_integrante(?, ?)', [
-		input.idUsuario,
-		input.idActor,
-	]);
+export async function renunciarIntegranteRepository(input: { idUsuario: number; idActor: number }) {
+	await pool.query('CALL sp_actor_renunciar_integrante(?, ?)', [input.idUsuario, input.idActor]);
 }
 
 const itemPortafolioArchivoRowSchema = z.object({

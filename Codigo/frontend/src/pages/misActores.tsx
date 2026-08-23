@@ -417,7 +417,11 @@ export default function MisActoresPage() {
 							</Tooltip>
 
 							<Tooltip title="Gestionar portafolio">
-								<IconButton size="small" color="secondary" onClick={() => handleOpenPortfolioModal(row)}>
+								<IconButton
+									size="small"
+									color="secondary"
+									onClick={() => handleOpenPortfolioModal(row)}
+								>
 									<CollectionsIcon fontSize="small" />
 								</IconButton>
 							</Tooltip>
@@ -683,10 +687,19 @@ export default function MisActoresPage() {
 											/>
 											<Chip label={typeLabels[actor.tipoActor]} size="small" variant="outlined" />
 											{actor.esDueno ? (
-												<Chip label="Titular" size="small" color="primary" sx={{ fontWeight: 600 }} />
+												<Chip
+													label="Titular"
+													size="small"
+													color="primary"
+													sx={{ fontWeight: 600 }}
+												/>
 											) : (
 												<Chip
-													label={actor.rolEnActor ? `Integrante (${actor.rolEnActor})` : 'Integrante'}
+													label={
+														actor.rolEnActor
+															? `Integrante (${actor.rolEnActor})`
+															: 'Integrante'
+													}
 													size="small"
 													color="secondary"
 													variant="outlined"
@@ -807,15 +820,14 @@ export default function MisActoresPage() {
 												</>
 											) : (
 												<Tooltip title="Renunciar a ser integrante">
-													<Button
+													<IconButton
 														size="small"
 														color="error"
-														variant="outlined"
-														startIcon={<ExitToAppIcon />}
 														onClick={() => handleOpenResignModal(actor)}
+														aria-label={`Renunciar a ser integrante de ${actor.nombre}`}
 													>
-														Renunciar
-													</Button>
+														<ExitToAppIcon fontSize="small" />
+													</IconButton>
 												</Tooltip>
 											)}
 										</Stack>
@@ -899,6 +911,9 @@ export default function MisActoresPage() {
 					setMembersModalOpen(false);
 					setTargetMembersActor(null);
 				}}
+				onOwnershipTransferred={() => {
+					void fetchMisActores();
+				}}
 			/>
 
 			{/* Events Dialog */}
@@ -928,12 +943,7 @@ export default function MisActoresPage() {
 			/>
 
 			{/* Resign Dialog */}
-			<Dialog
-				open={resignModalOpen}
-				onClose={handleCloseResignModal}
-				maxWidth="xs"
-				fullWidth
-			>
+			<Dialog open={resignModalOpen} onClose={handleCloseResignModal} maxWidth="xs" fullWidth>
 				<DialogTitle fontWeight={700}>Renunciar a ser integrante</DialogTitle>
 				<DialogContent dividers>
 					<Stack spacing={2}>
@@ -942,7 +952,8 @@ export default function MisActoresPage() {
 							<strong>{targetResignActor?.nombre}</strong>?
 						</Typography>
 						<Alert severity="info">
-							Tu membresía en este actor cultural será eliminada y dejarás de figurar en su nómina de integrantes.
+							Tu membresía en este actor cultural será eliminada y dejarás de figurar en su nómina de
+							integrantes.
 						</Alert>
 					</Stack>
 				</DialogContent>

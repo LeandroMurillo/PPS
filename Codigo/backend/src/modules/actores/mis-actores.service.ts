@@ -652,10 +652,6 @@ export async function transferirTitularidadService(input: {
 	await transferirTitularidadRepository(input);
 }
 
-export async function renunciarIntegranteService(input: {
-	idUsuario: number;
-	idActor: number;
-}) {
+export async function renunciarIntegranteService(input: { idUsuario: number; idActor: number }) {
 	await renunciarIntegranteRepository(input);
 }
-

@@ -57,6 +57,34 @@ const actorImageDataUrlSchema = z
 	.max(7_000_000)
 	.regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/);
 
+function sendControllerError(res: Response, error: unknown, fallback: string): void {
+	const message = getPublicErrorMessage(error, fallback);
+	if (/permisos|permiso|titular|dueño|no tenés|no podés/i.test(message)) {
+		res.status(403).json({
+			error: {
+				code: 'FORBIDDEN',
+				message,
+			},
+		});
+		return;
+	}
+	if (/no existe/i.test(message)) {
+		res.status(404).json({
+			error: {
+				code: 'NOT_FOUND',
+				message,
+			},
+		});
+		return;
+	}
+	res.status(400).json({
+		error: {
+			code: 'BAD_REQUEST',
+			message,
+		},
+	});
+}
+
 function normalizeUrl(value: string | null | undefined): string | null | undefined {
 	if (value === null || value === undefined) return value;
 	const trimmed = value.trim();
@@ -186,12 +214,7 @@ export async function listarMisActoresController(req: Request, res: Response): P
 
 		res.json(result);
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron listar tus actores culturales.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron listar tus actores culturales.');
 	}
 }
 
@@ -199,12 +222,7 @@ export async function obtenerOpcionesRegistroController(_req: Request, res: Resp
 	try {
 		res.json(await obtenerOpcionesRegistroService());
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron obtener las opciones de registro.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron obtener las opciones de registro.');
 	}
 }
 
@@ -213,12 +231,7 @@ export async function obtenerFormulariosAplicablesController(req: Request, res: 
 		const query = formulariosAplicablesQuerySchema.parse(req.query);
 		res.json(await obtenerFormulariosAplicablesService(query));
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron obtener los formularios aplicables.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron obtener los formularios aplicables.');
 	}
 }
 
@@ -234,12 +247,7 @@ export async function crearActorController(req: Request, res: Response): Promise
 
 		res.status(201).json({ data: result });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo crear el actor cultural.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo crear el actor cultural.');
 	}
 }
 
@@ -258,12 +266,7 @@ export async function editarActorController(req: Request, res: Response): Promis
 
 		res.json({ data: result, message: 'Actor cultural actualizado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo modificar el actor cultural.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo modificar el actor cultural.');
 	}
 }
 
@@ -280,12 +283,7 @@ export async function obtenerFormulariosActorController(req: Request, res: Respo
 
 		res.json(result);
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron obtener los formularios del actor.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron obtener los formularios del actor.');
 	}
 }
 
@@ -303,12 +301,7 @@ export async function cambiarEstadoActorController(req: Request, res: Response):
 
 		res.json({ message: `Estado actualizado a ${nuevoEstado} correctamente.` });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo cambiar el estado del actor.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo cambiar el estado del actor.');
 	}
 }
 
@@ -325,12 +318,7 @@ export async function eliminarActorController(req: Request, res: Response): Prom
 
 		res.json({ message: 'Actor cultural eliminado permanentemente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo eliminar el actor cultural.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo eliminar el actor cultural.');
 	}
 }
 
@@ -367,14 +355,9 @@ export async function eliminarItemPortafolioController(req: Request, res: Respon
 			idItem,
 		});
 
-		res.json({ message: 'Elemento de portafolio eliminado.' });
+		res.json({ message: 'Elemento eliminado del portafolio.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo eliminar el elemento del portafolio.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo eliminar el elemento del portafolio.');
 	}
 }
 
@@ -393,12 +376,7 @@ export async function listarPortafolioController(req: Request, res: Response): P
 			})),
 		});
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron listar los elementos del portafolio.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron listar los elementos del portafolio.');
 	}
 }
 
@@ -416,12 +394,7 @@ export async function agregarEventoController(req: Request, res: Response): Prom
 
 		res.status(201).json({ data: result });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo agregar el evento.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo agregar el evento.');
 	}
 }
 
@@ -440,12 +413,7 @@ export async function listarEventosController(req: Request, res: Response): Prom
 			})),
 		});
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron listar los eventos.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron listar los eventos.');
 	}
 }
 
@@ -463,12 +431,7 @@ export async function eliminarEventoController(req: Request, res: Response): Pro
 
 		res.json({ message: 'Evento eliminado.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo eliminar el evento.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo eliminar el evento.');
 	}
 }
 
@@ -515,12 +478,7 @@ export async function listarIntegrantesController(req: Request, res: Response): 
 
 		res.json({ data });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudieron listar los integrantes.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudieron listar los integrantes.');
 	}
 }
 
@@ -539,12 +497,7 @@ export async function agregarIntegranteController(req: Request, res: Response): 
 
 		res.status(201).json({ message: 'Integrante agregado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo agregar el integrante.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo agregar el integrante.');
 	}
 }
 
@@ -562,12 +515,7 @@ export async function eliminarIntegranteController(req: Request, res: Response):
 
 		res.json({ message: 'Integrante eliminado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo eliminar el integrante.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo eliminar el integrante.');
 	}
 }
 
@@ -587,12 +535,7 @@ export async function editarIntegranteController(req: Request, res: Response): P
 
 		res.json({ message: 'Integrante modificado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo modificar el integrante.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo modificar el integrante.');
 	}
 }
 
@@ -610,12 +553,7 @@ export async function agregarIntegranteNoRegistradoController(req: Request, res:
 
 		res.status(201).json({ message: 'Integrante sin cuenta agregado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo agregar el integrante.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo agregar el integrante.');
 	}
 }
 
@@ -635,12 +573,7 @@ export async function editarIntegranteNoRegistradoController(req: Request, res: 
 
 		res.json({ message: 'Integrante modificado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo modificar el integrante.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo modificar el integrante.');
 	}
 }
 
@@ -658,12 +591,7 @@ export async function eliminarIntegranteNoRegistradoController(req: Request, res
 
 		res.json({ message: 'Integrante eliminado correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo eliminar el integrante.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo eliminar el integrante.');
 	}
 }
 
@@ -685,12 +613,7 @@ export async function transferirTitularidadController(req: Request, res: Respons
 
 		res.json({ message: 'Titularidad transferida correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo transferir la titularidad.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo transferir la titularidad.');
 	}
 }
 
@@ -706,12 +629,6 @@ export async function renunciarIntegranteController(req: Request, res: Response)
 
 		res.json({ message: 'Has renunciado al actor cultural correctamente.' });
 	} catch (error) {
-		res.status(400).json({
-			error: {
-				code: 'BAD_REQUEST',
-				message: getPublicErrorMessage(error, 'No se pudo procesar la renuncia.'),
-			},
-		});
+		sendControllerError(res, error, 'No se pudo procesar la renuncia.');
 	}
 }
-

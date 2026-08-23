@@ -531,4 +531,3 @@ export async function renunciarIntegranteApi(idActor: number) {
 		method: 'POST',
 	});
 }
-
