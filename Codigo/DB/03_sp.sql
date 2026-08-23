@@ -1665,25 +1665,22 @@ BEGIN DECLARE vNextId INT;
 
 DECLARE vEstado CHAR(1);
 
+DECLARE vCategoriaBloqueada INT;
+
+DECLARE EXIT
+HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+
+RESIGNAL;
+
+END;
+
 IF pIdCategoria IS NULL
 OR pIdCategoria <= 0 THEN
 SIGNAL SQLSTATE '45000'
 SET
   MESSAGE_TEXT = 'El identificador de la categoría no es válido.';
-
-END IF;
-
-IF NOT EXISTS (
-  SELECT
-    1
-  FROM
-    `Categorias`
-  WHERE
-    idCategoria = pIdCategoria
-) THEN
-SIGNAL SQLSTATE '45000'
-SET
-  MESSAGE_TEXT = 'La categoría solicitada no existe.';
 
 END IF;
 
@@ -1706,6 +1703,23 @@ SET
 
 END IF;
 
+START TRANSACTION;
+
+SELECT
+  c.idCategoria INTO vCategoriaBloqueada
+FROM
+  `Categorias` c
+WHERE
+  c.idCategoria = pIdCategoria FOR
+UPDATE;
+
+IF vCategoriaBloqueada IS NULL THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'La categoría solicitada no existe.';
+
+END IF;
+
 SELECT
   COALESCE(MAX(idSubcategoria), 0) + 1 INTO vNextId
 FROM
@@ -1717,6 +1731,8 @@ INSERT INTO
   `Subcategorias` (idCategoria, idSubcategoria, nombre, estado)
 VALUES
   (pIdCategoria, vNextId, TRIM(pNombre), vEstado);
+
+COMMIT;
 
 CALL `sp_admin_obtener_subcategoria` (pIdCategoria, vNextId);
 
@@ -5166,6 +5182,17 @@ DECLARE vIdUsuarioBloqueado INT;
 
 DECLARE vCantidadPendientes INT DEFAULT 0;
 
+DECLARE EXIT
+HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+
+RESIGNAL;
+
+END;
+
+START TRANSACTION;
+
 SELECT
   idUsuario INTO vIdUsuarioBloqueado
 FROM
@@ -5219,6 +5246,8 @@ INSERT INTO
 VALUES
   (pIdUsuario, vIdActor, 'Contacto Principal', 1);
 
+COMMIT;
+
 SELECT
   vIdActor AS idActor;
 
@@ -5248,6 +5277,15 @@ BEGIN DECLARE vIdUbicacion INT;
 
 DECLARE vEsDueno INT DEFAULT 0;
 
+DECLARE EXIT
+HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+
+RESIGNAL;
+
+END;
+
 SELECT
   COUNT(*) INTO vEsDueno
 FROM
@@ -5272,6 +5310,8 @@ FROM
 WHERE
   idActor = pIdActor;
 
+START TRANSACTION;
+
 UPDATE `Ubicaciones`
 SET
   departamento = pDepartamento,
@@ -5292,6 +5332,8 @@ SET
   estado = IF (COALESCE(pEsAdmin, 0) = 1, estado, 'P')
 WHERE
   idActor = pIdActor;
+
+COMMIT;
 
 END //
 -- -----------------------------------------------------
@@ -5437,6 +5479,15 @@ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vIdUbicacion INT;
 
+DECLARE EXIT
+HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+
+RESIGNAL;
+
+END;
+
 SELECT
   COUNT(*) INTO vEsDueno
 FROM
@@ -5460,6 +5511,8 @@ FROM
   `Actores`
 WHERE
   idActor = pIdActor;
+
+START TRANSACTION;
 
 DELETE FROM `Respuestas`
 WHERE
@@ -5491,6 +5544,8 @@ WHERE
   idUbicacion = vIdUbicacion;
 
 END IF;
+
+COMMIT;
 
 END //
 -- -----------------------------------------------------
@@ -6994,6 +7049,15 @@ REPLACE
   PROCEDURE `sp_convocatoria_eliminar` (IN pIdConvocatoria INT) MODIFIES SQL DATA COMMENT 'Elimina una convocatoria y sus postulaciones asociadas.'
 BEGIN DECLARE vExiste INT;
 
+DECLARE EXIT
+HANDLER FOR SQLEXCEPTION
+BEGIN
+ROLLBACK;
+
+RESIGNAL;
+
+END;
+
 SELECT
   COUNT(*) INTO vExiste
 FROM
@@ -7008,6 +7072,8 @@ SET
 
 END IF;
 
+START TRANSACTION;
+
 -- Eliminar postulaciones vinculadas
 DELETE FROM `Postulaciones`
 WHERE
@@ -7017,6 +7083,8 @@ WHERE
 DELETE FROM `Convocatorias`
 WHERE
   idConvocatoria = pIdConvocatoria;
+
+COMMIT;
 
 END //
 -- -----------------------------------------------------
