@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 
 import { verifyFirebaseIdToken } from '../../config/firebase-admin.js';
 import { logger } from '../../shared/logger.js';
+import { getPublicErrorMessage } from '../../shared/public-error.js';
 import { registrarUsuarioBodySchema } from './auth.schemas.js';
 import {
 	crearSesionFirebaseService,
@@ -96,11 +97,17 @@ export const registrarUsuarioController: RequestHandler = async (request, respon
 			return;
 		}
 
-		if (error instanceof Error && (error.message.includes('registrado') || error.message.includes('existe'))) {
+		if (
+			error instanceof Error &&
+			(error.message.includes('registrado') ||
+				error.message.includes('existe') ||
+				error.message.includes('45000') ||
+				(error as { errno?: number }).errno === 1644)
+		) {
 			response.status(409).json({
 				error: {
 					code: 'USER_ALREADY_EXISTS',
-					message: error.message,
+					message: getPublicErrorMessage(error, 'El usuario o dato ingresado ya se encuentra registrado.'),
 				},
 			});
 			return;

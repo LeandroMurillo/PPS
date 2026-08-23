@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, reload, signOut, updateProfile } from 'firebase/auth';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import BadgeIcon from '@mui/icons-material/Badge';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import SendIcon from '@mui/icons-material/Send';
 import {
@@ -64,16 +63,19 @@ function validarCUIL(cuil: string): boolean {
 	return Number(cleaned[10]) === expectedDigit;
 }
 
-const STEPS = ['Datos personales y Documento', 'Confirmación de información', 'Registro completado'];
+const STEPS = ['Datos personales y Documento', 'Confirmación de información'];
 
 export default function RegistroDatosPage() {
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 	const navigate = useNavigate();
 
+	const isCompletingRegistrationRef = useRef(false);
 	const [authChecking, setAuthChecking] = useState(true);
 	const [activeStep, setActiveStep] = useState(0);
 	const [actividadesArca, setActividadesArca] = useState<ActividadArca[]>([]);
+	const [loadingActividades, setLoadingActividades] = useState(false);
+	const [errorActividades, setErrorActividades] = useState(false);
 
 	// Form state
 	const [formData, setFormData] = useState({
@@ -91,16 +93,31 @@ export default function RegistroDatosPage() {
 	const [documentoFileName, setDocumentoFileName] = useState('');
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(false);
-	const [registroExitoso, setRegistroExitoso] = useState<string | null>(null);
+
+	const cargarActividades = async () => {
+		setLoadingActividades(true);
+		setErrorActividades(false);
+		try {
+			const list = await obtenerActividadesArcaApi();
+			setActividadesArca(list);
+		} catch (err) {
+			console.error('Error al cargar actividades ARCA:', err);
+			setErrorActividades(true);
+		} finally {
+			setLoadingActividades(false);
+		}
+	};
 
 	useEffect(() => {
-		obtenerActividadesArcaApi()
-			.then((list) => setActividadesArca(list))
-			.catch(() => setActividadesArca([]));
+		void cargarActividades();
 	}, []);
 
 	useEffect(() => {
 		return onAuthStateChanged(firebaseAuth, async (currentUser) => {
+			if (isCompletingRegistrationRef.current) {
+				return;
+			}
+
 			if (!currentUser) {
 				notify.warning('Debés crear tu cuenta de acceso o iniciar sesión para continuar.', {
 					scope: 'registro-datos',
@@ -301,12 +318,15 @@ export default function RegistroDatosPage() {
 				displayName: `${payload.nombre} ${payload.apellido}`.trim(),
 			});
 			await currentUser.getIdToken(true);
+			isCompletingRegistrationRef.current = true;
 			const res = await registrarUsuarioApi(payload);
+			notify.success(res.mensaje || '¡Cuenta registrada exitosamente! Ya podés iniciar sesión.', {
+				scope: 'registro',
+			});
 			await signOut(firebaseAuth);
-			setRegistroExitoso(res.mensaje);
-			notify.success('¡Cuenta registrada exitosamente!', { scope: 'registro' });
-			setActiveStep(2);
+			navigate('/login', { replace: true });
 		} catch (err) {
+			isCompletingRegistrationRef.current = false;
 			const msg = err instanceof Error ? err.message : 'Ocurrió un error inesperado al registrar la cuenta.';
 			notify.error(msg, { scope: 'registro' });
 		} finally {
@@ -493,6 +513,7 @@ export default function RegistroDatosPage() {
 								<Grid size={{ xs: 12 }}>
 									<Autocomplete
 										options={actividadesArca}
+										loading={loadingActividades}
 										getOptionLabel={(option) => `${option.codigo} - ${option.descripcion}`}
 										value={
 											actividadesArca.find((a) => a.codigo === formData.actividadesArcaCodigo) ||
@@ -515,16 +536,39 @@ export default function RegistroDatosPage() {
 											<TextField
 												{...params}
 												label="Código de Actividad Rentas/ARCA (Opcional)"
-												placeholder="Seleccioná tu actividad económica de la lista"
+												placeholder={
+													loadingActividades
+														? 'Cargando actividades...'
+														: 'Seleccioná tu actividad económica de la lista'
+												}
 												error={!!formErrors.actividadesArcaCodigo}
 												helperText={
 													formErrors.actividadesArcaCodigo ||
-													'Seleccioná tu código de actividad formal registrado en Rentas/ARCA'
+													(errorActividades
+														? 'No pudimos cargar la lista de actividades de ARCA. Podés continuar o reintentar.'
+														: 'Seleccioná tu código de actividad formal registrado en Rentas/ARCA')
 												}
 											/>
 										)}
-										noOptionsText="No se encontraron actividades"
+										noOptionsText={
+											errorActividades
+												? 'Error al cargar actividades'
+												: loadingActividades
+													? 'Cargando actividades...'
+													: 'No se encontraron actividades'
+										}
 									/>
+									{errorActividades && (
+										<Button
+											size="small"
+											variant="text"
+											onClick={() => void cargarActividades()}
+											disabled={loadingActividades}
+											sx={{ mt: 0.5 }}
+										>
+											{loadingActividades ? 'Reintentando...' : 'Reintentar cargar actividades'}
+										</Button>
+									)}
 								</Grid>
 
 								{/* Documento de identidad */}
@@ -759,35 +803,6 @@ export default function RegistroDatosPage() {
 									size="large"
 								>
 									{loading ? 'Registrando...' : 'Confirmar y Registrarse'}
-								</Button>
-							</Box>
-						</Box>
-					)}
-
-					{/* PASO 3: Registro completado */}
-					{activeStep === 2 && (
-						<Box sx={{ textAlign: 'center', py: 4 }}>
-							<CheckCircleOutlineIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-
-							<Typography variant="h5" fontWeight="bold" gutterBottom color="success.main">
-								¡Registro Completado con Éxito!
-							</Typography>
-
-							<Typography
-								variant="body1"
-								color="text.secondary"
-								paragraph
-								sx={{ maxWidth: 600, mx: 'auto', mb: 3 }}
-							>
-								{registroExitoso || 'Tu cuenta se encuentra activada. Ya podés iniciar sesión.'}
-							</Typography>
-
-							<Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-								<Button variant="contained" onClick={() => navigate('/login')} size="large">
-									Iniciar Sesión
-								</Button>
-								<Button variant="outlined" onClick={() => navigate('/')} size="large">
-									Ir al Mapa Principal
 								</Button>
 							</Box>
 						</Box>

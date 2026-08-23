@@ -25,6 +25,22 @@ function resolveUrl(path: string): string {
 	return `${base}${normalizedPath}`;
 }
 
+function sanitizeErrorMessage(rawMessage: string): string {
+	const match = rawMessage.match(/SQLState:\s*45000\)\s*([\s\S]*?)(?:\s+sql:\s|$)/i);
+	if (match?.[1]?.trim()) {
+		return match[1].trim();
+	}
+	if (/\b(?:conn:\s*\d+|SQLState:|sql:\s)/i.test(rawMessage)) {
+		const cleaned = rawMessage
+			.replace(/^\(conn:\s*\d+,\s*no:\s*\d+,\s*SQLState:\s*[^)]+\)\s*/i, '')
+			.replace(/\s+sql:\s+CALL[\s\S]*$/i, '')
+			.replace(/\s+sql:\s+SELECT[\s\S]*$/i, '')
+			.trim();
+		if (cleaned) return cleaned;
+	}
+	return rawMessage;
+}
+
 export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promise<T> {
 	const headers = new Headers(init?.headers);
 	const authMode = init?.authMode ?? 'application';
@@ -33,7 +49,7 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
 
 	const token =
 		authMode === 'firebase'
-			? await firebaseAuth.currentUser?.getIdToken(true)
+			? await firebaseAuth.currentUser?.getIdToken()
 			: authMode === 'application' && typeof localStorage !== 'undefined'
 				? localStorage.getItem(TOKEN_STORAGE_KEY)
 				: null;
@@ -62,7 +78,7 @@ export async function apiRequest<T>(path: string, init?: ApiRequestInit): Promis
 			// La respuesta de error no siempre es JSON.
 		}
 
-		throw new Error(message);
+		throw new Error(sanitizeErrorMessage(message));
 	}
 
 	return (await response.json()) as T;

@@ -26,12 +26,17 @@ import {
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 
+import { crearSesionFirebaseApi } from '../api/auth';
 import { firebaseAuth } from '../config/firebase';
 import { getFirebaseErrorMessage } from '../utils/firebaseError';
 import { getGoogleRedirectResult, signInWithGoogle } from '../utils/googleAuth';
 import { notify } from '../utils/toast';
 
 const RESEND_COOLDOWN_SECONDS = 30;
+const INITIAL_POLL_INTERVAL_MS = 2000;
+const POLL_BACKOFF_FACTOR = 1.5;
+const MAX_POLL_INTERVAL_MS = 15000;
+const MAX_POLL_TOTAL_TIME_MS = 90000;
 
 export default function RegistroPage() {
 	const { mode, systemMode } = useColorScheme();
@@ -44,8 +49,33 @@ export default function RegistroPage() {
 	const [accessPasswordConfirmation, setAccessPasswordConfirmation] = useState('');
 
 	const [loading, setLoading] = useState(false);
+	const [checkingVerification, setCheckingVerification] = useState(false);
 	const [resendingEmail, setResendingEmail] = useState(false);
 	const [resendCooldown, setResendCooldown] = useState(0);
+	const [pollCycleKey, setPollCycleKey] = useState(0);
+
+	const handleGoogleAuthResult = async () => {
+		try {
+			const sessionRes = await crearSesionFirebaseApi();
+			localStorage.setItem('mosaico_cultural_token', sessionRes.token);
+			localStorage.setItem('mosaico_cultural_user_session', JSON.stringify(sessionRes.usuario));
+			notify.success(`¡Bienvenido de nuevo, ${sessionRes.usuario.nombre}!`, { scope: 'login' });
+			navigate('/');
+		} catch (error) {
+			const message = getFirebaseErrorMessage(error, '');
+			if (
+				(error instanceof Error && error.message.includes('completar el registro')) ||
+				message.includes('completar el registro') ||
+				message.includes('PROFILE_INCOMPLETE')
+			) {
+				navigate('/registro/datos');
+			} else {
+				notify.error(getFirebaseErrorMessage(error, 'No se pudo iniciar sesión con Google.'), {
+					scope: 'registro-google',
+				});
+			}
+		}
+	};
 
 	useEffect(() => {
 		return onAuthStateChanged(firebaseAuth, async (currentUser) => {
@@ -69,8 +99,8 @@ export default function RegistroPage() {
 	useEffect(() => {
 		void getGoogleRedirectResult()
 			.then((credential) => {
-				if (credential?.user?.emailVerified) {
-					navigate('/registro/datos');
+				if (credential?.user) {
+					void handleGoogleAuthResult();
 				}
 			})
 			.catch((error) => {
@@ -95,12 +125,59 @@ export default function RegistroPage() {
 		return () => window.clearInterval(timer);
 	}, [resendCooldown]);
 
+	// Sondeo automático con retroceso exponencial para detectar verificación en segundo plano
+	useEffect(() => {
+		if (!verificationPending) return;
+
+		let active = true;
+		let timeoutId: number | undefined;
+		let currentInterval = INITIAL_POLL_INTERVAL_MS;
+		const startTime = Date.now();
+
+		const poll = async () => {
+			if (!active) return;
+
+			const elapsed = Date.now() - startTime;
+			if (elapsed >= MAX_POLL_TOTAL_TIME_MS) {
+				return;
+			}
+
+			try {
+				const currentUser = firebaseAuth.currentUser;
+				if (currentUser) {
+					await reload(currentUser);
+					if (currentUser.emailVerified && active) {
+						notify.success('¡Correo verificado con éxito!', { scope: 'registro' });
+						navigate('/registro/datos');
+						return;
+					}
+				}
+			} catch (error) {
+				console.error('Error en sondeo automático de correo:', error);
+			}
+
+			if (!active) return;
+
+			timeoutId = window.setTimeout(poll, currentInterval);
+			currentInterval = Math.min(currentInterval * POLL_BACKOFF_FACTOR, MAX_POLL_INTERVAL_MS);
+		};
+
+		timeoutId = window.setTimeout(poll, currentInterval);
+
+		return () => {
+			active = false;
+			if (timeoutId) {
+				window.clearTimeout(timeoutId);
+			}
+		};
+	}, [verificationPending, pollCycleKey, navigate]);
+
 	const handleGoogleRegistration = async () => {
 		setLoading(true);
 		try {
 			const credential = await signInWithGoogle();
 			if (credential?.user) {
-				navigate('/registro/datos');
+				await handleGoogleAuthResult();
 			}
 		} catch (error) {
 			notify.error(getFirebaseErrorMessage(error, 'No se pudo continuar con Google.'), {
@@ -118,7 +195,7 @@ export default function RegistroPage() {
 			return;
 		}
 		if (accessPassword.length < 6 || !/^(?=.*[a-zA-Z])(?=.*\d)/.test(accessPassword)) {
-			notify.error('La contraseña debe tener al menos seis caracteres, letras y números.', {
+			notify.error('La contraseña debe tener al menos seis caracteres, incluyendo letras y números.', {
 				scope: 'registro-identidad',
 			});
 			return;
@@ -136,6 +213,7 @@ export default function RegistroPage() {
 			});
 			setAccessEmail(trimmedEmail);
 			setVerificationPending(true);
+			setPollCycleKey((prev) => prev + 1);
 			setResendCooldown(RESEND_COOLDOWN_SECONDS);
 			notify.info(
 				'Te enviamos un correo para verificar tu cuenta. Si no lo ves en tu bandeja de entrada, revisá la carpeta de Spam / Correo no deseado.',
@@ -147,6 +225,32 @@ export default function RegistroPage() {
 			});
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleCheckVerification = async () => {
+		setCheckingVerification(true);
+		try {
+			const currentUser = firebaseAuth.currentUser;
+			if (!currentUser) {
+				throw new Error('No se encontró una sesión activa. Volvé a ingresar tu correo.');
+			}
+			await reload(currentUser);
+			if (currentUser.emailVerified) {
+				notify.success('¡Correo electrónico verificado con éxito!', { scope: 'registro' });
+				navigate('/registro/datos');
+				return;
+			}
+			notify.info(
+				'El correo todavía no figura como verificado. Si ya hiciste clic en el enlace, aguardá unos segundos o revisá tu carpeta de Spam.',
+				{ scope: 'registro-identidad' },
+			);
+		} catch (error) {
+			notify.error(getFirebaseErrorMessage(error, 'No se pudo comprobar la verificación.'), {
+				scope: 'registro-identidad',
+			});
+		} finally {
+			setCheckingVerification(false);
 		}
 	};
 
@@ -163,6 +267,7 @@ export default function RegistroPage() {
 				url: `${window.location.origin}/registro/datos`,
 			});
 			setResendCooldown(RESEND_COOLDOWN_SECONDS);
+			setPollCycleKey((prev) => prev + 1);
 			notify.success(
 				'Te enviamos un nuevo enlace de verificación. Recordá revisar la bandeja principal y la carpeta de Spam o correo no deseado.',
 				{ scope: 'registro-identidad', autoClose: 8000 },
@@ -334,7 +439,7 @@ export default function RegistroPage() {
 								</Typography>
 								<Typography variant="body2" paragraph sx={{ mb: 1.5 }}>
 									2. Al hacer clic en el enlace, ingresarás automáticamente a la pantalla para{' '}
-									<strong>completar tus datos personales.</strong>.
+									<strong>completar tus datos personales</strong>.
 								</Typography>
 								<Alert
 									severity="success"
@@ -355,6 +460,19 @@ export default function RegistroPage() {
 
 							<Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="center">
 								<Button
+									variant="contained"
+									onClick={handleCheckVerification}
+									disabled={checkingVerification || loading}
+									size="large"
+								>
+									{checkingVerification ? (
+										<CircularProgress size={20} color="inherit" />
+									) : (
+										'Ya verifiqué mi correo'
+									)}
+								</Button>
+
+								<Button
 									variant="outlined"
 									startIcon={<SendIcon />}
 									onClick={handleResendVerificationEmail}
@@ -374,7 +492,7 @@ export default function RegistroPage() {
 									variant="text"
 									color="inherit"
 									onClick={handleUseAnotherEmail}
-									disabled={loading || resendingEmail}
+									disabled={loading || resendingEmail || checkingVerification}
 									size="large"
 								>
 									Usar otro correo
