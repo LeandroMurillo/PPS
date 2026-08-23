@@ -8,6 +8,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CategoryIcon from '@mui/icons-material/Category';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import CodeIcon from '@mui/icons-material/Code';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import GroupIcon from '@mui/icons-material/Group';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
@@ -136,6 +137,11 @@ function AppContent() {
 						segment: 'categorias',
 						icon: <CategoryIcon />,
 						pattern: 'categorias{/:categoriaSlug}*',
+					},
+					{
+						title: 'Auditoría DB',
+						segment: 'auditoria',
+						icon: <FactCheckIcon />,
 					},
 					{
 						title: 'Docs API',

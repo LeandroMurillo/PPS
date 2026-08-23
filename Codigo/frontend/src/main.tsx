@@ -17,6 +17,7 @@ import Actores from './pages/actores';
 import ProximosEventosPage from './pages/proximosEventos';
 import AdminActorDetallePage from './pages/adminActorDetalle';
 import AdminActoresPage from './pages/adminActores';
+import AdminAuditoriaPage from './pages/adminAuditoria';
 import AdminCategoriaDetallePage from './pages/adminCategoriaDetalle';
 import AdminCategoriaFormularioPage from './pages/adminCategoriaFormulario';
 import AdminCategoriasPage from './pages/adminCategorias';
@@ -248,6 +249,14 @@ const router = createBrowserRouter([
 						element: (
 							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriasPage />
+							</ProtectedRoute>
+						),
+					},
+					{
+						path: 'auditoria',
+						element: (
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
+								<AdminAuditoriaPage />
 							</ProtectedRoute>
 						),
 					},

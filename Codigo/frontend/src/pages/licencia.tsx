@@ -125,11 +125,17 @@ limitations under the License.`}
 				</Paper>
 
 				{/* Métricas de Impacto Cultural */}
-				<Box sx={{ mt: 3, justifyContent: 'center'  }}>
+				<Box sx={{ mt: 3, justifyContent: 'center' }}>
 					<Typography
 						variant="subtitle2"
 						color="text.secondary"
-						sx={{ mb: 1.5, textAlign: 'center', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}
+						sx={{
+							mb: 1.5,
+							textAlign: 'center',
+							fontWeight: 600,
+							textTransform: 'uppercase',
+							letterSpacing: 0.8,
+						}}
 					>
 						Impacto Territorial de la Plataforma
 					</Typography>
