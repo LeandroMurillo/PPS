@@ -161,6 +161,7 @@ const actorDetalleEventoDatabaseRowSchema = z.object({
 
 const actorDetalleRespuestaDatabaseRowSchema = z.object({
 	pregunta: z.string(),
+	tipoDato: z.string().nullable().optional(),
 	respuesta: databaseAnswerValueSchema,
 	publica: databaseBooleanSchema.optional(),
 });

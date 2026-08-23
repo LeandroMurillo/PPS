@@ -9,6 +9,7 @@ import {
 	formatSurveyDate,
 	getWhatsAppPhoneUrl,
 	isLikelyMobilePhone,
+	isValidSurveyDate,
 	isValidSurveyEmail,
 	isValidSurveyPhone,
 	isValidSurveyUrl,
@@ -47,7 +48,92 @@ export default function SurveyAnswerDisplay({
 
 	const textValue = String(value).trim();
 
-	if (tipoDato === 'FECHA') {
+	if (tipoDato) {
+		switch (tipoDato) {
+			case 'FECHA':
+				return (
+					<Typography variant="body2" color="text.secondary">
+						{formatSurveyDate(textValue)}
+					</Typography>
+				);
+			case 'EMAIL':
+				return (
+					<AnswerLink href={`mailto:${textValue}`} icon={<EmailOutlinedIcon fontSize="small" />}>
+						{textValue}
+					</AnswerLink>
+				);
+			case 'TELEFONO': {
+				const isMobile = isLikelyMobilePhone(textValue);
+				const waUrl = isMobile ? getWhatsAppPhoneUrl(textValue) : null;
+				const href = waUrl ?? `tel:${textValue}`;
+				const icon = waUrl ? <WhatsAppIcon fontSize="small" /> : <PhoneOutlinedIcon fontSize="small" />;
+				return (
+					<AnswerLink href={href} icon={icon}>
+						{textValue}
+					</AnswerLink>
+				);
+			}
+			case 'URL': {
+				if (isValidSurveyUrl(textValue)) {
+					const href = normalizeSurveyUrl(textValue);
+					return (
+						<AnswerLink href={href} icon={<LinkIcon fontSize="small" />}>
+							{textValue.replace(/^https?:\/\//i, '')}
+							<OpenInNewIcon sx={{ fontSize: 14, ml: 0.5 }} />
+						</AnswerLink>
+					);
+				}
+				return (
+					<Typography variant="body2" color="text.secondary">
+						{textValue}
+					</Typography>
+				);
+			}
+			case 'OPCION_MULTIPLE':
+			case 'OPCION_MULTIPLE_CHIPS':
+			case 'TAGS': {
+				let items: string[] = [];
+				if (textValue.startsWith('[') && textValue.endsWith(']')) {
+					try {
+						const parsed = JSON.parse(textValue);
+						if (Array.isArray(parsed)) {
+							items = parsed.map(String);
+						}
+					} catch {
+						// ignore
+					}
+				}
+				if (items.length === 0 && textValue.includes(',')) {
+					items = textValue
+						.split(',')
+						.map((s) => s.trim())
+						.filter(Boolean);
+				}
+				if (items.length > 0) {
+					return (
+						<Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+							{items.map((item) => (
+								<Chip key={item} label={item} size="small" variant="outlined" />
+							))}
+						</Stack>
+					);
+				}
+				return (
+					<Typography variant="body2" color="text.secondary">
+						{textValue}
+					</Typography>
+				);
+			}
+			default:
+				return (
+					<Typography variant="body2" color="text.secondary">
+						{textValue}
+					</Typography>
+				);
+		}
+	}
+
+	if (isValidSurveyDate(textValue)) {
 		return (
 			<Typography variant="body2" color="text.secondary">
 				{formatSurveyDate(textValue)}
@@ -55,17 +141,7 @@ export default function SurveyAnswerDisplay({
 		);
 	}
 
-	if (tipoDato === 'URL' || (!tipoDato && isValidSurveyUrl(textValue))) {
-		const href = normalizeSurveyUrl(textValue);
-		return (
-			<AnswerLink href={href} icon={<LinkIcon fontSize="small" />}>
-				{textValue.replace(/^https?:\/\//i, '')}
-				<OpenInNewIcon sx={{ fontSize: 14, ml: 0.5 }} />
-			</AnswerLink>
-		);
-	}
-
-	if (tipoDato === 'EMAIL' || (!tipoDato && isValidSurveyEmail(textValue))) {
+	if (isValidSurveyEmail(textValue)) {
 		return (
 			<AnswerLink href={`mailto:${textValue}`} icon={<EmailOutlinedIcon fontSize="small" />}>
 				{textValue}
@@ -73,7 +149,7 @@ export default function SurveyAnswerDisplay({
 		);
 	}
 
-	if (tipoDato === 'TELEFONO' || (!tipoDato && isValidSurveyPhone(textValue))) {
+	if (isValidSurveyPhone(textValue)) {
 		const isMobile = isLikelyMobilePhone(textValue);
 		const waUrl = isMobile ? getWhatsAppPhoneUrl(textValue) : null;
 		const href = waUrl ?? `tel:${textValue}`;
@@ -81,6 +157,16 @@ export default function SurveyAnswerDisplay({
 		return (
 			<AnswerLink href={href} icon={icon}>
 				{textValue}
+			</AnswerLink>
+		);
+	}
+
+	if (isValidSurveyUrl(textValue)) {
+		const href = normalizeSurveyUrl(textValue);
+		return (
+			<AnswerLink href={href} icon={<LinkIcon fontSize="small" />}>
+				{textValue.replace(/^https?:\/\//i, '')}
+				<OpenInNewIcon sx={{ fontSize: 14, ml: 0.5 }} />
 			</AnswerLink>
 		);
 	}

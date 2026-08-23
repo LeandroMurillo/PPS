@@ -12,9 +12,37 @@ export function normalizeSurveyUrl(value: string): string {
 }
 
 export function isValidSurveyUrl(value: string): boolean {
+	const trimmed = value.trim();
+	if (!trimmed || /\s/.test(trimmed)) return false;
+	if (EMAIL_PATTERN.test(trimmed)) return false;
+	if (/^\d+$/.test(trimmed) || /^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return false;
+
+	const hasScheme = /^[a-z][a-z\d+.-]*:\/\//i.test(trimmed);
+	if (!hasScheme) {
+		const hostPart = trimmed.split('/')[0].split('?')[0].split('#')[0];
+		if (!hostPart.includes('.') && !hostPart.startsWith('localhost')) {
+			return false;
+		}
+	}
+
 	try {
-		const parsed = new URL(normalizeSurveyUrl(value));
-		return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+		const parsed = new URL(normalizeSurveyUrl(trimmed));
+		if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+			return false;
+		}
+		const hostname = parsed.hostname;
+		if (!hostname || /^\d+$/.test(hostname)) {
+			return false;
+		}
+		if (hostname !== 'localhost' && !hostname.includes('.')) {
+			return false;
+		}
+		const parts = hostname.split('.');
+		const tld = parts[parts.length - 1];
+		if (!/^\d+$/.test(tld) && (tld.length < 2 || !/^[a-z]{2,}$/i.test(tld))) {
+			return false;
+		}
+		return true;
 	} catch {
 		return false;
 	}

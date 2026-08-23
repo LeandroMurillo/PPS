@@ -2686,6 +2686,7 @@ ORDER BY
 -- =====================================================
 SELECT
   p.pregunta,
+  p.tipoDato,
   r.valor AS respuesta,
   pf.esPublico AS publica
 FROM

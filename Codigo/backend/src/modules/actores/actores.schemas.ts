@@ -366,6 +366,11 @@ export const actorDetalleRespuestaSchema = z
 			example: 'Género musical principal',
 		}),
 
+		tipoDato: z.string().nullable().optional().meta({
+			description: 'Tipo de dato de la pregunta.',
+			example: 'TEXTO',
+		}),
+
 		respuesta: z.string().nullable().meta({
 			description: 'Respuesta pública del actor.',
 			example: 'Folklore',

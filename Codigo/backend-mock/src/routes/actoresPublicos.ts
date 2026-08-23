@@ -247,7 +247,7 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 	);
 	const allQuestions = relevantForms.flatMap((f) => f.preguntas);
 
-	let respuestas: { pregunta: string; respuesta: string; publica?: boolean }[] = [];
+	let respuestas: { pregunta: string; tipoDato?: string | null; respuesta: string; publica?: boolean }[] = [];
 
 	if (actor.respuestasFormulario && Object.keys(actor.respuestasFormulario).length > 0) {
 		respuestas = Object.entries(actor.respuestasFormulario)
@@ -259,6 +259,7 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 				const valorStr = Array.isArray(val) ? val.join(', ') : String(val ?? '');
 				return {
 					pregunta: preguntaText,
+					tipoDato: question?.tipoDato ?? null,
 					respuesta: valorStr,
 					publica: isPublic,
 				};
@@ -267,9 +268,9 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 	} else {
 		// Respuestas base de fallback
 		const respuestasBase = [
-			{ pregunta: '¿Cuenta con espacio propio?', respuesta: 'Sí', publica: true },
-			{ pregunta: '¿Años de actividad?', respuesta: '5 años', publica: true },
-			{ pregunta: 'Presupuesto anual estimado', respuesta: '$1.500.000', publica: false },
+			{ pregunta: '¿Cuenta con espacio propio?', tipoDato: 'BOOLEANO', respuesta: 'Sí', publica: true },
+			{ pregunta: '¿Años de actividad?', tipoDato: 'TEXTO', respuesta: '5 años', publica: true },
+			{ pregunta: 'Presupuesto anual estimado', tipoDato: 'TEXTO', respuesta: '$1.500.000', publica: false },
 		];
 		respuestas = respuestasBase;
 	}
@@ -277,7 +278,7 @@ actoresPublicosRouter.get('/:id', (req, res) => {
 	if (!isPrivileged) {
 		respuestas = respuestas
 			.filter((r) => r.publica !== false)
-			.map(({ pregunta, respuesta }) => ({ pregunta, respuesta }));
+			.map(({ pregunta, tipoDato, respuesta }) => ({ pregunta, tipoDato, respuesta }));
 	}
 
 	const data = {
