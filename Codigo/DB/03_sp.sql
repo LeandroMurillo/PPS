@@ -5119,6 +5119,194 @@ ORDER BY
 
 END //
 -- -----------------------------------------------------
+-- sp_admin_listar_actividades_arca
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_admin_listar_actividades_arca` (
+    IN pBusqueda VARCHAR(255) DEFAULT NULL,
+    IN pLimit INT DEFAULT 25,
+    IN pOffset INT DEFAULT 0,
+    IN pSortBy VARCHAR(50) DEFAULT 'codigo',
+    IN pSortDir VARCHAR(4) DEFAULT 'ASC'
+  ) READS SQL DATA
+COMMENT 'Lista actividades económicas ARCA con paginación, filtros de búsqueda y recuento de usuarios asociados.'
+BEGIN
+  DECLARE vLimit INT DEFAULT 25;
+  DECLARE vOffset INT DEFAULT 0;
+  DECLARE vSortBy VARCHAR(50) DEFAULT 'codigo';
+  DECLARE vSortDir VARCHAR(4) DEFAULT 'ASC';
+
+  SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 25), 1), 500);
+  SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
+
+  SET vSortBy = CASE
+    WHEN pSortBy IN ('codigo', 'descripcion', 'cantidadUsuarios') THEN pSortBy
+    ELSE 'codigo'
+  END;
+
+  SET vSortDir = CASE
+    WHEN UPPER(COALESCE(pSortDir, 'ASC')) = 'DESC' THEN 'DESC'
+    ELSE 'ASC'
+  END;
+
+  -- RS1: Total
+  SELECT COUNT(*) AS total
+  FROM `ActividadesArca` aa
+  WHERE (
+    pBusqueda IS NULL
+    OR TRIM(pBusqueda) = ''
+    OR aa.codigo LIKE CONCAT('%', TRIM(pBusqueda), '%')
+    OR aa.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%')
+  );
+
+  -- RS2: Registros con conteo de usuarios
+  SELECT
+    aa.codigo,
+    aa.descripcion,
+    COUNT(u.idUsuario) AS cantidadUsuarios
+  FROM `ActividadesArca` aa
+  LEFT JOIN `Usuarios` u ON u.actividadesArcaCodigo = aa.codigo
+  WHERE (
+    pBusqueda IS NULL
+    OR TRIM(pBusqueda) = ''
+    OR aa.codigo LIKE CONCAT('%', TRIM(pBusqueda), '%')
+    OR aa.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%')
+  )
+  GROUP BY aa.codigo, aa.descripcion
+  ORDER BY
+    CASE WHEN vSortBy = 'codigo' AND vSortDir = 'ASC' THEN aa.codigo END ASC,
+    CASE WHEN vSortBy = 'codigo' AND vSortDir = 'DESC' THEN aa.codigo END DESC,
+    CASE WHEN vSortBy = 'descripcion' AND vSortDir = 'ASC' THEN aa.descripcion END ASC,
+    CASE WHEN vSortBy = 'descripcion' AND vSortDir = 'DESC' THEN aa.descripcion END DESC,
+    CASE WHEN vSortBy = 'cantidadUsuarios' AND vSortDir = 'ASC' THEN COUNT(u.idUsuario) END ASC,
+    CASE WHEN vSortBy = 'cantidadUsuarios' AND vSortDir = 'DESC' THEN COUNT(u.idUsuario) END DESC,
+    aa.codigo ASC
+  LIMIT vLimit OFFSET vOffset;
+END //
+-- -----------------------------------------------------
+-- sp_admin_obtener_actividad_arca
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_admin_obtener_actividad_arca` (IN pCodigo CHAR(6)) READS SQL DATA
+COMMENT 'Obtiene los datos de una actividad económica ARCA y la cantidad de usuarios vinculados.'
+BEGIN
+  SELECT
+    aa.codigo,
+    aa.descripcion,
+    COUNT(u.idUsuario) AS cantidadUsuarios
+  FROM `ActividadesArca` aa
+  LEFT JOIN `Usuarios` u ON u.actividadesArcaCodigo = aa.codigo
+  WHERE aa.codigo = TRIM(pCodigo)
+  GROUP BY aa.codigo, aa.descripcion;
+END //
+-- -----------------------------------------------------
+-- sp_admin_crear_actividad_arca
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_admin_crear_actividad_arca` (IN pCodigo CHAR(6), IN pDescripcion VARCHAR(255)) MODIFIES SQL DATA
+COMMENT 'Crea una nueva actividad económica ARCA.'
+BEGIN
+  IF pCodigo IS NULL OR TRIM(pCodigo) NOT REGEXP '^[0-9]{6}$' THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'El código ARCA debe contener exactamente 6 dígitos numéricos.';
+  END IF;
+
+  IF pDescripcion IS NULL OR TRIM(pDescripcion) = '' OR CHAR_LENGTH(TRIM(pDescripcion)) > 255 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'La descripción de la actividad ARCA debe tener entre 1 y 255 caracteres.';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM `ActividadesArca` WHERE codigo = TRIM(pCodigo)) THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Ya existe una actividad ARCA con ese código.';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM `ActividadesArca` WHERE descripcion = TRIM(pDescripcion)) THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Ya existe una actividad ARCA con esa descripción.';
+  END IF;
+
+  INSERT INTO `ActividadesArca` (`codigo`, `descripcion`)
+  VALUES (TRIM(pCodigo), TRIM(pDescripcion));
+
+  CALL `sp_admin_obtener_actividad_arca`(TRIM(pCodigo));
+END //
+-- -----------------------------------------------------
+-- sp_admin_editar_actividad_arca
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_admin_editar_actividad_arca` (IN pCodigo CHAR(6), IN pDescripcion VARCHAR(255)) MODIFIES SQL DATA
+COMMENT 'Modifica la descripción de una actividad económica ARCA.'
+BEGIN
+  IF pCodigo IS NULL OR TRIM(pCodigo) NOT REGEXP '^[0-9]{6}$' THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'El código ARCA debe contener exactamente 6 dígitos numéricos.';
+  END IF;
+
+  IF pDescripcion IS NULL OR TRIM(pDescripcion) = '' OR CHAR_LENGTH(TRIM(pDescripcion)) > 255 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'La descripción de la actividad ARCA debe tener entre 1 y 255 caracteres.';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM `ActividadesArca` WHERE codigo = TRIM(pCodigo)) THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'La actividad ARCA solicitada no existe.';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM `ActividadesArca` WHERE descripcion = TRIM(pDescripcion) AND codigo <> TRIM(pCodigo)) THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Ya existe una actividad ARCA con esa descripción.';
+  END IF;
+
+  UPDATE `ActividadesArca`
+  SET descripcion = TRIM(pDescripcion)
+  WHERE codigo = TRIM(pCodigo);
+
+  CALL `sp_admin_obtener_actividad_arca`(TRIM(pCodigo));
+END //
+-- -----------------------------------------------------
+-- sp_admin_eliminar_actividad_arca
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_admin_eliminar_actividad_arca` (IN pCodigo CHAR(6)) MODIFIES SQL DATA
+COMMENT 'Elimina una actividad económica ARCA si no está asociada a ningún usuario.'
+BEGIN
+  DECLARE vDescripcion VARCHAR(255);
+
+  IF pCodigo IS NULL OR TRIM(pCodigo) NOT REGEXP '^[0-9]{6}$' THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'El código ARCA debe contener exactamente 6 dígitos numéricos.';
+  END IF;
+
+  SELECT descripcion INTO vDescripcion
+  FROM `ActividadesArca`
+  WHERE codigo = TRIM(pCodigo);
+
+  IF vDescripcion IS NULL THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'La actividad ARCA solicitada no existe.';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM `Usuarios` WHERE actividadesArcaCodigo = TRIM(pCodigo)) THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'No se puede eliminar la actividad ARCA porque está asociada a uno o más usuarios.';
+  END IF;
+
+  DELETE FROM `ActividadesArca` WHERE codigo = TRIM(pCodigo);
+
+  SELECT TRIM(pCodigo) AS codigo, vDescripcion AS descripcion, 0 AS cantidadUsuarios;
+END //
+-- -----------------------------------------------------
 -- sp_actor_listar_opciones_registro
 -- -----------------------------------------------------
 CREATE

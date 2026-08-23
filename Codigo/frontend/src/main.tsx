@@ -17,6 +17,7 @@ import Actores from './pages/actores';
 import ProximosEventosPage from './pages/proximosEventos';
 import AdminActorDetallePage from './pages/adminActorDetalle';
 import AdminActoresPage from './pages/adminActores';
+import AdminActividadesArcaPage from './pages/adminActividadesArca';
 import AdminAuditoriaPage from './pages/adminAuditoria';
 import AdminCategoriaDetallePage from './pages/adminCategoriaDetalle';
 import AdminCategoriaFormularioPage from './pages/adminCategoriaFormulario';
@@ -249,6 +250,14 @@ const router = createBrowserRouter([
 						element: (
 							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
 								<AdminCategoriasPage />
+							</ProtectedRoute>
+						),
+					},
+					{
+						path: 'actividades-arca',
+						element: (
+							<ProtectedRoute allowedRoles={ONLY_ADMIN}>
+								<AdminActividadesArcaPage />
 							</ProtectedRoute>
 						),
 					},

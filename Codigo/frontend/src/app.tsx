@@ -12,6 +12,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import GroupIcon from '@mui/icons-material/Group';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import type { Navigation } from '@toolpad/core/AppProvider';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 
@@ -137,6 +138,11 @@ function AppContent() {
 						segment: 'categorias',
 						icon: <CategoryIcon />,
 						pattern: 'categorias{/:categoriaSlug}*',
+					},
+					{
+						title: 'Actividades ARCA',
+						segment: 'actividades-arca',
+						icon: <ReceiptLongIcon />,
 					},
 					{
 						title: 'Auditoría DB',

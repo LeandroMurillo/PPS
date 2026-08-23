@@ -49,6 +49,17 @@ import {
 	usuarioAdminProtegidoResponseSchema,
 	usuarioAutoBajaProtegidoResponseSchema,
 	usuarioModeradorProtegidoResponseSchema,
+	actividadArcaCodigoParamSchema,
+	actividadArcaDuplicadaResponseSchema,
+	actividadArcaEnUsoResponseSchema,
+	actividadArcaNoEncontradaResponseSchema,
+	editarActividadArcaAdminBodySchema,
+	guardarActividadArcaAdminBodySchema,
+	importarActividadesArcaAdminBodySchema,
+	importarActividadesArcaAdminResponseSchema,
+	listarActividadesArcaAdminQuerySchema,
+	listarActividadesArcaAdminResponseSchema,
+	obtenerActividadArcaAdminResponseSchema,
 } from './admin.schemas.js';
 
 export function registerAdminOpenApi(): void {
@@ -690,6 +701,150 @@ export function registerAdminOpenApi(): void {
 			404: {
 				description: 'Formulario no encontrado.',
 				content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/actividades-arca',
+		tags: ['Administración'],
+		summary: 'Listar actividades ARCA para administración',
+		description: 'Lista actividades económicas ARCA con búsqueda, orden y paginación.',
+		request: { query: listarActividadesArcaAdminQuerySchema },
+		responses: {
+			200: {
+				description: 'Listado de actividades ARCA obtenido correctamente.',
+				content: { 'application/json': { schema: listarActividadesArcaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Parámetros de consulta inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			500: {
+				description: 'Error interno al consultar actividades.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/actividades-arca/{codigo}',
+		tags: ['Administración'],
+		summary: 'Obtener una actividad ARCA por su código',
+		request: { params: actividadArcaCodigoParamSchema },
+		responses: {
+			200: {
+				description: 'Actividad ARCA obtenida correctamente.',
+				content: { 'application/json': { schema: obtenerActividadArcaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Código ARCA inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Actividad ARCA no encontrada.',
+				content: { 'application/json': { schema: actividadArcaNoEncontradaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/actividades-arca',
+		tags: ['Administración'],
+		summary: 'Crear una nueva actividad económica ARCA',
+		request: {
+			body: { content: { 'application/json': { schema: guardarActividadArcaAdminBodySchema } } },
+		},
+		responses: {
+			201: {
+				description: 'Actividad ARCA creada correctamente.',
+				content: { 'application/json': { schema: obtenerActividadArcaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			409: {
+				description: 'Código o descripción duplicada.',
+				content: { 'application/json': { schema: actividadArcaDuplicadaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'put',
+		path: '/api/admin/actividades-arca/{codigo}',
+		tags: ['Administración'],
+		summary: 'Modificar la descripción de una actividad ARCA',
+		request: {
+			params: actividadArcaCodigoParamSchema,
+			body: { content: { 'application/json': { schema: editarActividadArcaAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Actividad ARCA modificada correctamente.',
+				content: { 'application/json': { schema: obtenerActividadArcaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Datos inválidos.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Actividad no encontrada.',
+				content: { 'application/json': { schema: actividadArcaNoEncontradaResponseSchema } },
+			},
+			409: {
+				description: 'Descripción duplicada.',
+				content: { 'application/json': { schema: actividadArcaDuplicadaResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'delete',
+		path: '/api/admin/actividades-arca/{codigo}',
+		tags: ['Administración'],
+		summary: 'Eliminar una actividad ARCA no asociada a usuarios',
+		request: { params: actividadArcaCodigoParamSchema },
+		responses: {
+			200: {
+				description: 'Actividad ARCA eliminada correctamente.',
+				content: { 'application/json': { schema: obtenerActividadArcaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Código inválido.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Actividad no encontrada.',
+				content: { 'application/json': { schema: actividadArcaNoEncontradaResponseSchema } },
+			},
+			409: {
+				description: 'Actividad en uso por usuarios registrados.',
+				content: { 'application/json': { schema: actividadArcaEnUsoResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/actividades-arca/importar',
+		tags: ['Administración'],
+		summary: 'Importar catálogo de actividades ARCA desde archivo TXT F883',
+		request: {
+			body: { content: { 'application/json': { schema: importarActividadesArcaAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Importación procesada correctamente con detalle de operaciones.',
+				content: { 'application/json': { schema: importarActividadesArcaAdminResponseSchema } },
+			},
+			400: {
+				description: 'Contenido inválido o error de procesamiento.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
 			},
 		},
 	});

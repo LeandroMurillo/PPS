@@ -528,3 +528,79 @@ export type AuditoriaIntegridadItem = {
 export async function auditarIntegridadSistemaAdmin(signal?: AbortSignal) {
 	return apiFetch<{ data: AuditoriaIntegridadItem[] }>('/api/admin/auditoria/integridad', signal);
 }
+
+// ---------------------------------------------------------------------------
+// Actividades ARCA
+// ---------------------------------------------------------------------------
+
+export type ActividadArcaAdmin = {
+	codigo: string;
+	descripcion: string;
+	cantidadUsuarios: number;
+};
+
+export type ActividadArcaAdminSortBy = 'codigo' | 'descripcion' | 'cantidadUsuarios';
+
+export type ImportarActividadesArcaError = {
+	linea: number;
+	codigo?: string;
+	motivo: string;
+};
+
+export type ImportarActividadesArcaResultado = {
+	totalProcesados: number;
+	creados: number;
+	actualizados: number;
+	sinCambios: number;
+	errores: ImportarActividadesArcaError[];
+};
+
+export async function listarActividadesArcaAdmin(
+	input: {
+		busqueda?: string;
+		limit: number;
+		offset: number;
+		sortBy: ActividadArcaAdminSortBy;
+		sortDir: SortDirection;
+	},
+	signal?: AbortSignal,
+) {
+	const params = new URLSearchParams();
+	Object.entries(input).forEach(([key, value]) => appendOptionalParam(params, key, value));
+
+	return apiFetch<PageResponse<ActividadArcaAdmin>>(`/api/admin/actividades-arca?${params.toString()}`, signal);
+}
+
+export async function obtenerActividadArcaAdmin(codigo: string, signal?: AbortSignal) {
+	return apiFetch<{ data: ActividadArcaAdmin }>(`/api/admin/actividades-arca/${encodeURIComponent(codigo)}`, signal);
+}
+
+export async function crearActividadArcaAdmin(data: { codigo: string; descripcion: string }) {
+	return apiRequest<{ data: ActividadArcaAdmin }>('/api/admin/actividades-arca', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function editarActividadArcaAdmin(codigo: string, data: { descripcion: string }) {
+	return apiRequest<{ data: ActividadArcaAdmin }>(`/api/admin/actividades-arca/${encodeURIComponent(codigo)}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data),
+	});
+}
+
+export async function eliminarActividadArcaAdmin(codigo: string) {
+	return apiRequest<{ data: ActividadArcaAdmin }>(`/api/admin/actividades-arca/${encodeURIComponent(codigo)}`, {
+		method: 'DELETE',
+	});
+}
+
+export async function importarActividadesArcaAdmin(contenido: string) {
+	return apiRequest<{ data: ImportarActividadesArcaResultado }>('/api/admin/actividades-arca/importar', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ contenido }),
+	});
+}

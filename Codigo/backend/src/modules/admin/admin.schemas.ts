@@ -716,3 +716,116 @@ export const auditarIntegridadSistemaAdminResponseSchema = z.strictObject({
 });
 
 export type AuditarIntegridadSistemaAdminResponse = z.infer<typeof auditarIntegridadSistemaAdminResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Actividades ARCA
+// ---------------------------------------------------------------------------
+
+export const actividadArcaAdminSortBySchema = z.enum(['codigo', 'descripcion', 'cantidadUsuarios']);
+export type ActividadArcaAdminSortBy = z.infer<typeof actividadArcaAdminSortBySchema>;
+
+export const actividadArcaCodigoParamSchema = z.strictObject({
+	codigo: z
+		.string()
+		.trim()
+		.regex(/^\d{6}$/, 'El código ARCA debe contener exactamente 6 dígitos numéricos'),
+});
+export type ActividadArcaCodigoParam = z.infer<typeof actividadArcaCodigoParamSchema>;
+
+export const listarActividadesArcaAdminQuerySchema = z.strictObject({
+	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()),
+	...paginationQueryFields,
+	sortBy: actividadArcaAdminSortBySchema.default('codigo'),
+	sortDir: z.preprocess(
+		(value) => (typeof value === 'string' ? value.toUpperCase() : value),
+		sortDirectionSchema.default('ASC'),
+	),
+});
+export type ListarActividadesArcaAdminQuery = z.infer<typeof listarActividadesArcaAdminQuerySchema>;
+
+export const actividadArcaAdminSchema = z.strictObject({
+	codigo: z.string().regex(/^\d{6}$/),
+	descripcion: z.string().min(1).max(255),
+	cantidadUsuarios: z.number().int().min(0),
+});
+export type ActividadArcaAdmin = z.infer<typeof actividadArcaAdminSchema>;
+
+export const guardarActividadArcaAdminBodySchema = z.strictObject({
+	codigo: z
+		.string()
+		.trim()
+		.regex(/^\d{6}$/, 'El código ARCA debe contener exactamente 6 dígitos numéricos'),
+	descripcion: z
+		.string()
+		.trim()
+		.min(1, 'La descripción es obligatoria')
+		.max(255, 'La descripción no puede exceder 255 caracteres'),
+});
+export type GuardarActividadArcaAdminBody = z.infer<typeof guardarActividadArcaAdminBodySchema>;
+
+export const editarActividadArcaAdminBodySchema = z.strictObject({
+	descripcion: z
+		.string()
+		.trim()
+		.min(1, 'La descripción es obligatoria')
+		.max(255, 'La descripción no puede exceder 255 caracteres'),
+});
+export type EditarActividadArcaAdminBody = z.infer<typeof editarActividadArcaAdminBodySchema>;
+
+export const importarActividadesArcaAdminBodySchema = z.strictObject({
+	contenido: z.string().min(1, 'El contenido del archivo no puede estar vacío'),
+});
+export type ImportarActividadesArcaAdminBody = z.infer<typeof importarActividadesArcaAdminBodySchema>;
+
+export const importarActividadesArcaErrorSchema = z.strictObject({
+	linea: z.number().int().positive(),
+	codigo: z.string().optional(),
+	motivo: z.string(),
+});
+export type ImportarActividadesArcaError = z.infer<typeof importarActividadesArcaErrorSchema>;
+
+export const importarActividadesArcaResultadoSchema = z.strictObject({
+	totalProcesados: z.number().int().min(0),
+	creados: z.number().int().min(0),
+	actualizados: z.number().int().min(0),
+	sinCambios: z.number().int().min(0),
+	errores: z.array(importarActividadesArcaErrorSchema),
+});
+export type ImportarActividadesArcaResultado = z.infer<typeof importarActividadesArcaResultadoSchema>;
+
+export const listarActividadesArcaAdminResponseSchema = z.strictObject({
+	data: z.array(actividadArcaAdminSchema),
+	pagination: adminPaginationSchema,
+});
+export type ListarActividadesArcaAdminResponse = z.infer<typeof listarActividadesArcaAdminResponseSchema>;
+
+export const obtenerActividadArcaAdminResponseSchema = z.strictObject({
+	data: actividadArcaAdminSchema,
+});
+export type ObtenerActividadArcaAdminResponse = z.infer<typeof obtenerActividadArcaAdminResponseSchema>;
+
+export const importarActividadesArcaAdminResponseSchema = z.strictObject({
+	data: importarActividadesArcaResultadoSchema,
+});
+export type ImportarActividadesArcaAdminResponse = z.infer<typeof importarActividadesArcaAdminResponseSchema>;
+
+export const actividadArcaDuplicadaResponseSchema = z.strictObject({
+	error: z.strictObject({
+		code: z.literal('ARCA_ACTIVITY_DUPLICATE'),
+		message: z.string(),
+	}),
+});
+
+export const actividadArcaNoEncontradaResponseSchema = z.strictObject({
+	error: z.strictObject({
+		code: z.literal('ARCA_ACTIVITY_NOT_FOUND'),
+		message: z.string(),
+	}),
+});
+
+export const actividadArcaEnUsoResponseSchema = z.strictObject({
+	error: z.strictObject({
+		code: z.literal('ARCA_ACTIVITY_IN_USE'),
+		message: z.string(),
+	}),
+});

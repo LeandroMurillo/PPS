@@ -45,6 +45,8 @@ describe('autorización de rutas administrativas', () => {
 		['PUT', '/api/admin/usuarios/1/moderacion'],
 		['POST', '/api/admin/categorias'],
 		['GET', '/api/admin/preguntas'],
+		['GET', '/api/admin/actividades-arca'],
+		['POST', '/api/admin/actividades-arca/importar'],
 	])('impide que un moderador use %s %s', async (method, path) => {
 		const response = await request(app)
 			[method.toLowerCase() as 'get' | 'post' | 'put'](path)

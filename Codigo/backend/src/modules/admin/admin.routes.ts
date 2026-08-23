@@ -32,12 +32,25 @@ import {
 	obtenerSubcategoriaAdminController,
 	obtenerActorAdminController,
 	obtenerUsuarioAdminController,
+	listarActividadesArcaAdminController,
+	obtenerActividadArcaAdminController,
+	crearActividadArcaAdminController,
+	editarActividadArcaAdminController,
+	eliminarActividadArcaAdminController,
+	importarActividadesArcaAdminController,
 } from './admin.controller.js';
 import { requireRole, verifyToken } from '../../middleware/auth.middleware.js';
 
 export const adminRouter = Router();
 
 adminRouter.use(verifyToken);
+
+adminRouter.get('/actividades-arca', requireRole('ADMIN'), listarActividadesArcaAdminController);
+adminRouter.post('/actividades-arca', requireRole('ADMIN'), crearActividadArcaAdminController);
+adminRouter.post('/actividades-arca/importar', requireRole('ADMIN'), importarActividadesArcaAdminController);
+adminRouter.get('/actividades-arca/:codigo', requireRole('ADMIN'), obtenerActividadArcaAdminController);
+adminRouter.put('/actividades-arca/:codigo', requireRole('ADMIN'), editarActividadArcaAdminController);
+adminRouter.delete('/actividades-arca/:codigo', requireRole('ADMIN'), eliminarActividadArcaAdminController);
 
 adminRouter.get('/usuarios', requireRole('ADMIN', 'MODERADOR'), listarUsuariosAdminController);
 adminRouter.get('/usuarios/:id', requireRole('ADMIN', 'MODERADOR'), obtenerUsuarioAdminController);

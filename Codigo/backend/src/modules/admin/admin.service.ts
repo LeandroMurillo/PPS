@@ -28,6 +28,12 @@ import {
 	obtenerFormularioAdminRepository,
 	obtenerUsuarioAdminRepository,
 	auditarIntegridadSistemaAdminRepository,
+	listarActividadesArcaAdminRepository,
+	obtenerActividadArcaAdminRepository,
+	crearActividadArcaAdminRepository,
+	editarActividadArcaAdminRepository,
+	eliminarActividadArcaAdminRepository,
+	importarActividadesArcaBatchRepository,
 } from './admin.repository.js';
 
 import type {
@@ -55,6 +61,13 @@ import type {
 	ObtenerFormularioAdminResponse,
 	PreguntaBancoAdmin,
 	ReemplazarPreguntaFormularioAdminBody,
+	EditarActividadArcaAdminBody,
+	GuardarActividadArcaAdminBody,
+	ImportarActividadesArcaAdminResponse,
+	ImportarActividadesArcaError,
+	ListarActividadesArcaAdminQuery,
+	ListarActividadesArcaAdminResponse,
+	ObtenerActividadArcaAdminResponse,
 } from './admin.schemas.js';
 
 function pagination(total: number, count: number, limit: number, offset: number) {
@@ -303,4 +316,139 @@ export async function auditarIntegridadSistemaAdminService(
 ): Promise<AuditarIntegridadSistemaAdminResponse> {
 	const data = await auditarIntegridadSistemaAdminRepository(idUsuarioSolicitante);
 	return { data };
+}
+
+// ---------------------------------------------------------------------------
+// Actividades ARCA
+// ---------------------------------------------------------------------------
+
+export async function listarActividadesArcaAdminService(
+	query: ListarActividadesArcaAdminQuery,
+): Promise<ListarActividadesArcaAdminResponse> {
+	const result = await listarActividadesArcaAdminRepository(query);
+
+	return {
+		data: result.actividades,
+		pagination: pagination(result.total, result.actividades.length, query.limit, query.offset),
+	};
+}
+
+export async function obtenerActividadArcaAdminService(
+	codigo: string,
+): Promise<ObtenerActividadArcaAdminResponse | null> {
+	const data = await obtenerActividadArcaAdminRepository(codigo);
+
+	return data ? { data } : null;
+}
+
+export async function crearActividadArcaAdminService(
+	data: GuardarActividadArcaAdminBody,
+): Promise<ObtenerActividadArcaAdminResponse> {
+	const creada = await crearActividadArcaAdminRepository(data.codigo, data.descripcion);
+
+	return { data: creada };
+}
+
+export async function editarActividadArcaAdminService(
+	codigo: string,
+	data: EditarActividadArcaAdminBody,
+): Promise<ObtenerActividadArcaAdminResponse> {
+	const editada = await editarActividadArcaAdminRepository(codigo, data.descripcion);
+
+	return { data: editada };
+}
+
+export async function eliminarActividadArcaAdminService(codigo: string): Promise<ObtenerActividadArcaAdminResponse> {
+	const eliminada = await eliminarActividadArcaAdminRepository(codigo);
+
+	return { data: eliminada };
+}
+
+export async function importarActividadesArcaAdminService(
+	contenido: string,
+): Promise<ImportarActividadesArcaAdminResponse> {
+	// Limpieza de caracteres BOM (\uFEFF)
+	const cleanContent = contenido.replace(/^\uFEFF/, '');
+	const lines = cleanContent.split(/\r?\n/);
+
+	const validItems: { linea: number; codigo: string; descripcion: string }[] = [];
+	const errores: ImportarActividadesArcaError[] = [];
+
+	let startIndex = 0;
+
+	// Detectar cabecera opcional
+	if (lines.length > 0) {
+		const firstLine = lines[0]!.trim();
+		if (/^COD_|^"COD_|^CODIGO|COD_ACTIVIDAD/i.test(firstLine)) {
+			startIndex = 1;
+		}
+	}
+
+	for (let i = startIndex; i < lines.length; i++) {
+		const lineNumber = i + 1;
+		const line = lines[i]!.trim();
+
+		if (!line) {
+			continue;
+		}
+
+		// Separar por delimitador ';'
+		const parts = line.split(';').map((p) => p.trim().replace(/^["']|["']$/g, ''));
+		const rawCodigo = parts[0] ?? '';
+		const rawDesc = parts[1] ?? '';
+		const rawDescLarga = parts[2] ?? '';
+
+		if (!/^\d{6}$/.test(rawCodigo)) {
+			errores.push({
+				linea: lineNumber,
+				codigo: rawCodigo || undefined,
+				motivo: 'El código ARCA debe contener exactamente 6 dígitos numéricos',
+			});
+			continue;
+		}
+
+		const chosenDesc = (rawDesc || rawDescLarga).trim().slice(0, 255);
+
+		if (!chosenDesc) {
+			errores.push({
+				linea: lineNumber,
+				codigo: rawCodigo,
+				motivo: 'La descripción de la actividad no puede estar vacía',
+			});
+			continue;
+		}
+
+		validItems.push({
+			linea: lineNumber,
+			codigo: rawCodigo,
+			descripcion: chosenDesc,
+		});
+	}
+
+	let creados = 0;
+	let actualizados = 0;
+	let sinCambios = 0;
+
+	if (validItems.length > 0) {
+		const batchResult = await importarActividadesArcaBatchRepository(validItems);
+		creados = batchResult.creados;
+		actualizados = batchResult.actualizados;
+		sinCambios = batchResult.sinCambios;
+		if (batchResult.erroresAdicionales?.length) {
+			errores.push(...batchResult.erroresAdicionales);
+		}
+	}
+
+	errores.sort((a, b) => a.linea - b.linea);
+
+	return {
+		data: {
+			totalProcesados:
+				validItems.length + errores.filter((e) => !validItems.some((v) => v.linea === e.linea)).length,
+			creados,
+			actualizados,
+			sinCambios,
+			errores,
+		},
+	};
 }

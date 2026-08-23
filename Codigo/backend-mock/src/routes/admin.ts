@@ -1075,3 +1075,221 @@ adminRouter.delete('/convocatorias/:id', (req, res) => {
 
 	return res.json({ mensaje: 'Convocatoria eliminada exitosamente.' });
 });
+
+// ---------------------------------------------------------------------------
+// Actividades ARCA Mock
+// ---------------------------------------------------------------------------
+
+// GET /api/admin/actividades-arca
+adminRouter.get('/actividades-arca', (req, res) => {
+	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase().trim() : undefined;
+	const limit = req.query.limit ? Number(req.query.limit) : 25;
+	const offset = req.query.offset ? Number(req.query.offset) : 0;
+	const sortBy = (typeof req.query.sortBy === 'string' ? req.query.sortBy : 'codigo') as 'codigo' | 'descripcion' | 'cantidadUsuarios';
+	const sortDir = req.query.sortDir === 'DESC' ? 'DESC' : 'ASC';
+
+	const userCountMap = new Map<string, number>();
+	for (const u of db.usuarios) {
+		if (u.actividadesArcaCodigo) {
+			userCountMap.set(u.actividadesArcaCodigo, (userCountMap.get(u.actividadesArcaCodigo) || 0) + 1);
+		}
+	}
+
+	let result = db.actividadesArca.map((a) => ({
+		codigo: a.codigo,
+		descripcion: a.descripcion,
+		cantidadUsuarios: userCountMap.get(a.codigo) || 0,
+	}));
+
+	if (busqueda) {
+		result = result.filter(
+			(a) => a.codigo.toLowerCase().includes(busqueda) || a.descripcion.toLowerCase().includes(busqueda),
+		);
+	}
+
+	result.sort((a, b) => {
+		let valA: string | number = a[sortBy] ?? '';
+		let valB: string | number = b[sortBy] ?? '';
+		if (typeof valA === 'string') valA = valA.toLowerCase();
+		if (typeof valB === 'string') valB = valB.toLowerCase();
+		if (valA === valB) return a.codigo.localeCompare(b.codigo);
+		return sortDir === 'ASC' ? (valA > valB ? 1 : -1) : valA < valB ? 1 : -1;
+	});
+
+	const total = result.length;
+	const paginated = result.slice(offset, offset + limit);
+
+	return res.json({
+		data: paginated,
+		pagination: {
+			total,
+			count: paginated.length,
+			limit,
+			offset,
+			hasNext: offset + paginated.length < total,
+		},
+	});
+});
+
+// GET /api/admin/actividades-arca/:codigo
+adminRouter.get('/actividades-arca/:codigo', (req, res) => {
+	const { codigo } = req.params;
+	const a = db.actividadesArca.find((item) => item.codigo === codigo);
+
+	if (!a) {
+		return res.status(404).json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'No se encontró la actividad ARCA' } });
+	}
+
+	const cantidadUsuarios = db.usuarios.filter((u) => u.actividadesArcaCodigo === codigo).length;
+
+	return res.json({
+		data: {
+			codigo: a.codigo,
+			descripcion: a.descripcion,
+			cantidadUsuarios,
+		},
+	});
+});
+
+// POST /api/admin/actividades-arca
+adminRouter.post('/actividades-arca', (req, res) => {
+	const { codigo, descripcion } = req.body || {};
+	const cleanCodigo = String(codigo || '').trim();
+	const cleanDesc = String(descripcion || '').trim();
+
+	if (!/^\d{6}$/.test(cleanCodigo)) {
+		return res.status(400).json({ error: { message: 'El código ARCA debe tener 6 dígitos' } });
+	}
+
+	if (!cleanDesc) {
+		return res.status(400).json({ error: { message: 'La descripción es obligatoria' } });
+	}
+
+	if (db.actividadesArca.some((a) => a.codigo === cleanCodigo)) {
+		return res.status(409).json({ error: { code: 'ARCA_ACTIVITY_DUPLICATE', message: 'Ya existe una actividad ARCA con ese código' } });
+	}
+
+	const nueva = { codigo: cleanCodigo, descripcion: cleanDesc };
+	db.actividadesArca.push(nueva);
+
+	return res.status(201).json({
+		data: {
+			codigo: nueva.codigo,
+			descripcion: nueva.descripcion,
+			cantidadUsuarios: 0,
+		},
+	});
+});
+
+// PUT /api/admin/actividades-arca/:codigo
+adminRouter.put('/actividades-arca/:codigo', (req, res) => {
+	const { codigo } = req.params;
+	const { descripcion } = req.body || {};
+	const cleanDesc = String(descripcion || '').trim();
+
+	const a = db.actividadesArca.find((item) => item.codigo === codigo);
+	if (!a) {
+		return res.status(404).json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'La actividad ARCA no existe' } });
+	}
+
+	if (!cleanDesc) {
+		return res.status(400).json({ error: { message: 'La descripción es obligatoria' } });
+	}
+
+	a.descripcion = cleanDesc;
+	const cantidadUsuarios = db.usuarios.filter((u) => u.actividadesArcaCodigo === codigo).length;
+
+	return res.json({
+		data: {
+			codigo: a.codigo,
+			descripcion: a.descripcion,
+			cantidadUsuarios,
+		},
+	});
+});
+
+// DELETE /api/admin/actividades-arca/:codigo
+adminRouter.delete('/actividades-arca/:codigo', (req, res) => {
+	const { codigo } = req.params;
+	const aIndex = db.actividadesArca.findIndex((item) => item.codigo === codigo);
+
+	if (aIndex === -1) {
+		return res.status(404).json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'La actividad ARCA no existe' } });
+	}
+
+	const enUso = db.usuarios.some((u) => u.actividadesArcaCodigo === codigo);
+	if (enUso) {
+		return res.status(409).json({ error: { code: 'ARCA_ACTIVITY_IN_USE', message: 'No se puede eliminar la actividad ARCA porque está asociada a uno o más usuarios.' } });
+	}
+
+	const [deleted] = db.actividadesArca.splice(aIndex, 1);
+
+	return res.json({
+		data: {
+			codigo: deleted.codigo,
+			descripcion: deleted.descripcion,
+			cantidadUsuarios: 0,
+		},
+	});
+});
+
+// POST /api/admin/actividades-arca/importar
+adminRouter.post('/actividades-arca/importar', (req, res) => {
+	const { contenido } = req.body || {};
+	const cleanContent = String(contenido || '').replace(/^\uFEFF/, '');
+	const lines = cleanContent.split(/\r?\n/);
+
+	const errores: { linea: number; codigo?: string; motivo: string }[] = [];
+	let creados = 0;
+	let actualizados = 0;
+	let sinCambios = 0;
+
+	let startIndex = 0;
+	if (lines.length > 0 && /^COD_|^"COD_|^CODIGO|COD_ACTIVIDAD/i.test(lines[0]!.trim())) {
+		startIndex = 1;
+	}
+
+	for (let i = startIndex; i < lines.length; i++) {
+		const lineNumber = i + 1;
+		const line = lines[i]!.trim();
+		if (!line) continue;
+
+		const parts = line.split(';').map((p) => p.trim().replace(/^["']|["']$/g, ''));
+		const rawCodigo = parts[0] ?? '';
+		const rawDesc = parts[1] ?? '';
+		const rawDescLarga = parts[2] ?? '';
+
+		if (!/^\d{6}$/.test(rawCodigo)) {
+			errores.push({ linea: lineNumber, codigo: rawCodigo || undefined, motivo: 'El código ARCA debe contener 6 dígitos' });
+			continue;
+		}
+
+		const desc = (rawDesc || rawDescLarga).trim().slice(0, 255);
+		if (!desc) {
+			errores.push({ linea: lineNumber, codigo: rawCodigo, motivo: 'Descripción vacía' });
+			continue;
+		}
+
+		const existing = db.actividadesArca.find((a) => a.codigo === rawCodigo);
+		if (!existing) {
+			db.actividadesArca.push({ codigo: rawCodigo, descripcion: desc });
+			creados++;
+		} else if (existing.descripcion !== desc) {
+			existing.descripcion = desc;
+			actualizados++;
+		} else {
+			sinCambios++;
+		}
+	}
+
+	return res.json({
+		data: {
+			totalProcesados: creados + actualizados + sinCambios + errores.length,
+			creados,
+			actualizados,
+			sinCambios,
+			errores,
+		},
+	});
+});
+

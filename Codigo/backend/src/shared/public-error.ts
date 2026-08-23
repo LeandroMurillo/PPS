@@ -32,6 +32,28 @@ export function getPublicErrorMessage(error: unknown, fallback: string): string 
 		}
 	}
 
+	// Manejo específico de registros duplicados (ER_DUP_ENTRY / errno 1062)
+	if (Number(databaseError.errno) === 1062 || /Duplicate entry/i.test(error.message)) {
+		const dupMatch = error.message.match(/Duplicate entry '([^']+)' for key '([^']+)'/i);
+		if (dupMatch?.[1] && dupMatch[2]) {
+			const valor = dupMatch[1];
+			const clave = dupMatch[2];
+			const campo = clave.includes('descripcion')
+				? 'descripción'
+				: clave.includes('PRIMARY')
+					? 'código o identificador principal'
+					: clave.includes('email')
+						? 'correo electrónico'
+						: clave;
+			return `Ya existe un registro con el valor "${valor}" en el campo ${campo}.`;
+		}
+	}
+
+	// Manejo de restricciones de clave foránea (ER_ROW_IS_REFERENCED / errno 1451 / 1452)
+	if (Number(databaseError.errno) === 1451 || Number(databaseError.errno) === 1452) {
+		return 'No se puede completar la operación porque el registro se encuentra asociado a otros datos del sistema.';
+	}
+
 	if (DATABASE_DETAILS_PATTERN.test(error.message)) {
 		return fallback;
 	}

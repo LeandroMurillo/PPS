@@ -25,6 +25,8 @@ import type {
 	SubcategoriaAdmin,
 	UsuarioAdmin,
 	UsuarioDetalleAdmin,
+	ActividadArcaAdmin,
+	ListarActividadesArcaAdminQuery,
 } from './admin.schemas.js';
 
 const databaseIntegerSchema = z
@@ -973,4 +975,221 @@ export async function auditarIntegridadSistemaAdminRepository(
 		descripcion: item.descripcion,
 		idReferencia: item.idReferencia,
 	}));
+}
+
+// ---------------------------------------------------------------------------
+// Actividades ARCA
+// ---------------------------------------------------------------------------
+
+const actividadArcaAdminDatabaseRowSchema = z.object({
+	codigo: z.string(),
+	descripcion: z.string(),
+	cantidadUsuarios: databaseIntegerSchema,
+});
+
+export async function listarActividadesArcaAdminRepository(
+	query: ListarActividadesArcaAdminQuery,
+): Promise<{ total: number; actividades: ActividadArcaAdmin[] }> {
+	const procedureName = 'sp_admin_listar_actividades_arca';
+	const result: unknown = await pool.query('CALL sp_admin_listar_actividades_arca(?, ?, ?, ?, ?)', [
+		query.busqueda ?? null,
+		query.limit,
+		query.offset,
+		query.sortBy,
+		query.sortDir,
+	]);
+	const rows = z.array(actividadArcaAdminDatabaseRowSchema).parse(getResultSet(result, 1, procedureName));
+
+	return {
+		total: getTotal(result, procedureName),
+		actividades: rows.map((r) => ({
+			codigo: r.codigo,
+			descripcion: r.descripcion,
+			cantidadUsuarios: r.cantidadUsuarios,
+		})),
+	};
+}
+
+export async function obtenerActividadArcaAdminRepository(codigo: string): Promise<ActividadArcaAdmin | null> {
+	const procedureName = 'sp_admin_obtener_actividad_arca';
+	const result: unknown = await pool.query('CALL sp_admin_obtener_actividad_arca(?)', [codigo]);
+	const rows = z.array(actividadArcaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const row = rows[0];
+
+	if (!row) {
+		return null;
+	}
+
+	return {
+		codigo: row.codigo,
+		descripcion: row.descripcion,
+		cantidadUsuarios: row.cantidadUsuarios,
+	};
+}
+
+export async function crearActividadArcaAdminRepository(
+	codigo: string,
+	descripcion: string,
+): Promise<ActividadArcaAdmin> {
+	const procedureName = 'sp_admin_crear_actividad_arca';
+	const result: unknown = await pool.query('CALL sp_admin_crear_actividad_arca(?, ?)', [codigo, descripcion]);
+	const rows = z.array(actividadArcaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const row = rows[0];
+
+	if (!row) {
+		throw new Error(`${procedureName} no devolvió la actividad creada`);
+	}
+
+	return {
+		codigo: row.codigo,
+		descripcion: row.descripcion,
+		cantidadUsuarios: row.cantidadUsuarios,
+	};
+}
+
+export async function editarActividadArcaAdminRepository(
+	codigo: string,
+	descripcion: string,
+): Promise<ActividadArcaAdmin> {
+	const procedureName = 'sp_admin_editar_actividad_arca';
+	const result: unknown = await pool.query('CALL sp_admin_editar_actividad_arca(?, ?)', [codigo, descripcion]);
+	const rows = z.array(actividadArcaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const row = rows[0];
+
+	if (!row) {
+		throw new Error(`${procedureName} no devolvió la actividad modificada`);
+	}
+
+	return {
+		codigo: row.codigo,
+		descripcion: row.descripcion,
+		cantidadUsuarios: row.cantidadUsuarios,
+	};
+}
+
+export async function eliminarActividadArcaAdminRepository(codigo: string): Promise<ActividadArcaAdmin> {
+	const procedureName = 'sp_admin_eliminar_actividad_arca';
+	const result: unknown = await pool.query('CALL sp_admin_eliminar_actividad_arca(?)', [codigo]);
+	const rows = z.array(actividadArcaAdminDatabaseRowSchema).parse(getResultSet(result, 0, procedureName));
+	const row = rows[0];
+
+	if (!row) {
+		throw new Error(`${procedureName} no devolvió la actividad eliminada`);
+	}
+
+	return {
+		codigo: row.codigo,
+		descripcion: row.descripcion,
+		cantidadUsuarios: row.cantidadUsuarios,
+	};
+}
+
+export async function importarActividadesArcaBatchRepository(
+	items: { linea: number; codigo: string; descripcion: string }[],
+): Promise<{
+	creados: number;
+	actualizados: number;
+	sinCambios: number;
+	erroresAdicionales: { linea: number; codigo?: string; motivo: string }[];
+}> {
+	const conn = await pool.getConnection();
+
+	try {
+		await conn.beginTransaction();
+
+		// Obtener catálogo existente en base de datos
+		const existingRows = (await conn.query('SELECT codigo, descripcion FROM `ActividadesArca`')) as Array<{
+			codigo: string;
+			descripcion: string;
+		}>;
+
+		const existingByCode = new Map<string, string>();
+		const existingByDesc = new Map<string, string>();
+
+		for (const r of existingRows) {
+			existingByCode.set(r.codigo, r.descripcion);
+			existingByDesc.set(r.descripcion, r.codigo);
+		}
+
+		let creados = 0;
+		let actualizados = 0;
+		let sinCambios = 0;
+		const erroresAdicionales: { linea: number; codigo?: string; motivo: string }[] = [];
+
+		// Seguimiento de códigos ya procesados en este lote
+		const processedCodesInBatch = new Set<string>();
+
+		for (const item of items) {
+			const { linea, codigo, descripcion } = item;
+
+			// Verificar si la descripción ya pertenece a otro código diferente en la BD
+			const conflictCode = existingByDesc.get(descripcion);
+			if (conflictCode && conflictCode !== codigo) {
+				erroresAdicionales.push({
+					linea,
+					codigo,
+					motivo: `La descripción "${descripcion}" ya está registrada para la actividad con código ${conflictCode}.`,
+				});
+				continue;
+			}
+
+			// Si el código ya se procesó en este mismo lote, actualizar si difiere
+			if (processedCodesInBatch.has(codigo)) {
+				const currentDesc = existingByCode.get(codigo);
+				if (currentDesc === descripcion) {
+					sinCambios++;
+				} else {
+					if (currentDesc) {
+						existingByDesc.delete(currentDesc);
+					}
+					await conn.query('UPDATE `ActividadesArca` SET `descripcion` = ? WHERE `codigo` = ?', [
+						descripcion,
+						codigo,
+					]);
+					existingByCode.set(codigo, descripcion);
+					existingByDesc.set(descripcion, codigo);
+					actualizados++;
+				}
+				continue;
+			}
+
+			processedCodesInBatch.add(codigo);
+			const existingDesc = existingByCode.get(codigo);
+
+			if (existingDesc === undefined) {
+				await conn.query('INSERT INTO `ActividadesArca` (`codigo`, `descripcion`) VALUES (?, ?)', [
+					codigo,
+					descripcion,
+				]);
+				existingByCode.set(codigo, descripcion);
+				existingByDesc.set(descripcion, codigo);
+				creados++;
+			} else if (existingDesc !== descripcion) {
+				existingByDesc.delete(existingDesc);
+				await conn.query('UPDATE `ActividadesArca` SET `descripcion` = ? WHERE `codigo` = ?', [
+					descripcion,
+					codigo,
+				]);
+				existingByCode.set(codigo, descripcion);
+				existingByDesc.set(descripcion, codigo);
+				actualizados++;
+			} else {
+				sinCambios++;
+			}
+		}
+
+		await conn.commit();
+
+		return {
+			creados,
+			actualizados,
+			sinCambios,
+			erroresAdicionales,
+		};
+	} catch (error) {
+		await conn.rollback();
+		throw error;
+	} finally {
+		conn.release();
+	}
 }

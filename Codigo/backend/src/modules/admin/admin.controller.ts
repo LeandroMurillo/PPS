@@ -28,6 +28,11 @@ import {
 	subcategoriaAdminCategoriaParamSchema,
 	subcategoriaAdminParamsSchema,
 	usuarioAdminParamsSchema,
+	actividadArcaCodigoParamSchema,
+	editarActividadArcaAdminBodySchema,
+	guardarActividadArcaAdminBodySchema,
+	importarActividadesArcaAdminBodySchema,
+	listarActividadesArcaAdminQuerySchema,
 } from './admin.schemas.js';
 import {
 	asignarModeradorAdminService,
@@ -59,6 +64,12 @@ import {
 	obtenerFormularioAdminService,
 	obtenerSubcategoriaAdminService,
 	obtenerUsuarioAdminService,
+	listarActividadesArcaAdminService,
+	obtenerActividadArcaAdminService,
+	crearActividadArcaAdminService,
+	editarActividadArcaAdminService,
+	eliminarActividadArcaAdminService,
+	importarActividadesArcaAdminService,
 } from './admin.service.js';
 
 function validationError(issues: { path: PropertyKey[]; code: string; message: string }[]) {
@@ -868,6 +879,191 @@ export const auditarIntegridadSistemaAdminController: RequestHandler = async (re
 			error: {
 				code: 'AUDIT_FAILED',
 				message: getPublicErrorMessage(error, 'No se pudo ejecutar la auditoría de integridad.'),
+			},
+		});
+	}
+};
+
+// ---------------------------------------------------------------------------
+// Actividades ARCA
+// ---------------------------------------------------------------------------
+
+export const listarActividadesArcaAdminController: RequestHandler = async (request, response, next) => {
+	const parsedQuery = listarActividadesArcaAdminQuerySchema.safeParse(request.query);
+	if (!parsedQuery.success) {
+		response.status(400).json(validationError(parsedQuery.error.issues));
+		return;
+	}
+
+	try {
+		const result = await listarActividadesArcaAdminService(parsedQuery.data);
+		response.status(200).json(result);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const obtenerActividadArcaAdminController: RequestHandler = async (request, response, next) => {
+	const parsedParams = actividadArcaCodigoParamSchema.safeParse(request.params);
+	if (!parsedParams.success) {
+		response.status(400).json(validationError(parsedParams.error.issues));
+		return;
+	}
+
+	try {
+		const result = await obtenerActividadArcaAdminService(parsedParams.data.codigo);
+		if (!result) {
+			response.status(404).json({
+				error: {
+					code: 'ARCA_ACTIVITY_NOT_FOUND',
+					message: 'No se encontró la actividad ARCA solicitada',
+				},
+			});
+			return;
+		}
+
+		response.status(200).json(result);
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const crearActividadArcaAdminController: RequestHandler = async (request, response) => {
+	const parsedBody = guardarActividadArcaAdminBodySchema.safeParse(request.body);
+	if (!parsedBody.success) {
+		response.status(400).json(validationError(parsedBody.error.issues));
+		return;
+	}
+
+	try {
+		const result = await crearActividadArcaAdminService(parsedBody.data);
+		response.status(201).json(result);
+	} catch (error) {
+		const message = getPublicErrorMessage(error, 'No se pudo crear la actividad ARCA');
+		if (message.includes('Ya existe')) {
+			response.status(409).json({
+				error: {
+					code: 'ARCA_ACTIVITY_DUPLICATE',
+					message,
+				},
+			});
+			return;
+		}
+
+		response.status(400).json({
+			error: {
+				code: 'ARCA_ACTIVITY_CREATE_FAILED',
+				message,
+			},
+		});
+	}
+};
+
+export const editarActividadArcaAdminController: RequestHandler = async (request, response) => {
+	const parsedParams = actividadArcaCodigoParamSchema.safeParse(request.params);
+	if (!parsedParams.success) {
+		response.status(400).json(validationError(parsedParams.error.issues));
+		return;
+	}
+
+	const parsedBody = editarActividadArcaAdminBodySchema.safeParse(request.body);
+	if (!parsedBody.success) {
+		response.status(400).json(validationError(parsedBody.error.issues));
+		return;
+	}
+
+	try {
+		const result = await editarActividadArcaAdminService(parsedParams.data.codigo, parsedBody.data);
+		response.status(200).json(result);
+	} catch (error) {
+		const message = getPublicErrorMessage(error, 'No se pudo modificar la actividad ARCA');
+		if (message.includes('no existe')) {
+			response.status(404).json({
+				error: {
+					code: 'ARCA_ACTIVITY_NOT_FOUND',
+					message,
+				},
+			});
+			return;
+		}
+
+		if (message.includes('Ya existe')) {
+			response.status(409).json({
+				error: {
+					code: 'ARCA_ACTIVITY_DUPLICATE',
+					message,
+				},
+			});
+			return;
+		}
+
+		response.status(400).json({
+			error: {
+				code: 'ARCA_ACTIVITY_UPDATE_FAILED',
+				message,
+			},
+		});
+	}
+};
+
+export const eliminarActividadArcaAdminController: RequestHandler = async (request, response) => {
+	const parsedParams = actividadArcaCodigoParamSchema.safeParse(request.params);
+	if (!parsedParams.success) {
+		response.status(400).json(validationError(parsedParams.error.issues));
+		return;
+	}
+
+	try {
+		const result = await eliminarActividadArcaAdminService(parsedParams.data.codigo);
+		response.status(200).json(result);
+	} catch (error) {
+		const message = getPublicErrorMessage(error, 'No se pudo eliminar la actividad ARCA');
+		if (message.includes('no existe')) {
+			response.status(404).json({
+				error: {
+					code: 'ARCA_ACTIVITY_NOT_FOUND',
+					message,
+				},
+			});
+			return;
+		}
+
+		if (message.includes('asociada a uno o más usuarios')) {
+			response.status(409).json({
+				error: {
+					code: 'ARCA_ACTIVITY_IN_USE',
+					message,
+				},
+			});
+			return;
+		}
+
+		response.status(400).json({
+			error: {
+				code: 'ARCA_ACTIVITY_DELETE_FAILED',
+				message,
+			},
+		});
+	}
+};
+
+export const importarActividadesArcaAdminController: RequestHandler = async (request, response) => {
+	const parsedBody = importarActividadesArcaAdminBodySchema.safeParse(request.body);
+	if (!parsedBody.success) {
+		response.status(400).json(validationError(parsedBody.error.issues));
+		return;
+	}
+
+	try {
+		const result = await importarActividadesArcaAdminService(parsedBody.data.contenido);
+		response.status(200).json(result);
+	} catch (error) {
+		request.log.error(error, 'Error al importar actividades ARCA');
+		const message = getPublicErrorMessage(error, 'No se pudo procesar la importación del archivo ARCA');
+		response.status(400).json({
+			error: {
+				code: 'ARCA_IMPORT_FAILED',
+				message,
 			},
 		});
 	}

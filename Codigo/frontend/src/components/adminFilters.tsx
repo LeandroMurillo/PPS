@@ -15,7 +15,7 @@ type AdminFiltersProps = {
 	collapsible?: boolean;
 	activeFilterCount?: number;
 	showClear?: boolean;
-	children: React.ReactNode;
+	children?: React.ReactNode;
 	onSearchChange: (value: string) => void;
 	onClear: () => void;
 };
