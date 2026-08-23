@@ -1,6 +1,7 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PublicIcon from '@mui/icons-material/Public';
 import {
+	Alert,
 	Autocomplete,
 	Checkbox,
 	Chip,
@@ -236,6 +237,11 @@ export default function QuestionField({
 							: undefined,
 				}}
 			/>
+			{question.tipoDato === 'URL' && scalarValue.trim().toLowerCase().startsWith('http://') && !showError && (
+				<Alert severity="warning" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem' }}>
+					El enlace utiliza HTTP en vez de HTTPS. Se recomienda utilizar una dirección segura (HTTPS).
+				</Alert>
+			)}
 		</Stack>
 	);
 }

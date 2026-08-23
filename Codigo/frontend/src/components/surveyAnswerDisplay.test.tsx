@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import SurveyAnswerDisplay from './surveyAnswerDisplay';
@@ -37,19 +37,35 @@ describe('SurveyAnswerDisplay', () => {
 			expect(screen.getByText('No')).toBeDefined();
 		});
 
-		it('renderiza FECHA con formato legible en español', () => {
-			render(<SurveyAnswerDisplay value="9999-08-29" tipoDato="FECHA" />);
-			expect(screen.getByText(/29 de agosto/i)).toBeDefined();
+		it('renderiza FECHA con formato legible, ícono y abre el calendario al interactuar', () => {
+			const { container } = render(<SurveyAnswerDisplay value="2024-05-25" tipoDato="FECHA" />);
+			const dateElement = screen.getByText(/25 de mayo de 2024/i);
+			expect(dateElement).toBeDefined();
+			expect(container.querySelector('[data-testid="CalendarMonthOutlinedIcon"]')).not.toBeNull();
+
+			// Al hacer clic, se abre el popover con el DateCalendar
+			fireEvent.click(dateElement);
+			expect(
+				document.querySelector('.MuiDateCalendar-root') || document.querySelector('.MuiPopover-root'),
+			).not.toBeNull();
 		});
 
-		it('renderiza URL válida como un enlace con icono de link', () => {
-			const { container } = render(
-				<SurveyAnswerDisplay value="https://instagram.com/artista" tipoDato="URL" />,
-			);
+		it('renderiza URL segura (HTTPS) sin alerta de HTTP', () => {
+			const { container } = render(<SurveyAnswerDisplay value="https://instagram.com/artista" tipoDato="URL" />);
 			const link = container.querySelector('a');
 			expect(link).not.toBeNull();
 			expect(link?.getAttribute('href')).toBe('https://instagram.com/artista');
 			expect(screen.getByText('instagram.com/artista')).toBeDefined();
+			expect(container.querySelector('.MuiAlert-root')).toBeNull();
+		});
+
+		it('muestra una alerta cuando la URL contiene http:// en lugar de https://', () => {
+			const { container } = render(<SurveyAnswerDisplay value="http://inseguro.ejemplo.com" tipoDato="URL" />);
+			const link = container.querySelector('a');
+			expect(link).not.toBeNull();
+			expect(link?.getAttribute('href')).toBe('http://inseguro.ejemplo.com');
+			expect(screen.getByText(/utiliza HTTP en lugar de HTTPS/i)).toBeDefined();
+			expect(container.querySelector('[data-testid="WarningAmberIcon"]')).not.toBeNull();
 		});
 
 		it('renderiza URL inválida como texto plano en lugar de un enlace roto', () => {
@@ -75,23 +91,13 @@ describe('SurveyAnswerDisplay', () => {
 		});
 
 		it('renderiza TAGS y OPCION_MULTIPLE como Chips independientes', () => {
-			render(
-				<SurveyAnswerDisplay
-					value={['Folklore', 'Rock Tucumano']}
-					tipoDato="TAGS"
-				/>,
-			);
+			render(<SurveyAnswerDisplay value={['Folklore', 'Rock Tucumano']} tipoDato="TAGS" />);
 			expect(screen.getByText('Folklore')).toBeDefined();
 			expect(screen.getByText('Rock Tucumano')).toBeDefined();
 		});
 
 		it('renderiza TAGS guardados como string separado por comas como Chips', () => {
-			render(
-				<SurveyAnswerDisplay
-					value="Folklore, Rock Tucumano"
-					tipoDato="TAGS"
-				/>,
-			);
+			render(<SurveyAnswerDisplay value="Folklore, Rock Tucumano" tipoDato="TAGS" />);
 			expect(screen.getByText('Folklore')).toBeDefined();
 			expect(screen.getByText('Rock Tucumano')).toBeDefined();
 		});
@@ -121,9 +127,10 @@ describe('SurveyAnswerDisplay', () => {
 			expect(container.querySelector('a')).toBeNull();
 		});
 
-		it('formatea fechas automáticamente si coinciden con YYYY-MM-DD', () => {
-			render(<SurveyAnswerDisplay value="9999-08-29" />);
-			expect(screen.getByText(/29 de agosto/i)).toBeDefined();
+		it('formatea fechas automáticamente si coinciden con YYYY-MM-DD con ícono de calendario', () => {
+			const { container } = render(<SurveyAnswerDisplay value="2024-05-25" />);
+			expect(screen.getByText(/25 de mayo de 2024/i)).toBeDefined();
+			expect(container.querySelector('[data-testid="CalendarMonthOutlinedIcon"]')).not.toBeNull();
 		});
 
 		it('reconoce correos electrónicos y crea enlaces mailto:', () => {
@@ -145,6 +152,11 @@ describe('SurveyAnswerDisplay', () => {
 			const link = container.querySelector('a');
 			expect(link).not.toBeNull();
 			expect(link?.getAttribute('href')).toBe('https://mosaico.gob.ar');
+		});
+
+		it('muestra alerta para URLs que usan http:// sin tipoDato explícito', () => {
+			render(<SurveyAnswerDisplay value="http://inseguro.gob.ar" />);
+			expect(screen.getByText(/utiliza HTTP en lugar de HTTPS/i)).toBeDefined();
 		});
 
 		it('renderiza valor vacío si el dato es null o string en blanco', () => {

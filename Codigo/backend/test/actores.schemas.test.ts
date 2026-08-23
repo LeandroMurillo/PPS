@@ -49,7 +49,11 @@ describe('actorDetalleRespuestaSchema', () => {
 			{ pregunta: 'Teléfono de contacto', tipoDato: 'TELEFONO', respuesta: '+5493815123456' },
 			{ pregunta: 'Formato habitual', tipoDato: 'OPCION_UNICA', respuesta: 'Solista' },
 			{ pregunta: 'Cámaras utilizadas', tipoDato: 'OPCION_MULTIPLE', respuesta: 'Sony Alpha, Blackmagic' },
-			{ pregunta: 'Especialidades técnicas', tipoDato: 'OPCION_MULTIPLE_CHIPS', respuesta: 'Sonido, Iluminación' },
+			{
+				pregunta: 'Especialidades técnicas',
+				tipoDato: 'OPCION_MULTIPLE_CHIPS',
+				respuesta: 'Sonido, Iluminación',
+			},
 			{ pregunta: 'Etiquetas temáticas', tipoDato: 'TAGS', respuesta: 'Folklore, Rock Tucumano' },
 		];
 
@@ -103,7 +107,7 @@ describe('actorDetalleRespuestaSchema', () => {
 				esPublica: true,
 				direccion: 'San Martín 250',
 				latitud: -26.83,
-				longitud: -65.20,
+				longitud: -65.2,
 			},
 			portafolio: [],
 			eventos: [],
