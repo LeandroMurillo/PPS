@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
@@ -16,7 +16,6 @@ import {
 	Box,
 	Button,
 	Card,
-	CardActionArea,
 	CardContent,
 	Chip,
 	CircularProgress,
@@ -62,6 +61,9 @@ const PRESETS_FECHA = [
 type PresetFechaId = (typeof PRESETS_FECHA)[number]['id'];
 
 export default function ProximosEventosPage() {
+	const location = useLocation();
+	const returnUrl = encodeURIComponent(`${location.pathname}${location.search}` || '/eventos');
+
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
 
@@ -461,34 +463,45 @@ export default function ProximosEventosPage() {
 							<Grid key={evento.idEvento} size={{ xs: 12, md: 6, lg: 4 }}>
 								<Card
 									elevation={0}
+									onClick={(e) => handleOpenCalendar(evento, e.currentTarget)}
+									tabIndex={0}
+									role="button"
+									onKeyDown={(e) => {
+										if (e.key === 'Enter' || e.key === ' ') {
+											e.preventDefault();
+											handleOpenCalendar(evento, e.currentTarget);
+										}
+									}}
 									sx={{
 										height: '100%',
 										display: 'flex',
 										flexDirection: 'column',
-										borderRadius: 2,
+										borderRadius: 2.5,
 										border: '1px solid',
 										borderColor: 'divider',
-										transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+										cursor: 'pointer',
+										userSelect: 'none',
+										transition: 'all 0.2s ease',
+										backgroundColor: isDarkMode ? 'background.paper' : '#ffffff',
 										'&:hover': {
 											transform: 'translateY(-2px)',
 											boxShadow: isDarkMode
-												? '0 8px 24px rgba(0,0,0,0.5)'
-												: '0 8px 20px rgba(0,0,0,0.06)',
-											borderColor: isDarkMode ? 'primary.dark' : 'primary.light',
+												? '0 12px 28px rgba(0,0,0,0.5)'
+												: '0 12px 24px rgba(0,0,0,0.08)',
+											borderColor: isDarkMode ? 'primary.dark' : 'primary.main',
+											backgroundColor: isDarkMode
+												? 'rgba(255, 255, 255, 0.05)'
+												: 'rgba(25, 118, 210, 0.04)',
+											'& .actor-footer-box': {
+												backgroundColor: isDarkMode
+													? 'rgba(255, 255, 255, 0.08)'
+													: 'rgba(25, 118, 210, 0.08)',
+											},
 										},
 									}}
 								>
-									{/* Área clickeable para abrir calendario */}
-									<CardActionArea
-										onClick={(e) => handleOpenCalendar(evento, e.currentTarget)}
-										sx={{
-											flexGrow: 1,
-											display: 'flex',
-											flexDirection: 'column',
-											alignItems: 'stretch',
-											justifyContent: 'flex-start',
-											p: 2.5,
-										}}
+									<CardContent
+										sx={{ p: 2.5, flex: '1 0 auto', display: 'flex', flexDirection: 'column' }}
 									>
 										{/* Fila Superior: Fecha destacada + Disciplina */}
 										<Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
@@ -640,52 +653,57 @@ export default function ProximosEventosPage() {
 													)}
 												</Box>
 											</Stack>
-										</Box>
-									</CardActionArea>
 
-									{/* Footer de la tarjeta con Organizador y Enlace al perfil */}
-									<CardContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
-										<Stack
-											direction="row"
-											spacing={1}
-											alignItems="center"
-											justifyContent="space-between"
-											sx={{
-												p: 1,
-												borderRadius: 1.5,
-												backgroundColor: isDarkMode ? 'action.hover' : '#f8fafc',
-											}}
-										>
-											<Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-												<Avatar
-													src={evento.fotoPerfilActor ?? undefined}
-													alt={evento.nombreActor}
-													sx={{ width: 28, height: 28, fontSize: 13 }}
-												>
-													<PersonIcon fontSize="small" />
-												</Avatar>
-												<Typography variant="body2" fontWeight="500" noWrap>
-													{evento.nombreActor}
-												</Typography>
-											</Stack>
-
-											<Button
-												component={Link}
-												to={`/actores/${actorSlug}`}
-												size="small"
-												variant="text"
-												onClick={(e) => e.stopPropagation()}
+											{/* Actor Organizador */}
+											<Stack
+												className="actor-footer-box"
+												direction="row"
+												spacing={1}
+												alignItems="center"
+												justifyContent="space-between"
 												sx={{
-													textTransform: 'none',
-													whiteSpace: 'nowrap',
-													fontWeight: 600,
-													minWidth: 'auto',
-													p: 0.5,
+													p: 1,
+													borderRadius: 1.5,
+													backgroundColor: isDarkMode ? 'action.hover' : '#f8fafc',
+													transition: 'background-color 0.2s ease',
 												}}
 											>
-												Ver perfil
-											</Button>
-										</Stack>
+												<Stack
+													direction="row"
+													spacing={1}
+													alignItems="center"
+													sx={{ minWidth: 0 }}
+												>
+													<Avatar
+														src={evento.fotoPerfilActor ?? undefined}
+														alt={evento.nombreActor}
+														sx={{ width: 28, height: 28, fontSize: 13 }}
+													>
+														<PersonIcon fontSize="small" />
+													</Avatar>
+													<Typography variant="body2" fontWeight="500" noWrap>
+														{evento.nombreActor}
+													</Typography>
+												</Stack>
+
+												<Button
+													component={Link}
+													to={`/actores/${actorSlug}?from=${returnUrl}`}
+													size="small"
+													variant="text"
+													onClick={(e) => e.stopPropagation()}
+													sx={{
+														textTransform: 'none',
+														whiteSpace: 'nowrap',
+														fontWeight: 600,
+														minWidth: 'auto',
+														p: 0.5,
+													}}
+												>
+													Ver perfil
+												</Button>
+											</Stack>
+										</Box>
 									</CardContent>
 								</Card>
 							</Grid>
