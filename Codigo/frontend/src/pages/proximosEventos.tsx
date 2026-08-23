@@ -16,6 +16,7 @@ import {
 	Box,
 	Button,
 	Card,
+	CardActionArea,
 	CardContent,
 	Chip,
 	CircularProgress,
@@ -43,19 +44,19 @@ import {
 	type FiltroDepartamento,
 } from '../api/actores';
 import CategoryIcon from '../components/categoryIcon';
-import EventCalendarButton from '../components/eventCalendarButton';
+import CalendarExportMenu from '../components/calendarExportMenu';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { type CalendarEventData } from '../utils/calendar';
 import { markdownToPlainText } from '../utils/markdown';
 import { buildSlugConId } from '../utils/slug';
 
 dayjs.locale('es');
 
 const PRESETS_FECHA = [
-	{ id: 'todos', label: 'Todos los futuros' },
+	{ id: 'todos', label: 'Todos los eventos' },
 	{ id: 'semana', label: 'Próximos 7 días' },
 	{ id: 'mes', label: 'Este mes' },
-	{ id: 'personalizado', label: 'Rango personalizado' },
 ] as const;
 
 type PresetFechaId = (typeof PRESETS_FECHA)[number]['id'];
@@ -78,7 +79,7 @@ export default function ProximosEventosPage() {
 	const debouncedBusqueda = useDebouncedValue(busqueda);
 	const [filtroCategoria, setFiltroCategoria] = useState<number>(0);
 	const [filtroDepartamento, setFiltroDepartamento] = useState<string>('');
-	const [presetFecha, setPresetFecha] = useState<PresetFechaId>('todos');
+	const [presetFecha, setPresetFecha] = useState<PresetFechaId>('mes');
 	const [fechaDesde, setFechaDesde] = useState<string>('');
 	const [fechaHasta, setFechaHasta] = useState<string>('');
 
@@ -86,6 +87,27 @@ export default function ProximosEventosPage() {
 	const [page, setPage] = useState(0);
 	const [hasNext, setHasNext] = useState(false);
 	const LIMIT = 18;
+
+	// Menú de calendario
+	const [calendarEvent, setCalendarEvent] = useState<CalendarEventData | null>(null);
+	const [calendarAnchorEl, setCalendarAnchorEl] = useState<HTMLElement | null>(null);
+
+	const handleOpenCalendar = (evento: EventoPublicoItem, target: HTMLElement) => {
+		setCalendarEvent({
+			nombreEvento: evento.nombreEvento,
+			descripcion: evento.descripcion,
+			fecha: evento.fecha,
+			departamento: evento.departamento,
+			localidad: evento.localidad,
+			direccion: evento.direccion,
+		});
+		setCalendarAnchorEl(target);
+	};
+
+	const handleCloseCalendar = () => {
+		setCalendarAnchorEl(null);
+		setCalendarEvent(null);
+	};
 
 	// Fechas computadas según preset
 	const { computedFechaDesde, computedFechaHasta } = useMemo(() => {
@@ -100,12 +122,6 @@ export default function ProximosEventosPage() {
 			return {
 				computedFechaDesde: hoy,
 				computedFechaHasta: dayjs().endOf('month').format('YYYY-MM-DD'),
-			};
-		}
-		if (presetFecha === 'personalizado') {
-			return {
-				computedFechaDesde: fechaDesde || undefined,
-				computedFechaHasta: fechaHasta || undefined,
 			};
 		}
 		return {
@@ -356,32 +372,6 @@ export default function ProximosEventosPage() {
 							)}
 						</Stack>
 					</Grid>
-
-					{/* Fechas personalizadas si está activo */}
-					{presetFecha === 'personalizado' && (
-						<Grid size={{ xs: 12 }}>
-							<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
-								<TextField
-									label="Desde"
-									type="date"
-									size="small"
-									value={fechaDesde}
-									onChange={(e) => setFechaDesde(e.target.value)}
-									slotProps={{ inputLabel: { shrink: true } }}
-									sx={{ width: { xs: '100%', sm: 200 } }}
-								/>
-								<TextField
-									label="Hasta"
-									type="date"
-									size="small"
-									value={fechaHasta}
-									onChange={(e) => setFechaHasta(e.target.value)}
-									slotProps={{ inputLabel: { shrink: true } }}
-									sx={{ width: { xs: '100%', sm: 200 } }}
-								/>
-							</Stack>
-						</Grid>
-					)}
 				</Grid>
 			</Paper>
 
@@ -488,8 +478,17 @@ export default function ProximosEventosPage() {
 										},
 									}}
 								>
-									<CardContent
-										sx={{ p: 2.5, flex: '1 0 auto', display: 'flex', flexDirection: 'column' }}
+									{/* Área clickeable para abrir calendario */}
+									<CardActionArea
+										onClick={(e) => handleOpenCalendar(evento, e.currentTarget)}
+										sx={{
+											flexGrow: 1,
+											display: 'flex',
+											flexDirection: 'column',
+											alignItems: 'stretch',
+											justifyContent: 'flex-start',
+											p: 2.5,
+										}}
 									>
 										{/* Fila Superior: Fecha destacada + Disciplina */}
 										<Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
@@ -618,7 +617,7 @@ export default function ProximosEventosPage() {
 											</Typography>
 										)}
 
-										<Box sx={{ mt: 'auto', pt: 1.5 }}>
+										<Box sx={{ mt: 'auto', pt: 1.5, width: '100%' }}>
 											<Divider sx={{ mb: 1.5 }} />
 
 											{/* Ubicación */}
@@ -641,69 +640,52 @@ export default function ProximosEventosPage() {
 													)}
 												</Box>
 											</Stack>
+										</Box>
+									</CardActionArea>
 
-											{/* Actor Organizador */}
-											<Stack
-												direction="row"
-												spacing={1}
-												alignItems="center"
-												justifyContent="space-between"
-												sx={{
-													p: 1,
-													borderRadius: 1.5,
-													backgroundColor: isDarkMode ? 'action.hover' : '#f8fafc',
-													mb: 1.5,
-												}}
-											>
-												<Stack
-													direction="row"
-													spacing={1}
-													alignItems="center"
-													sx={{ minWidth: 0 }}
+									{/* Footer de la tarjeta con Organizador y Enlace al perfil */}
+									<CardContent sx={{ pt: 0, px: 2.5, pb: 2 }}>
+										<Stack
+											direction="row"
+											spacing={1}
+											alignItems="center"
+											justifyContent="space-between"
+											sx={{
+												p: 1,
+												borderRadius: 1.5,
+												backgroundColor: isDarkMode ? 'action.hover' : '#f8fafc',
+											}}
+										>
+											<Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+												<Avatar
+													src={evento.fotoPerfilActor ?? undefined}
+													alt={evento.nombreActor}
+													sx={{ width: 28, height: 28, fontSize: 13 }}
 												>
-													<Avatar
-														src={evento.fotoPerfilActor ?? undefined}
-														alt={evento.nombreActor}
-														sx={{ width: 28, height: 28, fontSize: 13 }}
-													>
-														<PersonIcon fontSize="small" />
-													</Avatar>
-													<Typography variant="body2" fontWeight="500" noWrap>
-														{evento.nombreActor}
-													</Typography>
-												</Stack>
-
-												<Button
-													component={Link}
-													to={`/actores/${actorSlug}`}
-													size="small"
-													variant="text"
-													sx={{
-														textTransform: 'none',
-														whiteSpace: 'nowrap',
-														fontWeight: 600,
-														minWidth: 'auto',
-														p: 0.5,
-													}}
-												>
-													Ver perfil
-												</Button>
+													<PersonIcon fontSize="small" />
+												</Avatar>
+												<Typography variant="body2" fontWeight="500" noWrap>
+													{evento.nombreActor}
+												</Typography>
 											</Stack>
 
-											{/* Botón de Guardar en Calendario */}
-											<Box sx={{ display: 'flex', justifyContent: 'center' }}>
-												<EventCalendarButton
-													event={{
-														nombreEvento: evento.nombreEvento,
-														descripcion: evento.descripcion,
-														fecha: evento.fecha,
-														departamento: evento.departamento,
-														localidad: evento.localidad,
-														direccion: evento.direccion,
-													}}
-												/>
-											</Box>
-										</Box>
+											<Button
+												component={Link}
+												to={`/actores/${actorSlug}`}
+												size="small"
+												variant="text"
+												onClick={(e) => e.stopPropagation()}
+												sx={{
+													textTransform: 'none',
+													whiteSpace: 'nowrap',
+													fontWeight: 600,
+													minWidth: 'auto',
+													p: 0.5,
+												}}
+											>
+												Ver perfil
+											</Button>
+										</Stack>
 									</CardContent>
 								</Card>
 							</Grid>
@@ -720,6 +702,14 @@ export default function ProximosEventosPage() {
 					<CircularProgress size={32} />
 				</Box>
 			)}
+
+			{/* Menú para exportar al calendario */}
+			<CalendarExportMenu
+				anchorEl={calendarAnchorEl}
+				open={Boolean(calendarAnchorEl)}
+				onClose={handleCloseCalendar}
+				event={calendarEvent}
+			/>
 		</Box>
 	);
 }

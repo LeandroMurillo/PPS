@@ -8,6 +8,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import BadgeIcon from '@mui/icons-material/Badge';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CloseIcon from '@mui/icons-material/Close';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -28,7 +29,7 @@ import {
 	Box,
 	Button,
 	Card,
-	CardContent,
+	CardActionArea,
 	Chip,
 	Dialog,
 	DialogContent,
@@ -47,8 +48,10 @@ import {
 
 import { ESTADO_COLORS, getEstadoEtiqueta, getTipoActorEtiqueta } from '../constants/estados';
 import { useAuth } from '../context/AuthContext';
+import { type CalendarEventData } from '../utils/calendar';
 import { formatEventDate } from '../utils/date';
 import { detectarTipoEnlace, esImagenPortafolio, obtenerIdYoutube, type TipoEnlace } from '../utils/links';
+import CalendarExportMenu from './calendarExportMenu';
 import MarkdownContent from './markdownContent';
 import SurveyAnswerDisplay from './surveyAnswerDisplay';
 
@@ -314,6 +317,30 @@ export default function ActorPortfolioView({
 	const [imageModalOpen, setImageModalOpen] = useState(false);
 	const [mapModalOpen, setMapModalOpen] = useState(false);
 	const [modalMapaSatelital, setModalMapaSatelital] = useState(false);
+
+	// Estado para exportación al calendario
+	const [calendarEvent, setCalendarEvent] = useState<CalendarEventData | null>(null);
+	const [calendarAnchorEl, setCalendarAnchorEl] = useState<HTMLElement | null>(null);
+
+	const handleOpenCalendar = (
+		evento: { nombre: string; descripcion?: string | null; fecha: string },
+		target: HTMLElement,
+	) => {
+		setCalendarEvent({
+			nombreEvento: evento.nombre,
+			descripcion: evento.descripcion,
+			fecha: evento.fecha,
+			departamento: actor.ubicacion?.departamento,
+			localidad: actor.ubicacion?.localidad,
+			direccion: actor.ubicacion?.direccion,
+		});
+		setCalendarAnchorEl(target);
+	};
+
+	const handleCloseCalendar = () => {
+		setCalendarAnchorEl(null);
+		setCalendarEvent(null);
+	};
 
 	// Asegurar que si los permisos cambian, no se muestre información privada
 	const effectiveShowAll = isPrivileged && showAllInfo;
@@ -939,19 +966,74 @@ export default function ActorPortfolioView({
 							<Grid size={{ xs: 12, sm: 6 }} key={`${evento.nombre}-${evento.fecha}-${idx}`}>
 								<Card
 									variant="outlined"
-									sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+									sx={{
+										height: '100%',
+										display: 'flex',
+										flexDirection: 'column',
+										borderRadius: 2,
+										transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+										'&:hover': {
+											borderColor: 'primary.main',
+											boxShadow: 2,
+											transform: 'translateY(-2px)',
+										},
+									}}
 								>
-									<CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-										<Typography variant="subtitle2" color="text.secondary" gutterBottom>
-											{evento.nombre}
-										</Typography>
-										<Typography variant="h6" sx={{ mb: 2 }}>
-											{evento.descripcion}
-										</Typography>
-										<Typography variant="caption" color="text.secondary" sx={{ mt: 'auto' }}>
+									<CardActionArea
+										onClick={(e) => handleOpenCalendar(evento, e.currentTarget)}
+										sx={{
+											flexGrow: 1,
+											p: 2.5,
+											display: 'flex',
+											flexDirection: 'column',
+											alignItems: 'stretch',
+											justifyContent: 'flex-start',
+										}}
+									>
+										<Stack
+											direction="row"
+											justifyContent="space-between"
+											alignItems="flex-start"
+											sx={{ mb: 1.5 }}
+										>
+											<Typography variant="h6" fontWeight="700" sx={{ lineHeight: 1.3 }}>
+												{evento.nombre}
+											</Typography>
+											<Chip
+												size="small"
+												icon={<CalendarMonthIcon fontSize="small" />}
+												label="Agendar"
+												color="primary"
+												variant="outlined"
+												sx={{ pointerEvents: 'none', ml: 1, flexShrink: 0, fontWeight: 600 }}
+											/>
+										</Stack>
+
+										{evento.descripcion && (
+											<Typography
+												variant="body2"
+												color="text.secondary"
+												sx={{ mb: 2, whiteSpace: 'pre-line' }}
+											>
+												{evento.descripcion}
+											</Typography>
+										)}
+
+										<Typography
+											variant="caption"
+											color="text.secondary"
+											sx={{
+												mt: 'auto',
+												display: 'flex',
+												alignItems: 'center',
+												gap: 0.5,
+												fontWeight: 600,
+											}}
+										>
+											<CalendarMonthIcon sx={{ fontSize: 14 }} />
 											{formatearFechaEvento(evento.fecha)}
 										</Typography>
-									</CardContent>
+									</CardActionArea>
 								</Card>
 							</Grid>
 						))}
@@ -1234,6 +1316,14 @@ export default function ActorPortfolioView({
 					</DialogContent>
 				</Dialog>
 			)}
+
+			{/* Menú para exportar evento a Google Calendar / .ics */}
+			<CalendarExportMenu
+				anchorEl={calendarAnchorEl}
+				open={Boolean(calendarAnchorEl)}
+				onClose={handleCloseCalendar}
+				event={calendarEvent}
+			/>
 		</Box>
 	);
 }
