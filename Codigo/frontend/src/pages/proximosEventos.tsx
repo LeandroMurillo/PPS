@@ -55,7 +55,7 @@ dayjs.locale('es');
 const PRESETS_FECHA = [
 	{ id: 'todos', label: 'Todos los eventos' },
 	{ id: 'semana', label: 'Próximos 7 días' },
-	{ id: 'mes', label: 'Este mes' },
+	{ id: 'mes', label: 'Próximos 30 días' },
 ] as const;
 
 type PresetFechaId = (typeof PRESETS_FECHA)[number]['id'];
@@ -154,7 +154,7 @@ export default function ProximosEventosPage() {
 		if (presetFecha === 'mes') {
 			return {
 				computedFechaDesde: hoy,
-				computedFechaHasta: dayjs().endOf('month').format('YYYY-MM-DD'),
+				computedFechaHasta: dayjs().add(30, 'day').format('YYYY-MM-DD'),
 			};
 		}
 		return {
@@ -493,16 +493,9 @@ export default function ProximosEventosPage() {
 						return (
 							<Grid key={evento.idEvento} size={{ xs: 12, md: 6, lg: 4 }}>
 								<Card
+									component={Link}
+									to={`/actores/${actorSlug}?from=${returnUrl}`}
 									elevation={0}
-									onClick={(e) => handleOpenCalendar(evento, e.currentTarget)}
-									tabIndex={0}
-									role="button"
-									onKeyDown={(e) => {
-										if (e.key === 'Enter' || e.key === ' ') {
-											e.preventDefault();
-											handleOpenCalendar(evento, e.currentTarget);
-										}
-									}}
 									sx={{
 										height: '100%',
 										display: 'flex',
@@ -510,6 +503,8 @@ export default function ProximosEventosPage() {
 										borderRadius: 2.5,
 										border: '1px solid',
 										borderColor: 'divider',
+										textDecoration: 'none',
+										color: 'inherit',
 										cursor: 'pointer',
 										userSelect: 'none',
 										transition: 'all 0.2s ease',
@@ -685,7 +680,7 @@ export default function ProximosEventosPage() {
 												</Box>
 											</Stack>
 
-											{/* Actor Organizador */}
+											{/* Actor Organizador + Botón para Agendar en Calendario */}
 											<Stack
 												className="actor-footer-box"
 												direction="row"
@@ -703,7 +698,7 @@ export default function ProximosEventosPage() {
 													direction="row"
 													spacing={1}
 													alignItems="center"
-													sx={{ minWidth: 0 }}
+													sx={{ minWidth: 0, mr: 1 }}
 												>
 													<Avatar
 														src={evento.fotoPerfilActor ?? undefined}
@@ -718,20 +713,27 @@ export default function ProximosEventosPage() {
 												</Stack>
 
 												<Button
-													component={Link}
-													to={`/actores/${actorSlug}?from=${returnUrl}`}
 													size="small"
-													variant="text"
-													onClick={(e) => e.stopPropagation()}
+													variant="outlined"
+													color="primary"
+													startIcon={<CalendarMonthIcon fontSize="small" />}
+													onClick={(e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														handleOpenCalendar(evento, e.currentTarget);
+													}}
 													sx={{
 														textTransform: 'none',
 														whiteSpace: 'nowrap',
 														fontWeight: 600,
+														borderRadius: 1.5,
 														minWidth: 'auto',
-														p: 0.5,
+														px: 1.2,
+														py: 0.4,
+														fontSize: '0.8rem',
 													}}
 												>
-													Ver perfil
+													Agendar
 												</Button>
 											</Stack>
 										</Box>
