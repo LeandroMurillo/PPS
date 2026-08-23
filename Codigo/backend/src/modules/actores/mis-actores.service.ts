@@ -22,6 +22,8 @@ import {
 	obtenerFormulariosActorRepository,
 	obtenerFormulariosAplicablesRepository,
 	obtenerOpcionesRegistroRepository,
+	renunciarIntegranteRepository,
+	transferirTitularidadRepository,
 } from './mis-actores.repository.js';
 import { removeSavedActorImages, saveActorImage, type SavedActorImage } from './actor-media.service.js';
 import { eliminarArchivosPersonalesUsuario } from '../usuario/usuario-files.service.js';
@@ -218,6 +220,8 @@ export async function listarMisActoresService(input: {
 			tipoActor: actor.tipoActor,
 			fechaCreacion: actor.fechaCreacion,
 			estado: actor.estado,
+			esDueno: actor.esDueno,
+			rolEnActor: actor.rolEnActor,
 			categoria: actor.categoria,
 			categoriaIcono: actor.iconoCategoria,
 			subcategoria: actor.subcategoria,
@@ -639,3 +643,19 @@ export async function eliminarIntegranteNoRegistradoService(input: {
 }) {
 	await eliminarIntegranteNoRegistradoRepository(input);
 }
+
+export async function transferirTitularidadService(input: {
+	idUsuario: number;
+	idActor: number;
+	idNuevoTitular: number;
+}) {
+	await transferirTitularidadRepository(input);
+}
+
+export async function renunciarIntegranteService(input: {
+	idUsuario: number;
+	idActor: number;
+}) {
+	await renunciarIntegranteRepository(input);
+}
+

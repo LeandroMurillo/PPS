@@ -184,6 +184,8 @@ export type MisActorApiItem = {
 	tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
 	fechaCreacion: string;
 	estado: 'A' | 'P' | 'I';
+	esDueno?: boolean;
+	rolEnActor?: string | null;
 	categoria: string;
 	categoriaIcono: CategoriaIcono;
 	subcategoria: string | null;
@@ -515,3 +517,18 @@ export async function eliminarIntegranteNoRegistradoApi(idActor: number, idInteg
 		{ method: 'DELETE' },
 	);
 }
+
+export async function transferirTitularidadApi(idActor: number, idNuevoTitular: number) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/transferir-titularidad`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ idNuevoTitular }),
+	});
+}
+
+export async function renunciarIntegranteApi(idActor: number) {
+	return apiRequest<{ message: string }>(`/api/mis-actores/${idActor}/renunciar`, {
+		method: 'POST',
+	});
+}
+

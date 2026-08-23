@@ -26,6 +26,8 @@ import {
 	obtenerFormulariosActorService,
 	obtenerFormulariosAplicablesService,
 	obtenerOpcionesRegistroService,
+	renunciarIntegranteService,
+	transferirTitularidadService,
 } from './mis-actores.service.js';
 
 const formulariosAplicablesQuerySchema = z.object({
@@ -664,3 +666,52 @@ export async function eliminarIntegranteNoRegistradoController(req: Request, res
 		});
 	}
 }
+
+const transferirTitularidadBodySchema = z.object({
+	idNuevoTitular: z.coerce.number().int().positive('Identificador de nuevo titular inválido'),
+});
+
+export async function transferirTitularidadController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+		const body = transferirTitularidadBodySchema.parse(req.body);
+
+		await transferirTitularidadService({
+			idUsuario: user.idUsuario,
+			idActor,
+			idNuevoTitular: body.idNuevoTitular,
+		});
+
+		res.json({ message: 'Titularidad transferida correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudo transferir la titularidad.'),
+			},
+		});
+	}
+}
+
+export async function renunciarIntegranteController(req: Request, res: Response): Promise<void> {
+	try {
+		const user = req.user!;
+		const idActor = Number(req.params.id);
+
+		await renunciarIntegranteService({
+			idUsuario: user.idUsuario,
+			idActor,
+		});
+
+		res.json({ message: 'Has renunciado al actor cultural correctamente.' });
+	} catch (error) {
+		res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: getPublicErrorMessage(error, 'No se pudo procesar la renuncia.'),
+			},
+		});
+	}
+}
+

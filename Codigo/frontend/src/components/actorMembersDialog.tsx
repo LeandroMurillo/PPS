@@ -18,8 +18,10 @@ import {
 	TextField,
 	ToggleButton,
 	ToggleButtonGroup,
+	Tooltip,
 	Typography,
 } from '@mui/material';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import GroupIcon from '@mui/icons-material/Group';
@@ -32,6 +34,7 @@ import {
 	eliminarIntegranteApi,
 	eliminarIntegranteNoRegistradoApi,
 	listarIntegrantesApi,
+	transferirTitularidadApi,
 	type IntegranteApiItem,
 } from '../api/actores';
 import { notify } from '../utils/toast';
@@ -56,6 +59,10 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 	const [loading, setLoading] = React.useState(false);
 	const [submitting, setSubmitting] = React.useState(false);
 	const [deletingKey, setDeletingKey] = React.useState<string | null>(null);
+
+	// Estado para transferir titularidad
+	const [transferMember, setTransferMember] = React.useState<IntegranteApiItem | null>(null);
+	const [transferring, setTransferring] = React.useState(false);
 
 	// Estado para agregar nuevo integrante
 	const [memberType, setMemberType] = React.useState<'REGISTRADO' | 'NO_REGISTRADO'>('NO_REGISTRADO');
@@ -229,6 +236,25 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 			notify.error(errMsg, { scope: 'actor-members' });
 		} finally {
 			setDeletingKey(null);
+		}
+	};
+
+	const handleConfirmTransfer = async () => {
+		if (!actor || !transferMember || !transferMember.idUsuario) return;
+
+		setTransferring(true);
+		try {
+			await transferirTitularidadApi(actor.id, transferMember.idUsuario);
+			notify.success(`Titularidad transferida a ${transferMember.nombre} ${transferMember.apellido}.`, {
+				scope: 'actor-members',
+			});
+			setTransferMember(null);
+			await loadMembers(actor.id);
+		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Error al transferir titularidad.';
+			notify.error(errMsg, { scope: 'actor-members' });
+		} finally {
+			setTransferring(false);
 		}
 	};
 
@@ -486,28 +512,45 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 										</Stack>
 
 										<Stack direction="row" spacing={0.5}>
-											<IconButton
-												size="small"
-												color="primary"
-												onClick={() => handleStartEdit(member)}
-												aria-label={`Editar a ${member.nombre} ${member.apellido}`}
-											>
-												<EditIcon fontSize="small" />
-											</IconButton>
-											{!member.esDueño && (
+											{member.tipo === 'REGISTRADO' && !member.esDueño && (
+												<Tooltip title="Transferir titularidad">
+													<IconButton
+														size="small"
+														color="warning"
+														onClick={() => setTransferMember(member)}
+														disabled={transferring}
+														aria-label={`Transferir titularidad a ${member.nombre} ${member.apellido}`}
+													>
+														<AdminPanelSettingsIcon fontSize="small" />
+													</IconButton>
+												</Tooltip>
+											)}
+											<Tooltip title="Editar integrante">
 												<IconButton
 													size="small"
-													color="error"
-													onClick={() => handleDeleteMember(member)}
-													disabled={deletingKey !== null}
-													aria-label={`Eliminar a ${member.nombre} ${member.apellido}`}
+													color="primary"
+													onClick={() => handleStartEdit(member)}
+													aria-label={`Editar a ${member.nombre} ${member.apellido}`}
 												>
-													{deletingKey === memberKey ? (
-														<CircularProgress size={18} />
-													) : (
-														<DeleteOutlineIcon fontSize="small" />
-													)}
+													<EditIcon fontSize="small" />
 												</IconButton>
+											</Tooltip>
+											{!member.esDueño && (
+												<Tooltip title="Eliminar integrante">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={() => handleDeleteMember(member)}
+														disabled={deletingKey !== null}
+														aria-label={`Eliminar a ${member.nombre} ${member.apellido}`}
+													>
+														{deletingKey === memberKey ? (
+															<CircularProgress size={18} />
+														) : (
+															<DeleteOutlineIcon fontSize="small" />
+														)}
+													</IconButton>
+												</Tooltip>
 											)}
 										</Stack>
 									</Stack>
@@ -522,6 +565,45 @@ export default function ActorMembersDialog({ open, actor, onClose }: Props) {
 					Cerrar
 				</Button>
 			</DialogActions>
+
+			{/* Diálogo de confirmación para transferir titularidad */}
+			<Dialog
+				open={Boolean(transferMember)}
+				onClose={() => !transferring && setTransferMember(null)}
+				maxWidth="xs"
+				fullWidth
+			>
+				<DialogTitle fontWeight={700}>Transferir titularidad</DialogTitle>
+				<DialogContent dividers>
+					<Stack spacing={2}>
+						<Typography variant="body2">
+							¿Estás seguro de que deseás transferir la titularidad de <strong>{actor?.nombre}</strong> a{' '}
+							<strong>
+								{transferMember?.nombre} {transferMember?.apellido}
+							</strong>
+							?
+						</Typography>
+						<Alert severity="warning">
+							Perderás los privilegios de administración sobre este actor cultural (editar datos, portafolio, eventos
+							e integrantes). Pasarás a ser un integrante regular.
+						</Alert>
+					</Stack>
+				</DialogContent>
+				<DialogActions sx={{ p: 2 }}>
+					<Button onClick={() => setTransferMember(null)} disabled={transferring}>
+						Cancelar
+					</Button>
+					<Button
+						variant="contained"
+						color="warning"
+						onClick={handleConfirmTransfer}
+						disabled={transferring}
+						startIcon={transferring ? <CircularProgress size={16} /> : <AdminPanelSettingsIcon />}
+					>
+						{transferring ? 'Transfiriendo...' : 'Transferir titularidad'}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Dialog>
 	);
 }

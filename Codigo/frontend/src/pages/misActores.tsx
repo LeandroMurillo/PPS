@@ -5,6 +5,7 @@ import CollectionsIcon from '@mui/icons-material/Collections';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import GroupIcon from '@mui/icons-material/Group';
 import GridViewIcon from '@mui/icons-material/GridView';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -22,6 +23,10 @@ import {
 	CardMedia,
 	Chip,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	FormControl,
 	Grid,
 	IconButton,
@@ -47,7 +52,12 @@ import ActorStatusDialog from '../components/actorStatusDialog';
 import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import CategoryIcon, { type CategoriaIcono } from '../components/categoryIcon';
-import { listarMisActoresApi, obtenerOpcionesRegistroApi, type OpcionCategoriaRegistro } from '../api/actores';
+import {
+	listarMisActoresApi,
+	obtenerOpcionesRegistroApi,
+	renunciarIntegranteApi,
+	type OpcionCategoriaRegistro,
+} from '../api/actores';
 import {
 	ESTADO_COLORS as stateColors,
 	ESTADO_LABELS as stateLabels,
@@ -108,6 +118,8 @@ export type MyActor = {
 	fotoPerfilUrl: string | null;
 	estado: 'A' | 'P' | 'I';
 	fechaCreacion: string;
+	esDueno?: boolean;
+	rolEnActor?: string | null;
 	portafolio?: MyActorPortfolioItem[];
 	eventos?: MyActorEvent[];
 };
@@ -152,6 +164,38 @@ export default function MisActoresPage() {
 	// Delete Modal
 	const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
 	const [targetDeleteActor, setTargetDeleteActor] = React.useState<MyActor | null>(null);
+
+	// Resign Modal
+	const [resignModalOpen, setResignModalOpen] = React.useState(false);
+	const [targetResignActor, setTargetResignActor] = React.useState<MyActor | null>(null);
+	const [resigning, setResigning] = React.useState(false);
+
+	const handleOpenResignModal = (actor: MyActor) => {
+		setTargetResignActor(actor);
+		setResignModalOpen(true);
+	};
+
+	const handleCloseResignModal = () => {
+		if (resigning) return;
+		setResignModalOpen(false);
+		setTargetResignActor(null);
+	};
+
+	const handleConfirmResign = async () => {
+		if (!targetResignActor) return;
+		setResigning(true);
+		try {
+			await renunciarIntegranteApi(targetResignActor.id);
+			notify.success(`Has renunciado a ${targetResignActor.nombre}.`, { scope: 'mis-actores' });
+			handleCloseResignModal();
+			await fetchMisActores();
+		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : 'Error al procesar la renuncia.';
+			notify.error(errMsg, { scope: 'mis-actores' });
+		} finally {
+			setResigning(false);
+		}
+	};
 
 	const debouncedSearch = useDebouncedValue(search);
 
@@ -204,6 +248,8 @@ export default function MisActoresPage() {
 					fotoPerfilUrl: item.foto,
 					estado: item.estado,
 					fechaCreacion: item.fechaCreacion,
+					esDueno: item.esDueno ?? true,
+					rolEnActor: item.rolEnActor ?? null,
 					portafolio: [],
 					eventos: [],
 				}));
@@ -286,10 +332,23 @@ export default function MisActoresPage() {
 			label: 'Actor cultural',
 			minWidth: 200,
 			render: (row) => (
-				<Stack>
-					<Typography variant="body2" fontWeight={600}>
-						{row.nombre}
-					</Typography>
+				<Stack spacing={0.5}>
+					<Stack direction="row" spacing={1} alignItems="center">
+						<Typography variant="body2" fontWeight={600}>
+							{row.nombre}
+						</Typography>
+						{row.esDueno ? (
+							<Chip label="Titular" size="small" color="primary" sx={{ height: 20, fontSize: 10 }} />
+						) : (
+							<Chip
+								label={row.rolEnActor ? `Integrante (${row.rolEnActor})` : 'Integrante'}
+								size="small"
+								variant="outlined"
+								color="secondary"
+								sx={{ height: 20, fontSize: 10 }}
+							/>
+						)}
+					</Stack>
 					<Typography variant="caption" color="text.secondary">
 						{typeLabels[row.tipoActor]}
 					</Typography>
@@ -343,41 +402,51 @@ export default function MisActoresPage() {
 						</IconButton>
 					</Tooltip>
 
-					<Tooltip title="Editar datos del actor">
-						<IconButton size="small" color="primary" onClick={() => handleOpenEdit(row)}>
-							<EditIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
+					{row.esDueno ? (
+						<>
+							<Tooltip title="Editar datos del actor">
+								<IconButton size="small" color="primary" onClick={() => handleOpenEdit(row)}>
+									<EditIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
 
-					<Tooltip title="Gestionar integrantes">
-						<IconButton size="small" color="secondary" onClick={() => handleOpenMembersModal(row)}>
-							<GroupIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
+							<Tooltip title="Gestionar integrantes">
+								<IconButton size="small" color="secondary" onClick={() => handleOpenMembersModal(row)}>
+									<GroupIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
 
-					<Tooltip title="Gestionar portafolio">
-						<IconButton size="small" color="secondary" onClick={() => handleOpenPortfolioModal(row)}>
-							<CollectionsIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
+							<Tooltip title="Gestionar portafolio">
+								<IconButton size="small" color="secondary" onClick={() => handleOpenPortfolioModal(row)}>
+									<CollectionsIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
 
-					<Tooltip title="Gestionar eventos">
-						<IconButton size="small" color="secondary" onClick={() => handleOpenEventsModal(row)}>
-							<EventIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
+							<Tooltip title="Gestionar eventos">
+								<IconButton size="small" color="secondary" onClick={() => handleOpenEventsModal(row)}>
+									<EventIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
 
-					<Tooltip title="Gestionar estado">
-						<IconButton size="small" color="warning" onClick={() => handleOpenStatusModal(row)}>
-							<TuneIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
+							<Tooltip title="Gestionar estado">
+								<IconButton size="small" color="warning" onClick={() => handleOpenStatusModal(row)}>
+									<TuneIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
 
-					<Tooltip title="Borrar definitivamente">
-						<IconButton size="small" color="error" onClick={() => handleOpenDeleteModal(row)}>
-							<DeleteOutlineIcon fontSize="small" />
-						</IconButton>
-					</Tooltip>
+							<Tooltip title="Borrar definitivamente">
+								<IconButton size="small" color="error" onClick={() => handleOpenDeleteModal(row)}>
+									<DeleteOutlineIcon fontSize="small" />
+								</IconButton>
+							</Tooltip>
+						</>
+					) : (
+						<Tooltip title="Renunciar a ser integrante">
+							<IconButton size="small" color="error" onClick={() => handleOpenResignModal(row)}>
+								<ExitToAppIcon fontSize="small" />
+							</IconButton>
+						</Tooltip>
+					)}
 				</Stack>
 			),
 		},
@@ -613,6 +682,17 @@ export default function MisActoresPage() {
 												variant="outlined"
 											/>
 											<Chip label={typeLabels[actor.tipoActor]} size="small" variant="outlined" />
+											{actor.esDueno ? (
+												<Chip label="Titular" size="small" color="primary" sx={{ fontWeight: 600 }} />
+											) : (
+												<Chip
+													label={actor.rolEnActor ? `Integrante (${actor.rolEnActor})` : 'Integrante'}
+													size="small"
+													color="secondary"
+													variant="outlined"
+													sx={{ fontWeight: 600 }}
+												/>
+											)}
 										</Stack>
 
 										<Stack
@@ -663,65 +743,81 @@ export default function MisActoresPage() {
 										</Button>
 
 										<Stack direction="row" spacing={0.5}>
-											<Tooltip title="Editar actor">
-												<IconButton
-													size="small"
-													color="primary"
-													onClick={() => handleOpenEdit(actor)}
-												>
-													<EditIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
+											{actor.esDueno ? (
+												<>
+													<Tooltip title="Editar actor">
+														<IconButton
+															size="small"
+															color="primary"
+															onClick={() => handleOpenEdit(actor)}
+														>
+															<EditIcon fontSize="small" />
+														</IconButton>
+													</Tooltip>
 
-											<Tooltip title="Gestionar integrantes">
-												<IconButton
-													size="small"
-													color="secondary"
-													onClick={() => handleOpenMembersModal(actor)}
-												>
-													<GroupIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
+													<Tooltip title="Gestionar integrantes">
+														<IconButton
+															size="small"
+															color="secondary"
+															onClick={() => handleOpenMembersModal(actor)}
+														>
+															<GroupIcon fontSize="small" />
+														</IconButton>
+													</Tooltip>
 
-											<Tooltip title="Gestionar portafolio">
-												<IconButton
-													size="small"
-													color="secondary"
-													onClick={() => handleOpenPortfolioModal(actor)}
-												>
-													<CollectionsIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
+													<Tooltip title="Gestionar portafolio">
+														<IconButton
+															size="small"
+															color="secondary"
+															onClick={() => handleOpenPortfolioModal(actor)}
+														>
+															<CollectionsIcon fontSize="small" />
+														</IconButton>
+													</Tooltip>
 
-											<Tooltip title="Gestionar eventos">
-												<IconButton
-													size="small"
-													color="secondary"
-													onClick={() => handleOpenEventsModal(actor)}
-												>
-													<EventIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
+													<Tooltip title="Gestionar eventos">
+														<IconButton
+															size="small"
+															color="secondary"
+															onClick={() => handleOpenEventsModal(actor)}
+														>
+															<EventIcon fontSize="small" />
+														</IconButton>
+													</Tooltip>
 
-											<Tooltip title="Gestionar estado">
-												<IconButton
-													size="small"
-													color="warning"
-													onClick={() => handleOpenStatusModal(actor)}
-												>
-													<TuneIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
+													<Tooltip title="Gestionar estado">
+														<IconButton
+															size="small"
+															color="warning"
+															onClick={() => handleOpenStatusModal(actor)}
+														>
+															<TuneIcon fontSize="small" />
+														</IconButton>
+													</Tooltip>
 
-											<Tooltip title="Borrar actor">
-												<IconButton
-													size="small"
-													color="error"
-													onClick={() => handleOpenDeleteModal(actor)}
-												>
-													<DeleteOutlineIcon fontSize="small" />
-												</IconButton>
-											</Tooltip>
+													<Tooltip title="Borrar definitivamente">
+														<IconButton
+															size="small"
+															color="error"
+															onClick={() => handleOpenDeleteModal(actor)}
+														>
+															<DeleteOutlineIcon fontSize="small" />
+														</IconButton>
+													</Tooltip>
+												</>
+											) : (
+												<Tooltip title="Renunciar a ser integrante">
+													<Button
+														size="small"
+														color="error"
+														variant="outlined"
+														startIcon={<ExitToAppIcon />}
+														onClick={() => handleOpenResignModal(actor)}
+													>
+														Renunciar
+													</Button>
+												</Tooltip>
+											)}
 										</Stack>
 									</CardActions>
 								</Card>
@@ -830,6 +926,41 @@ export default function MisActoresPage() {
 					setActores((prev) => prev.filter((a) => a.id !== actorId));
 				}}
 			/>
+
+			{/* Resign Dialog */}
+			<Dialog
+				open={resignModalOpen}
+				onClose={handleCloseResignModal}
+				maxWidth="xs"
+				fullWidth
+			>
+				<DialogTitle fontWeight={700}>Renunciar a ser integrante</DialogTitle>
+				<DialogContent dividers>
+					<Stack spacing={2}>
+						<Typography variant="body2">
+							¿Estás seguro de que deseás renunciar a ser integrante de{' '}
+							<strong>{targetResignActor?.nombre}</strong>?
+						</Typography>
+						<Alert severity="info">
+							Tu membresía en este actor cultural será eliminada y dejarás de figurar en su nómina de integrantes.
+						</Alert>
+					</Stack>
+				</DialogContent>
+				<DialogActions sx={{ p: 2 }}>
+					<Button onClick={handleCloseResignModal} disabled={resigning}>
+						Cancelar
+					</Button>
+					<Button
+						variant="contained"
+						color="error"
+						onClick={handleConfirmResign}
+						disabled={resigning}
+						startIcon={resigning ? <CircularProgress size={16} /> : <ExitToAppIcon />}
+					>
+						{resigning ? 'Procesando...' : 'Renunciar al actor'}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</PageContainer>
 	);
 }

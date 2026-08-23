@@ -4873,6 +4873,25 @@ VALUES
 SET
   vNuevoId = LAST_INSERT_ID();
 
+-- Auto-vincular membresías previas de integrantes no registrados
+INSERT INTO
+  `Integrantes` (idUsuario, idActor, rol, esDueño)
+SELECT
+  vNuevoId,
+  nr.idActor,
+  nr.rol,
+  0
+FROM
+  `IntegrantesNoRegistrados` nr
+WHERE
+  nr.email = pEmail
+ON DUPLICATE KEY UPDATE
+  rol = nr.rol;
+
+DELETE FROM `IntegrantesNoRegistrados`
+WHERE
+  email = pEmail;
+
 SELECT
   u.idUsuario,
   u.nombre,
@@ -4997,7 +5016,7 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_mis_actores` (IN pIdUsuario INT, IN pBusqueda VARCHAR(100), IN pIdCategoria INT, IN pEstado CHAR(1), IN pLimit INT, IN pOffset INT) READS SQL DATA
-COMMENT 'Lista los actores culturales pertenecientes al usuario autenticado (donde esDueño = 1).'
+COMMENT 'Lista los actores culturales donde el usuario autenticado es integrante o titular.'
 BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
@@ -5026,7 +5045,6 @@ FROM
   JOIN `Ubicaciones` u ON a.idUbicacion = u.idUbicacion
 WHERE
   i.idUsuario = pIdUsuario
-  AND i.esDueño = 1
   AND (
     pIdCategoria IS NULL
     OR pIdCategoria = 0
@@ -5056,6 +5074,8 @@ SELECT
   a.tipoActor,
   a.fechaCreacion,
   a.estado,
+  i.esDueño AS esDueno,
+  i.rol AS rolEnActor,
   c.idCategoria,
   c.nombre AS categoria,
   c.icono AS iconoCategoria,
@@ -5078,7 +5098,6 @@ FROM
   JOIN `Ubicaciones` u ON a.idUbicacion = u.idUbicacion
 WHERE
   i.idUsuario = pIdUsuario
-  AND i.esDueño = 1
   AND (
     pIdCategoria IS NULL
     OR pIdCategoria = 0
@@ -5098,6 +5117,7 @@ WHERE
     OR u.localidad LIKE CONCAT('%', TRIM(pBusqueda), '%')
   )
 ORDER BY
+  i.esDueño DESC,
   a.idActor DESC
 LIMIT
   vLimit
@@ -6099,6 +6119,123 @@ SET
   MESSAGE_TEXT = 'El integrante solicitado no existe.';
 
 END IF;
+
+END //
+-- -----------------------------------------------------
+-- sp_actor_transferir_titularidad
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_actor_transferir_titularidad` (
+    IN pIdUsuarioActual INT,
+    IN pIdActor INT,
+    IN pIdNuevoTitular INT
+  ) MODIFIES SQL DATA
+COMMENT 'Transfiere la titularidad (esDueño = 1) de un actor cultural a otro integrante registrado.'
+BEGIN DECLARE vEsDueno INT DEFAULT 0;
+
+DECLARE vNuevoEsIntegrante INT DEFAULT 0;
+
+SELECT
+  COUNT(*) INTO vEsDueno
+FROM
+  `Integrantes`
+  WHERE
+    idUsuario = pIdUsuarioActual
+    AND idActor = pIdActor
+    AND esDueño = 1;
+
+IF vEsDueno = 0 THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'No tenés permisos de titular para transferir este actor.';
+
+END IF;
+
+IF pIdNuevoTitular = pIdUsuarioActual THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'Ya sos el titular de este actor cultural.';
+
+END IF;
+
+SELECT
+  COUNT(*) INTO vNuevoEsIntegrante
+FROM
+  `Integrantes`
+WHERE
+  idUsuario = pIdNuevoTitular
+  AND idActor = pIdActor;
+
+IF vNuevoEsIntegrante = 0 THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'El nuevo titular debe ser un integrante registrado existente del actor cultural.';
+
+END IF;
+
+START TRANSACTION;
+
+UPDATE `Integrantes`
+SET
+  esDueño = 0
+WHERE
+  idActor = pIdActor
+  AND idUsuario = pIdUsuarioActual;
+
+UPDATE `Integrantes`
+SET
+  esDueño = 1
+WHERE
+  idActor = pIdActor
+  AND idUsuario = pIdNuevoTitular;
+
+COMMIT;
+
+END //
+-- -----------------------------------------------------
+-- sp_actor_renunciar_integrante
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_actor_renunciar_integrante` (
+    IN pIdUsuario INT,
+    IN pIdActor INT
+  ) MODIFIES SQL DATA COMMENT 'Permite a un usuario registrado renunciar a su membresía como integrante de un actor cultural.'
+BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
+
+DECLARE vEsDueno INT DEFAULT 0;
+
+SELECT
+  COUNT(*),
+  COALESCE(MAX(esDueño), 0) INTO vEsIntegrante,
+  vEsDueno
+FROM
+  `Integrantes`
+WHERE
+  idUsuario = pIdUsuario
+  AND idActor = pIdActor;
+
+IF vEsIntegrante = 0 THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'No sos integrante de este actor cultural.';
+
+END IF;
+
+IF vEsDueno = 1 THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'No podés renunciar siendo el titular. Debés transferir la titularidad primero o eliminar el actor.';
+
+END IF;
+
+DELETE FROM `Integrantes`
+WHERE
+  idUsuario = pIdUsuario
+  AND idActor = pIdActor;
 
 END //
 -- -----------------------------------------------------

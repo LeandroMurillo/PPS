@@ -117,6 +117,12 @@ export const misActoresDatabaseRowSchema = z.object({
 		.union([z.date(), z.string()])
 		.transform((val) => (val instanceof Date ? val.toISOString() : String(val))),
 	estado: z.enum(['A', 'P', 'I']),
+	esDueno: databaseIntegerSchema.transform((v) => Boolean(v)),
+	rolEnActor: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((v) => v ?? null),
 	idCategoria: databaseIntegerSchema,
 	categoria: z.string(),
 	iconoCategoria: categoriaIconoSchema,
@@ -661,6 +667,28 @@ export async function eliminarIntegranteNoRegistradoRepository(input: {
 		input.idUsuario,
 		input.idActor,
 		input.idIntegranteNoRegistrado,
+	]);
+}
+
+export async function transferirTitularidadRepository(input: {
+	idUsuario: number;
+	idActor: number;
+	idNuevoTitular: number;
+}) {
+	await pool.query('CALL sp_actor_transferir_titularidad(?, ?, ?)', [
+		input.idUsuario,
+		input.idActor,
+		input.idNuevoTitular,
+	]);
+}
+
+export async function renunciarIntegranteRepository(input: {
+	idUsuario: number;
+	idActor: number;
+}) {
+	await pool.query('CALL sp_actor_renunciar_integrante(?, ?)', [
+		input.idUsuario,
+		input.idActor,
 	]);
 }
 

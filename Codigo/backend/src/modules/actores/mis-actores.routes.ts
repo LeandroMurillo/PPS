@@ -23,6 +23,8 @@ import {
 	obtenerFormulariosActorController,
 	obtenerFormulariosAplicablesController,
 	obtenerOpcionesRegistroController,
+	renunciarIntegranteController,
+	transferirTitularidadController,
 } from './mis-actores.controller.js';
 
 export const misActoresRouter = Router();
@@ -37,6 +39,9 @@ misActoresRouter.get('/:id/formularios', obtenerFormulariosActorController);
 misActoresRouter.put('/:id', editarActorController);
 misActoresRouter.patch('/:id/estado', cambiarEstadoActorController);
 misActoresRouter.delete('/:id', eliminarActorController);
+
+misActoresRouter.post('/:id/transferir-titularidad', transferirTitularidadController);
+misActoresRouter.post('/:id/renunciar', renunciarIntegranteController);
 
 misActoresRouter.get('/:id/portafolio', listarPortafolioController);
 misActoresRouter.post('/:id/portafolio', agregarItemPortafolioController);
