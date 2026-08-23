@@ -206,10 +206,11 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 				});
 
 				const createdId = res?.data?.idItem ?? Date.now();
+				const itemUrl = res?.data?.url || '';
 				const newItem: MyActorPortfolioItem = {
 					id: createdId,
 					tipo: 'IMAGEN',
-					url: imagePreview,
+					url: itemUrl,
 					descripcion: descripcion.trim() || 'Sin título',
 				};
 
@@ -238,10 +239,11 @@ export default function ActorPortfolioDialog({ open, actor, onClose, onPortfolio
 				});
 
 				const createdId = res?.data?.idItem ?? Date.now();
+				const itemUrl = res?.data?.url || normalizedUrl;
 				const newItem: MyActorPortfolioItem = {
 					id: createdId,
 					tipo,
-					url: normalizedUrl,
+					url: itemUrl,
 					descripcion: descripcion.trim() || 'Sin descripción',
 				};
 

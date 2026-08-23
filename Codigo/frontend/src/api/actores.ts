@@ -402,7 +402,7 @@ export async function agregarItemPortafolioApi(
 	idActor: number,
 	input: { tipo: 'IMAGEN' | 'LINK' | 'RRSS'; descripcion: string; url?: string; imagenBase64?: string },
 ) {
-	return apiRequest<{ data: { idItem: number } }>(`/api/mis-actores/${idActor}/portafolio`, {
+	return apiRequest<{ data: { idItem: number; url: string } }>(`/api/mis-actores/${idActor}/portafolio`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(input),

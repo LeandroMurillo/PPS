@@ -36,7 +36,7 @@ const RESEND_COOLDOWN_SECONDS = 30;
 const INITIAL_POLL_INTERVAL_MS = 2000;
 const POLL_BACKOFF_FACTOR = 1.5;
 const MAX_POLL_INTERVAL_MS = 15000;
-const MAX_POLL_TOTAL_TIME_MS = 90000;
+const MAX_POLL_TOTAL_TIME_MS = 600000; // 10 minutos para dar tiempo suficiente al usuario
 
 export default function RegistroPage() {
 	const { mode, systemMode } = useColorScheme();
@@ -245,6 +245,7 @@ export default function RegistroPage() {
 				'El correo todavía no figura como verificado. Si ya hiciste clic en el enlace, aguardá unos segundos o revisá tu carpeta de Spam.',
 				{ scope: 'registro-identidad' },
 			);
+			setPollCycleKey((prev) => prev + 1);
 		} catch (error) {
 			notify.error(getFirebaseErrorMessage(error, 'No se pudo comprobar la verificación.'), {
 				scope: 'registro-identidad',

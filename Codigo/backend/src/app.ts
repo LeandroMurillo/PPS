@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import cors from 'cors';
 import express from 'express';
@@ -21,9 +20,6 @@ import { usuarioRouter } from './modules/usuario/usuario.routes.js';
 import { obtenerDniArchivoController } from './modules/usuario/dni-archivo.controller.js';
 import { openApiRouter } from './openapi/openapi.routes.js';
 import { logger } from './shared/logger.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const app = express();
 
@@ -100,7 +96,7 @@ app.use(
 		res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 		next();
 	},
-	express.static(path.join(__dirname, '../uploads/actores')),
+	express.static(path.resolve(process.cwd(), 'uploads/actores')),
 );
 
 // Acceso autenticado y restringido a imágenes de DNI (privadas)

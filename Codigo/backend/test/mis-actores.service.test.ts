@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+	agregarItemPortafolioService,
 	eliminarActorService,
 	renunciarIntegranteService,
 	transferirTitularidadService,
@@ -11,12 +12,16 @@ const mockEliminarActorRepository = vi.fn();
 const mockEliminarArchivosPersonalesUsuario = vi.fn();
 const mockTransferirTitularidadRepository = vi.fn();
 const mockRenunciarIntegranteRepository = vi.fn();
+const mockAgregarItemPortafolioRepository = vi.fn();
+const mockListarPortafolioRepository = vi.fn();
 
 vi.mock('../src/modules/actores/mis-actores.repository.js', () => ({
 	obtenerArchivosActorRepository: (id: number) => mockObtenerArchivosActorRepository(id),
 	eliminarActorRepository: (args: unknown) => mockEliminarActorRepository(args),
 	transferirTitularidadRepository: (args: unknown) => mockTransferirTitularidadRepository(args),
 	renunciarIntegranteRepository: (args: unknown) => mockRenunciarIntegranteRepository(args),
+	agregarItemPortafolioRepository: (args: unknown) => mockAgregarItemPortafolioRepository(args),
+	listarPortafolioRepository: (args: unknown) => mockListarPortafolioRepository(args),
 }));
 
 vi.mock('../src/modules/usuario/usuario-files.service.js', () => ({
@@ -123,5 +128,56 @@ describe('renunciarIntegranteService', () => {
 			idUsuario: 2,
 			idActor: 5,
 		});
+	});
+});
+
+describe('agregarItemPortafolioService', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('agrega un link de portafolio y retorna idItem junto con la url normalizada', async () => {
+		mockAgregarItemPortafolioRepository.mockResolvedValueOnce({ idItem: 42 });
+
+		const result = await agregarItemPortafolioService({
+			idUsuario: 1,
+			idActor: 5,
+			tipo: 'LINK',
+			descripcion: 'Sitio oficial',
+			url: 'https://ejemplo.com',
+		});
+
+		expect(result).toEqual({
+			idItem: 42,
+			url: 'https://ejemplo.com',
+		});
+		expect(mockAgregarItemPortafolioRepository).toHaveBeenCalledWith({
+			idUsuario: 1,
+			idActor: 5,
+			tipo: 'LINK',
+			descripcion: 'Sitio oficial',
+			url: 'https://ejemplo.com',
+		});
+	});
+
+	it('falla si se intenta agregar una imagen cuando ya se alcanzaron 10 imágenes', async () => {
+		mockListarPortafolioRepository.mockResolvedValueOnce(
+			Array.from({ length: 10 }, (_, i) => ({
+				idItem: i + 1,
+				tipo: 'IMAGEN' as const,
+				url: `https://mosaico.example/uploads/actores/portafolio_${i}.jpg`,
+				descripcion: `Foto ${i}`,
+			})),
+		);
+
+		await expect(
+			agregarItemPortafolioService({
+				idUsuario: 1,
+				idActor: 5,
+				tipo: 'IMAGEN',
+				descripcion: 'Foto 11',
+				url: 'https://mosaico.example/uploads/actores/portafolio_11.jpg',
+			}),
+		).rejects.toThrow('El actor ya alcanzó el límite máximo de 10 imágenes en su portafolio.');
 	});
 });

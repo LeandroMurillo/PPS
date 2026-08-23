@@ -536,13 +536,17 @@ export async function agregarItemPortafolioService(input: {
 	}
 
 	try {
-		return await agregarItemPortafolioRepository({
+		const repoResult = await agregarItemPortafolioRepository({
 			idUsuario: input.idUsuario,
 			idActor: input.idActor,
 			tipo: input.tipo,
 			descripcion: input.descripcion,
 			url: finalUrl,
 		});
+		return {
+			idItem: repoResult.idItem,
+			url: finalUrl,
+		};
 	} catch (error) {
 		if (savedImage) {
 			removeSavedActorImages([savedImage]);
