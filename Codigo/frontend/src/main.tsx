@@ -14,6 +14,7 @@ import Layout from './layouts/dashboard';
 import ActorNuevoPage from './pages/actorNuevo';
 import ActorPortfolio from './pages/actorPortfolio';
 import Actores from './pages/actores';
+import ProximosEventosPage from './pages/proximosEventos';
 import AdminActorDetallePage from './pages/adminActorDetalle';
 import AdminActoresPage from './pages/adminActores';
 import AdminCategoriaDetallePage from './pages/adminCategoriaDetalle';
@@ -89,6 +90,10 @@ const router = createBrowserRouter([
 					{
 						path: 'actores',
 						Component: Actores,
+					},
+					{
+						path: 'eventos',
+						Component: ProximosEventosPage,
 					},
 					{
 						path: 'login',

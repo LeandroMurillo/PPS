@@ -1,7 +1,9 @@
 import {
 	listarActoresRepository,
+	listarEventosPublicosRepository,
 	obtenerActoresMapaRepository,
 	obtenerActorRepository,
+	obtenerEstadisticasPublicasRepository,
 	obtenerFiltrosListadoActoresRepository,
 	obtenerFiltrosMapaRepository,
 } from './actores.repository.js';
@@ -9,13 +11,20 @@ import {
 import type {
 	ListarActoresQuery,
 	ListarActoresResponse,
+	ListarEventosPublicosQuery,
+	ListarEventosPublicosResponse,
 	ObtenerActoresMapaQuery,
 	ObtenerActoresMapaResponse,
 	ObtenerActorResponse,
+	ObtenerEstadisticasPublicasResponse,
 	ObtenerFiltrosListadoActoresResponse,
 	ObtenerFiltrosMapaResponse,
 } from './actores.schemas.js';
-import type { ListarActoresRepositoryInput, ObtenerActoresMapaRepositoryInput } from './actores.types.js';
+import type {
+	ListarActoresRepositoryInput,
+	ListarEventosPublicosRepositoryInput,
+	ObtenerActoresMapaRepositoryInput,
+} from './actores.types.js';
 
 export async function listarActoresService(query: ListarActoresQuery): Promise<ListarActoresResponse> {
 	const repositoryInput: ListarActoresRepositoryInput = {
@@ -82,4 +91,36 @@ export async function obtenerFiltrosMapaService(): Promise<ObtenerFiltrosMapaRes
 
 export async function obtenerFiltrosListadoActoresService(): Promise<ObtenerFiltrosListadoActoresResponse> {
 	return obtenerFiltrosListadoActoresRepository();
+}
+
+export async function listarEventosPublicosService(
+	query: ListarEventosPublicosQuery,
+): Promise<ListarEventosPublicosResponse> {
+	const repositoryInput: ListarEventosPublicosRepositoryInput = {
+		busqueda: query.busqueda ?? null,
+		departamento: query.departamento ?? null,
+		idCategoria: query.idCategoria && query.idCategoria > 0 ? query.idCategoria : null,
+		fechaDesde: query.fechaDesde ?? null,
+		fechaHasta: query.fechaHasta ?? null,
+		limit: query.limit,
+		offset: query.offset,
+	};
+
+	const result = await listarEventosPublicosRepository(repositoryInput);
+	const count = result.data.length;
+
+	return {
+		data: result.data,
+		pagination: {
+			total: result.total,
+			count,
+			limit: query.limit,
+			offset: query.offset,
+			hasNext: query.offset + count < result.total,
+		},
+	};
+}
+
+export async function obtenerEstadisticasPublicasService(): Promise<ObtenerEstadisticasPublicasResponse> {
+	return obtenerEstadisticasPublicasRepository();
 }

@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from 'react-router';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AddCommentIcon from '@mui/icons-material/AddComment';
 import AnnouncementIcon from '@mui/icons-material/Announcement';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CategoryIcon from '@mui/icons-material/Category';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import CodeIcon from '@mui/icons-material/Code';
@@ -60,6 +61,11 @@ function AppContent() {
 				title: 'Actores culturales',
 				segment: 'actores',
 				icon: <PeopleIcon />,
+			},
+			{
+				title: 'Próximos eventos',
+				segment: 'eventos',
+				icon: <CalendarMonthIcon />,
 			},
 		];
 

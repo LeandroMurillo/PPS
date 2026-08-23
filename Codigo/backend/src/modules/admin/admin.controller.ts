@@ -48,6 +48,7 @@ import {
 	desactivarPreguntaFormularioAdminService,
 	reemplazarPreguntaFormularioAdminService,
 	crearPreguntaBancoAdminService,
+	auditarIntegridadSistemaAdminService,
 	listarActoresAdminService,
 	listarCategoriasAdminService,
 	listarPreguntasAdminService,
@@ -842,6 +843,31 @@ export const crearPreguntaBancoAdminController: RequestHandler = async (request,
 			error: {
 				code: 'QUESTION_CREATE_FAILED',
 				message: getPublicErrorMessage(error, 'No se pudo crear la pregunta.'),
+			},
+		});
+	}
+};
+
+export const auditarIntegridadSistemaAdminController: RequestHandler = async (request, response) => {
+	const idUsuario = request.user?.idUsuario;
+	if (!idUsuario) {
+		response.status(401).json({
+			error: {
+				code: 'UNAUTHORIZED',
+				message: 'No autenticado.',
+			},
+		});
+		return;
+	}
+
+	try {
+		const result = await auditarIntegridadSistemaAdminService(idUsuario);
+		response.status(200).json(result);
+	} catch (error) {
+		response.status(400).json({
+			error: {
+				code: 'AUDIT_FAILED',
+				message: getPublicErrorMessage(error, 'No se pudo ejecutar la auditoría de integridad.'),
 			},
 		});
 	}

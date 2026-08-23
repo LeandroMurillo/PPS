@@ -721,3 +721,89 @@ export const listarActoresResponseSchema = z
 	});
 
 export type ListarActoresResponse = z.infer<typeof listarActoresResponseSchema>;
+
+export const listarEventosPublicosQuerySchema = z.strictObject({
+	busqueda: z.preprocess(normalizeOptionalString, z.string().max(255).optional()).meta({
+		description: 'Texto buscado en el nombre o descripción del evento, o en el nombre del actor.',
+		example: 'festival',
+	}),
+	departamento: z.preprocess(normalizeOptionalString, z.string().max(100).optional()).meta({
+		description: 'Nombre del departamento por el cual filtrar los eventos.',
+		example: 'Capital',
+	}),
+	idCategoria: z.preprocess(normalizeQueryInteger, z.number().int().min(1).max(4_294_967_295).optional()).meta({
+		description: 'Identificador de la categoría cultural.',
+		example: 1,
+	}),
+	fechaDesde: z
+		.preprocess(
+			normalizeOptionalString,
+			z
+				.string()
+				.regex(/^\d{4}-\d{2}-\d{2}$/)
+				.optional(),
+		)
+		.meta({
+			description: 'Fecha inicial (YYYY-MM-DD) para el filtro de eventos.',
+			example: '2026-08-25',
+		}),
+	fechaHasta: z
+		.preprocess(
+			normalizeOptionalString,
+			z
+				.string()
+				.regex(/^\d{4}-\d{2}-\d{2}$/)
+				.optional(),
+		)
+		.meta({
+			description: 'Fecha final (YYYY-MM-DD) para el filtro de eventos.',
+			example: '2026-12-31',
+		}),
+	limit: z.preprocess(normalizeQueryInteger, z.number().int().min(1).max(100).default(20)).meta({
+		description: 'Cantidad máxima de eventos devueltos en la página.',
+		default: 20,
+	}),
+	offset: z.preprocess(normalizeQueryInteger, z.number().int().min(0).max(2_147_483_647).default(0)).meta({
+		description: 'Desplazamiento para la paginación.',
+		default: 0,
+	}),
+});
+
+export type ListarEventosPublicosQuery = z.infer<typeof listarEventosPublicosQuerySchema>;
+
+export const eventoPublicoItemSchema = z.strictObject({
+	idEvento: z.number().int().positive(),
+	nombreEvento: z.string(),
+	descripcion: z.string().nullable(),
+	fecha: z.string(),
+	idActor: z.number().int().positive(),
+	nombreActor: z.string(),
+	fotoPerfilActor: z.string().nullable(),
+	idCategoria: z.number().int().positive(),
+	categoria: z.string(),
+	categoriaIcono: z.string(),
+	subcategoria: z.string().nullable(),
+	departamento: z.string(),
+	localidad: z.string().nullable(),
+	direccion: z.string().nullable(),
+	latitud: z.number().nullable(),
+	longitud: z.number().nullable(),
+});
+
+export type EventoPublicoItem = z.infer<typeof eventoPublicoItemSchema>;
+
+export const listarEventosPublicosResponseSchema = z.strictObject({
+	data: z.array(eventoPublicoItemSchema),
+	pagination: paginacionSchema,
+});
+
+export type ListarEventosPublicosResponse = z.infer<typeof listarEventosPublicosResponseSchema>;
+
+export const obtenerEstadisticasPublicasResponseSchema = z.strictObject({
+	totalActores: z.number().int().nonnegative(),
+	totalEspacios: z.number().int().nonnegative(),
+	totalDepartamentos: z.number().int().nonnegative(),
+	totalCategorias: z.number().int().nonnegative(),
+});
+
+export type ObtenerEstadisticasPublicasResponse = z.infer<typeof obtenerEstadisticasPublicasResponseSchema>;

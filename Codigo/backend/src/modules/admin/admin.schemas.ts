@@ -701,3 +701,18 @@ export const reemplazarPreguntaFormularioAdminBodySchema = z.strictObject({
 });
 
 export type ReemplazarPreguntaFormularioAdminBody = z.infer<typeof reemplazarPreguntaFormularioAdminBodySchema>;
+
+export const auditoriaIntegridadHallazgoSchema = z.strictObject({
+	modulo: z.string(),
+	severidad: z.enum(['ALTA', 'MEDIA', 'BAJA', 'INFO']),
+	descripcion: z.string(),
+	idReferencia: z.number().int().nullable(),
+});
+
+export type AuditoriaIntegridadHallazgo = z.infer<typeof auditoriaIntegridadHallazgoSchema>;
+
+export const auditarIntegridadSistemaAdminResponseSchema = z.strictObject({
+	data: z.array(auditoriaIntegridadHallazgoSchema),
+});
+
+export type AuditarIntegridadSistemaAdminResponse = z.infer<typeof auditarIntegridadSistemaAdminResponseSchema>;

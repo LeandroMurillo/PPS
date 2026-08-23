@@ -2,13 +2,16 @@ import type { RequestHandler } from 'express';
 
 import {
 	listarActoresQuerySchema,
+	listarEventosPublicosQuerySchema,
 	obtenerActoresMapaQuerySchema,
 	obtenerActorParamsSchema,
 } from './actores.schemas.js';
 import {
 	listarActoresService,
+	listarEventosPublicosService,
 	obtenerActoresMapaService,
 	obtenerActorService,
+	obtenerEstadisticasPublicasService,
 	obtenerFiltrosListadoActoresService,
 	obtenerFiltrosMapaService,
 } from './actores.service.js';
@@ -108,6 +111,36 @@ export const obtenerFiltrosListadoActoresController: RequestHandler = async (_re
 
 export const obtenerFiltrosMapaController: RequestHandler = async (_request, response) => {
 	const result = await obtenerFiltrosMapaService();
+
+	response.status(200).json(result);
+};
+
+export const listarEventosPublicosController: RequestHandler = async (request, response) => {
+	const validationResult = listarEventosPublicosQuerySchema.safeParse(request.query);
+
+	if (!validationResult.success) {
+		response.status(400).json({
+			error: {
+				code: 'INVALID_QUERY_PARAMETERS',
+				message: 'Los parámetros de consulta no son válidos',
+				details: validationResult.error.issues.map((issue) => ({
+					field: issue.path.join('.'),
+					code: issue.code,
+					message: issue.message,
+				})),
+			},
+		});
+
+		return;
+	}
+
+	const result = await listarEventosPublicosService(validationResult.data);
+
+	response.status(200).json(result);
+};
+
+export const obtenerEstadisticasPublicasController: RequestHandler = async (_request, response) => {
+	const result = await obtenerEstadisticasPublicasService();
 
 	response.status(200).json(result);
 };

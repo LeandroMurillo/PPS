@@ -8,6 +8,7 @@ import type {
 	ActorDetalleAdmin,
 	ActorDetalleEncuestaAdmin,
 	AsociarPreguntaFormularioAdminBody,
+	AuditoriaIntegridadHallazgo,
 	CategoriaAdmin,
 	CategoriaModeracionAdmin,
 	CrearPreguntaFormularioAdminBody,
@@ -948,4 +949,28 @@ export async function crearPreguntaBancoAdminRepository(
 		tipoDato: row.tipoDato,
 		opciones: row.opciones,
 	};
+}
+
+const auditoriaDatabaseRowSchema = z.object({
+	modulo: z.string(),
+	severidad: z.enum(['ALTA', 'MEDIA', 'BAJA', 'INFO']),
+	descripcion: z.string(),
+	idReferencia: databaseIntegerSchema.nullable(),
+});
+
+export async function auditarIntegridadSistemaAdminRepository(
+	idUsuarioSolicitante: number,
+): Promise<AuditoriaIntegridadHallazgo[]> {
+	const procedureName = 'sp_sistema_auditar_integridad';
+	const result: unknown = await pool.query('CALL sp_sistema_auditar_integridad(?)', [idUsuarioSolicitante]);
+	const rows = getResultSet(result, 0, procedureName);
+
+	const parsed = z.array(auditoriaDatabaseRowSchema).parse(rows);
+
+	return parsed.map((item) => ({
+		modulo: item.modulo,
+		severidad: item.severidad,
+		descripcion: item.descripcion,
+		idReferencia: item.idReferencia,
+	}));
 }

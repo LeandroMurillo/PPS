@@ -27,10 +27,12 @@ import {
 	obtenerSubcategoriaAdminRepository,
 	obtenerFormularioAdminRepository,
 	obtenerUsuarioAdminRepository,
+	auditarIntegridadSistemaAdminRepository,
 } from './admin.repository.js';
 
 import type {
 	AsociarPreguntaFormularioAdminBody,
+	AuditarIntegridadSistemaAdminResponse,
 	ListarActoresAdminQuery,
 	ListarActoresAdminResponse,
 	ListarCategoriasAdminQuery,
@@ -294,4 +296,11 @@ export async function listarPreguntasAdminService(
 	query: ListarPreguntasAdminQuery,
 ): Promise<ListarPreguntasAdminResponse> {
 	return { data: await listarPreguntasAdminRepository(query) };
+}
+
+export async function auditarIntegridadSistemaAdminService(
+	idUsuarioSolicitante: number,
+): Promise<AuditarIntegridadSistemaAdminResponse> {
+	const data = await auditarIntegridadSistemaAdminRepository(idUsuarioSolicitante);
+	return { data };
 }

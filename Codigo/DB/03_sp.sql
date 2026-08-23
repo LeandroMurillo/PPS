@@ -2452,6 +2452,114 @@ OFFSET
 
 END //
 -- -----------------------------------------------------
+-- sp_publico_listar_eventos
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_publico_listar_eventos` (
+    IN pBusqueda VARCHAR(255),
+    IN pDepartamento VARCHAR(100),
+    IN pIdCategoria INT,
+    IN pFechaDesde DATE,
+    IN pFechaHasta DATE,
+    IN pLimit INT,
+    IN pOffset INT
+  ) SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Lista los eventos futuros para la agenda cultural publica con filtros de texto, departamento, categoria y rango de fechas. Resultsets: RS1: (total). RS2: (idEvento, nombreEvento, descripcion, fecha, idActor, nombreActor, fotoPerfilActor, idCategoria, categoria, categoriaIcono, subcategoria, departamento, localidad, direccion, latitud, longitud).'
+BEGIN
+  DECLARE vLimit INT DEFAULT 20;
+  DECLARE vOffset INT DEFAULT 0;
+  DECLARE vFechaDesde DATE;
+
+  SET vLimit = LEAST(GREATEST(COALESCE(pLimit, 20), 1), 100);
+  SET vOffset = GREATEST(COALESCE(pOffset, 0), 0);
+  SET vFechaDesde = COALESCE(pFechaDesde, CURDATE());
+
+  -- RS1: Total de coincidencias
+  SELECT COUNT(*) AS total
+  FROM `Eventos` e
+  JOIN `Actores` a ON a.idActor = e.idActor
+  JOIN `Categorias` c ON c.idCategoria = a.idCategoria
+  JOIN `Ubicaciones` u ON u.idUbicacion = a.idUbicacion
+  WHERE e.estado = 'A'
+    AND a.estado = 'A'
+    AND c.estado = 'A'
+    AND e.fecha >= CAST(vFechaDesde AS DATETIME)
+    AND (pFechaHasta IS NULL OR e.fecha <= CAST(CONCAT(pFechaHasta, ' 23:59:59') AS DATETIME))
+    AND (pIdCategoria IS NULL OR a.idCategoria = pIdCategoria)
+    AND (pDepartamento IS NULL OR u.departamento = pDepartamento)
+    AND (
+      pBusqueda IS NULL
+      OR TRIM(pBusqueda) = ''
+      OR e.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
+      OR a.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
+      OR e.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%')
+    );
+
+  -- RS2: Registros paginados
+  SELECT
+    e.idEvento,
+    e.nombre AS nombreEvento,
+    e.descripcion,
+    e.fecha,
+    a.idActor,
+    a.nombre AS nombreActor,
+    a.fotoPerfilUrl AS fotoPerfilActor,
+    c.idCategoria,
+    c.nombre AS categoria,
+    c.icono AS categoriaIcono,
+    sc.nombre AS subcategoria,
+    u.departamento,
+    u.localidad,
+    CASE WHEN u.esPublica = 1 THEN u.direccion ELSE NULL END AS direccion,
+    CASE WHEN u.esPublica = 1 THEN u.latitud ELSE NULL END AS latitud,
+    CASE WHEN u.esPublica = 1 THEN u.longitud ELSE NULL END AS longitud
+  FROM `Eventos` e
+  JOIN `Actores` a ON a.idActor = e.idActor
+  JOIN `Categorias` c ON c.idCategoria = a.idCategoria
+  LEFT JOIN `Subcategorias` sc
+    ON sc.idCategoria = a.idCategoria
+    AND sc.idSubcategoria = a.idSubcategoria
+  JOIN `Ubicaciones` u ON u.idUbicacion = a.idUbicacion
+  WHERE e.estado = 'A'
+    AND a.estado = 'A'
+    AND c.estado = 'A'
+    AND e.fecha >= CAST(vFechaDesde AS DATETIME)
+    AND (pFechaHasta IS NULL OR e.fecha <= CAST(CONCAT(pFechaHasta, ' 23:59:59') AS DATETIME))
+    AND (pIdCategoria IS NULL OR a.idCategoria = pIdCategoria)
+    AND (pDepartamento IS NULL OR u.departamento = pDepartamento)
+    AND (
+      pBusqueda IS NULL
+      OR TRIM(pBusqueda) = ''
+      OR e.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
+      OR a.nombre LIKE CONCAT('%', TRIM(pBusqueda), '%')
+      OR e.descripcion LIKE CONCAT('%', TRIM(pBusqueda), '%')
+    )
+  ORDER BY e.fecha ASC, e.idEvento ASC
+  LIMIT vLimit OFFSET vOffset;
+END //
+-- -----------------------------------------------------
+-- sp_publico_resumen_estadisticas
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_publico_resumen_estadisticas` () SQL SECURITY DEFINER READS SQL DATA
+COMMENT 'Obtiene los contadores consolidados de impacto cultural para la portada institucional del portal y pagina de licencia. Resultsets: RS1: (totalActores, totalEspacios, totalDepartamentos, totalCategorias).'
+BEGIN
+  SELECT
+    (SELECT COUNT(*) FROM `Actores` WHERE estado = 'A') AS totalActores,
+    (SELECT COUNT(*) FROM `Actores` WHERE estado = 'A' AND tipoActor = 'ESPACIO') AS totalEspacios,
+    (
+      SELECT COUNT(DISTINCT u.departamento)
+      FROM `Ubicaciones` u
+      JOIN `Actores` a ON a.idUbicacion = u.idUbicacion
+      WHERE a.estado = 'A'
+    ) AS totalDepartamentos,
+    (SELECT COUNT(*) FROM `Categorias` WHERE estado = 'A') AS totalCategorias;
+END //
+-- -----------------------------------------------------
 -- sp_publico_obtener_actor
 -- -----------------------------------------------------
 CREATE
@@ -7333,5 +7441,130 @@ WHERE
   AND url IS NOT NULL
   AND TRIM(url) <> '';
 
+END //
+-- -----------------------------------------------------
+-- sp_sistema_auditar_integridad
+-- -----------------------------------------------------
+CREATE
+OR
+REPLACE
+  PROCEDURE `sp_sistema_auditar_integridad` (
+    IN pIdUsuarioSolicitante INT
+  ) READS SQL DATA
+COMMENT 'Ejecuta auditorias de integridad referencial y de negocio detectando anomalias o inconsistencias en la base de datos (exclusivo administradores). Resultsets: RS1: (modulo, severidad, descripcion, idReferencia).'
+BEGIN
+  DECLARE vRol VARCHAR(20);
+
+  SELECT rol INTO vRol
+  FROM `Usuarios`
+  WHERE idUsuario = pIdUsuarioSolicitante
+    AND estado = 'A';
+
+  IF vRol IS NULL OR vRol <> 'ADMIN' THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Solo los administradores pueden ejecutar la auditoria de integridad del sistema.';
+  END IF;
+
+  -- Tabla temporal para recolectar hallazgos de diagnostico
+  CREATE TEMPORARY TABLE IF NOT EXISTS `tmp_auditoria_resultados` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `modulo` VARCHAR(50) NOT NULL,
+    `severidad` VARCHAR(10) NOT NULL,
+    `descripcion` VARCHAR(255) NOT NULL,
+    `idReferencia` INT NULL
+  ) ENGINE = MEMORY;
+
+  TRUNCATE TABLE `tmp_auditoria_resultados`;
+
+  -- 1. Formularios activos sin preguntas activas
+  INSERT INTO `tmp_auditoria_resultados` (modulo, severidad, descripcion, idReferencia)
+  SELECT
+    'FORMULARIOS',
+    'ALTA',
+    CONCAT('Formulario "', f.titulo, '" (ID ', f.idFormulario, ') no posee preguntas activas asociadas.'),
+    f.idFormulario
+  FROM `Formularios` f
+  LEFT JOIN `PreguntasFormulario` pf
+    ON pf.idFormulario = f.idFormulario
+    AND pf.estado = 'A'
+  GROUP BY f.idFormulario, f.titulo
+  HAVING COUNT(pf.idPregunta) = 0;
+
+  -- 2. Actores activos sin ningun integrante titular asignado
+  INSERT INTO `tmp_auditoria_resultados` (modulo, severidad, descripcion, idReferencia)
+  SELECT
+    'ACTORES',
+    'ALTA',
+    CONCAT('Actor activo "', a.nombre, '" (ID ', a.idActor, ') no posee un integrante titular con esDueño = 1.'),
+    a.idActor
+  FROM `Actores` a
+  LEFT JOIN `Integrantes` i
+    ON i.idActor = a.idActor
+    AND i.esDueño = 1
+  WHERE a.estado = 'A'
+  GROUP BY a.idActor, a.nombre
+  HAVING COUNT(i.idUsuario) = 0;
+
+  -- 3. Moderadores activos sin categorias asignadas
+  INSERT INTO `tmp_auditoria_resultados` (modulo, severidad, descripcion, idReferencia)
+  SELECT
+    'USUARIOS',
+    'MEDIA',
+    CONCAT('El usuario moderador "', u.nombre, ' ', u.apellido, '" (ID ', u.idUsuario, ') no tiene categorias asignadas.'),
+    u.idUsuario
+  FROM `Usuarios` u
+  LEFT JOIN `ModeradoresCategorias` mc ON mc.idUsuario = u.idUsuario
+  WHERE u.rol = 'MODERADOR' AND u.estado = 'A'
+  GROUP BY u.idUsuario, u.nombre, u.apellido
+  HAVING COUNT(mc.idCategoria) = 0;
+
+  -- 4. Eventos activos asociados a actores dados de baja
+  INSERT INTO `tmp_auditoria_resultados` (modulo, severidad, descripcion, idReferencia)
+  SELECT
+    'EVENTOS',
+    'MEDIA',
+    CONCAT('Evento activo "', e.nombre, '" (ID ', e.idEvento, ') pertenece al actor dado de baja (ID ', a.idActor, ').'),
+    e.idEvento
+  FROM `Eventos` e
+  JOIN `Actores` a ON a.idActor = e.idActor
+  WHERE e.estado = 'A' AND a.estado = 'I';
+
+  -- 5. Preguntas inactivas sin fecha de desactivacion
+  INSERT INTO `tmp_auditoria_resultados` (modulo, severidad, descripcion, idReferencia)
+  SELECT
+    'FORMULARIOS',
+    'BAJA',
+    CONCAT('Pregunta ID ', pf.idPregunta, ' en Formulario ID ', pf.idFormulario, ' tiene estado I pero fechaDesactivacion es nula.'),
+    pf.idPregunta
+  FROM `PreguntasFormulario` pf
+  WHERE pf.estado = 'I' AND pf.fechaDesactivacion IS NULL;
+
+  -- 6. Integrantes no registrados cuyo correo ya coincide con un usuario registrado activo
+  INSERT INTO `tmp_auditoria_resultados` (modulo, severidad, descripcion, idReferencia)
+  SELECT
+    'INTEGRANTES',
+    'INFO',
+    CONCAT('Integrante no registrado (ID ', inr.idIntegranteNoRegistrado, ', email: ', inr.email, ') pertenece a un usuario ya registrado (ID ', u.idUsuario, '). Puede migrarse.'),
+    inr.idIntegranteNoRegistrado
+  FROM `IntegrantesNoRegistrados` inr
+  JOIN `Usuarios` u ON u.email = inr.email
+  WHERE inr.email IS NOT NULL AND u.estado = 'A';
+
+  -- Devolver resultados consolidados
+  SELECT
+    modulo,
+    severidad,
+    descripcion,
+    idReferencia
+  FROM `tmp_auditoria_resultados`
+  ORDER BY
+    CASE severidad
+      WHEN 'ALTA' THEN 1
+      WHEN 'MEDIA' THEN 2
+      WHEN 'BAJA' THEN 3
+      ELSE 4
+    END ASC,
+    modulo ASC,
+    id ASC;
 END //
 DELIMITER ;

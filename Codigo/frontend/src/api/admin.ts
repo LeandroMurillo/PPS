@@ -517,3 +517,14 @@ export async function reemplazarPreguntaFormularioAdmin(
 		},
 	);
 }
+
+export type AuditoriaIntegridadItem = {
+	modulo: string;
+	severidad: 'ALTA' | 'MEDIA' | 'BAJA' | 'INFO';
+	descripcion: string;
+	idReferencia: number | null;
+};
+
+export async function auditarIntegridadSistemaAdmin(signal?: AbortSignal) {
+	return apiFetch<{ data: AuditoriaIntegridadItem[] }>('/api/admin/auditoria/integridad', signal);
+}

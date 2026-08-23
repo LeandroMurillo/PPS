@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
 	asignarModeradorAdminController,
 	asociarPreguntaFormularioAdminController,
+	auditarIntegridadSistemaAdminController,
 	cambiarEstadoUsuarioAdminController,
 	crearCategoriaAdminController,
 	crearFormularioCategoriaAdminController,
@@ -96,3 +97,4 @@ adminRouter.delete(
 	requireRole('ADMIN'),
 	desactivarPreguntaFormularioAdminController,
 );
+adminRouter.get('/auditoria/integridad', requireRole('ADMIN'), auditarIntegridadSistemaAdminController);

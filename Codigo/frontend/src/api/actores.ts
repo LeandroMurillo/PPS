@@ -175,6 +175,73 @@ export async function obtenerActor(id: number, signal?: AbortSignal) {
 	return apiFetch<ObtenerActorResponse>(`/api/publico/actores/${id}`, signal);
 }
 
+export type EventoPublicoItem = {
+	idEvento: number;
+	nombreEvento: string;
+	descripcion: string | null;
+	fecha: string;
+	idActor: number;
+	nombreActor: string;
+	fotoPerfilActor: string | null;
+	idCategoria: number;
+	categoria: string;
+	categoriaIcono: CategoriaIcono;
+	subcategoria: string | null;
+	departamento: string;
+	localidad: string | null;
+	direccion: string | null;
+	latitud: number | null;
+	longitud: number | null;
+};
+
+export type ListarEventosPublicosParams = {
+	busqueda?: string;
+	departamento?: string;
+	idCategoria?: number;
+	fechaDesde?: string;
+	fechaHasta?: string;
+	limit?: number;
+	offset?: number;
+};
+
+export type ListarEventosResponse = {
+	data: EventoPublicoItem[];
+	pagination: {
+		total: number;
+		count: number;
+		limit: number;
+		offset: number;
+		hasNext: boolean;
+	};
+};
+
+export type EstadisticasPublicasResponse = {
+	totalActores: number;
+	totalEspacios: number;
+	totalDepartamentos: number;
+	totalCategorias: number;
+};
+
+export async function listarEventosPublicos(input: ListarEventosPublicosParams = {}, signal?: AbortSignal) {
+	const params = new URLSearchParams();
+
+	appendOptionalParam(params, 'busqueda', input.busqueda);
+	appendOptionalParam(params, 'departamento', input.departamento);
+	appendOptionalParam(params, 'idCategoria', input.idCategoria);
+	appendOptionalParam(params, 'fechaDesde', input.fechaDesde);
+	appendOptionalParam(params, 'fechaHasta', input.fechaHasta);
+	appendOptionalParam(params, 'limit', input.limit);
+	appendOptionalParam(params, 'offset', input.offset);
+
+	const query = params.toString();
+
+	return apiFetch<ListarEventosResponse>(`/api/publico/actores/eventos${query ? `?${query}` : ''}`, signal);
+}
+
+export async function obtenerEstadisticasPublicas(signal?: AbortSignal) {
+	return apiFetch<EstadisticasPublicasResponse>('/api/publico/actores/estadisticas', signal);
+}
+
 export type MisActorApiItem = {
 	id: number;
 	nombre: string;

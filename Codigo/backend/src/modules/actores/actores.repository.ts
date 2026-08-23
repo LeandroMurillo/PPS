@@ -14,9 +14,12 @@ import {
 import type {
 	ListarActoresRepositoryInput,
 	ListarActoresRepositoryResult,
+	ListarEventosPublicosRepositoryInput,
+	ListarEventosPublicosRepositoryResult,
 	ObtenerActoresMapaRepositoryInput,
 	ObtenerActoresMapaRepositoryResult,
 	ObtenerActorRepositoryResult,
+	ObtenerEstadisticasPublicasRepositoryResult,
 	ObtenerFiltrosListadoActoresRepositoryResult,
 	ObtenerFiltrosMapaRepositoryResult,
 } from './actores.types.js';
@@ -420,5 +423,113 @@ export async function obtenerFiltrosMapaRepository(): Promise<ObtenerFiltrosMapa
 	return {
 		categorias,
 		departamentos,
+	};
+}
+
+const eventoPublicoDatabaseRowSchema = z.object({
+	idEvento: databaseIntegerSchema,
+	nombreEvento: z.string(),
+	descripcion: z.string().nullable(),
+	fecha: z.union([z.date().transform((d) => d.toISOString()), z.string()]),
+	idActor: databaseIntegerSchema,
+	nombreActor: z.string(),
+	fotoPerfilActor: z.string().nullable(),
+	idCategoria: databaseIntegerSchema,
+	categoria: z.string(),
+	categoriaIcono: categoriaIconoSchema,
+	subcategoria: z.string().nullable(),
+	departamento: z.string(),
+	localidad: z.string().nullable(),
+	direccion: z.string().nullable(),
+	latitud: nullableDatabaseLatitudeSchema,
+	longitud: nullableDatabaseLongitudeSchema,
+});
+
+export async function listarEventosPublicosRepository(
+	input: ListarEventosPublicosRepositoryInput,
+): Promise<ListarEventosPublicosRepositoryResult> {
+	const procedureResult: unknown = await pool.query(
+		`
+      CALL sp_publico_listar_eventos(
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    `,
+		[
+			input.busqueda,
+			input.departamento,
+			input.idCategoria,
+			input.fechaDesde,
+			input.fechaHasta,
+			input.limit,
+			input.offset,
+		],
+	);
+
+	const totalResultSet = getResultSet(procedureResult, 0, 'sp_publico_listar_eventos');
+	const eventosResultSet = getResultSet(procedureResult, 1, 'sp_publico_listar_eventos');
+
+	const totalRows = z.array(totalRowSchema).parse(totalResultSet);
+	const totalRow = totalRows[0];
+
+	if (!totalRow) {
+		throw new Error('sp_publico_listar_eventos no devolvió el total de eventos');
+	}
+
+	const databaseEvents = z.array(eventoPublicoDatabaseRowSchema).parse(eventosResultSet);
+
+	const data = databaseEvents.map((evento) => ({
+		idEvento: evento.idEvento,
+		nombreEvento: evento.nombreEvento,
+		descripcion: evento.descripcion,
+		fecha: evento.fecha,
+		idActor: evento.idActor,
+		nombreActor: evento.nombreActor,
+		fotoPerfilActor: evento.fotoPerfilActor,
+		idCategoria: evento.idCategoria,
+		categoria: evento.categoria,
+		categoriaIcono: evento.categoriaIcono,
+		subcategoria: evento.subcategoria,
+		departamento: evento.departamento,
+		localidad: evento.localidad,
+		direccion: evento.direccion,
+		latitud: evento.latitud,
+		longitud: evento.longitud,
+	}));
+
+	return {
+		total: totalRow.total,
+		data,
+	};
+}
+
+const estadisticasPublicasDatabaseRowSchema = z.object({
+	totalActores: databaseIntegerSchema,
+	totalEspacios: databaseIntegerSchema,
+	totalDepartamentos: databaseIntegerSchema,
+	totalCategorias: databaseIntegerSchema,
+});
+
+export async function obtenerEstadisticasPublicasRepository(): Promise<ObtenerEstadisticasPublicasRepositoryResult> {
+	const procedureResult: unknown = await pool.query('CALL sp_publico_resumen_estadisticas()');
+
+	const estadisticasResultSet = getResultSet(procedureResult, 0, 'sp_publico_resumen_estadisticas');
+	const rows = z.array(estadisticasPublicasDatabaseRowSchema).parse(estadisticasResultSet);
+
+	const row = rows[0];
+	if (!row) {
+		throw new Error('sp_publico_resumen_estadisticas no devolvió estadísticas');
+	}
+
+	return {
+		totalActores: row.totalActores,
+		totalEspacios: row.totalEspacios,
+		totalDepartamentos: row.totalDepartamentos,
+		totalCategorias: row.totalCategorias,
 	};
 }
