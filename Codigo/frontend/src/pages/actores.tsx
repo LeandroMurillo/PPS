@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SearchIcon from '@mui/icons-material/Search';
@@ -37,6 +37,9 @@ import { markdownToPlainText } from '../utils/markdown';
 import { buildSlugConId } from '../utils/slug';
 
 export default function ListaActoresPublica() {
+	const location = useLocation();
+	const [searchParams, setSearchParams] = useSearchParams();
+
 	const sentinelRef = useRef<HTMLDivElement | null>(null);
 	const [actores, setActores] = useState<ActorResumen[]>([]);
 	const [categorias, setCategorias] = useState<FiltroCategoria[]>([]);
@@ -46,10 +49,27 @@ export default function ListaActoresPublica() {
 	const [cargando, setCargando] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	const [busqueda, setBusqueda] = useState('');
+	const [busqueda, setBusqueda] = useState(() => searchParams.get('q') || '');
 	const debouncedBusqueda = useDebouncedValue(busqueda);
-	const [filtroCategoria, setFiltroCategoria] = useState(0);
-	const [filtroDepartamento, setFiltroDepartamento] = useState('');
+	const [filtroCategoria, setFiltroCategoria] = useState<number>(() => {
+		const val = Number(searchParams.get('categoria'));
+		return Number.isInteger(val) && val > 0 ? val : 0;
+	});
+	const [filtroDepartamento, setFiltroDepartamento] = useState<string>(() => searchParams.get('departamento') || '');
+
+	// Sincronizar filtros a los query parameters de la URL
+	useEffect(() => {
+		const nextParams = new URLSearchParams();
+		if (debouncedBusqueda.trim()) nextParams.set('q', debouncedBusqueda.trim());
+		if (filtroCategoria > 0) nextParams.set('categoria', String(filtroCategoria));
+		if (filtroDepartamento) nextParams.set('departamento', filtroDepartamento);
+
+		if (nextParams.toString() !== searchParams.toString()) {
+			setSearchParams(nextParams, { replace: true });
+		}
+	}, [debouncedBusqueda, filtroCategoria, filtroDepartamento, searchParams, setSearchParams]);
+
+	const returnUrl = encodeURIComponent(`${location.pathname}${location.search}` || '/actores');
 
 	const [page, setPage] = useState(0);
 	const [hasNext, setHasNext] = useState(false);
@@ -218,14 +238,14 @@ export default function ListaActoresPublica() {
 				) : actores.length === 1 ? (
 					<Box display="flex" justifyContent="center">
 						<Box sx={{ maxWidth: 500, width: '100%' }}>
-							<ActorCard actor={actores[0]} />
+							<ActorCard actor={actores[0]} returnUrl={returnUrl} />
 						</Box>
 					</Box>
 				) : (
 					<Grid container spacing={4}>
 						{actores.map((actor) => (
 							<Grid key={actor.id} size={{ xs: 12, md: 6 }}>
-								<ActorCard actor={actor} />
+								<ActorCard actor={actor} returnUrl={returnUrl} />
 							</Grid>
 						))}
 					</Grid>
@@ -243,7 +263,7 @@ export default function ListaActoresPublica() {
 	);
 }
 
-function ActorCard({ actor }: { actor: ActorResumen }) {
+function ActorCard({ actor, returnUrl }: { actor: ActorResumen; returnUrl: string }) {
 	return (
 		<Card
 			sx={{
@@ -261,7 +281,7 @@ function ActorCard({ actor }: { actor: ActorResumen }) {
 		>
 			<CardActionArea
 				component={Link}
-				to={`/actores/${buildSlugConId(actor.id, actor.nombre)}`}
+				to={`/actores/${buildSlugConId(actor.id, actor.nombre)}?from=${returnUrl}`}
 				sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
 			>
 				{actor.foto ? (

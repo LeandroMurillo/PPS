@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
@@ -62,7 +62,7 @@ type PresetFechaId = (typeof PRESETS_FECHA)[number]['id'];
 
 export default function ProximosEventosPage() {
 	const location = useLocation();
-	const returnUrl = encodeURIComponent(`${location.pathname}${location.search}` || '/eventos');
+	const [searchParams, setSearchParams] = useSearchParams();
 
 	const { mode, systemMode } = useColorScheme();
 	const isDarkMode = mode === 'system' ? systemMode === 'dark' : mode === 'dark';
@@ -76,14 +76,45 @@ export default function ProximosEventosPage() {
 	const [cargando, setCargando] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
-	// Filtros
-	const [busqueda, setBusqueda] = useState('');
+	// Filtros inicializados desde los query params de la URL
+	const [busqueda, setBusqueda] = useState(() => searchParams.get('q') || '');
 	const debouncedBusqueda = useDebouncedValue(busqueda);
-	const [filtroCategoria, setFiltroCategoria] = useState<number>(0);
-	const [filtroDepartamento, setFiltroDepartamento] = useState<string>('');
-	const [presetFecha, setPresetFecha] = useState<PresetFechaId>('mes');
-	const [fechaDesde, setFechaDesde] = useState<string>('');
-	const [fechaHasta, setFechaHasta] = useState<string>('');
+	const [filtroCategoria, setFiltroCategoria] = useState<number>(() => {
+		const val = Number(searchParams.get('categoria'));
+		return Number.isInteger(val) && val > 0 ? val : 0;
+	});
+	const [filtroDepartamento, setFiltroDepartamento] = useState<string>(() => searchParams.get('departamento') || '');
+	const [presetFecha, setPresetFecha] = useState<PresetFechaId>(() => {
+		const f = searchParams.get('fecha');
+		if (f === 'todos' || f === 'semana' || f === 'mes') return f;
+		return 'mes';
+	});
+	const [fechaDesde, setFechaDesde] = useState<string>(() => searchParams.get('desde') || '');
+	const [fechaHasta, setFechaHasta] = useState<string>(() => searchParams.get('hasta') || '');
+
+	// Sincronizar filtros a los query parameters de la URL
+	useEffect(() => {
+		const nextParams = new URLSearchParams();
+		if (debouncedBusqueda.trim()) nextParams.set('q', debouncedBusqueda.trim());
+		if (filtroCategoria > 0) nextParams.set('categoria', String(filtroCategoria));
+		if (filtroDepartamento) nextParams.set('departamento', filtroDepartamento);
+		if (presetFecha !== 'mes') nextParams.set('fecha', presetFecha);
+
+		if (nextParams.toString() !== searchParams.toString()) {
+			setSearchParams(nextParams, { replace: true });
+		}
+	}, [
+		debouncedBusqueda,
+		filtroCategoria,
+		filtroDepartamento,
+		presetFecha,
+		fechaDesde,
+		fechaHasta,
+		searchParams,
+		setSearchParams,
+	]);
+
+	const returnUrl = encodeURIComponent(`${location.pathname}${location.search}` || '/eventos');
 
 	// Paginación
 	const [page, setPage] = useState(0);
@@ -206,7 +237,7 @@ export default function ProximosEventosPage() {
 		setBusqueda('');
 		setFiltroCategoria(0);
 		setFiltroDepartamento('');
-		setPresetFecha('todos');
+		setPresetFecha('mes');
 		setFechaDesde('');
 		setFechaHasta('');
 	};
@@ -215,7 +246,7 @@ export default function ProximosEventosPage() {
 		busqueda.trim() !== '' ||
 		filtroCategoria !== 0 ||
 		filtroDepartamento !== '' ||
-		presetFecha !== 'todos' ||
+		presetFecha !== 'mes' ||
 		Boolean(fechaDesde) ||
 		Boolean(fechaHasta);
 
