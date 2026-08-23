@@ -86,7 +86,7 @@ export function isLikelyMobilePhone(value: string): boolean {
 	if (raw.startsWith('54')) raw = raw.slice(2);
 	if (raw.startsWith('0')) raw = raw.slice(1);
 
-	return stripArgentine15(raw) !== null;
+	return stripArgentine15(raw) !== null || raw.length === 10;
 }
 
 export function getWhatsAppPhoneUrl(value: string): string | null {
