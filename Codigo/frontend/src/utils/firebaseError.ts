@@ -9,9 +9,12 @@ const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
 	'auth/popup-blocked': 'El navegador bloqueó la ventana de acceso con Google.',
 	'auth/too-many-requests': 'Hubo demasiados intentos. Esperá unos minutos y volvé a intentar.',
 	'auth/user-disabled': 'La cuenta de autenticación se encuentra deshabilitada.',
+	'auth/user-not-found': 'No se encontró un usuario asociado a esta cuenta.',
 	'auth/weak-password': 'La nueva contraseña debe tener al menos seis caracteres.',
 	'auth/wrong-password': 'La contraseña actual ingresada es incorrecta.',
 	'auth/requires-recent-login': 'Esta operación requiere volver a iniciar sesión por seguridad.',
+	'auth/expired-action-code': 'El enlace ha expirado. Por favor solicitá un nuevo enlace.',
+	'auth/invalid-action-code': 'El enlace es inválido o ya fue utilizado anteriormente.',
 };
 
 function isBrowserStorageError(message: string): boolean {

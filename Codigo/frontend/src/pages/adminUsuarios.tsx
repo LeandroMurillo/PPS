@@ -109,8 +109,8 @@ export default function AdminUsuariosPage() {
 	const search = searchParams.get('busqueda') ?? '';
 	const roleParam = searchParams.get('rol');
 	const stateParam = searchParams.get('estado');
-	const role = roleParam && validRoles.has(roleParam as UsuarioAdmin['rol']) ? roleParam : '';
-	const state = stateParam && validStates.has(stateParam as UsuarioAdmin['estado']) ? stateParam : '';
+	const role = roleParam && validRoles.has(roleParam as UsuarioAdmin['rol']) ? roleParam : 'USUARIO';
+	const state = stateParam && validStates.has(stateParam as UsuarioAdmin['estado']) ? stateParam : 'A';
 	const [page, setPage] = React.useState(0);
 	const [pageSize, setPageSize] = React.useState(25);
 	const [sortBy, setSortBy] = React.useState<UsuarioAdminSortBy>('fechaRegistro');
