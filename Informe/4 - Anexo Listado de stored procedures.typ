@@ -1,3 +1,4 @@
+#pagebreak()
 = Anexo: Listado de procedimientos almacenados
 
 Toda la lógica de persistencia, reglas de validación de negocio, control de concurrencia y mutaciones de datos del sistema *Mosaico Cultural* se encuentran estrictamente encapsuladas en la base de datos MariaDB mediante *Procedimientos Almacenados (Stored Procedures)*.
