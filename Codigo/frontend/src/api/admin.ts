@@ -26,6 +26,9 @@ export type UsuarioAdmin = {
 	fechaNacimiento: string;
 	nacionalidad: string;
 	email: string;
+	fotoDniUrl: string | null;
+	avatarEstilo: string | null;
+	avatarSeed: string | null;
 	fechaRegistro: string;
 	rol: 'USUARIO' | 'MODERADOR' | 'ADMIN';
 	estado: 'A' | 'P' | 'I';
@@ -38,8 +41,34 @@ export type CategoriaModeracionAdmin = {
 	asignada: boolean;
 };
 
+export type UsuarioActorAdmin = {
+	id: number;
+	nombre: string;
+	descripcion: string;
+	foto: string | null;
+	cuit: string | null;
+	tipoActor: 'INDIVIDUO' | 'COLECTIVO' | 'ESPACIO';
+	fechaCreacion: string;
+	estado: 'A' | 'P' | 'I';
+	esDueno: boolean;
+	rolEnActor: string;
+	categoria: { id: number; nombre: string; icono: CategoriaIcono };
+	subcategoria: { id: number; nombre: string } | null;
+	ubicacion: {
+		id: number;
+		provincia: string;
+		departamento: string;
+		localidad: string;
+		direccion: string;
+		latitud: number;
+		longitud: number;
+		esPublica: boolean;
+	};
+};
+
 export type UsuarioDetalleAdmin = UsuarioAdmin & {
 	categoriasModeracion: CategoriaModeracionAdmin[];
+	actores: UsuarioActorAdmin[];
 };
 
 export type UsuarioAdminSortBy =

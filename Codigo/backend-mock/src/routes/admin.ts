@@ -59,6 +59,9 @@ adminRouter.get('/usuarios', (req, res) => {
 		fechaNacimiento: u.fechaNacimiento,
 		nacionalidad: u.nacionalidad,
 		email: u.email,
+		fotoDniUrl: u.fotoDniUrl ?? null,
+		avatarEstilo: u.avatarEstilo ?? null,
+		avatarSeed: u.avatarSeed ?? null,
 		fechaRegistro: u.fechaRegistro,
 		rol: u.rol,
 		estado: u.estado,
@@ -87,6 +90,43 @@ adminRouter.get('/usuarios/:id', (req, res) => {
 		asignada: mods.includes(c.id),
 	}));
 
+	const userIntegraciones = db.integrantes.filter((i) => i.idUsuario === id);
+	const userActores = db.actores
+		.filter((a) => a.idUsuarioDueno === id || userIntegraciones.some((ui) => ui.idActor === a.id))
+		.map((a) => {
+			const integracion = userIntegraciones.find((ui) => ui.idActor === a.id);
+			const cat = db.categorias.find((c) => c.id === a.idCategoria);
+			const subcat = a.idSubcategoria ? db.subcategorias.find((s) => s.id === a.idSubcategoria) : null;
+			return {
+				id: a.id,
+				nombre: a.nombre,
+				descripcion: a.descripcion,
+				foto: a.foto,
+				cuit: a.cuit,
+				tipoActor: a.tipoActor,
+				fechaCreacion: a.fechaCreacion,
+				estado: a.estado,
+				esDueno: a.idUsuarioDueno === id || Boolean(integracion?.esDueno),
+				rolEnActor: integracion?.rol || (a.idUsuarioDueno === id ? 'Dueño' : 'Integrante'),
+				categoria: {
+					id: a.idCategoria,
+					nombre: cat ? cat.nombre : 'General',
+					icono: cat ? cat.icono : 'Category',
+				},
+				subcategoria: subcat ? { id: subcat.id, nombre: subcat.nombre } : null,
+				ubicacion: {
+					id: a.ubicacion?.id ?? 1,
+					provincia: a.ubicacion?.provincia ?? 'Tucumán',
+					departamento: a.ubicacion?.departamento ?? 'Capital',
+					localidad: a.ubicacion?.localidad ?? 'San Miguel de Tucumán',
+					direccion: a.ubicacion?.direccion ?? '',
+					latitud: a.ubicacion?.latitud ?? -26.8241,
+					longitud: a.ubicacion?.longitud ?? -65.2226,
+					esPublica: a.ubicacion?.esPublica ?? true,
+				},
+			};
+		});
+
 	const data = {
 		id: user.id,
 		actividadArcaCodigo: user.actividadesArcaCodigo ?? null,
@@ -98,10 +138,14 @@ adminRouter.get('/usuarios/:id', (req, res) => {
 		fechaNacimiento: user.fechaNacimiento,
 		nacionalidad: user.nacionalidad,
 		email: user.email,
+		fotoDniUrl: user.fotoDniUrl ?? null,
+		avatarEstilo: user.avatarEstilo ?? null,
+		avatarSeed: user.avatarSeed ?? null,
 		fechaRegistro: user.fechaRegistro,
 		rol: user.rol,
 		estado: user.estado,
 		categoriasModeracion,
+		actores: userActores,
 	};
 
 	return res.json({ data });

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
@@ -14,6 +16,7 @@ import AdminFilters from '../components/adminFilters';
 import AdminTable, { type AdminColumn } from '../components/adminTable';
 import { ESTADO_COLORS as stateColors, ESTADO_LABELS as stateLabels } from '../constants/estados';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { getUserAvatarUrl } from '../utils/avatar';
 import { formatDateTime } from '../utils/date';
 
 const roleColors = { USUARIO: 'default', MODERADOR: 'warning', ADMIN: 'error' } as const;
@@ -25,15 +28,42 @@ const columns: AdminColumn<UsuarioAdmin, UsuarioAdminSortBy>[] = [
 		id: 'persona',
 		label: 'Usuario',
 		sortBy: 'apellido',
-		minWidth: 190,
-		render: (row) => (
-			<Stack>
-				<Typography variant="body2" fontWeight={600}>{`${row.apellido}, ${row.nombre}`}</Typography>
-				<Typography variant="caption" color="text.secondary">
-					{row.email}
-				</Typography>
-			</Stack>
-		),
+		minWidth: 230,
+		render: (row) => {
+			const avatarUrl = getUserAvatarUrl({
+				idUsuario: row.id,
+				nombre: row.nombre,
+				apellido: row.apellido,
+				email: row.email,
+				genero: row.genero,
+				avatarEstilo: row.avatarEstilo,
+				avatarSeed: row.avatarSeed,
+			});
+
+			return (
+				<Stack direction="row" spacing={1.5} alignItems="center">
+					<Avatar
+						src={avatarUrl}
+						alt={`${row.nombre} ${row.apellido}`}
+						sx={{
+							width: 38,
+							height: 38,
+							boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+							border: '1px solid',
+							borderColor: 'divider',
+						}}
+					/>
+					<Box sx={{ minWidth: 0 }}>
+						<Typography variant="body2" fontWeight={600} noWrap>
+							{`${row.apellido}, ${row.nombre}`}
+						</Typography>
+						<Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+							{row.email}
+						</Typography>
+					</Box>
+				</Stack>
+			);
+		},
 	},
 	{
 		id: 'actividad',

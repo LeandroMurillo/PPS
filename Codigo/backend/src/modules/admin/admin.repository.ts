@@ -23,6 +23,7 @@ import type {
 	PreguntaBancoAdmin,
 	ReemplazarPreguntaFormularioAdminBody,
 	SubcategoriaAdmin,
+	UsuarioActorAdmin,
 	UsuarioAdmin,
 	UsuarioDetalleAdmin,
 	ActividadArcaAdmin,
@@ -64,12 +65,53 @@ const usuarioDatabaseRowSchema = z.object({
 	fechaNacimiento: databaseDateSchema,
 	nacionalidad: z.string(),
 	email: z.string(),
+	fotoDniUrl: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((v) => v ?? null),
+	avatarEstilo: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((v) => v ?? null),
+	avatarSeed: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((v) => v ?? null),
 	fechaRegistro: databaseDateSchema,
 	rol: z.enum(['USUARIO', 'MODERADOR', 'ADMIN']),
 	estado: z.enum(['A', 'P', 'I']),
 });
 
 type UsuarioDatabaseRow = z.infer<typeof usuarioDatabaseRowSchema>;
+
+const usuarioActorDatabaseRowSchema = z.object({
+	idActor: databaseIntegerSchema,
+	nombreActor: z.string(),
+	descripcion: z.string(),
+	fotoPerfilUrl: z.string().nullable(),
+	cuit: z.string().nullable(),
+	tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']),
+	fechaCreacion: databaseDateSchema,
+	estado: z.enum(['A', 'P', 'I']),
+	esDueno: databaseBooleanSchema,
+	rolEnActor: z.string(),
+	idCategoria: databaseIntegerSchema,
+	categoria: z.string(),
+	iconoCategoria: categoriaIconoSchema,
+	idSubcategoria: databaseIntegerSchema.nullable(),
+	subcategoria: z.string().nullable(),
+	idUbicacion: databaseIntegerSchema,
+	provincia: z.string(),
+	departamento: z.string(),
+	localidad: z.string(),
+	direccion: z.string(),
+	latitud: databaseDecimalSchema,
+	longitud: databaseDecimalSchema,
+	esPublica: databaseBooleanSchema,
+});
 
 const categoriaModeracionDatabaseRowSchema = z.object({
 	idCategoria: databaseIntegerSchema,
@@ -254,9 +296,49 @@ function mapUsuario(row: UsuarioDatabaseRow): UsuarioAdmin {
 		fechaNacimiento: row.fechaNacimiento,
 		nacionalidad: row.nacionalidad,
 		email: row.email,
+		fotoDniUrl: row.fotoDniUrl ?? null,
+		avatarEstilo: row.avatarEstilo ?? null,
+		avatarSeed: row.avatarSeed ?? null,
 		fechaRegistro: row.fechaRegistro,
 		rol: row.rol,
 		estado: row.estado,
+	};
+}
+
+function mapUsuarioActor(row: z.infer<typeof usuarioActorDatabaseRowSchema>): UsuarioActorAdmin {
+	return {
+		id: row.idActor,
+		nombre: row.nombreActor,
+		descripcion: row.descripcion,
+		foto: row.fotoPerfilUrl,
+		cuit: row.cuit,
+		tipoActor: row.tipoActor,
+		fechaCreacion: row.fechaCreacion,
+		estado: row.estado,
+		esDueno: row.esDueno,
+		rolEnActor: row.rolEnActor,
+		categoria: {
+			id: row.idCategoria,
+			nombre: row.categoria,
+			icono: row.iconoCategoria,
+		},
+		subcategoria:
+			row.idSubcategoria && row.subcategoria
+				? {
+						id: row.idSubcategoria,
+						nombre: row.subcategoria,
+					}
+				: null,
+		ubicacion: {
+			id: row.idUbicacion,
+			provincia: row.provincia,
+			departamento: row.departamento,
+			localidad: row.localidad,
+			direccion: row.direccion,
+			latitud: row.latitud,
+			longitud: row.longitud,
+			esPublica: row.esPublica,
+		},
 	};
 }
 
@@ -365,9 +447,13 @@ export async function obtenerUsuarioAdminRepository(id: number): Promise<Usuario
 		asignada: row.asignada,
 	}));
 
+	const actorRows = z.array(usuarioActorDatabaseRowSchema).parse(getResultSet(result, 2, procedureName));
+	const actores: UsuarioActorAdmin[] = actorRows.map(mapUsuarioActor);
+
 	return {
 		...mapUsuario(userRow),
 		categoriasModeracion,
+		actores,
 	};
 }
 

@@ -120,6 +120,9 @@ export const usuarioAdminSchema = z.object({
 	fechaNacimiento: z.string(),
 	nacionalidad: z.string(),
 	email: z.string(),
+	fotoDniUrl: z.string().nullable().default(null),
+	avatarEstilo: z.string().nullable().default(null),
+	avatarSeed: z.string().nullable().default(null),
 	fechaRegistro: z.string(),
 	rol: z.enum(['USUARIO', 'MODERADOR', 'ADMIN']),
 	estado: z.enum(['A', 'P', 'I']),
@@ -225,8 +228,45 @@ export const categoriaModeracionAdminSchema = z.object({
 
 export type CategoriaModeracionAdmin = z.infer<typeof categoriaModeracionAdminSchema>;
 
+export const usuarioActorAdminSchema = z.object({
+	id: z.number().int().positive(),
+	nombre: z.string(),
+	descripcion: z.string(),
+	foto: z.string().nullable(),
+	cuit: z.string().nullable(),
+	tipoActor: z.enum(['INDIVIDUO', 'COLECTIVO', 'ESPACIO']),
+	fechaCreacion: z.string(),
+	estado: z.enum(['A', 'P', 'I']),
+	esDueno: z.boolean(),
+	rolEnActor: z.string(),
+	categoria: z.object({
+		id: z.number().int().positive(),
+		nombre: z.string(),
+		icono: categoriaIconoSchema,
+	}),
+	subcategoria: z
+		.object({
+			id: z.number().int().positive(),
+			nombre: z.string(),
+		})
+		.nullable(),
+	ubicacion: z.object({
+		id: z.number().int().positive(),
+		provincia: z.string(),
+		departamento: z.string(),
+		localidad: z.string(),
+		direccion: z.string(),
+		latitud: z.number(),
+		longitud: z.number(),
+		esPublica: z.boolean(),
+	}),
+});
+
+export type UsuarioActorAdmin = z.infer<typeof usuarioActorAdminSchema>;
+
 export const usuarioDetalleAdminSchema = usuarioAdminSchema.extend({
 	categoriasModeracion: z.array(categoriaModeracionAdminSchema),
+	actores: z.array(usuarioActorAdminSchema),
 });
 
 export type UsuarioDetalleAdmin = z.infer<typeof usuarioDetalleAdminSchema>;

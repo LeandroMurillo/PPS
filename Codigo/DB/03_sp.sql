@@ -102,6 +102,9 @@ SELECT
   u.fechaNacimiento,
   u.nacionalidad,
   u.email,
+  u.fotoDniUrl,
+  u.avatarEstilo,
+  u.avatarSeed,
   u.fechaRegistro,
   u.rol,
   u.estado
@@ -233,7 +236,7 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_usuario` (IN pIdUsuario INT) READS SQL DATA
-COMMENT 'Obtiene el detalle administrativo de un usuario y las categorías activas que puede moderar, indicando sus asignaciones actuales.'
+COMMENT 'Obtiene el detalle administrativo de un usuario, sus categorías de moderación y los actores de los que es integrante.'
 BEGIN
 SELECT
   u.idUsuario,
@@ -247,6 +250,8 @@ SELECT
   u.nacionalidad,
   u.email,
   u.fotoDniUrl,
+  u.avatarEstilo,
+  u.avatarSeed,
   u.fechaRegistro,
   u.rol,
   u.estado
@@ -271,6 +276,43 @@ FROM
 ORDER BY
   c.nombre ASC,
   c.idCategoria ASC;
+
+SELECT
+  a.idActor,
+  a.nombre AS nombreActor,
+  a.descripcion,
+  a.fotoPerfilUrl,
+  a.cuit,
+  a.tipoActor,
+  a.fechaCreacion,
+  a.estado,
+  i.esDueño AS esDueno,
+  i.rol AS rolEnActor,
+  c.idCategoria,
+  c.nombre AS categoria,
+  c.icono AS iconoCategoria,
+  s.idSubcategoria,
+  s.nombre AS subcategoria,
+  u.idUbicacion,
+  u.provincia,
+  u.departamento,
+  u.localidad,
+  u.direccion,
+  u.latitud,
+  u.longitud,
+  u.esPublica
+FROM
+  `Integrantes` i
+  JOIN `Actores` a ON a.idActor = i.idActor
+  JOIN `Categorias` c ON a.idCategoria = c.idCategoria
+  LEFT JOIN `Subcategorias` s ON a.idCategoria = s.idCategoria
+  AND a.idSubcategoria = s.idSubcategoria
+  JOIN `Ubicaciones` u ON a.idUbicacion = u.idUbicacion
+WHERE
+  i.idUsuario = pIdUsuario
+ORDER BY
+  i.esDueño DESC,
+  a.nombre ASC;
 
 END //
 -- -----------------------------------------------------
