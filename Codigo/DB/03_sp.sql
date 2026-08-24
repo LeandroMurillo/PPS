@@ -4614,7 +4614,7 @@ DECLARE vSubcategoriaFormulario INT;
 
 DECLARE vEstadoPregunta CHAR(1);
 
-DECLARE vTipoDato VARCHAR(20);
+DECLARE vTipoDato VARCHAR(50);
 
 DECLARE vOpciones JSON;
 

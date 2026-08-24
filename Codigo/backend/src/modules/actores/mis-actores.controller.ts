@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { getPublicErrorMessage } from '../../shared/public-error.js';
 import { publicDescriptionSchema } from '../../shared/public-description.schema.js';
+import { logger } from '../../shared/logger.js';
 
 import {
 	agregarEventoService,
@@ -59,6 +60,9 @@ const actorImageDataUrlSchema = z
 
 function sendControllerError(res: Response, error: unknown, fallback: string): void {
 	const message = getPublicErrorMessage(error, fallback);
+	if (message === fallback && error instanceof Error) {
+		logger.error({ err: error }, `Error en mis-actores: ${error.message}`);
+	}
 	if (/permisos|permiso|titular|dueño|no tenés|no podés/i.test(message)) {
 		res.status(403).json({
 			error: {
