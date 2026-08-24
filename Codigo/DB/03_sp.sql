@@ -24,8 +24,8 @@ REPLACE
     IN pSortBy VARCHAR(50) DEFAULT 'fechaRegistro',
     IN pSortDir VARCHAR(4) DEFAULT 'DESC'
   ) READS SQL DATA
-COMMENT 'Lista usuarios para administración aplicando búsqueda, filtros opcionales por rol y estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de usuarios.'
-BEGIN DECLARE vLimit INT DEFAULT 25;
+COMMENT 'Lista usuarios para administración aplicando búsqueda, filtros opcionales por rol y estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de usuarios. Resultsets: RS1: (total). RS2: (idUsuario, actividadesArcaCodigo, actividadArca, nombre, apellido, CUIL, genero, fechaNacimiento, nacionalidad, email, fotoDniUrl, avatarEstilo, avatarSeed, fechaRegistro, rol, estado).'
+ BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
 
@@ -236,8 +236,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_usuario` (IN pIdUsuario INT) READS SQL DATA
-COMMENT 'Obtiene el detalle administrativo de un usuario, sus categorías de moderación y los actores de los que es integrante.'
-BEGIN
+COMMENT 'Obtiene el detalle administrativo de un usuario, sus categorías de moderación y los actores de los que es integrante. Resultsets: RS1: (idUsuario, actividadesArcaCodigo, actividadArca, nombre, apellido, CUIL, genero, fechaNacimiento, nacionalidad, email, fotoDniUrl, avatarEstilo, avatarSeed, fechaRegistro, rol, estado). RS2: (idCategoria, nombre, icono, asignada). RS3: (idActor, nombreActor, descripcion, fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado, esDueno, rolEnActor, idCategoria, categoria, iconoCategoria, idSubcategoria, subcategoria, idUbicacion, provincia, departamento, localidad, direccion, latitud, longitud, esPublica).'
+ BEGIN
 SELECT
   u.idUsuario,
   u.actividadesArcaCodigo,
@@ -321,8 +321,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_cambiar_estado_usuario` (IN pIdUsuarioSolicitante INT, IN pIdUsuario INT, IN pEstado CHAR(1)) MODIFIES SQL DATA COMMENT 'Cambia el estado de un usuario respetando la jerarquía entre administradores, moderadores y usuarios.'
-BEGIN DECLARE vRolSolicitante VARCHAR(20);
+  PROCEDURE `sp_admin_cambiar_estado_usuario` (IN pIdUsuarioSolicitante INT, IN pIdUsuario INT, IN pEstado CHAR(1)) MODIFIES SQL DATA
+COMMENT 'Cambia el estado de un usuario (A, P, I) respetando la jerarquía de roles entre administradores, moderadores y usuarios estándar.'
+ BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vRolObjetivo VARCHAR(20);
 
@@ -413,8 +414,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_asignar_moderador` (IN pIdUsuario INT, IN pIdsCategorias JSON) MODIFIES SQL DATA COMMENT 'Reemplaza de forma transaccional las categorías que modera un usuario. Con categorías lo convierte en moderador; sin categorías restaura el rol de usuario. Los administradores no pueden cambiar de rol.'
-BEGIN DECLARE EXIT
+  PROCEDURE `sp_admin_asignar_moderador` (IN pIdUsuario INT, IN pIdsCategorias JSON) MODIFIES SQL DATA
+COMMENT 'Reemplaza de forma transaccional las categorías que modera un usuario. Al asignar categorías promueve el rol a MODERADOR; sin categorías restaura el rol USUARIO. Protege a los administradores contra cambios no permitidos.'
+ BEGIN DECLARE EXIT
 HANDLER FOR SQLEXCEPTION
 BEGIN
 ROLLBACK;
@@ -533,8 +535,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_cambiar_estado_actores` (IN pIdUsuarioSolicitante INT, IN pIdsActores JSON, IN pEstado CHAR(1)) MODIFIES SQL DATA COMMENT 'Da de baja o reactiva actores. Los moderadores solo pueden operar sobre sus categorías asignadas.'
-BEGIN DECLARE vRolSolicitante VARCHAR(20);
+  PROCEDURE `sp_admin_cambiar_estado_actores` (IN pIdUsuarioSolicitante INT, IN pIdsActores JSON, IN pEstado CHAR(1)) MODIFIES SQL DATA
+COMMENT 'Modifica el estado (A, P, I) de uno o varios actores culturales de forma masiva o individual. Los moderadores solo pueden operar sobre sus categorías asignadas. Resultsets: RS1: (actualizados).'
+ BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 SELECT
   u.rol INTO vRolSolicitante
@@ -652,8 +655,8 @@ REPLACE
     IN pSortBy VARCHAR(50) DEFAULT 'fechaCreacion',
     IN pSortDir VARCHAR(4) DEFAULT 'DESC'
   ) READS SQL DATA
-COMMENT 'Lista actores para administración. Los moderadores solo ven actores de sus categorías asignadas.'
-BEGIN DECLARE vRolSolicitante VARCHAR(20);
+COMMENT 'Lista actores culturales para administración con filtros por búsqueda, categoría, departamento, tipo de actor y estado. Los moderadores solo visualizan actores dentro de sus disciplinas asignadas. Resultsets: RS1: (total). RS2: (idActor, nombreActor, descripcion, fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado, idCategoria, categoria, iconoCategoria, estadoCategoria, idSubcategoria, subcategoria, estadoSubcategoria, idUsuarioDueno, usuarioDueno, emailUsuarioDueno, idUbicacion, provincia, departamento, localidad, direccion, latitud, longitud, esPublica).'
+ BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vLimit INT DEFAULT 25;
 
@@ -975,8 +978,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_actor` (IN pIdUsuarioSolicitante INT, IN pIdActor INT) READS SQL DATA
-COMMENT 'Obtiene el perfil administrativo de un actor si pertenece al alcance de moderación del solicitante.'
-BEGIN DECLARE vRolSolicitante VARCHAR(20);
+COMMENT 'Obtiene el perfil administrativo completo de un actor cultural, su nómina de integrantes y su galería de portafolio, validando el alcance de moderación del solicitante. Resultsets: RS1: (idActor, nombreActor, descripcion, fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado, idCategoria, categoria, iconoCategoria, estadoCategoria, idSubcategoria, subcategoria, estadoSubcategoria, idUsuarioDueno, usuarioDueno, emailUsuarioDueno, idUbicacion, provincia, departamento, localidad, direccion, latitud, longitud, esPublica). RS2: (idUsuario, nombre, apellido, email, rol, esDueño, tipoIntegrante). RS3: (idItem, tipo, descripcion, url, fechaCreacion).'
+ BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vPuedeAcceder TINYINT DEFAULT 0;
 
@@ -1147,8 +1150,8 @@ REPLACE
     IN pSortBy VARCHAR(50) DEFAULT 'estado',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
   ) READS SQL DATA
-COMMENT 'Lista categorías administrativas; para moderadores limita el resultado a sus categorías asignadas.'
-BEGIN DECLARE vRolSolicitante VARCHAR(20);
+COMMENT 'Lista categorías administrativas con conteo de subcategorías y actores asociados; para moderadores limita el resultado a sus disciplinas asignadas. Resultsets: RS1: (total). RS2: (idCategoria, nombre, icono, estado, cantidadSubcategorias, cantidadActores).'
+ BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vLimit INT DEFAULT 25;
 
@@ -1323,8 +1326,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_categoria` (IN pIdCategoria INT) READS SQL DATA
-COMMENT 'Obtiene una categoría por identificador con icono, la cantidad de subcategorías y la cantidad de actores asociados.'
-BEGIN
+COMMENT 'Obtiene los datos de una categoría por identificador con icono, la cantidad de subcategorías y la cantidad de actores asociados. Resultsets: RS1: (idCategoria, nombre, icono, estado, cantidadSubcategorias, cantidadActores).'
+ BEGIN
 SELECT
   c.idCategoria,
   c.nombre,
@@ -1351,8 +1354,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_crear_categoria` (IN pNombre VARCHAR(45), IN pIcono VARCHAR(64) DEFAULT 'Category', IN pEstado CHAR(1) DEFAULT 'A') MODIFIES SQL DATA COMMENT 'Crea una categoría y devuelve el registro creado.'
-BEGIN IF pNombre IS NULL
+  PROCEDURE `sp_admin_crear_categoria` (IN pNombre VARCHAR(45), IN pIcono VARCHAR(64) DEFAULT 'Category', IN pEstado CHAR(1) DEFAULT 'A') MODIFIES SQL DATA
+COMMENT 'Crea una categoría cultural validando unicidad de nombre y devuelve el registro creado. Resultsets: RS1: (idCategoria, nombre, icono, estado, cantidadSubcategorias, cantidadActores).'
+ BEGIN IF pNombre IS NULL
 OR TRIM(pNombre) = ''
 OR CHAR_LENGTH(TRIM(pNombre)) > 45 THEN
 SIGNAL SQLSTATE '45000'
@@ -1406,8 +1410,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_editar_categoria` (IN pIdCategoria INT, IN pNombre VARCHAR(45), IN pIcono VARCHAR(64), IN pEstado CHAR(1)) MODIFIES SQL DATA COMMENT 'Modifica el nombre y estado de una categoría y devuelve el registro actualizado.'
-BEGIN IF pIdCategoria IS NULL
+  PROCEDURE `sp_admin_editar_categoria` (IN pIdCategoria INT, IN pNombre VARCHAR(45), IN pIcono VARCHAR(64), IN pEstado CHAR(1)) MODIFIES SQL DATA
+COMMENT 'Modifica el nombre, icono y estado de una categoría cultural y devuelve el registro actualizado. Resultsets: RS1: (idCategoria, nombre, icono, estado, cantidadSubcategorias, cantidadActores).'
+ BEGIN IF pIdCategoria IS NULL
 OR pIdCategoria <= 0 THEN
 SIGNAL SQLSTATE '45000'
 SET
@@ -1487,8 +1492,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_eliminar_categoria` (IN pIdCategoria INT) MODIFIES SQL DATA COMMENT 'Realiza la baja lógica de una categoría para preservar sus relaciones históricas y devuelve el registro actualizado.'
-BEGIN IF pIdCategoria IS NULL
+  PROCEDURE `sp_admin_eliminar_categoria` (IN pIdCategoria INT) MODIFIES SQL DATA
+COMMENT 'Realiza la baja lógica de una categoría cultural para preservar sus relaciones históricas y devuelve el registro actualizado. Resultsets: RS1: (idCategoria, nombre, icono, estado, cantidadSubcategorias, cantidadActores).'
+ BEGIN IF pIdCategoria IS NULL
 OR pIdCategoria <= 0 THEN
 SIGNAL SQLSTATE '45000'
 SET
@@ -1534,8 +1540,8 @@ REPLACE
     IN pSortBy VARCHAR(50) DEFAULT 'idSubcategoria',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
   ) READS SQL DATA
-COMMENT 'Lista subcategorías de una categoría para administración con búsqueda, filtro de estado, orden y paginación.'
-BEGIN DECLARE vLimit INT DEFAULT 25;
+COMMENT 'Lista subcategorías pertenecientes a una categoría con búsqueda por texto, filtro de estado, ordenamiento y paginación. Resultsets: RS1: (total). RS2: (idCategoria, id, nombre, estado, cantidadActores).'
+ BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
 
@@ -1674,8 +1680,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT) READS SQL DATA
-COMMENT 'Obtiene una subcategoría por identificador.'
-BEGIN
+COMMENT 'Obtiene una subcategoría por identificador compuesto (idCategoria, idSubcategoria) y el total de actores vinculados. Resultsets: RS1: (idCategoria, id, nombre, estado, cantidadActores).'
+ BEGIN
 SELECT
   s.idCategoria,
   s.idSubcategoria AS id,
@@ -1702,8 +1708,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_crear_subcategoria` (IN pIdCategoria INT, IN pNombre VARCHAR(45), IN pEstado CHAR(1) DEFAULT 'A') MODIFIES SQL DATA COMMENT 'Crea una subcategoría asignando el siguiente idSubcategoria dentro de la categoría.'
-BEGIN DECLARE vNextId INT;
+  PROCEDURE `sp_admin_crear_subcategoria` (IN pIdCategoria INT, IN pNombre VARCHAR(45), IN pEstado CHAR(1) DEFAULT 'A') MODIFIES SQL DATA
+COMMENT 'Crea una subcategoría asignando el siguiente idSubcategoria dentro de la categoría y devuelve el registro creado. Resultsets: RS1: (idCategoria, id, nombre, estado, cantidadActores).'
+ BEGIN DECLARE vNextId INT;
 
 DECLARE vEstado CHAR(1);
 
@@ -1785,8 +1792,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_editar_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT, IN pNombre VARCHAR(45), IN pEstado CHAR(1) DEFAULT 'A') MODIFIES SQL DATA COMMENT 'Modifica los datos de una subcategoría y devuelve el registro actualizado.'
-BEGIN DECLARE vEstado CHAR(1);
+  PROCEDURE `sp_admin_editar_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT, IN pNombre VARCHAR(45), IN pEstado CHAR(1) DEFAULT 'A') MODIFIES SQL DATA
+COMMENT 'Modifica los datos de una subcategoría y devuelve el registro actualizado. Resultsets: RS1: (idCategoria, id, nombre, estado, cantidadActores).'
+ BEGIN DECLARE vEstado CHAR(1);
 
 IF pIdCategoria IS NULL
 OR pIdCategoria <= 0 THEN
@@ -1855,8 +1863,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_eliminar_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT) MODIFIES SQL DATA COMMENT 'Realiza la baja lógica de una subcategoría para preservar sus relaciones históricas y devuelve el registro actualizado.'
-BEGIN IF pIdCategoria IS NULL
+  PROCEDURE `sp_admin_eliminar_subcategoria` (IN pIdCategoria INT, IN pIdSubcategoria INT) MODIFIES SQL DATA
+COMMENT 'Realiza la baja lógica de una subcategoría para preservar sus vínculos históricos y devuelve el registro actualizado. Resultsets: RS1: (idCategoria, id, nombre, estado, cantidadActores).'
+ BEGIN IF pIdCategoria IS NULL
 OR pIdCategoria <= 0 THEN
 SIGNAL SQLSTATE '45000'
 SET
@@ -1911,8 +1920,8 @@ REPLACE
     IN pSortBy VARCHAR(50) DEFAULT 'idEvento',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
   ) READS SQL DATA
-COMMENT 'Lista eventos para administración aplicando búsqueda, filtro opcional por estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de eventos.'
-BEGIN DECLARE vLimit INT DEFAULT 25;
+COMMENT 'Lista eventos calendarizados para administración aplicando búsqueda, filtro opcional por estado, ordenamiento controlado y paginación. Devuelve el total de coincidencias y la página de eventos. Resultsets: RS1: (total). RS2: (idEvento, nombre, descripcion, fecha, estado, fechaCreacion, idActor, nombreActor, estadoActor, idUbicacion, provincia, departamento, localidad, direccion, latitud, longitud, esPublica).'
+ BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
 
@@ -2078,8 +2087,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_mapa_filtros` () SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Devuelve los filtros disponibles para el mapa público. RS1: categorías. RS2: departamentos.'
-BEGIN
+COMMENT 'Devuelve los filtros disponibles para el mapa público con el recuento de actores activos por categoría y departamento. Resultsets: RS1: (id, nombre, icono, cantidadActores). RS2: (departamento, cantidadActores).'
+ BEGIN
 /*
  * RESULT SET 1: categorías
  *
@@ -2157,8 +2166,8 @@ REPLACE
     IN pDepartamento VARCHAR(100) DEFAULT NULL,
     IN pCategoriasJson JSON DEFAULT NULL
   ) READS SQL DATA
-COMMENT 'Busca actores culturales activos para el mapa público. Solo devuelve actores de categorías activas, con subcategoría activa cuando corresponda y ubicación pública.'
-BEGIN IF pCategoriasJson IS NOT NULL
+COMMENT 'Busca actores culturales activos para el mapa público interactivo con ubicación pública, aplicando filtros de texto, departamento y categorías. Resultsets: RS1: (idActor, nombre, descripcion, fotoPerfilUrl, categoria, categoriaIcono, subcategoria, departamento, localidad, direccion, latitud, longitud).'
+ BEGIN IF pCategoriasJson IS NOT NULL
 AND pCategoriasJson IS NOT JSON ARRAY THEN
 SIGNAL SQLSTATE '45000'
 SET
@@ -2277,8 +2286,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_listar_actores_filtros` () SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Devuelve los filtros disponibles para el directorio público de actores. RS1: categorías. RS2: departamentos.'
-BEGIN
+COMMENT 'Devuelve los filtros disponibles para el directorio público de actores (categorías activas y departamentos). Resultsets: RS1: (id, nombre, icono). RS2: (departamento).'
+ BEGIN
 /*
  * RESULT SET 1: categorías
  *
@@ -2358,8 +2367,8 @@ REPLACE
     IN pLimit INT DEFAULT 20,
     IN pOffset INT DEFAULT 0
   ) SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Lista actores culturales activos para el directorio público, con filtros opcionales por nombre, departamento y categoría. Devuelve el total y la página solicitada.'
-BEGIN DECLARE vBusqueda VARCHAR(255);
+COMMENT 'Lista actores culturales activos para el directorio público, con filtros opcionales por nombre, departamento y categoría, con paginación. Resultsets: RS1: (total). RS2: (idActor, nombre, descripcion, fotoPerfilUrl, idCategoria, categoria, categoriaIcono, idSubcategoria, subcategoria, departamento, localidad).'
+ BEGIN DECLARE vBusqueda VARCHAR(255);
 
 DECLARE vDepartamento VARCHAR(100);
 
@@ -2508,8 +2517,8 @@ REPLACE
     IN pLimit INT,
     IN pOffset INT
   ) SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Lista los eventos futuros para la agenda cultural publica con filtros de texto, departamento, categoria y rango de fechas. Resultsets: RS1: (total). RS2: (idEvento, nombreEvento, descripcion, fecha, idActor, nombreActor, fotoPerfilActor, idCategoria, categoria, categoriaIcono, subcategoria, departamento, localidad, direccion, latitud, longitud).'
-BEGIN
+COMMENT 'Lista los eventos futuros para la agenda cultural pública con filtros de texto, departamento, categoría y rango de fechas. Resultsets: RS1: (total). RS2: (idEvento, nombreEvento, descripcion, fecha, idActor, nombreActor, fotoPerfilActor, idCategoria, categoria, categoriaIcono, subcategoria, departamento, localidad, direccion, latitud, longitud).'
+ BEGIN
   DECLARE vLimit INT DEFAULT 20;
   DECLARE vOffset INT DEFAULT 0;
   DECLARE vFechaDesde DATE;
@@ -2588,8 +2597,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_resumen_estadisticas` () SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Obtiene los contadores consolidados de impacto cultural para la portada institucional del portal y pagina de licencia. Resultsets: RS1: (totalActores, totalEspacios, totalDepartamentos, totalCategorias).'
-BEGIN
+COMMENT 'Obtiene los contadores consolidados de impacto cultural para la portada institucional del portal y página de licencia. Resultsets: RS1: (totalActores, totalEspacios, totalDepartamentos, totalCategorias).'
+ BEGIN
   SELECT
     (SELECT COUNT(*) FROM `Actores` WHERE estado = 'A') AS totalActores,
     (SELECT COUNT(*) FROM `Actores` WHERE estado = 'A' AND tipoActor = 'ESPACIO') AS totalEspacios,
@@ -2608,8 +2617,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_obtener_actor` (IN pIdActor INT, IN pIdUsuario INT) SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Obtiene la ficha pública completa de un actor cultural. Si está activo es visible para todos. Si no está activo (P o I), solo es visible si pIdUsuario es integrante o admin/moderador.'
-BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
+COMMENT 'Obtiene la ficha pública completa de un actor cultural. Si está activo es visible para todos; si no está activo solo es visible para sus integrantes o administradores. Resultsets: RS1: (id, nombre, descripcion, fotoPerfilUrl, estado, tipoActor, cuit, categoria, categoriaIcono, subcategoria, provincia, departamento, localidad, esUbicacionPublica, direccion, latitud, longitud, idDueno, nombreDueno, emailDueno). RS2: (tipo, descripcion, url). RS3: (nombre, descripcion, fecha). RS4: (pregunta, tipoDato, respuesta, publica). RS5: (idUsuario, nombre, apellido, email, rol, esDueño, tipoIntegrante).'
+ BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 DECLARE vEsAdmin INT DEFAULT 0;
 
@@ -2966,8 +2975,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_interno_validar_opciones_pregunta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON) READS SQL DATA
-COMMENT 'Valida que las opciones de una pregunta sean coherentes con su tipo de dato, no estén vacías y no contengan duplicados.'
-BEGIN IF pTipoDato IN ('OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN IF pOpciones IS NULL
+COMMENT 'Valida que las opciones JSON de una pregunta sean coherentes con su tipo de dato, contengan al menos dos opciones y no tengan duplicados.'
+ BEGIN IF pTipoDato IN ('OPCION_UNICA', 'OPCION_MULTIPLE', 'OPCION_MULTIPLE_CHIPS', 'TAGS') THEN IF pOpciones IS NULL
 OR pOpciones IS NOT JSON ARRAY
 OR JSON_LENGTH(pOpciones) < 2
 OR JSON_LENGTH(pOpciones) > 100 THEN
@@ -3031,7 +3040,7 @@ OR
 REPLACE
   PROCEDURE `sp_interno_validar_valor_respuesta` (IN pTipoDato VARCHAR(50), IN pOpciones JSON, IN pValor JSON) READS SQL DATA
 COMMENT 'Valida el tipo y el contenido JSON de una respuesta según la definición de la pregunta.'
-BEGIN DECLARE vTexto LONGTEXT;
+ BEGIN DECLARE vTexto LONGTEXT;
 
 IF pValor IS NULL
 OR pValor IS NOT JSON
@@ -3185,8 +3194,8 @@ REPLACE
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0
   ) READS SQL DATA
-COMMENT 'Lista formularios para administración con filtros por texto, categoría y ámbito. Devuelve el total y la página solicitada.'
-BEGIN DECLARE vLimit INT DEFAULT 25;
+COMMENT 'Lista formularios dinámicos EAV para administración con filtros por texto, categoría y ámbito. Devuelve el total y la página solicitada. Resultsets: RS1: (total). RS2: (idFormulario, idCategoria, categoria, estadoCategoria, idSubcategoria, subcategoria, estadoSubcategoria, ambito, titulo, descripcion, fechaCreacion, cantidadPreguntasHistoricas, cantidadPreguntasActivas, cantidadObligatorias, cantidadActoresConRespuestas).'
+ BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
 
@@ -3327,8 +3336,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_crear_formulario` (IN pIdCategoria INT, IN pIdSubcategoria INT, IN pTitulo VARCHAR(150), IN pDescripcion VARCHAR(1000) DEFAULT NULL) MODIFIES SQL DATA COMMENT 'Crea el único formulario correspondiente a una categoría o subcategoría activa.'
-BEGIN DECLARE vTitulo VARCHAR(150);
+  PROCEDURE `sp_admin_crear_formulario` (IN pIdCategoria INT, IN pIdSubcategoria INT, IN pTitulo VARCHAR(150), IN pDescripcion VARCHAR(1000) DEFAULT NULL) MODIFIES SQL DATA
+COMMENT 'Crea el único formulario correspondiente a una categoría o subcategoría activa y devuelve su cabecera. Resultsets: RS1: (idFormulario, idCategoria, categoria, idSubcategoria, subcategoria, titulo, descripcion, fechaCreacion).'
+ BEGIN DECLARE vTitulo VARCHAR(150);
 
 DECLARE vDescripcion VARCHAR(1000);
 
@@ -3470,8 +3480,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_editar_formulario` (IN pIdFormulario INT, IN pTitulo VARCHAR(150), IN pDescripcion VARCHAR(1000)) MODIFIES SQL DATA COMMENT 'Modifica el título y la descripción de un formulario sin cambiar su categoría o subcategoría.'
-BEGIN DECLARE vTitulo VARCHAR(150);
+  PROCEDURE `sp_admin_editar_formulario` (IN pIdFormulario INT, IN pTitulo VARCHAR(150), IN pDescripcion VARCHAR(1000)) MODIFIES SQL DATA
+COMMENT 'Modifica el título y la descripción de un formulario sin cambiar su categoría o subcategoría. Resultsets: RS1: (idFormulario, idCategoria, categoria, idSubcategoria, subcategoria, titulo, descripcion, fechaCreacion).'
+ BEGIN DECLARE vTitulo VARCHAR(150);
 
 DECLARE vDescripcion VARCHAR(1000);
 
@@ -3551,8 +3562,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_listar_preguntas` (IN pBusqueda VARCHAR(255) DEFAULT NULL) READS SQL DATA
-COMMENT 'Lista el banco reutilizable de preguntas con filtro opcional por texto.'
-BEGIN DECLARE vBusqueda VARCHAR(255);
+COMMENT 'Lista el banco reutilizable de preguntas con filtro opcional por texto. Resultsets: RS1: (id, pregunta, tipoDato, opciones).'
+ BEGIN DECLARE vBusqueda VARCHAR(255);
 
 SET
   vBusqueda = NULLIF(TRIM(pBusqueda), '');
@@ -3577,8 +3588,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_crear_pregunta` (IN pPregunta VARCHAR(500), IN pTipoDato VARCHAR(50), IN pOpciones JSON DEFAULT NULL) MODIFIES SQL DATA COMMENT 'Crea una pregunta reutilizable después de validar el tipo de dato y sus posibles opciones.'
-BEGIN DECLARE vPregunta VARCHAR(500);
+  PROCEDURE `sp_admin_crear_pregunta` (IN pPregunta VARCHAR(500), IN pTipoDato VARCHAR(50), IN pOpciones JSON DEFAULT NULL) MODIFIES SQL DATA
+COMMENT 'Crea una pregunta reutilizable después de validar el tipo de dato y sus posibles opciones. Resultsets: RS1: (idPregunta, pregunta, tipoDato, opciones).'
+ BEGIN DECLARE vPregunta VARCHAR(500);
 
 DECLARE vTipoDato VARCHAR(50);
 
@@ -3677,8 +3689,9 @@ REPLACE
       'TAGS'
     ),
     IN pOpciones JSON DEFAULT NULL
-  ) MODIFIES SQL DATA COMMENT 'Edita una pregunta existente globalmente. Si la pregunta ya posee respuestas registradas en Respuestas, prohíbe cambios de tipoDato u opciones.'
-BEGIN DECLARE vPregunta VARCHAR(500);
+  ) MODIFIES SQL DATA
+COMMENT 'Edita una pregunta existente globalmente. Si la pregunta ya posee respuestas registradas en Respuestas, prohíbe cambios de tipoDato u opciones. Resultsets: RS1: (idPregunta, pregunta, tipoDato, opciones).'
+ BEGIN DECLARE vPregunta VARCHAR(500);
 
 DECLARE vTipoDatoActual VARCHAR(50);
 
@@ -3796,8 +3809,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_agregar_pregunta_formulario` (IN pIdFormulario INT, IN pIdPregunta INT, IN pOrden INT, IN pEsObligatorio TINYINT, IN pEsPublico TINYINT) MODIFIES SQL DATA COMMENT 'Incorpora una pregunta existente a un formulario y ajusta el orden de las preguntas activas.'
-BEGIN DECLARE vOrden INT;
+  PROCEDURE `sp_admin_agregar_pregunta_formulario` (IN pIdFormulario INT, IN pIdPregunta INT, IN pOrden INT, IN pEsObligatorio TINYINT, IN pEsPublico TINYINT) MODIFIES SQL DATA
+COMMENT 'Incorpora una pregunta existente a un formulario y ajusta el orden de las preguntas activas. Resultsets: RS1: (idFormulario, idPregunta, pregunta, tipoDato, opciones, orden, esObligatorio, esPublico, fechaIncorporacion, estado).'
+ BEGIN DECLARE vOrden INT;
 
 DECLARE vIdFormularioBloqueado INT;
 
@@ -3954,8 +3968,9 @@ REPLACE
     IN pIdPreguntaNueva INT,
     IN pEsObligatorio TINYINT DEFAULT NULL,
     IN pEsPublico TINYINT DEFAULT NULL
-  ) MODIFIES SQL DATA COMMENT 'Desactiva una pregunta activa e incorpora otra en la misma posición, conservando el vínculo histórico de reemplazo.'
-BEGIN DECLARE vOrden INT;
+  ) MODIFIES SQL DATA
+COMMENT 'Desactiva una pregunta activa e incorpora otra en la misma posición, conservando el vínculo histórico de reemplazo. Resultsets: RS1: (idFormulario, idPregunta, pregunta, idPreguntaReemplazada, preguntaReemplazada, orden, esObligatorio, esPublico, fechaIncorporacion, estado).'
+ BEGIN DECLARE vOrden INT;
 
 DECLARE vObligatoriaAnterior TINYINT;
 
@@ -4124,8 +4139,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_admin_desactivar_pregunta_formulario` (IN pIdFormulario INT, IN pIdPregunta INT) MODIFIES SQL DATA COMMENT 'Desactiva una pregunta del formulario sin eliminarla ni borrar sus respuestas históricas.'
-BEGIN DECLARE vOrden INT;
+  PROCEDURE `sp_admin_desactivar_pregunta_formulario` (IN pIdFormulario INT, IN pIdPregunta INT) MODIFIES SQL DATA
+COMMENT 'Desactiva una pregunta del formulario sin eliminarla ni borrar sus respuestas históricas. Resultsets: RS1: (idFormulario, idPregunta, pregunta, orden, fechaIncorporacion, fechaDesactivacion, estado).'
+ BEGIN DECLARE vOrden INT;
 
 DECLARE vIdFormularioBloqueado INT;
 
@@ -4216,8 +4232,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_formulario` (IN pIdFormulario INT) READS SQL DATA
-COMMENT 'Obtiene la cabecera de un formulario y todas sus preguntas, incluidas las inactivas y reemplazadas.'
-BEGIN IF pIdFormulario IS NULL
+COMMENT 'Obtiene la cabecera de un formulario y todas sus preguntas, incluidas las inactivas y reemplazadas. Resultsets: RS1: (idFormulario, idCategoria, categoria, estadoCategoria, idSubcategoria, subcategoria, estadoSubcategoria, titulo, descripcion, fechaCreacion, cantidadPreguntasHistoricas, cantidadPreguntasActivas, cantidadActoresConRespuestas). RS2: (idFormulario, idPregunta, pregunta, tipoDato, opciones, idPreguntaReemplazada, preguntaReemplazada, orden, esObligatorio, esPublico, fechaIncorporacion, fechaDesactivacion, estado, cantidadActoresQueRespondieron).'
+ BEGIN IF pIdFormulario IS NULL
 OR NOT EXISTS (
   SELECT
     1
@@ -4329,8 +4345,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_formularios` (IN pIdActor INT) READS SQL DATA
-COMMENT 'Lista los formularios aplicables a un actor: el de su categoría y, cuando existe, el de su subcategoría.'
-BEGIN IF pIdActor IS NULL
+COMMENT 'Lista los formularios aplicables a un actor: el de su categoría y, cuando existe, el de su subcategoría. Resultsets: RS1: (idFormulario, ambito, idCategoria, categoria, idSubcategoria, subcategoria, titulo, descripcion, cantidadPreguntasActivas, cantidadPreguntasObligatorias, cantidadRespondidas, cantidadObligatoriasPendientes, estaCompleto, fechaConfirmacionMasAntigua, fechaUltimaModificacion).'
+ BEGIN IF pIdActor IS NULL
 OR NOT EXISTS (
   SELECT
     1
@@ -4440,8 +4456,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_obtener_formulario` (IN pIdActor INT, IN pIdFormulario INT) READS SQL DATA
-COMMENT 'Obtiene un formulario aplicable al actor y sus preguntas activas junto con las respuestas vigentes.'
-BEGIN IF pIdActor IS NULL
+COMMENT 'Obtiene un formulario aplicable al actor y sus preguntas activas junto con las respuestas vigentes. Resultsets: RS1: (idFormulario, idCategoria, categoria, idSubcategoria, subcategoria, titulo, descripcion, cantidadPreguntasActivas, cantidadObligatorias, cantidadObligatoriasPendientes, estaCompleto). RS2: (idFormulario, idPregunta, pregunta, tipoDato, opciones, orden, esObligatorio, esPublico, valor, fechaCreacion, fechaUltimaModificacion, fechaUltimaConfirmacion, estaRespondida).'
+ BEGIN IF pIdActor IS NULL
 OR NOT EXISTS (
   SELECT
     1
@@ -4578,8 +4594,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_guardar_respuesta` (IN pIdActor INT, IN pIdFormulario INT, IN pIdPregunta INT, IN pValor JSON) MODIFIES SQL DATA COMMENT 'Inserta o actualiza la respuesta vigente de un actor, validando el formulario, la pregunta y el tipo JSON recibido.'
-BEGIN DECLARE vCategoriaActor INT;
+  PROCEDURE `sp_actor_guardar_respuesta` (IN pIdActor INT, IN pIdFormulario INT, IN pIdPregunta INT, IN pValor JSON) MODIFIES SQL DATA
+COMMENT 'Inserta o actualiza la respuesta vigente de un actor, validando el formulario, la pregunta y el tipo JSON recibido. Resultsets: RS1: (idFormulario, idPregunta, pregunta, tipoDato, idActor, valor, fechaCreacion, fechaUltimaModificacion, fechaUltimaConfirmacion).'
+ BEGIN DECLARE vCategoriaActor INT;
 
 DECLARE vSubcategoriaActor INT;
 
@@ -4721,8 +4738,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_confirmar_formulario` (IN pIdActor INT, IN pIdFormulario INT) MODIFIES SQL DATA COMMENT 'Confirma las respuestas vigentes de un formulario cuando todas sus preguntas obligatorias activas fueron respondidas.'
-BEGIN DECLARE vPendientes INT DEFAULT 0;
+  PROCEDURE `sp_actor_confirmar_formulario` (IN pIdActor INT, IN pIdFormulario INT) MODIFIES SQL DATA
+COMMENT 'Confirma las respuestas vigentes de un formulario cuando todas sus preguntas obligatorias activas fueron respondidas. Resultsets: RS1: (idActor, idFormulario, fechaConfirmacion, cantidadObligatoriasPendientes, cantidadRespuestasConfirmadas).'
+ BEGIN DECLARE vPendientes INT DEFAULT 0;
 
 DECLARE vAhora DATETIME;
 
@@ -4859,8 +4877,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_preguntas_pendientes` (IN pIdActor INT) READS SQL DATA
-COMMENT 'Lista las preguntas obligatorias activas que el actor todavía no respondió en sus formularios aplicables.'
-BEGIN IF pIdActor IS NULL
+COMMENT 'Lista las preguntas obligatorias activas que el actor todavía no respondió en sus formularios aplicables. Resultsets: RS1: (idFormulario, formulario, ambito, idPregunta, pregunta, tipoDato, opciones, orden, esPublico).'
+ BEGIN IF pIdActor IS NULL
 OR NOT EXISTS (
   SELECT
     1
@@ -4931,8 +4949,9 @@ REPLACE
     IN pCUIL VARCHAR(11),
     IN pActividadesArcaCodigo CHAR(6),
     IN pFotoDniUrl VARCHAR(255)
-  ) MODIFIES SQL DATA COMMENT 'Registra una identidad Firebase verificada en estado Activo (A) con rol USUARIO.'
-BEGIN DECLARE vEmailExistente INT DEFAULT 0;
+  ) MODIFIES SQL DATA
+COMMENT 'Registra una identidad Firebase verificada en estado Activo (A) con rol USUARIO y devuelve el perfil creado. Resultsets: RS1: (idUsuario, nombre, apellido, email, genero, fechaNacimiento, nacionalidad, CUIL, actividadesArcaCodigo, fotoDniUrl, avatarEstilo, avatarSeed, rol, estado, fechaRegistro).'
+ BEGIN DECLARE vEmailExistente INT DEFAULT 0;
 
 DECLARE vCUILExistente INT DEFAULT 0;
 
@@ -5105,8 +5124,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_obtener_usuario_por_id_firebase` (IN pIdFirebase VARCHAR(128)) READS SQL DATA
-COMMENT 'Obtiene un usuario por la identidad validada por Firebase Authentication.'
-BEGIN
+COMMENT 'Obtiene los datos de un usuario a partir de su identificador idFirebase validado. Resultsets: RS1: (idUsuario, nombre, apellido, email, genero, fechaNacimiento, nacionalidad, CUIL, actividadesArcaCodigo, fotoDniUrl, avatarEstilo, avatarSeed, rol, estado, fechaRegistro).'
+ BEGIN
 SELECT
   u.idUsuario,
   u.nombre,
@@ -5136,8 +5155,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_auth_obtener_usuario_sesion` (IN pIdUsuario INT) READS SQL DATA
-COMMENT 'Obtiene rol y estado vigentes para validar una sesión autenticada.'
-BEGIN
+COMMENT 'Obtiene rol y estado vigentes para validar una sesión autenticada. Resultsets: RS1: (idUsuario, email, rol, estado).'
+ BEGIN
 SELECT
   u.idUsuario,
   u.email,
@@ -5156,8 +5175,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_publico_listar_actividades_arca` () READS SQL DATA
-COMMENT 'Obtiene el listado completo de actividades económicas ARCA para selección en formularios.'
-BEGIN
+COMMENT 'Obtiene el listado completo de actividades económicas ARCA para selección en formularios. Resultsets: RS1: (codigo, descripcion).'
+ BEGIN
 SELECT
   aa.codigo,
   aa.descripcion
@@ -5180,8 +5199,8 @@ REPLACE
     IN pSortBy VARCHAR(50) DEFAULT 'codigo',
     IN pSortDir VARCHAR(4) DEFAULT 'ASC'
   ) READS SQL DATA
-COMMENT 'Lista actividades económicas ARCA con paginación, filtros de búsqueda y recuento de usuarios asociados.'
-BEGIN
+COMMENT 'Lista actividades económicas ARCA con paginación, filtros de búsqueda y recuento de usuarios asociados. Resultsets: RS1: (total). RS2: (codigo, descripcion, cantidadUsuarios).'
+ BEGIN
   DECLARE vLimit INT DEFAULT 25;
   DECLARE vOffset INT DEFAULT 0;
   DECLARE vSortBy VARCHAR(50) DEFAULT 'codigo';
@@ -5241,8 +5260,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_obtener_actividad_arca` (IN pCodigo CHAR(6)) READS SQL DATA
-COMMENT 'Obtiene los datos de una actividad económica ARCA y la cantidad de usuarios vinculados.'
-BEGIN
+COMMENT 'Obtiene los datos de una actividad económica ARCA y la cantidad de usuarios vinculados. Resultsets: RS1: (codigo, descripcion, cantidadUsuarios).'
+ BEGIN
   SELECT
     aa.codigo,
     aa.descripcion,
@@ -5259,8 +5278,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_crear_actividad_arca` (IN pCodigo CHAR(6), IN pDescripcion VARCHAR(255)) MODIFIES SQL DATA
-COMMENT 'Crea una nueva actividad económica ARCA.'
-BEGIN
+COMMENT 'Crea una nueva actividad económica ARCA y devuelve el registro creado. Resultsets: RS1: (codigo, descripcion, cantidadUsuarios).'
+ BEGIN
   IF pCodigo IS NULL OR TRIM(pCodigo) NOT REGEXP '^[0-9]{6}$' THEN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'El código ARCA debe contener exactamente 6 dígitos numéricos.';
@@ -5293,8 +5312,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_editar_actividad_arca` (IN pCodigo CHAR(6), IN pDescripcion VARCHAR(255)) MODIFIES SQL DATA
-COMMENT 'Modifica la descripción de una actividad económica ARCA.'
-BEGIN
+COMMENT 'Modifica la descripción de una actividad económica ARCA y devuelve el registro actualizado. Resultsets: RS1: (codigo, descripcion, cantidadUsuarios).'
+ BEGIN
   IF pCodigo IS NULL OR TRIM(pCodigo) NOT REGEXP '^[0-9]{6}$' THEN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'El código ARCA debe contener exactamente 6 dígitos numéricos.';
@@ -5328,8 +5347,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_admin_eliminar_actividad_arca` (IN pCodigo CHAR(6)) MODIFIES SQL DATA
-COMMENT 'Elimina una actividad económica ARCA si no está asociada a ningún usuario.'
-BEGIN
+COMMENT 'Elimina una actividad económica ARCA si no está asociada a ningún usuario y devuelve el registro eliminado. Resultsets: RS1: (codigo, descripcion, cantidadUsuarios).'
+ BEGIN
   DECLARE vDescripcion VARCHAR(255);
 
   IF pCodigo IS NULL OR TRIM(pCodigo) NOT REGEXP '^[0-9]{6}$' THEN
@@ -5362,8 +5381,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_opciones_registro` () READS SQL DATA
-COMMENT 'Lista categorías y subcategorías activas disponibles para registrar o editar un actor.'
-BEGIN
+COMMENT 'Lista categorías y subcategorías activas disponibles para registrar o editar un actor cultural. Resultsets: RS1: (idCategoria, categoria, icono, idSubcategoria, subcategoria).'
+ BEGIN
 SELECT
   c.idCategoria,
   c.nombre AS categoria,
@@ -5388,8 +5407,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_mis_actores` (IN pIdUsuario INT, IN pBusqueda VARCHAR(100), IN pIdCategoria INT, IN pEstado CHAR(1), IN pLimit INT, IN pOffset INT) READS SQL DATA
-COMMENT 'Lista los actores culturales donde el usuario autenticado es integrante o titular.'
-BEGIN DECLARE vLimit INT DEFAULT 25;
+COMMENT 'Lista los actores culturales donde el usuario autenticado es integrante o titular. Resultsets: RS1: (total). RS2: (idActor, nombre, descripcion, fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado, esDueno, rolEnActor, idCategoria, categoria, iconoCategoria, idSubcategoria, subcategoria, idUbicacion, provincia, departamento, localidad, direccion, latitud, longitud, esPublica).'
+ BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
 
@@ -5519,8 +5538,9 @@ REPLACE
     IN pLatitud DECIMAL(10, 8),
     IN pLongitud DECIMAL(11, 8),
     IN pEsPublica TINYINT
-  ) MODIFIES SQL DATA COMMENT 'Crea un nuevo actor cultural para el usuario autenticado (con estado Pendiente).'
-BEGIN DECLARE vIdUbicacion INT;
+  ) MODIFIES SQL DATA
+COMMENT 'Crea un nuevo actor cultural para el usuario autenticado (con estado Pendiente) y devuelve el identificador generado. Resultsets: RS1: (idActor).'
+ BEGIN DECLARE vIdUbicacion INT;
 
 DECLARE vIdActor INT;
 
@@ -5618,8 +5638,9 @@ REPLACE
     IN pLocalidad VARCHAR(45),
     IN pDireccion VARCHAR(150),
     IN pEsAdmin TINYINT
-  ) MODIFIES SQL DATA COMMENT 'Edita los datos de un actor cultural. Si es editado por usuario estándar pasa a estado Pendiente.'
-BEGIN DECLARE vIdUbicacion INT;
+  ) MODIFIES SQL DATA
+COMMENT 'Edita los datos de un actor cultural. Si es editado por un usuario estándar pasa a estado Pendiente.'
+ BEGIN DECLARE vIdUbicacion INT;
 
 DECLARE vEsDueno INT DEFAULT 0;
 
@@ -5688,8 +5709,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_actualizar_ubicacion_coordenadas` (IN pIdActor INT, IN pLatitud DECIMAL(10, 8), IN pLongitud DECIMAL(11, 8), IN pEsPublica TINYINT) MODIFIES SQL DATA COMMENT 'Actualiza las coordenadas geograficas (lat/lng) y visibilidad publica de la ubicacion de un actor.'
-BEGIN DECLARE vIdUbicacion INT;
+  PROCEDURE `sp_actor_actualizar_ubicacion_coordenadas` (IN pIdActor INT, IN pLatitud DECIMAL(10, 8), IN pLongitud DECIMAL(11, 8), IN pEsPublica TINYINT) MODIFIES SQL DATA
+COMMENT 'Actualiza las coordenadas geográficas (latitud/longitud) y visibilidad pública de la ubicación de un actor cultural.'
+ BEGIN DECLARE vIdUbicacion INT;
 
 SELECT
   idUbicacion INTO vIdUbicacion
@@ -5716,8 +5738,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_cambiar_estado_actor` (IN pIdUsuario INT, IN pIdActor INT, IN pNuevoEstado CHAR(1)) MODIFIES SQL DATA COMMENT 'Cambia el estado según el rol vigente, la propiedad del actor y las categorías asignadas al moderador.'
-BEGIN DECLARE vRolSolicitante VARCHAR(20);
+  PROCEDURE `sp_actor_cambiar_estado_actor` (IN pIdUsuario INT, IN pIdActor INT, IN pNuevoEstado CHAR(1)) MODIFIES SQL DATA
+COMMENT 'Cambia el estado del actor cultural según el rol vigente, la titularidad y las categorías asignadas al moderador.'
+ BEGIN DECLARE vRolSolicitante VARCHAR(20);
 
 DECLARE vEsDueno TINYINT DEFAULT 0;
 
@@ -5820,8 +5843,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_eliminar_actor` (IN pIdUsuario INT, IN pIdActor INT, IN pEsAdmin TINYINT) MODIFIES SQL DATA COMMENT 'Elimina permanentemente un actor cultural y sus datos asociados.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_eliminar_actor` (IN pIdUsuario INT, IN pIdActor INT, IN pEsAdmin TINYINT) MODIFIES SQL DATA
+COMMENT 'Elimina permanentemente un actor cultural, sus relaciones y datos asociados previa verificación de permisos.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vIdUbicacion INT;
 
@@ -5900,8 +5924,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_agregar_item_portafolio` (IN pIdUsuario INT, IN pIdActor INT, IN pTipo VARCHAR(20), IN pDescripcion VARCHAR(255), IN pUrl VARCHAR(255)) MODIFIES SQL DATA COMMENT 'Agrega un ítem al portafolio de un actor cultural.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_agregar_item_portafolio` (IN pIdUsuario INT, IN pIdActor INT, IN pTipo VARCHAR(20), IN pDescripcion VARCHAR(255), IN pUrl VARCHAR(255)) MODIFIES SQL DATA
+COMMENT 'Agrega un ítem al portafolio de un actor cultural y devuelve el identificador creado. Resultsets: RS1: (idItem).'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsDueno
@@ -5934,8 +5959,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_eliminar_item_portafolio` (IN pIdUsuario INT, IN pIdItem INT) MODIFIES SQL DATA COMMENT 'Elimina un ítem del portafolio.'
-BEGIN DECLARE vIdActor INT;
+  PROCEDURE `sp_actor_eliminar_item_portafolio` (IN pIdUsuario INT, IN pIdItem INT) MODIFIES SQL DATA
+COMMENT 'Elimina un ítem del portafolio de un actor cultural previa validación de pertenencia.'
+ BEGIN DECLARE vIdActor INT;
 
 DECLARE vEsDueno INT DEFAULT 0;
 
@@ -5981,8 +6007,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_portafolio` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA
-COMMENT 'Lista los ítems del portafolio de un actor para sus integrantes.'
-BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
+COMMENT 'Lista los ítems del portafolio de un actor para sus integrantes. Resultsets: RS1: (idItem, tipo, descripcion, url).'
+ BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsIntegrante
@@ -6019,8 +6045,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_eventos` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA
-COMMENT 'Lista los eventos de un actor para sus integrantes.'
-BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
+COMMENT 'Lista los eventos de un actor cultural para sus integrantes. Resultsets: RS1: (idEvento, nombre, descripcion, fecha).'
+ BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsIntegrante
@@ -6057,8 +6083,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_agregar_evento` (IN pIdUsuario INT, IN pIdActor INT, IN pNombre VARCHAR(100), IN pDescripcion VARCHAR(500), IN pFecha DATETIME) MODIFIES SQL DATA COMMENT 'Agrega un evento a un actor cultural.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_agregar_evento` (IN pIdUsuario INT, IN pIdActor INT, IN pNombre VARCHAR(100), IN pDescripcion VARCHAR(500), IN pFecha DATETIME) MODIFIES SQL DATA
+COMMENT 'Agrega un evento a un actor cultural y devuelve el identificador generado. Resultsets: RS1: (idEvento).'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsDueno
@@ -6091,8 +6118,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_eliminar_evento` (IN pIdUsuario INT, IN pIdActor INT, IN pIdEvento INT) MODIFIES SQL DATA COMMENT 'Elimina un evento de un actor cultural.'
-BEGIN DECLARE vIdActor INT;
+  PROCEDURE `sp_actor_eliminar_evento` (IN pIdUsuario INT, IN pIdActor INT, IN pIdEvento INT) MODIFIES SQL DATA
+COMMENT 'Elimina un evento de un actor cultural previa validación de pertenencia.'
+ BEGIN DECLARE vIdActor INT;
 
 DECLARE vEsDueno INT DEFAULT 0;
 
@@ -6139,8 +6167,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_listar_integrantes` (IN pIdUsuario INT, IN pIdActor INT) READS SQL DATA
-COMMENT 'Lista los integrantes de un actor cultural.'
-BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
+COMMENT 'Lista los integrantes registrados y no registrados de un actor cultural. Resultsets: RS1: (idUsuario, nombre, apellido, email, rol, esDueño, tipoIntegrante).'
+ BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsIntegrante
@@ -6202,8 +6230,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_agregar_integrante` (IN pIdUsuario INT, IN pIdActor INT, IN pEmailUsuario VARCHAR(99), IN pRol VARCHAR(45)) MODIFIES SQL DATA COMMENT 'Agrega a un usuario como integrante de un actor cultural mediante su correo electrónico.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_agregar_integrante` (IN pIdUsuario INT, IN pIdActor INT, IN pEmailUsuario VARCHAR(99), IN pRol VARCHAR(45)) MODIFIES SQL DATA
+COMMENT 'Agrega a un usuario como integrante de un actor cultural mediante su correo electrónico.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vTargetUsuarioId INT;
 
@@ -6266,8 +6295,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_eliminar_integrante` (IN pIdUsuario INT, IN pIdActor INT, IN pIdUsuarioAEliminar INT) MODIFIES SQL DATA COMMENT 'Elimina a un integrante de un actor cultural.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_eliminar_integrante` (IN pIdUsuario INT, IN pIdActor INT, IN pIdUsuarioAEliminar INT) MODIFIES SQL DATA
+COMMENT 'Elimina a un integrante de un actor cultural asegurando que no se elimine al único titular.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vEsDuenoTarget INT DEFAULT 0;
 
@@ -6315,8 +6345,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_editar_integrante` (IN pIdUsuario INT, IN pIdActor INT, IN pIdUsuarioAEditar INT, IN pRol VARCHAR(45)) MODIFIES SQL DATA COMMENT 'Modifica el rol de un usuario integrante de un actor cultural.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_editar_integrante` (IN pIdUsuario INT, IN pIdActor INT, IN pIdUsuarioAEditar INT, IN pRol VARCHAR(45)) MODIFIES SQL DATA
+COMMENT 'Modifica el rol de un usuario integrante de un actor cultural.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsDueno
@@ -6370,8 +6401,9 @@ REPLACE
     IN pApellido VARCHAR(45),
     IN pEmail VARCHAR(99),
     IN pRol VARCHAR(45)
-  ) MODIFIES SQL DATA COMMENT 'Agrega a un actor cultural una persona que no posee cuenta de usuario.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  ) MODIFIES SQL DATA
+COMMENT 'Agrega a un actor cultural una persona que no posee cuenta de usuario.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vEmail VARCHAR(99);
 
@@ -6429,8 +6461,9 @@ REPLACE
     IN pApellido VARCHAR(45),
     IN pEmail VARCHAR(99),
     IN pRol VARCHAR(45)
-  ) MODIFIES SQL DATA COMMENT 'Modifica los datos de un integrante sin cuenta de usuario.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  ) MODIFIES SQL DATA
+COMMENT 'Modifica los datos y rol de un integrante sin cuenta de usuario.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vEmail VARCHAR(99);
 
@@ -6500,8 +6533,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_eliminar_integrante_no_registrado` (IN pIdUsuario INT, IN pIdActor INT, IN pIdIntegranteNoRegistrado INT) MODIFIES SQL DATA COMMENT 'Elimina de un actor cultural a un integrante sin cuenta de usuario.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+  PROCEDURE `sp_actor_eliminar_integrante_no_registrado` (IN pIdUsuario INT, IN pIdActor INT, IN pIdIntegranteNoRegistrado INT) MODIFIES SQL DATA
+COMMENT 'Elimina de un actor cultural a un integrante sin cuenta de usuario.'
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 SELECT
   COUNT(*) INTO vEsDueno
@@ -6544,7 +6578,7 @@ REPLACE
     IN pIdNuevoTitular INT
   ) MODIFIES SQL DATA
 COMMENT 'Transfiere la titularidad (esDueño = 1) de un actor cultural a otro integrante registrado.'
-BEGIN DECLARE vEsDueno INT DEFAULT 0;
+ BEGIN DECLARE vEsDueno INT DEFAULT 0;
 
 DECLARE vNuevoEsIntegrante INT DEFAULT 0;
 
@@ -6619,8 +6653,9 @@ REPLACE
   PROCEDURE `sp_actor_renunciar_integrante` (
     IN pIdUsuario INT,
     IN pIdActor INT
-  ) MODIFIES SQL DATA COMMENT 'Permite a un usuario registrado renunciar a su membresía como integrante de un actor cultural.'
-BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
+  ) MODIFIES SQL DATA
+COMMENT 'Permite a un usuario registrado renunciar a su membresía como integrante de un actor cultural.'
+ BEGIN DECLARE vEsIntegrante INT DEFAULT 0;
 
 DECLARE vEsDueno INT DEFAULT 0;
 
@@ -6661,8 +6696,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_usuario_obtener_perfil` (IN pIdUsuario INT) READS SQL DATA
-COMMENT 'Obtiene los datos de perfil del usuario autenticado comprobando que exista y esté activo.'
-BEGIN DECLARE vEstado VARCHAR(1);
+COMMENT 'Obtiene los datos de perfil del usuario autenticado comprobando que exista y esté activo. Resultsets: RS1: (idUsuario, idFirebase, actividadesArcaCodigo, actividadArca, nombre, apellido, CUIL, genero, fechaNacimiento, nacionalidad, email, fotoDniUrl, avatarEstilo, avatarSeed, fechaRegistro, rol, estado, actoresDuenoCount).'
+ BEGIN DECLARE vEstado VARCHAR(1);
 
 SELECT
   estado INTO vEstado
@@ -6737,8 +6772,9 @@ REPLACE
     IN pFotoDniUrl VARCHAR(255),
     IN pAvatarEstilo VARCHAR(50),
     IN pAvatarSeed VARCHAR(100)
-  ) MODIFIES SQL DATA COMMENT 'Actualiza los datos personales del usuario autenticado previa comprobación de autorización y estado.'
-BEGIN DECLARE vEstado VARCHAR(1);
+  ) MODIFIES SQL DATA
+COMMENT 'Actualiza los datos personales del usuario autenticado previa comprobación de autorización y estado. Resultsets: RS1: (idUsuario, idFirebase, actividadesArcaCodigo, actividadArca, nombre, apellido, CUIL, genero, fechaNacimiento, nacionalidad, email, fotoDniUrl, avatarEstilo, avatarSeed, fechaRegistro, rol, estado, actoresDuenoCount).'
+ BEGIN DECLARE vEstado VARCHAR(1);
 
 SELECT
   estado INTO vEstado
@@ -6809,8 +6845,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_usuario_eliminar_cuenta` (IN pIdUsuario INT) MODIFIES SQL DATA COMMENT 'Elimina físicamente una cuenta y devuelve el manifiesto de archivos personales locales que quedaron sin referencias.'
-BEGIN DECLARE vExiste INT DEFAULT 0;
+  PROCEDURE `sp_usuario_eliminar_cuenta` (IN pIdUsuario INT) MODIFIES SQL DATA
+COMMENT 'Elimina físicamente una cuenta y devuelve el manifiesto de archivos personales locales que quedaron sin referencias. Resultsets: RS1: (actoresEliminadosCount). RS2: (tipo, url).'
+ BEGIN DECLARE vExiste INT DEFAULT 0;
 
 DECLARE vActoresEliminadosCount INT DEFAULT 0;
 
@@ -7033,8 +7070,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_convocatoria_listar_activas` (IN pIdUsuario INT DEFAULT NULL) READS SQL DATA
-COMMENT 'Lista convocatorias activas (fecha de cierre en el futuro) con cantidad total de postulaciones y lista de actores del usuario que estan postulados.'
-BEGIN
+COMMENT 'Lista convocatorias activas (fecha de cierre en el futuro) con cantidad total de postulaciones y lista de actores del usuario que están postulados. Resultsets: RS1: (idConvocatoria, titulo, descripcion, fechaCreacion, fechaCierre, totalPostulaciones). RS2: (idConvocatoria, idActor, nombreActor, fechaPostulacion).'
+ BEGIN
 -- 1. Lista de convocatorias activas con conteo total de postulaciones
 SELECT
   c.idConvocatoria,
@@ -7094,8 +7131,8 @@ REPLACE
     IN pLimit INT DEFAULT 25,
     IN pOffset INT DEFAULT 0
   ) READS SQL DATA
-COMMENT 'Lista todas las convocatorias para el panel de administracion con filtros y paginacion.'
-BEGIN DECLARE vLimit INT DEFAULT 25;
+COMMENT 'Lista todas las convocatorias para el panel de administración con filtros y paginación. Resultsets: RS1: (total). RS2: (idConvocatoria, titulo, descripcion, fechaCreacion, fechaCierre, estado, totalPostulaciones).'
+ BEGIN DECLARE vLimit INT DEFAULT 25;
 
 DECLARE vOffset INT DEFAULT 0;
 
@@ -7188,8 +7225,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_convocatoria_obtener_detalle` (IN pIdConvocatoria INT) READS SQL DATA
-COMMENT 'Obtiene los datos de una convocatoria y la lista completa de actores postulados.'
-BEGIN
+COMMENT 'Obtiene los datos de una convocatoria y la lista completa de actores postulados con sus datos de contacto. Resultsets: RS1: (idConvocatoria, titulo, descripcion, fechaCreacion, fechaCierre, estado, totalPostulaciones). RS2: (idActor, fechaPostulacion, nombreActor, fotoPerfilUrl, estadoActor, categoria, subcategoria, departamento, localidad, responsableNombre, responsableApellido, responsableEmail).'
+ BEGIN
 -- 1. Detalle de la convocatoria
 SELECT
   c.idConvocatoria,
@@ -7249,8 +7286,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_crear` (IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME, OUT pIdConvocatoria INT) MODIFIES SQL DATA COMMENT 'Crea una nueva convocatoria cultural validando fechas y titulo unico.'
-BEGIN DECLARE vTitulo VARCHAR(145);
+  PROCEDURE `sp_convocatoria_crear` (IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME, OUT pIdConvocatoria INT) MODIFIES SQL DATA
+COMMENT 'Crea una nueva convocatoria cultural validando fechas y título único y devuelve el registro creado. Resultsets: RS1: (idConvocatoria, titulo, descripcion, fechaCreacion, fechaCierre, estado, totalPostulaciones).'
+ BEGIN DECLARE vTitulo VARCHAR(145);
 
 DECLARE vDescripcion TEXT;
 
@@ -7312,8 +7350,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_editar` (IN pIdConvocatoria INT, IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME) MODIFIES SQL DATA COMMENT 'Modifica los datos de una convocatoria existente.'
-BEGIN DECLARE vTitulo VARCHAR(145);
+  PROCEDURE `sp_convocatoria_editar` (IN pIdConvocatoria INT, IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME) MODIFIES SQL DATA
+COMMENT 'Modifica los datos de una convocatoria existente y devuelve el registro actualizado. Resultsets: RS1: (idConvocatoria, titulo, descripcion, fechaCreacion, fechaCierre, estado, totalPostulaciones).'
+ BEGIN DECLARE vTitulo VARCHAR(145);
 
 DECLARE vDescripcion TEXT;
 
@@ -7400,8 +7439,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_eliminar` (IN pIdConvocatoria INT) MODIFIES SQL DATA COMMENT 'Elimina una convocatoria y sus postulaciones asociadas.'
-BEGIN DECLARE vExiste INT;
+  PROCEDURE `sp_convocatoria_eliminar` (IN pIdConvocatoria INT) MODIFIES SQL DATA
+COMMENT 'Elimina una convocatoria y sus postulaciones asociadas previa validación de existencia.'
+ BEGIN DECLARE vExiste INT;
 
 DECLARE EXIT
 HANDLER FOR SQLEXCEPTION
@@ -7447,8 +7487,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_postular_actor` (IN pIdConvocatoria INT, IN pIdActor INT, IN pIdUsuario INT) MODIFIES SQL DATA COMMENT 'Postula un actor cultural a una convocatoria activa verificando pertenencia y estado activo.'
-BEGIN DECLARE vCerrada INT DEFAULT 0;
+  PROCEDURE `sp_convocatoria_postular_actor` (IN pIdConvocatoria INT, IN pIdActor INT, IN pIdUsuario INT) MODIFIES SQL DATA
+COMMENT 'Postula un actor cultural a una convocatoria activa verificando pertenencia y estado activo.'
+ BEGIN DECLARE vCerrada INT DEFAULT 0;
 
 DECLARE vEsMiembro INT DEFAULT 0;
 
@@ -7560,8 +7601,9 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_cancelar_postulacion` (IN pIdConvocatoria INT, IN pIdActor INT, IN pIdUsuario INT) MODIFIES SQL DATA COMMENT 'Cancela la postulación de un actor a una convocatoria.'
-BEGIN DECLARE vCerrada INT DEFAULT 0;
+  PROCEDURE `sp_convocatoria_cancelar_postulacion` (IN pIdConvocatoria INT, IN pIdActor INT, IN pIdUsuario INT) MODIFIES SQL DATA
+COMMENT 'Cancela la postulación de un actor a una convocatoria antes de la fecha de cierre.'
+ BEGIN DECLARE vCerrada INT DEFAULT 0;
 
 DECLARE vEsMiembro INT DEFAULT 0;
 
@@ -7632,8 +7674,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_sistema_ping` () SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Verifica la conectividad con MariaDB retornando ok = 1.'
-BEGIN
+COMMENT 'Verifica la conectividad con MariaDB retornando ok = 1. Resultsets: RS1: (ok).'
+ BEGIN
 SELECT
   1 AS ok;
 
@@ -7645,8 +7687,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_obtener_archivo_item_portafolio` (IN pIdItem INT) SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Obtiene la URL de un ítem de portafolio de tipo IMAGEN.'
-BEGIN
+COMMENT 'Obtiene la URL de un ítem de portafolio de tipo IMAGEN. Resultsets: RS1: (url).'
+ BEGIN
 SELECT
   url
 FROM
@@ -7663,8 +7705,8 @@ CREATE
 OR
 REPLACE
   PROCEDURE `sp_actor_obtener_archivos_actor` (IN pIdActor INT) SQL SECURITY DEFINER READS SQL DATA
-COMMENT 'Obtiene las URLs de archivos asociados a un actor (foto de perfil y portafolio).'
-BEGIN
+COMMENT 'Obtiene las URLs de archivos asociados a un actor (foto de perfil y portafolio). Resultsets: RS1: (tipo, url).'
+ BEGIN
 SELECT
   'ACTOR_PERFIL' AS tipo,
   fotoPerfilUrl AS url
@@ -7696,8 +7738,8 @@ REPLACE
   PROCEDURE `sp_sistema_auditar_integridad` (
     IN pIdUsuarioSolicitante INT
   ) READS SQL DATA
-COMMENT 'Ejecuta auditorias de integridad referencial y de negocio detectando anomalias o inconsistencias en la base de datos (exclusivo administradores). Resultsets: RS1: (modulo, severidad, descripcion, idReferencia).'
-BEGIN
+COMMENT 'Ejecuta auditorias de integridad referencial y de negocio detectando anomalías o inconsistencias en la base de datos (exclusivo administradores). Resultsets: RS1: (modulo, severidad, descripcion, idReferencia).'
+ BEGIN
   DECLARE vRol VARCHAR(20);
 
   SELECT rol INTO vRol
