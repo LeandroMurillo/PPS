@@ -106,11 +106,7 @@ export async function obtenerConvocatoriaDetalleRepository(idConvocatoria: numbe
 export async function crearConvocatoriaRepository(titulo: string, descripcion: string, fechaCierre: string) {
 	// MariaDB DATETIME expects 'YYYY-MM-DD HH:MM:SS'
 	const formattedDate = new Date(fechaCierre).toISOString().slice(0, 19).replace('T', ' ');
-	const raw = await pool.execute('CALL sp_convocatoria_crear(?, ?, ?, @pIdConvocatoria)', [
-		titulo,
-		descripcion,
-		formattedDate,
-	]);
+	const raw = await pool.execute('CALL sp_convocatoria_crear(?, ?, ?)', [titulo, descripcion, formattedDate]);
 	const rows = raw as unknown as [unknown[]];
 	const createdRaw = Array.isArray(rows[0]) && rows[0][0] ? rows[0][0] : null;
 	if (!createdRaw) {

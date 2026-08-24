@@ -66,6 +66,121 @@ actoresPublicosRouter.get('/mapa/filtros', (_req, res) => {
 	return res.json({ categorias, departamentos });
 });
 
+// GET /api/publico/actores/eventos
+actoresPublicosRouter.get('/eventos', (req, res) => {
+	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase().trim() : undefined;
+	const departamento = typeof req.query.departamento === 'string' ? req.query.departamento.trim() : undefined;
+	const idCategoria = req.query.idCategoria ? Number(req.query.idCategoria) : undefined;
+	const fechaDesde = typeof req.query.fechaDesde === 'string' ? req.query.fechaDesde.trim() : undefined;
+	const fechaHasta = typeof req.query.fechaHasta === 'string' ? req.query.fechaHasta.trim() : undefined;
+	const limit = req.query.limit ? Number(req.query.limit) : 20;
+	const offset = req.query.offset ? Number(req.query.offset) : 0;
+
+	const effectiveFechaDesde = fechaDesde || new Date().toISOString().slice(0, 10);
+
+	// Filtrar eventos asociados a actores activos
+	let result = db.eventos
+		.map((e) => {
+			const actor = db.actores.find((a) => a.id === e.idActor);
+			return { evento: e, actor };
+		})
+		.filter((item): item is { evento: typeof item.evento; actor: NonNullable<typeof item.actor> } => {
+			return Boolean(item.actor && item.actor.estado === 'A');
+		});
+
+	if (idCategoria && idCategoria > 0) {
+		result = result.filter(({ actor }) => actor.idCategoria === idCategoria);
+	}
+
+	if (departamento) {
+		result = result.filter(({ actor }) => actor.ubicacion?.departamento === departamento);
+	}
+
+	if (effectiveFechaDesde) {
+		result = result.filter(({ evento }) => evento.fecha.slice(0, 10) >= effectiveFechaDesde.slice(0, 10));
+	}
+
+	if (fechaHasta) {
+		result = result.filter(({ evento }) => evento.fecha.slice(0, 10) <= fechaHasta.slice(0, 10));
+	}
+
+	if (busqueda) {
+		result = result.filter(
+			({ evento, actor }) =>
+				evento.nombre.toLowerCase().includes(busqueda) ||
+				(evento.descripcion && evento.descripcion.toLowerCase().includes(busqueda)) ||
+				actor.nombre.toLowerCase().includes(busqueda),
+		);
+	}
+
+	// Ordenar cronológicamente (ORDER BY fecha ASC, idEvento ASC)
+	result.sort(
+		(a, b) => a.evento.fecha.slice(0, 10).localeCompare(b.evento.fecha.slice(0, 10)) || a.evento.id - b.evento.id,
+	);
+
+	const total = result.length;
+	const paginated = result.slice(offset, offset + limit);
+
+	const data = paginated.map(({ evento, actor }) => {
+		const cat = db.categorias.find((c) => c.id === actor.idCategoria);
+		const subcat = actor.idSubcategoria ? db.subcategorias.find((s) => s.id === actor.idSubcategoria) : null;
+
+		return {
+			idEvento: evento.id,
+			nombreEvento: evento.nombre,
+			descripcion: evento.descripcion,
+			fecha: evento.fecha,
+			idActor: actor.id,
+			nombreActor: actor.nombre,
+			fotoPerfilActor: actor.foto,
+			idCategoria: actor.idCategoria,
+			categoria: cat ? cat.nombre : 'Música',
+			categoriaIcono: cat ? cat.icono : 'MusicNote',
+			subcategoria: subcat ? subcat.nombre : null,
+			departamento: actor.ubicacion?.departamento ?? 'Capital',
+			localidad: actor.ubicacion?.localidad ?? null,
+			direccion: actor.ubicacion?.esPublica ? (actor.ubicacion?.direccion ?? null) : null,
+			latitud: actor.ubicacion?.esPublica ? (actor.ubicacion?.latitud ?? null) : null,
+			longitud: actor.ubicacion?.esPublica ? (actor.ubicacion?.longitud ?? null) : null,
+		};
+	});
+
+	return res.json({
+		data,
+		pagination: {
+			total,
+			count: data.length,
+			limit,
+			offset,
+			hasNext: offset + limit < total,
+		},
+	});
+});
+
+// GET /api/publico/actores/estadisticas
+actoresPublicosRouter.get('/estadisticas', (_req, res) => {
+	const actoresActivos = db.actores.filter((a) => a.estado === 'A');
+	const totalActores = actoresActivos.length;
+	const totalEspacios = actoresActivos.filter((a) => a.tipoActor === 'ESPACIO').length;
+
+	const departamentosSet = new Set<string>();
+	actoresActivos.forEach((a) => {
+		if (a.ubicacion?.departamento) {
+			departamentosSet.add(a.ubicacion.departamento);
+		}
+	});
+	const totalDepartamentos = departamentosSet.size;
+
+	const totalCategorias = db.categorias.filter((c) => c.estado === 'A').length;
+
+	return res.json({
+		totalActores,
+		totalEspacios,
+		totalDepartamentos,
+		totalCategorias,
+	});
+});
+
 // GET /api/publico/actores
 actoresPublicosRouter.get('/', (req, res) => {
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase() : undefined;

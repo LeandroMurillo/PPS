@@ -147,8 +147,8 @@ CREATE TABLE IF NOT EXISTS
   `cultura`.`Eventos` (
     `idEvento` INT NOT NULL AUTO_INCREMENT,
     `idActor` INT NOT NULL,
-    `nombre` VARCHAR(45) NOT NULL,
-    `descripcion` VARCHAR(455) NOT NULL,
+    `nombre` VARCHAR(100) NOT NULL,
+    `descripcion` VARCHAR(500) NOT NULL,
     `fecha` DATETIME NOT NULL,
     `fechaCreacion` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `estado` ENUM('A', 'I') NOT NULL,

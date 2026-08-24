@@ -402,12 +402,18 @@ class MockDatabase {
 					fechaCreacion,
 				});
 
+				const eventDate = new Date(Date.now() + ((i % 120) - 5) * 24 * 60 * 60 * 1000);
+				const yyyy = eventDate.getUTCFullYear();
+				const mm = String(eventDate.getUTCMonth() + 1).padStart(2, '0');
+				const dd = String(eventDate.getUTCDate()).padStart(2, '0');
+				const fechaEvento = `${yyyy}-${mm}-${dd}`;
+
 				this.eventos.push({
 					id: i,
 					idActor: i,
 					nombre: `Encuentro Cultural en ${depInfo.localidad}`,
 					descripcion: `Presentación abierta de ${cDef.nombre} en ${depInfo.departamento}`,
-					fecha: `2026-0${(i % 8) + 1}-18`,
+					fecha: fechaEvento,
 				});
 
 				this.integrantes.push({

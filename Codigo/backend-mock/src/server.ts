@@ -29,8 +29,26 @@ app.use('/api/usuario', usuarioRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/convocatorias', convocatoriasRouter);
 
+// Archivos estáticos / uploads mock
+const TRANSPARENT_PNG = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+	'base64',
+);
+
+app.get('/uploads/dni/:filename', (_req, res) => {
+	res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+	res.setHeader('Content-Type', 'image/png');
+	res.send(TRANSPARENT_PNG);
+});
+
+app.get('/uploads/actores/:filename', (_req, res) => {
+	res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+	res.setHeader('Content-Type', 'image/png');
+	res.send(TRANSPARENT_PNG);
+});
+
 // Health check
-app.get('/health', (_req, res) => {
+app.get(['/health', '/api/health'], (_req, res) => {
 	res.json({ status: 'ok', server: 'Mosaico Cultural Standalone Mock Backend' });
 });
 

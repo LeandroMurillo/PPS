@@ -364,6 +364,111 @@ misActoresRouter.delete('/:id', (req, res) => {
 	return res.json({ message: 'Actor eliminado.' });
 });
 
+// POST /api/mis-actores/:id/transferir-titularidad
+misActoresRouter.post('/:id/transferir-titularidad', (req, res) => {
+	const idActor = Number(req.params.id);
+	const { idNuevoTitular } = req.body || {};
+	const user = getAuthUser(req);
+
+	const actor = db.actores.find((a) => a.id === idActor);
+	if (!actor) {
+		return res.status(404).json({ error: { message: 'Actor cultural no encontrado.' } });
+	}
+
+	if (user && user.rol !== 'ADMIN' && actor.idUsuarioDueno !== user.id) {
+		return res.status(403).json({
+			error: {
+				code: 'FORBIDDEN',
+				message: 'Solo el titular actual o un administrador puede transferir la titularidad.',
+			},
+		});
+	}
+
+	const nuevoTitularId = Number(idNuevoTitular);
+	const nuevoTitular = db.usuarios.find((u) => u.id === nuevoTitularId);
+	if (!nuevoTitular) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'El usuario destinatario no existe.' },
+		});
+	}
+
+	if (actor.idUsuarioDueno === nuevoTitularId) {
+		return res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: 'El usuario seleccionado ya es el titular actual del actor cultural.',
+			},
+		});
+	}
+
+	// Actualizar el dueño en el actor
+	actor.idUsuarioDueno = nuevoTitularId;
+
+	// Actualizar los integrantes: quitar esDueno del anterior y ponérselo al nuevo
+	let nuevoTitularEnIntegrantes = false;
+	db.integrantes.forEach((i) => {
+		if (i.idActor === idActor) {
+			if (i.idUsuario === nuevoTitularId) {
+				i.esDueno = true;
+				nuevoTitularEnIntegrantes = true;
+			} else if (i.esDueno) {
+				i.esDueno = false;
+			}
+		}
+	});
+
+	if (!nuevoTitularEnIntegrantes) {
+		db.integrantes.push({
+			tipo: 'REGISTRADO',
+			idActor,
+			idUsuario: nuevoTitular.id,
+			idIntegranteNoRegistrado: null,
+			nombre: nuevoTitular.nombre,
+			apellido: nuevoTitular.apellido,
+			email: nuevoTitular.email,
+			rol: 'Titular',
+			esDueno: true,
+		});
+	}
+
+	return res.json({ message: 'Titularidad transferida correctamente.' });
+});
+
+// POST /api/mis-actores/:id/renunciar
+misActoresRouter.post('/:id/renunciar', (req, res) => {
+	const idActor = Number(req.params.id);
+	const user = getAuthUser(req);
+
+	if (!user) {
+		return res.status(401).json({ error: { message: 'Acceso no autorizado. Se requiere iniciar sesión.' } });
+	}
+
+	const actor = db.actores.find((a) => a.id === idActor);
+	if (!actor) {
+		return res.status(404).json({ error: { message: 'Actor cultural no encontrado.' } });
+	}
+
+	const integrante = db.integrantes.find((i) => i.idActor === idActor && i.idUsuario === user.id);
+	if (!integrante) {
+		return res.status(400).json({
+			error: { code: 'BAD_REQUEST', message: 'No sos integrante de este actor cultural.' },
+		});
+	}
+
+	if (integrante.esDueno || actor.idUsuarioDueno === user.id) {
+		return res.status(400).json({
+			error: {
+				code: 'BAD_REQUEST',
+				message: 'El titular no puede renunciar al actor cultural. Debe transferir la titularidad primero.',
+			},
+		});
+	}
+
+	db.integrantes = db.integrantes.filter((i) => !(i.idActor === idActor && i.idUsuario === user.id));
+
+	return res.json({ message: 'Has renunciado al actor cultural correctamente.' });
+});
+
 // GET /api/mis-actores/:id/portafolio
 misActoresRouter.get('/:id/portafolio', (req, res) => {
 	const idActor = Number(req.params.id);

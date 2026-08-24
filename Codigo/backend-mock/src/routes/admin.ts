@@ -1129,7 +1129,8 @@ adminRouter.get('/actividades-arca', (req, res) => {
 	const busqueda = typeof req.query.busqueda === 'string' ? req.query.busqueda.toLowerCase().trim() : undefined;
 	const limit = req.query.limit ? Number(req.query.limit) : 25;
 	const offset = req.query.offset ? Number(req.query.offset) : 0;
-	const sortBy = (typeof req.query.sortBy === 'string' ? req.query.sortBy : 'codigo') as 'codigo' | 'descripcion' | 'cantidadUsuarios';
+	const sortBy = (typeof req.query.sortBy === 'string' ? req.query.sortBy : 'codigo') as
+		'codigo' | 'descripcion' | 'cantidadUsuarios';
 	const sortDir = req.query.sortDir === 'DESC' ? 'DESC' : 'ASC';
 
 	const userCountMap = new Map<string, number>();
@@ -1181,7 +1182,9 @@ adminRouter.get('/actividades-arca/:codigo', (req, res) => {
 	const a = db.actividadesArca.find((item) => item.codigo === codigo);
 
 	if (!a) {
-		return res.status(404).json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'No se encontró la actividad ARCA' } });
+		return res
+			.status(404)
+			.json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'No se encontró la actividad ARCA' } });
 	}
 
 	const cantidadUsuarios = db.usuarios.filter((u) => u.actividadesArcaCodigo === codigo).length;
@@ -1210,7 +1213,9 @@ adminRouter.post('/actividades-arca', (req, res) => {
 	}
 
 	if (db.actividadesArca.some((a) => a.codigo === cleanCodigo)) {
-		return res.status(409).json({ error: { code: 'ARCA_ACTIVITY_DUPLICATE', message: 'Ya existe una actividad ARCA con ese código' } });
+		return res.status(409).json({
+			error: { code: 'ARCA_ACTIVITY_DUPLICATE', message: 'Ya existe una actividad ARCA con ese código' },
+		});
 	}
 
 	const nueva = { codigo: cleanCodigo, descripcion: cleanDesc };
@@ -1233,7 +1238,9 @@ adminRouter.put('/actividades-arca/:codigo', (req, res) => {
 
 	const a = db.actividadesArca.find((item) => item.codigo === codigo);
 	if (!a) {
-		return res.status(404).json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'La actividad ARCA no existe' } });
+		return res
+			.status(404)
+			.json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'La actividad ARCA no existe' } });
 	}
 
 	if (!cleanDesc) {
@@ -1258,12 +1265,19 @@ adminRouter.delete('/actividades-arca/:codigo', (req, res) => {
 	const aIndex = db.actividadesArca.findIndex((item) => item.codigo === codigo);
 
 	if (aIndex === -1) {
-		return res.status(404).json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'La actividad ARCA no existe' } });
+		return res
+			.status(404)
+			.json({ error: { code: 'ARCA_ACTIVITY_NOT_FOUND', message: 'La actividad ARCA no existe' } });
 	}
 
 	const enUso = db.usuarios.some((u) => u.actividadesArcaCodigo === codigo);
 	if (enUso) {
-		return res.status(409).json({ error: { code: 'ARCA_ACTIVITY_IN_USE', message: 'No se puede eliminar la actividad ARCA porque está asociada a uno o más usuarios.' } });
+		return res.status(409).json({
+			error: {
+				code: 'ARCA_ACTIVITY_IN_USE',
+				message: 'No se puede eliminar la actividad ARCA porque está asociada a uno o más usuarios.',
+			},
+		});
 	}
 
 	const [deleted] = db.actividadesArca.splice(aIndex, 1);
@@ -1304,7 +1318,11 @@ adminRouter.post('/actividades-arca/importar', (req, res) => {
 		const rawDescLarga = parts[2] ?? '';
 
 		if (!/^\d{6}$/.test(rawCodigo)) {
-			errores.push({ linea: lineNumber, codigo: rawCodigo || undefined, motivo: 'El código ARCA debe contener 6 dígitos' });
+			errores.push({
+				linea: lineNumber,
+				codigo: rawCodigo || undefined,
+				motivo: 'El código ARCA debe contener 6 dígitos',
+			});
 			continue;
 		}
 
@@ -1337,3 +1355,102 @@ adminRouter.post('/actividades-arca/importar', (req, res) => {
 	});
 });
 
+// GET /api/admin/auditoria/integridad
+adminRouter.get('/auditoria/integridad', (_req, res) => {
+	type AuditoriaHallazgo = {
+		modulo: string;
+		severidad: 'ALTA' | 'MEDIA' | 'BAJA' | 'INFO';
+		descripcion: string;
+		idReferencia: number | null;
+	};
+
+	const data: AuditoriaHallazgo[] = [];
+
+	// 1. Formularios activos sin preguntas activas
+	for (const f of db.formularios) {
+		const preguntasActivas = (f.preguntas || []).filter((p) => p.estado === 'A');
+		if (preguntasActivas.length === 0) {
+			data.push({
+				modulo: 'FORMULARIOS',
+				severidad: 'ALTA',
+				descripcion: `Formulario "${f.titulo}" (ID ${f.id}) no posee preguntas activas asociadas.`,
+				idReferencia: f.id,
+			});
+		}
+	}
+
+	// 2. Actores activos sin ningún integrante titular con esDueno = true
+	for (const a of db.actores) {
+		if (a.estado === 'A') {
+			const tieneTitular = db.integrantes.some((i) => i.idActor === a.id && i.esDueno);
+			if (!tieneTitular) {
+				data.push({
+					modulo: 'ACTORES',
+					severidad: 'ALTA',
+					descripcion: `Actor activo "${a.nombre}" (ID ${a.id}) no posee un integrante titular con esDueño = 1.`,
+					idReferencia: a.id,
+				});
+			}
+		}
+	}
+
+	// 3. Moderadores activos sin categorías asignadas
+	for (const u of db.usuarios) {
+		if (u.rol === 'MODERADOR' && u.estado === 'A') {
+			if (!u.categoriasModeracion || u.categoriasModeracion.length === 0) {
+				data.push({
+					modulo: 'USUARIOS',
+					severidad: 'MEDIA',
+					descripcion: `El usuario moderador "${u.nombre} ${u.apellido}" (ID ${u.id}) no tiene categorías asignadas.`,
+					idReferencia: u.id,
+				});
+			}
+		}
+	}
+
+	// 4. Eventos activos asociados a actores dados de baja
+	for (const e of db.eventos) {
+		const actor = db.actores.find((a) => a.id === e.idActor);
+		if (actor && actor.estado === 'I') {
+			data.push({
+				modulo: 'EVENTOS',
+				severidad: 'MEDIA',
+				descripcion: `Evento activo "${e.nombre}" (ID ${e.id}) pertenece al actor dado de baja (ID ${actor.id}).`,
+				idReferencia: e.id,
+			});
+		}
+	}
+
+	// 5. Preguntas inactivas sin fecha de desactivación
+	for (const f of db.formularios) {
+		for (const p of f.preguntas || []) {
+			if (p.estado === 'I' && !p.fechaDesactivacion) {
+				data.push({
+					modulo: 'FORMULARIOS',
+					severidad: 'BAJA',
+					descripcion: `Pregunta ID ${p.id} en Formulario ID ${f.id} tiene estado I pero fechaDesactivacion es nula.`,
+					idReferencia: p.id,
+				});
+			}
+		}
+	}
+
+	// 6. Integrantes no registrados cuyo correo ya coincide con un usuario registrado activo
+	for (const i of db.integrantes) {
+		if (i.tipo === 'NO_REGISTRADO' && i.email) {
+			const existe = db.usuarios.some(
+				(u) => u.email.toLowerCase() === i.email?.toLowerCase() && u.estado === 'A',
+			);
+			if (existe) {
+				data.push({
+					modulo: 'INTEGRANTES',
+					severidad: 'INFO',
+					descripcion: `Integrante sin cuenta "${i.nombre} ${i.apellido}" tiene un correo (${i.email}) correspondiente a un usuario registrado activo.`,
+					idReferencia: i.idActor,
+				});
+			}
+		}
+	}
+
+	return res.json({ data });
+});

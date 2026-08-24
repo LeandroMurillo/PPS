@@ -403,7 +403,8 @@ END IF;
 
 UPDATE `Usuarios`
 SET
-  estado = pEstado
+  estado = pEstado,
+  fechaBaja = CASE WHEN pEstado = 'I' THEN NOW() ELSE NULL END
 WHERE
   idUsuario = pIdUsuario;
 
@@ -631,7 +632,8 @@ INNER JOIN (
     JSON_TABLE (pIdsActores, '$[*]' COLUMNS (idActor INT PATH '$')) ids
 ) seleccionados ON seleccionados.idActor = a.idActor
 SET
-  a.estado = pEstado;
+  a.estado = pEstado,
+  a.fechaBaja = CASE WHEN pEstado = 'I' THEN NOW() ELSE NULL END;
 
 SELECT
   ROW_COUNT () AS actualizados;
@@ -1233,7 +1235,9 @@ SELECT
 FROM
   `Categorias` c
   LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria
+  AND s.estado = 'A'
   LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
+  AND a.estado = 'A'
 WHERE
   (
     vRolSolicitante = 'ADMIN'
@@ -1338,7 +1342,9 @@ SELECT
 FROM
   `Categorias` c
   LEFT JOIN `Subcategorias` s ON s.idCategoria = c.idCategoria
+  AND s.estado = 'A'
   LEFT JOIN `Actores` a ON a.idCategoria = c.idCategoria
+  AND a.estado = 'A'
 WHERE
   c.idCategoria = pIdCategoria
 GROUP BY
@@ -5406,7 +5412,7 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_actor_listar_mis_actores` (IN pIdUsuario INT, IN pBusqueda VARCHAR(100), IN pIdCategoria INT, IN pEstado CHAR(1), IN pLimit INT, IN pOffset INT) READS SQL DATA
+  PROCEDURE `sp_actor_listar_mis_actores` (IN pIdUsuario INT, IN pBusqueda VARCHAR(255), IN pIdCategoria INT, IN pEstado CHAR(1), IN pLimit INT, IN pOffset INT) READS SQL DATA
 COMMENT 'Lista los actores culturales donde el usuario autenticado es integrante o titular. Resultsets: RS1: (total). RS2: (idActor, nombre, descripcion, fotoPerfilUrl, cuit, tipoActor, fechaCreacion, estado, esDueno, rolEnActor, idCategoria, categoria, iconoCategoria, idSubcategoria, subcategoria, idUbicacion, provincia, departamento, localidad, direccion, latitud, longitud, esPublica).'
  BEGIN DECLARE vLimit INT DEFAULT 25;
 
@@ -5832,7 +5838,8 @@ END IF;
 
 UPDATE `Actores`
 SET
-  estado = pNuevoEstado
+  estado = pNuevoEstado,
+  fechaBaja = CASE WHEN pNuevoEstado = 'I' THEN NOW() ELSE NULL END
 WHERE
   idActor = pIdActor;
 
@@ -7286,11 +7293,13 @@ END //
 CREATE
 OR
 REPLACE
-  PROCEDURE `sp_convocatoria_crear` (IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME, OUT pIdConvocatoria INT) MODIFIES SQL DATA
+  PROCEDURE `sp_convocatoria_crear` (IN pTitulo VARCHAR(145), IN pDescripcion TEXT, IN pFechaCierre DATETIME) MODIFIES SQL DATA
 COMMENT 'Crea una nueva convocatoria cultural validando fechas y título único y devuelve el registro creado. Resultsets: RS1: (idConvocatoria, titulo, descripcion, fechaCreacion, fechaCierre, estado, totalPostulaciones).'
  BEGIN DECLARE vTitulo VARCHAR(145);
 
 DECLARE vDescripcion TEXT;
+
+DECLARE vIdConvocatoria INT;
 
 SET
   vTitulo = TRIM(pTitulo);
@@ -7328,7 +7337,7 @@ VALUES
   (vTitulo, vDescripcion, pFechaCierre);
 
 SET
-  pIdConvocatoria = LAST_INSERT_ID();
+  vIdConvocatoria = LAST_INSERT_ID();
 
 SELECT
   c.idConvocatoria,
@@ -7341,7 +7350,7 @@ SELECT
 FROM
   `Convocatorias` c
 WHERE
-  c.idConvocatoria = pIdConvocatoria;
+  c.idConvocatoria = vIdConvocatoria;
 
 END //
 -- -----------------------------------------------------
@@ -7759,7 +7768,7 @@ COMMENT 'Ejecuta auditorias de integridad referencial y de negocio detectando an
     `severidad` VARCHAR(10) NOT NULL,
     `descripcion` VARCHAR(255) NOT NULL,
     `idReferencia` INT NULL
-  ) ENGINE = MEMORY;
+  ) ENGINE = InnoDB;
 
   TRUNCATE TABLE `tmp_auditoria_resultados`;
 

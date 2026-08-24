@@ -146,7 +146,7 @@ export default function AdminAuditoriaPage() {
 	};
 
 	return (
-		<Box sx={{ width: '100%', maxWidth: 1200, margin: '0 auto', p: { xs: 2, sm: 3 }, pb: 8 }}>
+		<Box sx={{ width: '100%', margin: '0 auto', p: { xs: 2, sm: 3 }, pb: 8 }}>
 			{/* Cabecera */}
 			<Box
 				sx={{
