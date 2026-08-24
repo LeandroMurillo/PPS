@@ -174,6 +174,18 @@ authRouter.post('/registro', (req, res) => {
 		});
 	}
 
+	const birthDate = new Date(body.fechaNacimiento);
+	const hoy = new Date();
+	const limiteDiezAnos = new Date(hoy.getFullYear() - 10, hoy.getMonth(), hoy.getDate());
+	if (isNaN(birthDate.getTime()) || birthDate > limiteDiezAnos) {
+		return res.status(400).json({
+			error: {
+				code: 'INVALID_AGE',
+				message: 'Debés tener al menos 10 años para registrarte en la plataforma.',
+			},
+		});
+	}
+
 	if (cleanEmail) {
 		const existingEmail = db.usuarios.find((u) => u.email.toLowerCase() === cleanEmail);
 		if (existingEmail) {

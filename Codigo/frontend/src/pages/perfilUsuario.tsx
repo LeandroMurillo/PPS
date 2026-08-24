@@ -273,6 +273,17 @@ export default function PerfilUsuarioPage() {
 			notify.error('La fecha de nacimiento es obligatoria.', { scope: 'perfil' });
 			return;
 		}
+		const birthDate = new Date(fechaNacimiento);
+		const hoy = new Date();
+		const limiteDiezAnos = new Date(hoy.getFullYear() - 10, hoy.getMonth(), hoy.getDate());
+		if (Number.isNaN(birthDate.getTime()) || birthDate.getFullYear() < 1900) {
+			notify.error('Ingresá una fecha de nacimiento válida.', { scope: 'perfil' });
+			return;
+		}
+		if (birthDate > limiteDiezAnos) {
+			notify.error('Debés tener al menos 10 años para usar la plataforma.', { scope: 'perfil' });
+			return;
+		}
 		if (!nacionalidad.trim()) {
 			notify.error('La nacionalidad es obligatoria.', { scope: 'perfil' });
 			return;
@@ -669,6 +680,7 @@ export default function PerfilUsuarioPage() {
 														? 'La fecha de nacimiento es obligatoria'
 														: undefined
 												}
+												minDate={dayjs('1900-01-01')}
 												maxDate={dayjs()}
 											/>
 										</Grid>

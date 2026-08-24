@@ -138,17 +138,32 @@ function SectionPaper({
 
 function InfoItem({ icon, label, value }: { icon?: React.ReactNode; label: string; value: React.ReactNode }) {
 	return (
-		<Box sx={{ py: 1 }}>
-			<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-				{icon && <Box sx={{ color: 'text.secondary', display: 'flex', fontSize: '1rem' }}>{icon}</Box>}
-				<Typography variant="caption" color="text.secondary" fontWeight={500}>
+		<Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ py: 0.75 }}>
+			{icon && <Box sx={{ color: 'primary.main', mt: 0.25, display: 'flex', fontSize: '1.25rem' }}>{icon}</Box>}
+			<Box sx={{ minWidth: 0, flexGrow: 1 }}>
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					fontWeight={500}
+					sx={{ display: 'block', mb: 0.25 }}
+				>
 					{label}
 				</Typography>
-			</Stack>
-			<Typography variant="body2" fontWeight={600} sx={{ pl: icon ? 3 : 0, wordBreak: 'break-word' }}>
-				{value ?? '—'}
-			</Typography>
-		</Box>
+				<Box sx={{ wordBreak: 'break-word' }}>
+					{typeof value === 'string' || typeof value === 'number' ? (
+						<Typography variant="body2" fontWeight={600} color="text.primary">
+							{value}
+						</Typography>
+					) : (
+						(value ?? (
+							<Typography variant="body2" fontWeight={600} color="text.primary">
+								—
+							</Typography>
+						))
+					)}
+				</Box>
+			</Box>
+		</Stack>
 	);
 }
 
@@ -398,30 +413,27 @@ export default function AdminUsuarioDetallePage() {
 				<Paper
 					variant="outlined"
 					sx={{
-						p: { xs: 2.5, sm: 3.5 },
-						borderRadius: 3,
+						p: { xs: 2.5, sm: 3 },
+						borderRadius: 2,
 						borderColor: 'divider',
-						background: (theme) =>
-							theme.palette.mode === 'dark'
-								? 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)'
-								: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-						boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+						bgcolor: 'background.paper',
+						boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
 					}}
 				>
 					<Stack
 						direction={{ xs: 'column', sm: 'row' }}
-						spacing={{ xs: 2.5, sm: 3.5 }}
+						spacing={{ xs: 2, sm: 3 }}
 						alignItems={{ sm: 'center' }}
 					>
 						<Avatar
 							src={avatarUrl}
 							alt={`${usuario.nombre} ${usuario.apellido}`}
 							sx={{
-								width: { xs: 80, sm: 100 },
-								height: { xs: 80, sm: 100 },
-								boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12)',
-								border: '3px solid',
-								borderColor: 'primary.light',
+								width: { xs: 80, sm: 96 },
+								height: { xs: 80, sm: 96 },
+								boxShadow: '0 2px 10px rgba(0, 0, 0, 0.08)',
+								border: '2px solid',
+								borderColor: 'divider',
 								alignSelf: { xs: 'center', sm: 'auto' },
 							}}
 						/>
@@ -432,9 +444,9 @@ export default function AdminUsuarioDetallePage() {
 								alignItems="center"
 								justifyContent={{ xs: 'center', sm: 'flex-start' }}
 								flexWrap="wrap"
-								sx={{ mb: 1 }}
+								sx={{ mb: 0.75 }}
 							>
-								<Typography variant="h5" component="h1" fontWeight={700}>
+								<Typography variant="h5" component="h1" fontWeight={700} color="text.primary">
 									{`${usuario.nombre} ${usuario.apellido}`}
 								</Typography>
 								<Chip
@@ -450,7 +462,7 @@ export default function AdminUsuarioDetallePage() {
 								/>
 							</Stack>
 							<Typography
-								variant="body1"
+								variant="body2"
 								color="text.secondary"
 								sx={{
 									display: 'flex',
@@ -460,7 +472,7 @@ export default function AdminUsuarioDetallePage() {
 									mb: 0.5,
 								}}
 							>
-								<EmailOutlinedIcon fontSize="small" color="action" />
+								<EmailOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
 								{usuario.email}
 							</Typography>
 							<Typography variant="caption" color="text.secondary">
@@ -662,9 +674,9 @@ export default function AdminUsuarioDetallePage() {
 										</Box>
 									</Box>
 
-									<Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+									<Stack direction="row" spacing={1.5} sx={{ width: '100%' }}>
 										<Button
-											variant="outlined"
+											variant="contained"
 											startIcon={<VisibilityOutlinedIcon />}
 											onClick={() => setDniViewerOpen(true)}
 											fullWidth
@@ -677,8 +689,8 @@ export default function AdminUsuarioDetallePage() {
 											startIcon={<DownloadIcon />}
 											href={dniBlobUrl}
 											download={`dni_${usuario.cuil || usuario.id}.jpg`}
+											fullWidth
 											size="small"
-											sx={{ minWidth: 42, px: 1.5 }}
 										>
 											Descargar
 										</Button>

@@ -5012,6 +5012,13 @@ SET
 
 END IF;
 
+IF pFechaNacimiento > DATE_SUB(CURDATE(), INTERVAL 10 YEAR) THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'Debés tener al menos 10 años para registrarte en la plataforma.';
+
+END IF;
+
 START TRANSACTION;
 
 INSERT INTO
@@ -6767,6 +6774,14 @@ AND EXISTS (
 SIGNAL SQLSTATE '45000'
 SET
   MESSAGE_TEXT = 'El CUIL ingresado ya pertenece a otro usuario.';
+
+END IF;
+
+IF pFechaNacimiento IS NOT NULL
+AND pFechaNacimiento > DATE_SUB(CURDATE(), INTERVAL 10 YEAR) THEN
+SIGNAL SQLSTATE '45000'
+SET
+  MESSAGE_TEXT = 'Debés tener al menos 10 años para registrarte en la plataforma.';
 
 END IF;
 

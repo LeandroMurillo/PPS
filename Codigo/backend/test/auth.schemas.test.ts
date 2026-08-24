@@ -74,12 +74,23 @@ describe('validación del registro y login de usuario', () => {
 		expect(result3.success).toBe(false);
 	});
 
-	it('rechaza fechas de nacimiento en el futuro', () => {
-		const result = registrarUsuarioBodySchema.safeParse({
+	it('rechaza fechas de nacimiento en el futuro o para menores de 10 años', () => {
+		const resultFuturo = registrarUsuarioBodySchema.safeParse({
 			...validPayload,
 			fechaNacimiento: '2099-01-01',
 		});
-		expect(result.success).toBe(false);
+		expect(resultFuturo.success).toBe(false);
+
+		const hoy = new Date();
+		const cincoAnosAtras = new Date(hoy.getFullYear() - 5, hoy.getMonth(), hoy.getDate())
+			.toISOString()
+			.slice(0, 10);
+
+		const resultMenor = registrarUsuarioBodySchema.safeParse({
+			...validPayload,
+			fechaNacimiento: cincoAnosAtras,
+		});
+		expect(resultMenor.success).toBe(false);
 	});
 
 	it('rechaza código ARCA que no tenga 6 dígitos', () => {

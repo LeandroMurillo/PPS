@@ -73,9 +73,24 @@ export const registrarUsuarioBodySchema = z.object({
 		.regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de nacimiento debe estar en formato AAAA-MM-DD')
 		.refine(
 			(val) => {
-				const date = new Date(val);
-				const year = date.getFullYear();
-				return !isNaN(date.getTime()) && date < new Date() && year >= 1900;
+				const parts = val.split('-').map(Number);
+				if (parts.length !== 3) return false;
+				const [year, month, day] = parts;
+				if (!year || !month || !day) return false;
+				const date = new Date(year, month - 1, day);
+				if (
+					Number.isNaN(date.getTime()) ||
+					date.getFullYear() !== year ||
+					date.getMonth() !== month - 1 ||
+					date.getDate() !== day
+				) {
+					return false;
+				}
+				if (year < 1900) return false;
+
+				const hoy = new Date();
+				const limiteDiezAnos = new Date(hoy.getFullYear() - 10, hoy.getMonth(), hoy.getDate());
+				return date <= limiteDiezAnos;
 			},
 			{ message: 'La fecha de nacimiento debe ser una fecha válida' },
 		),

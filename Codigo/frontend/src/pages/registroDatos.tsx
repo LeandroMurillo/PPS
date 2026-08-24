@@ -32,6 +32,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
+import dayjs from 'dayjs';
 
 import DatePickerSpanish from '../components/datePickerSpanish';
 import GENEROS, { getGeneroEtiqueta, type GeneroCodigo } from '../constants/generos';
@@ -254,8 +255,12 @@ export default function RegistroDatosPage() {
 			errors.fechaNacimiento = 'La fecha de nacimiento es obligatoria';
 		} else {
 			const birthDate = new Date(formData.fechaNacimiento);
-			if (isNaN(birthDate.getTime()) || birthDate >= new Date() || birthDate.getFullYear() < 1900) {
-				errors.fechaNacimiento = 'Ingrese una fecha de nacimiento válida (entre 1900 y la fecha actual)';
+			const hoy = new Date();
+			const limiteDiezAnos = new Date(hoy.getFullYear() - 10, hoy.getMonth(), hoy.getDate());
+			if (Number.isNaN(birthDate.getTime()) || birthDate.getFullYear() < 1900) {
+				errors.fechaNacimiento = 'Ingrese una fecha de nacimiento válida (posterior a 1900)';
+			} else if (birthDate > limiteDiezAnos) {
+				errors.fechaNacimiento = 'Debés tener al menos 10 años para registrarte en la plataforma';
 			}
 		}
 
@@ -473,6 +478,8 @@ export default function RegistroDatosPage() {
 										}}
 										error={!!formErrors.fechaNacimiento}
 										helperText={formErrors.fechaNacimiento}
+										minDate={dayjs('1900-01-01')}
+										maxDate={dayjs()}
 									/>
 								</Grid>
 
