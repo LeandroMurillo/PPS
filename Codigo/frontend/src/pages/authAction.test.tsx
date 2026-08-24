@@ -44,9 +44,7 @@ describe('AuthActionPage - Restablecer Contraseña', () => {
 		);
 
 		await waitFor(() => {
-			expect(
-				screen.getByText(/El enlace de verificación o recuperación es inválido/i),
-			).toBeDefined();
+			expect(screen.getByText(/El enlace de verificación o recuperación es inválido/i)).toBeDefined();
 		});
 	});
 
@@ -151,10 +149,7 @@ describe('AuthActionPage - Restablecer Contraseña', () => {
 		fireEvent.change(confirmPassInput, { target: { value: 'OtraClaveDistinta456' } });
 		fireEvent.click(submitButton);
 
-		expect(notify.error).toHaveBeenCalledWith(
-			'Las contraseñas no coinciden.',
-			expect.anything(),
-		);
+		expect(notify.error).toHaveBeenCalledWith('Las contraseñas no coinciden.', expect.anything());
 		expect(firebaseAuthModule.confirmPasswordReset).not.toHaveBeenCalled();
 	});
 

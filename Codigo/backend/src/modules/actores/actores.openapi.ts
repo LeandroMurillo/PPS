@@ -5,10 +5,13 @@ import {
 	actorNoEncontradoResponseSchema,
 	listarActoresQuerySchema,
 	listarActoresResponseSchema,
+	listarEventosPublicosQuerySchema,
+	listarEventosPublicosResponseSchema,
 	obtenerActoresMapaQuerySchema,
 	obtenerActoresMapaResponseSchema,
 	obtenerActorParamsSchema,
 	obtenerActorResponseSchema,
+	obtenerEstadisticasPublicasResponseSchema,
 	obtenerFiltrosListadoActoresResponseSchema,
 	obtenerFiltrosMapaResponseSchema,
 } from './actores.schemas.js';
@@ -123,6 +126,90 @@ export function registerActoresOpenApi(): void {
 
 			500: {
 				description: 'Se produjo un error interno al consultar los filtros del mapa.',
+
+				content: {
+					'application/json': {
+						schema: internalErrorResponseSchema,
+					},
+				},
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+
+		path: '/api/publico/actores/eventos',
+
+		tags: ['Actores públicos'],
+
+		summary: 'Listar eventos de la agenda cultural pública',
+
+		description:
+			'Devuelve los próximos eventos calendarizados de actores culturales activos con filtros por texto, departamento, categoría y rango de fechas.',
+
+		request: {
+			query: listarEventosPublicosQuerySchema,
+		},
+
+		responses: {
+			200: {
+				description: 'Listado de eventos públicos obtenido correctamente.',
+
+				content: {
+					'application/json': {
+						schema: listarEventosPublicosResponseSchema,
+					},
+				},
+			},
+
+			400: {
+				description: 'Parámetros de consulta no válidos.',
+
+				content: {
+					'application/json': {
+						schema: validationErrorResponseSchema,
+					},
+				},
+			},
+
+			500: {
+				description: 'Error interno al consultar la agenda de eventos.',
+
+				content: {
+					'application/json': {
+						schema: internalErrorResponseSchema,
+					},
+				},
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+
+		path: '/api/publico/actores/estadisticas',
+
+		tags: ['Actores públicos'],
+
+		summary: 'Obtener resumen consolidado de estadísticas culturales',
+
+		description:
+			'Devuelve los contadores consolidados de impacto cultural provincial: total de actores activos, total de espacios, departamentos alcanzados y categorías activas.',
+
+		responses: {
+			200: {
+				description: 'Resumen estadístico obtenido correctamente.',
+
+				content: {
+					'application/json': {
+						schema: obtenerEstadisticasPublicasResponseSchema,
+					},
+				},
+			},
+
+			500: {
+				description: 'Error interno al calcular las estadísticas públicas.',
 
 				content: {
 					'application/json': {

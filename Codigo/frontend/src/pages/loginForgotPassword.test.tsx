@@ -74,9 +74,7 @@ describe('LoginPage - Diálogo de Recuperación de Contraseña', () => {
 		fireEvent.click(forgotButton);
 
 		expect(screen.getByRole('heading', { name: /Recuperar contraseña/i })).toBeDefined();
-		expect(
-			screen.getByText(/Ingresá tu correo electrónico y te enviaremos las instrucciones/i),
-		).toBeDefined();
+		expect(screen.getByText(/Ingresá tu correo electrónico y te enviaremos las instrucciones/i)).toBeDefined();
 	});
 
 	it('precompleta el email si el usuario ya lo había escrito en el formulario de login', async () => {
@@ -119,10 +117,9 @@ describe('LoginPage - Diálogo de Recuperación de Contraseña', () => {
 				expect.anything(),
 				'contacto@mosaico.gob.ar',
 			);
-			expect(notify.info).toHaveBeenCalledWith(
-				'Si el correo está registrado, recibirás las instrucciones.',
-				{ scope: 'forgot-password' },
-			);
+			expect(notify.info).toHaveBeenCalledWith('Si el correo está registrado, recibirás las instrucciones.', {
+				scope: 'forgot-password',
+			});
 			expect(
 				screen.getByText(/Si el correo existe en nuestro sistema, recibirás las instrucciones/i),
 			).toBeDefined();
@@ -150,10 +147,9 @@ describe('LoginPage - Diálogo de Recuperación de Contraseña', () => {
 		fireEvent.click(submitButton);
 
 		await waitFor(() => {
-			expect(notify.error).toHaveBeenCalledWith(
-				'No se encontró un usuario asociado a esta cuenta.',
-				{ scope: 'forgot-password' },
-			);
+			expect(notify.error).toHaveBeenCalledWith('No se encontró un usuario asociado a esta cuenta.', {
+				scope: 'forgot-password',
+			});
 		});
 	});
 });

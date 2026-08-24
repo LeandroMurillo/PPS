@@ -34,6 +34,10 @@ import {
 	obtenerActorAdminResponseSchema,
 	obtenerCategoriaAdminResponseSchema,
 	obtenerSubcategoriaAdminResponseSchema,
+	asociarPreguntaFormularioAdminBodySchema,
+	auditarIntegridadSistemaAdminResponseSchema,
+	listarPreguntasAdminQuerySchema,
+	listarPreguntasAdminResponseSchema,
 	obtenerFormularioAdminResponseSchema,
 	editarPreguntaAdminBodySchema,
 	preguntaAdminParamsSchema,
@@ -845,6 +849,99 @@ export function registerAdminOpenApi(): void {
 			400: {
 				description: 'Contenido inválido o error de procesamiento.',
 				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/preguntas',
+		tags: ['Administración'],
+		summary: 'Listar banco de preguntas reutilizables',
+		description: 'Lista todas las preguntas del banco reutilizable con filtro opcional de búsqueda por texto.',
+		request: { query: listarPreguntasAdminQuerySchema },
+		responses: {
+			200: {
+				description: 'Preguntas del banco obtenidas correctamente.',
+				content: { 'application/json': { schema: listarPreguntasAdminResponseSchema } },
+			},
+			500: {
+				description: 'Error interno.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/preguntas',
+		tags: ['Administración'],
+		summary: 'Crear una nueva pregunta en el banco reutilizable',
+		description: 'Crea una pregunta en el catálogo global con validación estricta de opciones JSON.',
+		request: {
+			body: { content: { 'application/json': { schema: crearPreguntaFormularioAdminBodySchema } } },
+		},
+		responses: {
+			201: {
+				description: 'Pregunta creada en el banco correctamente.',
+				content: { 'application/json': { schema: z.object({ data: preguntaBancoAdminSchema }) } },
+			},
+			400: {
+				description: 'Tipo de dato u opciones inválidas.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			500: {
+				description: 'Error interno.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'post',
+		path: '/api/admin/formularios/{idFormulario}/preguntas/existente',
+		tags: ['Administración'],
+		summary: 'Asociar una pregunta existente del banco a un formulario',
+		description: 'Incorpora una pregunta activa del banco a un formulario de categoría o subcategoría.',
+		request: {
+			params: formularioAdminParamsSchema,
+			body: { content: { 'application/json': { schema: asociarPreguntaFormularioAdminBodySchema } } },
+		},
+		responses: {
+			200: {
+				description: 'Pregunta asociada al formulario correctamente.',
+				content: { 'application/json': { schema: obtenerFormularioAdminResponseSchema } },
+			},
+			400: {
+				description: 'Identificador inválido o pregunta ya asociada.',
+				content: { 'application/json': { schema: validationErrorResponseSchema } },
+			},
+			404: {
+				description: 'Formulario o pregunta no encontrada.',
+				content: { 'application/json': { schema: formularioAdminNoEncontradoResponseSchema } },
+			},
+			500: {
+				description: 'Error interno.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+		path: '/api/admin/auditoria/integridad',
+		tags: ['Administración'],
+		summary: 'Ejecutar auditoría diagnóstica de integridad del sistema',
+		description:
+			'Ejecuta sp_sistema_auditar_integridad para evaluar anomalías referenciales, registros huérfanos o desajustes de formularios en la base de datos.',
+		responses: {
+			200: {
+				description: 'Resultados de auditoría obtenidos correctamente.',
+				content: { 'application/json': { schema: auditarIntegridadSistemaAdminResponseSchema } },
+			},
+			500: {
+				description: 'Error interno al ejecutar la auditoría de integridad.',
+				content: { 'application/json': { schema: internalErrorResponseSchema } },
 			},
 		},
 	});

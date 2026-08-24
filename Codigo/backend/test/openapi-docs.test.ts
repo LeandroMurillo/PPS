@@ -66,4 +66,55 @@ describe('acceso a documentación /docs y /openapi.json', () => {
 		expect(response.status).toBe(200);
 		expect(response.body).toHaveProperty('openapi');
 	});
+
+	it('contiene registradas todas las rutas principales de los módulos', async () => {
+		const { openApiDocument } = await import('../src/openapi/document.js');
+		const paths = openApiDocument.paths ?? {};
+
+		// Salud
+		expect(paths['/api/health']).toBeDefined();
+
+		// Auth
+		expect(paths['/api/publico/auth/registro']).toBeDefined();
+		expect(paths['/api/publico/auth/firebase/session']).toBeDefined();
+		expect(paths['/api/publico/auth/actividades-arca']).toBeDefined();
+
+		// Actores públicos
+		expect(paths['/api/publico/actores']).toBeDefined();
+		expect(paths['/api/publico/actores/mapa']).toBeDefined();
+		expect(paths['/api/publico/actores/eventos']).toBeDefined();
+		expect(paths['/api/publico/actores/estadisticas']).toBeDefined();
+		expect(paths['/api/publico/actores/{id}']).toBeDefined();
+
+		// Perfil Usuario
+		expect(paths['/api/usuario/perfil']).toBeDefined();
+		expect(paths['/api/usuario/cuenta']).toBeDefined();
+		expect(paths['/uploads/dni/{filename}']).toBeDefined();
+
+		// Mis Actores
+		expect(paths['/api/mis-actores']).toBeDefined();
+		expect(paths['/api/mis-actores/opciones-registro']).toBeDefined();
+		expect(paths['/api/mis-actores/formularios-aplicables']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}/formularios']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}/portafolio']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}/eventos']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}/integrantes']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}/integrantes-no-registrados']).toBeDefined();
+		expect(paths['/api/mis-actores/{id}/transferir-titularidad']).toBeDefined();
+
+		// Convocatorias
+		expect(paths['/api/convocatorias']).toBeDefined();
+		expect(paths['/api/convocatorias/{id}']).toBeDefined();
+		expect(paths['/api/convocatorias/{id}/postular']).toBeDefined();
+		expect(paths['/api/admin/convocatorias']).toBeDefined();
+
+		// Admin
+		expect(paths['/api/admin/usuarios']).toBeDefined();
+		expect(paths['/api/admin/actores']).toBeDefined();
+		expect(paths['/api/admin/categorias']).toBeDefined();
+		expect(paths['/api/admin/preguntas']).toBeDefined();
+		expect(paths['/api/admin/actividades-arca']).toBeDefined();
+		expect(paths['/api/admin/auditoria/integridad']).toBeDefined();
+	});
 });

@@ -28,9 +28,9 @@ describe('getFirebaseErrorMessage', () => {
 	});
 
 	it('retorna el fallback si el error de Firebase no está en el mapa', () => {
-		expect(getFirebaseErrorMessage(new FirebaseError('auth/unknown-error-code', 'Unknown'), 'Mensaje por defecto')).toBe(
-			'Mensaje por defecto',
-		);
+		expect(
+			getFirebaseErrorMessage(new FirebaseError('auth/unknown-error-code', 'Unknown'), 'Mensaje por defecto'),
+		).toBe('Mensaje por defecto');
 	});
 
 	it('retorna el mensaje de la excepción estándar si no es FirebaseError', () => {

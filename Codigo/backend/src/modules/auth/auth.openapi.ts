@@ -1,6 +1,22 @@
+import { z } from 'zod';
+
 import { internalErrorResponseSchema, validationErrorResponseSchema } from '../../openapi/common.schemas.js';
 import { openApiRegistry } from '../../openapi/registry.js';
 import { loginResponseSchema, registrarUsuarioBodySchema, registroUsuarioResponseSchema } from './auth.schemas.js';
+
+export const actividadArcaItemSchema = z.strictObject({
+	codigo: z.string().meta({ example: '900010' }),
+	descripcion: z.string().meta({ example: 'Servicios artísticos de música y teatro' }),
+});
+
+export const listarActividadesArcaResponseSchema = z
+	.strictObject({
+		actividades: z.array(actividadArcaItemSchema),
+	})
+	.meta({
+		id: 'ListarActividadesArcaResponse',
+		description: 'Padrón de actividades económicas ARCA habilitadas para selección en el registro.',
+	});
 
 export function registerAuthOpenApi(): void {
 	openApiRegistry.registerPath({
@@ -13,7 +29,7 @@ export function registerAuthOpenApi(): void {
 		summary: 'Registrar un nuevo usuario',
 
 		description:
-			'Completa el perfil de una identidad previamente autenticada y verificada por Firebase. Requiere un ID token de Firebase en Authorization: Bearer y crea la cuenta en estado Pendiente (P).',
+			'Completa el perfil de una identidad previamente autenticada y verificada por Firebase. Requiere un ID token de Firebase en Authorization: Bearer y crea la cuenta en estado Activo o Pendiente.',
 
 		request: {
 			body: {
@@ -96,7 +112,7 @@ export function registerAuthOpenApi(): void {
 			},
 
 			401: {
-				description: 'Credenciales incorrectas o cuenta inactiva.',
+				description: 'Credenciales incorrectas, cuenta inactiva o perfil incompleto.',
 				content: {
 					'application/json': {
 						schema: validationErrorResponseSchema,
@@ -106,6 +122,39 @@ export function registerAuthOpenApi(): void {
 
 			500: {
 				description: 'Error interno al iniciar sesión.',
+				content: {
+					'application/json': {
+						schema: internalErrorResponseSchema,
+					},
+				},
+			},
+		},
+	});
+
+	openApiRegistry.registerPath({
+		method: 'get',
+
+		path: '/api/publico/auth/actividades-arca',
+
+		tags: ['Autenticación y Registro'],
+
+		summary: 'Listar actividades económicas ARCA para registro',
+
+		description:
+			'Devuelve el catálogo oficial de actividades económicas ARCA disponibles para asociar opcionalmente durante el registro de usuarios.',
+
+		responses: {
+			200: {
+				description: 'Catálogo de actividades ARCA obtenido correctamente.',
+				content: {
+					'application/json': {
+						schema: listarActividadesArcaResponseSchema,
+					},
+				},
+			},
+
+			500: {
+				description: 'Error interno al consultar las actividades ARCA.',
 				content: {
 					'application/json': {
 						schema: internalErrorResponseSchema,
