@@ -18,10 +18,11 @@ Como respuesta a esta problemática, *Mosaico Cultural* se concibió como un eco
 
 /* == Estructura del Documento
 
-El presente informe se encuentra estructurado en los siguientes capítulos:
+El presente informe se encuentra estructurado en los siguientes capítulos y secciones principales:
 
-- *Capítulo 1:* Presenta la portada institucional, los datos de autoría y la configuración general del documento.
-- *Capítulo 2 (este capítulo):* Brinda la introducción general, la justificación del proyecto, los problemas abordados y la visión global de la solución implementada.
-- *Capítulo 3:* Detalla la *Especificación de Requisitos Complementarios del Software* siguiendo las directrices del estándar IEEE 830, describiendo los actores participantes, los requisitos funcionales y no funcionales, el modelo de datos relacional y EAV, las reglas de negocio, los esquemas de autenticación y seguridad, y las consideraciones arquitectónicas y de despliegue.
-- *Capítulo 4 (Anexo):* Contiene el catálogo exhaustivo de los *Procedimientos Almacenados (Stored Procedures)* implementados en la base de datos MariaDB, detallando para cada uno de ellos su propósito funcional, sus parámetros de entrada y sus conjuntos de resultados (_resultsets_).
-- *Capítulo 5:* Expone los términos de la licencia de uso y derechos de autor bajo *Creative Commons Atribución 4.0 Internacional (CC BY 4.0)*.
+- *Capítulo 1 (este capítulo):* Brinda la introducción general, la justificación del proyecto, los problemas abordados y la visión global de la solución implementada.
+- *Capítulo 2:* Detalla la *Especificación de Requisitos Complementarios del Software* siguiendo las directrices del estándar IEEE 830, describiendo los actores participantes, los requisitos funcionales y no funcionales, el modelo de datos relacional y EAV, las reglas de negocio, los esquemas de autenticación y seguridad, y las consideraciones arquitectónicas y de despliegue.
+- *Capítulo 3 (Anexo):* Contiene el catálogo exhaustivo de los *Procedimientos Almacenados (Stored Procedures)* implementados en la base de datos MariaDB, detallando para cada uno de ellos su propósito funcional, sus parámetros de entrada y sus conjuntos de resultados (_resultsets_).
+- *Capítulo 4:* Expone los términos de la licencia de uso y derechos de autor bajo *Creative Commons Atribución 4.0 Internacional (CC BY 4.0)*.
+
+_Nota sobre la organización modular de los archivos fuente:_ En el repositorio del proyecto, los archivos fuente en Typst que componen este documento adoptan prefijos numéricos (`1 - Informe.typ` para la portada/configuración, `2 - Introducción.typ`, `3 - Especificación de requisitos...`, `4 - Anexo Listado...` y `5 - Licencia.typ`) con el fin de preservar el orden de ensamblado y compilación modular.

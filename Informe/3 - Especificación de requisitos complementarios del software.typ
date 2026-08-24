@@ -1,147 +1,214 @@
-// #pagebreak()
 = Especificación de requisitos complementarios del software // (ANSI/IEEE 830)
 
-Esta especificación tiene como objetivo analizar y documentar las necesidades funcionales que deberán ser soportadas por el sistema a desarrollar. Para ello, se identificarán los requisitos que ha de satisfacer el nuevo sistema mediante entrevistas, el estudio de los problemas de las unidades afectadas y sus necesidades actuales. Además de identificar los requisitos se deberán establecer prioridades, lo cual proporciona un punto de referencia para validar el sistema final que compruebe que se ajusta a las necesidades del usuario.
+Esta especificación tiene como objetivo analizar y documentar exhaustivamente los requisitos funcionales, no funcionales, reglas de negocio y restricciones técnicas que rigen el sistema *Mosaico Cultural*. Para ello, se adoptan las directrices del estándar IEEE 830, adaptadas a una arquitectura moderna de servicios web distribuidos, tipado estricto e interfaces reactivas de alto rendimiento.
 
 == Identificación de los usuarios participantes
 
-Los objetivos de esta tarea son identificar a los responsables de cada una de las unidades y a los principales usuarios implicados. En la organización se identificaron los siguientes usuarios:
+En la organización y en el ecosistema provincial de la plataforma se identifican los siguientes tipos de actores y usuarios:
 
-- *Ente cultural de Tucumán*: son los solicitantes de la página web.
-- *Grupo de administradores*: son las personas encargadas de gestionar la plataforma de cultura de forma global, gestionar el acceso de los moderadores y usuarios a la plataforma, crear o administrar las convocatorias.
-- *Grupo de moderadores de categoría cultural (Editores)*: son los que se encargan de validar los datos de los actores culturales de una categoría y gestionar a los usuarios correspondientes a su sector. Además, son los encargados de registrar espacios y crear las convocatorias.
-- *Grupo de actores culturales*: son las personas o grupo de personas con datos validados y publicados en el sitio de la plataforma. Estos actores tienen la capacidad de postularse a las convocatorias vigentes para participar en ellas y también pueden gestionar sus eventos de cartelera.
-- *Grupo de usuarios*: son las personas registradas en el sitio que están en condiciones de solicitar la publicación de un actor cultural en el sitio de la plataforma.
-- *Grupo de personas*: grupo que puede visualizar los datos públicos (portafolios) de la plataforma sin necesidad de registrarse.
+- *Ente Cultural de Tucumán*: Organismo público solicitante de la plataforma web y rector de las políticas culturales de la provincia.
+- *Grupo de Administradores*: Personal técnico y directivo encargado de la supervisión global de la plataforma, administración de usuarios y asignación de roles, gestión integral de categorías y subcategorías, diseño de formularios dinámicos y bancos de preguntas, administración del padrón de actividades económicas ARCA, creación y gestión de convocatorias oficiales, y ejecución de auditorías automatizadas de integridad del sistema.
+- *Grupo de Moderadores de Categoría Cultural (Editores)*: Integrantes del equipo técnico del Ente Cultural a quienes se les delega autoridad exclusiva sobre una o varias disciplinas artísticas específicas. Tienen competencia para validar, publicar, rechazar o dar de baja a los actores culturales pertenecientes a sus categorías asignadas, registrar y verificar espacios culturales, y monitorear el relevamiento sectorial.
+- *Grupo de Actores Culturales*: Entidades artísticas, productivas o institucionales registradas en el sistema (clasificadas como *Individuos*, *Colectivos* o *Espacios Culturales*) cuyos perfiles y portafolios públicos son visibilizados en la plataforma una vez aprobados. Pueden postularse a convocatorias oficiales, gestionar su portafolio multimedia, programar eventos en la agenda cultural provincial y administrar a sus integrantes.
+- *Grupo de Usuarios*: Personas físicas registradas y autenticadas mediante Firebase Authentication que han completado su perfil con su documento de identidad (DNI), CUIL y actividad ARCA optativa. Están facultadas para crear y administrar actores culturales, integrar agrupaciones artísticas y postular a convocatorias.
+- *Grupo de Personas (Público General)*: Ciudadanos y turistas que acceden a la plataforma sin necesidad de registrarse para consultar el directorio público de artistas, explorar el mapa cultural georreferenciado, consultar la agenda de eventos culturales (con opción de exportación a calendarios personales) y acceder a estadísticas culturales del territorio.
 
 == Objetivos y alcances del sistema
 
-El proyecto consiste en desarrollar una plataforma para recopilar, almacenar, catalogar y poner a disposición registros culturales en Tucumán. Cuenta con un mapa cultural georeferenciado que brinda a los actores culturales de la provincia, visibilidad e identificación de sus manifestaciones culturales. Cada usuario a través de una aplicación _web responsive_ puede gestionar su actor cultural y armar su portafolio. Además, el sistema debe ofrecer una apariencia conforme a los requisitos de la provincia de Tucumán.
+El proyecto tiene por objetivo primordial recopilar, catalogar, georreferenciar y difundir el patrimonio vivo y los hacedores culturales de la provincia de Tucumán a través de una plataforma web accesible, moderna y adaptable (_responsive_).
 
-Además debe permitir a las personas visualizar los datos públicos del sistema y registrarse como usuario de la plataforma.
+Entre sus principales alcances funcionales se destacan:
+1. *Georreferenciación y Cartografía Cultural:* Mapeo interactivo basado en coordenadas geográficas reales sobre el territorio provincial, permitiendo localizar artistas, salas de teatro, talleres artesanales, centros culturales y museos.
+2. *Formularios Dinámicos por Disciplina:* Sistema flexible bajo el patrón Entidad-Atributo-Valor (EAV) que permite crear cuestionarios específicos según la naturaleza de cada sector artístico sin necesidad de modificar el esquema relacional de la base de datos.
+3. *Agenda Cultural y Difusión de Eventos:* Publicación de actividades y espectáculos con integración y exportación directa a calendarios digitales.
+4. *Gestión de Convocatorias y Fomento Cultural:* Canal unificado para el lanzamiento de concursos, subsidios y festivales provinciales con soporte de bases en formato Markdown, postulación en línea para actores registrados y paneles de evaluación.
+5. *Vinculación con el Padrón Fiscal ARCA:* Mapeo y caracterización de la formalidad socioeconómica del sector artístico mediante el enlace voluntario a códigos oficiales de actividad económica.
+6. *Cumplimiento Normativo y Protección de Datos:* Resguardo estricto de datos sensibles conforme a la Ley N° 25.326 de Protección de los Datos Personales, garantizando el derecho al olvido mediante borrado físico y recolección de archivos locales huérfanos.
 
 == Definiciones, acrónimos y abreviaturas
 
 - *Definiciones*:
+  - *Actividad ARCA*: Código oficial del clasificador de actividades económicas de la Agencia de Recaudación y Control Aduanero (ex-AFIP/Rentas Tucumán) utilizado para evaluar el impacto formal del sector.
+  - *Actor Cultural*: Entidad lógica central de la plataforma que representa a un artista individual, una agrupación o un espacio físico.
   - *Artesanía*: son los objetos elaborados manualmente, mediante la transformación de la materia prima con ayuda de recursos instrumentales y el dominio de técnicas específicas del oficio, que expresan un criterio estético funcional con valor cultural.
   - *Artesanos/as*: son aquellos hacedores culturales que elaboran artesanías, es decir, objetos de origen utilitario que cobran significación cultural, realizados manualmente con técnicas que son transmitidas de generación en generación o con máquinas movidas con energía básicamente humana, en forma individual o colectiva. (Art. 2º Ley 8083).
-  - *Convocatoria*: un llamado o invitación al cual los actores culturales de la plataforma pueden aplicar o postularse.
-  - *Evento*: un suceso (ejemplo festivales o mercados calendarizados) que puede destacar un actor.
-  - *Mapa georeferenciado*: es una representación cartográfica que ha sido vinculada a una ubicación real y precisa sobre la superficie terrestre mediante coordenadas geográficas.
-  - *Portafolio*: recopilación organizada de evidencias, proyectos, trabajos y logros de una persona u organización. Es la cara visible y pública del actor cultural.
-  - *_Web responsive_*: hacer que un sitio web sea accesible y adaptable en todos los dispositivos: _tablets_, _smartphones_, etc.
+  - *Convocatoria*: Llamado formal abierto para certámenes, subsidios o participación en festivales.
+  - *Data URL en Base64*: Esquema URI que permite incrustar archivos binarios (imágenes) directamente dentro de cadenas de texto en formato JSON.
+  - *Derecho al Olvido*: Mecanismo que garantiza la supresión física definitiva de los datos personales e identificatorios de un usuario y de sus archivos asociados a su requerimiento expreso.
+  - *Evento*: Suceso o actividad cultural calendarizada (festivales, obras de teatro, exposiciones, mercados) asociado a un actor.
+  - *Formulario EAV*: Patrón arquitectónico (Entidad-Atributo-Valor) que permite almacenar propiedades dinámicas mediante pares clave-valor estructurados.
+  - *Markdown*: Lenguaje de marcado ligero que permite aplicar formato estructurado a textos planos mediante etiquetas simples y legibles.
+  - *Portafolio Cultural*: Colección pública de ítems multimedia (imágenes, enlaces externos y redes sociales) que constituye la vitrina digital del actor cultural.
+  - *_Web responsive_*: Diseño adaptativo que permite una visualización y funcionalidad óptima en dispositivos móviles, _tablets_ y computadoras de escritorio.
 
-- *Abreviaturas*:
-  - *IEEE*: _Institute of Electrical & Electronics Engineers_
+- *Acrónimos y Abreviaturas*:
+  - *ACID*: _Atomicity, Consistency, Isolation, Durability_ (Propiedades de transaccionalidad de bases de datos).
+  - *ARCA*: _Agencia de Recaudación y Control Aduanero_.
+  - *COOP*: _Cross-Origin-Opener-Policy_.
+  - *CSP*: _Content Security Policy_.
+  - *EAV*: _Entity-Attribute-Value_.
+  - *GFM*: _GitHub Flavored Markdown_.
+  - *IEEE*: _Institute of Electrical and Electronics Engineers_.
+  - *JWT*: _JSON Web Token_.
+  - *MUI*: _Material UI_.
+  - *REST*: _Representational State Transfer_.
+  - *SPA*: _Single Page Application_.
+  - *UUID*: _Universally Unique Identifier_.
 
-== Descripción general
+== Descripción general de los módulos y arquitectura funcional
 
-Esta sección ofrece una descripción general del sistema con el propósito de identificar las funciones que debe soportar, los datos asociados, las restricciones impuestas y cualquier otro factor que pueda influir en su desarrollo.
+=== Arquitectura Híbrida de Identidad y Autenticación
 
-La plataforma de cultura será administrada globalmente por un equipo de administradores, quienes gestionarán a sus moderadores y les delegarán autoridad para gestionar de forma independiente los actores culturales de su respectiva categoría cultural.
+El sistema implementa un esquema desacoplado de identidad y perfiles relacionales:
 
-Los administradores tienen control total de la plataforma. Tienen la capacidad de cargar datos de los usuarios, y acceder sin restricciones a todos los usuarios y actores culturales registrados. Son responsables de gestionar el acceso de los espacios e instituciones a la plataforma, asignando, modificando o retirando recursos según sea necesario. // Cada espacio o categoría se registra con un nombre único y un estado de actividad (activa o inactiva).
+1. *Gestión de Identidad y Proveedores de Acceso (Firebase Authentication):* La capa de autenticación, almacenamiento seguro de credenciales, autenticación federada con Google, emisión de enlaces de verificación de correo y recuperación de contraseñas es gestionada íntegramente por Firebase Authentication.
+2. *Integración con Backend y Base de Datos Relacional:* La base de datos MariaDB *no almacena contraseñas ni hashes de acceso*. En su lugar, la tabla `Usuarios` almacena el atributo `idFirebase VARCHAR(128) NOT NULL` como clave foránea conceptual. El backend en Node.js/Express intercepta las peticiones, valida criptográficamente el ID Token de Firebase mediante el Firebase Admin SDK y genera una sesión interna respaldada por el procedimiento almacenado `sp_auth_obtener_usuario_sesion`.
+3. *Manejador de Acciones de Correo Personalizado:* La plataforma cuenta con una ruta especializada en el frontend (`/auth/action`) que procesa los códigos de acción de Firebase (_oobCode_) para validar correos electrónicos y restablecer contraseñas de forma transparente en español y con validación de estados de seguridad.
 
-Los administradores son los responsables de crear, modificar y eliminar categorías, subcategorías y moderadores. Los administradores definen las categorías culturales (y sus subcategorías), cada una con un nombre único y un formulario de registro dinámico. La estructura de estos formularios varía obligatoriamente según la categoría y subcategoría; por ejemplo, para registrar un artesano se requerirán datos de la rama productiva, procedencia de materia prima y técnicas, mientras que para un músico se requerirán géneros musicales y roles.
+=== Flujo de Registro y Gestión de Usuarios
 
-Cada categoría cuenta con un nombre único, su formulario específico, y un estado (activa o dada de baja), permitiendo un borrado lógico cuando una categoría ya no se utiliza. Las categorías que tengan actores asociados no pueden ser eliminadas. Al cambiar su estado a "dado de baja", estas categorías dejarán de aparecer en la clasificación de actores. La plataforma también debe ofrecer funcionalidad para gestionar las categorías.
+El proceso de alta de un usuario se ejecuta en dos etapas coordinadas:
 
-*Relación entre Usuarios y Actores Culturales:*
-El sistema separa lógicamente la "Cuenta de Usuario" (persona física) del "Perfil de Actor Cultural" (entidad artística/productiva). Para gestionar esta versatilidad, se implementa una relación de cardinalidad _Muchos a Muchos_ (N:M). Esto permite que un mismo Usuario registrado pueda crear y/o pertenecer a múltiples Actores Culturales, y a su vez, que un Actor Cultural tipo "Agrupación" esté conformado por múltiples Usuarios.
+1. *Fase 1: Registro en Firebase Auth y Verificación de Correo:* El usuario crea su cuenta y recibe un correo para validar la titularidad de su casilla.
+2. *Fase 2: Completitud de Perfil en la Plataforma (`RegistroDatosPage`):* Una vez validado el acceso, el usuario completa sus datos obligatorios:
+  - Nombre y Apellidos.
+  - Género: Tipificado según enumerador.
+  - Fecha de Nacimiento: El sistema impone como regla de negocio obligatoria que el usuario debe tener una *edad mínima de 10 años cumplidos*.
+  - Nacionalidad.
+  - CUIL: Código de 11 dígitos numéricos sin guiones.
+  - Código de Actividad ARCA: Opcional, seleccionado del padrón oficial provisto por el sistema.
+  - Imagen de Documento de Identidad (DNI): Archivo escaneado o fotografía transmitido en Base64 y almacenado en una ruta privada con acceso restringido bajo `/uploads/dni/:filename`.
+  - Avatar Personalizado: Selección de estilo y semilla gráfica generada dinámicamente mediante DiceBear (`avatarEstilo`, `avatarSeed`).
 
-Cuando un usuario crea un nuevo actor cultural, este se registra con los atributos: nombre, descripción, fecha de creación, y estado. Inicialmente, el actor tiene el estado "Pendiente". Para garantizar la integridad del flujo de control y no saturar las bandejas de validación, se establece como regla de negocio que un usuario puede tener hasta cinco actores culturales pendientes de revisión de manera simultánea. Al alcanzar ese límite, podrá registrar otro cuando finalice al menos una de las revisiones.
+*Seguridad y Privacidad en el Acceso al DNI:*
+La imagen del documento de identidad no se expone a través de directorios públicos estáticos. El acceso se canaliza exclusivamente mediante el endpoint autenticado `GET /uploads/dni/:filename`, el cual exige token de sesión JWT (`verifyToken`) y comprueba a nivel de base de datos que *únicamente el usuario titular (`idUsuario`) o un agente con rol `ADMIN` o `MODERADOR` en tareas de verificación de identidad tienen autorización para visualizar y descargar el archivo*. Las peticiones de terceros no autorizados son rechazadas inmediatamente con código HTTP 403 Forbidden.
 
-Un moderador, al publicarlo en el sitio, cambia su estado a "Publicado". Una vez que el usuario ya no desea que el actor cultural figure en el sitio (por ejemplo, si una agrupación musical se disuelve), puede dar de baja el actor, marcándolo con el estado "DadoDeBaja". Este borrado lógico permite conservar el registro histórico y estadístico de los eventos en los que la agrupación participó.
+*Derecho al Olvido y Supresión Física (Ley N° 25.326):*
+Si un usuario solicita la baja de su cuenta, el sistema ejecuta el procedimiento `sp_usuario_eliminar_cuenta`. Este procedimiento efectúa la eliminación física transaccional de los registros personales del usuario, desvincula o elimina los actores de su titularidad exclusiva y retorna un conjunto de resultados con las rutas relativas de los archivos almacenados en el servidor (foto de DNI, fotos de perfil de actores y archivos de portafolio). El backend procesa este manifiesto y elimina físicamente los archivos del disco, garantizando que no queden datos huérfanos.
 
-Por otro lado, en estricto cumplimiento de la Ley N° 25.326 de Protección de los Datos Personales, si una persona física solicita formalmente la eliminación de su cuenta y sus datos del sistema, la plataforma deberá realizar un borrado físico definitivo de su información identificatoria y sensible.
+=== Modelo de Actores Culturales
 
-=== Grupo de Personas (Público):
+Un Actor Cultural es la entidad nuclear del sistema y se clasifica en tres naturalezas:
 
-El público podrá realizar la búsqueda de los actores culturales publicados en el sitio filtrando por categoría, título, y departamento de la provincia. Además, podrá visualizar el portafolio público individual de los actores, agrupaciones y espacios, el cual mostrará únicamente la información artística o institucional de carácter público, resguardando datos sensibles o privados de contacto personal.
+1. *Individuo:* Artistas, hacedores, músicos o artesanos independientes que gestionan su propio perfil y portafolio de manera directa.
+2. *Colectivo / Agrupación:* Bandas de música, ballets folclóricos, compañías teatrales o colectivos de artesanos conformados por múltiples personas.
+3. *Espacio Cultural:* Salas de teatro, museos, bibliotecas populares, talleres o galerías de arte que disponen de una sede física y coordenadas geográficas.
 
-=== Grupo de Usuarios:
+*Soporte de Formato Markdown en Descripciones:*
+Las descripciones públicas de los actores culturales admiten texto enriquecido en formato Markdown con un límite de hasta 5.000 caracteres (almacenado en tipo `TEXT`). Esto permite a los artistas estructurar su reseña biográfica, incluir enlaces web, texto en negrita/cursiva, listas y citas. En el cliente, el contenido se procesa mediante `react-markdown` y `remark-gfm`, mientras que en el backend se valida y sanitiza contra caracteres de control e invisibles mediante `sanitizeString` (`publicDescriptionSchema`).
 
-Los usuarios serán personas que tengan un correo electrónico, la posibilidad de ingresar al sitio y que estén en condiciones legales de publicar sus datos en la plataforma; que cumplan la edad legal mínima y que sean personas capaces bajo la ley.
+*Relación de Pertenencia y Gestión de Integrantes:*
+- *Integrantes Registrados (`Integrantes`):* Vincula usuarios de la plataforma con el actor, definiendo su rol artístico y la bandera `esDueño`.
+- *Transferencia de Titularidad (`sp_actor_transferir_titularidad`):* El titular de un colectivo puede transferir de forma transaccional el control del actor a otro integrante registrado.
+- *Renuncia de Integrantes (`sp_actor_renunciar_integrante`):* Un usuario registrado puede renunciar voluntariamente a su vinculación con una agrupación.
+- *Integrantes No Registrados (`IntegrantesNoRegistrados`):* Permite al titular cargar a miembros que no poseen cuenta activa en la plataforma (registrando nombre, apellido, correo electrónico opcional y rol), facilitando la representación fidedigna de agrupaciones tradicionales o comunitarias.
+- *Migración y Auto-vinculación de Integrantes No Registrados (`sp_publico_registrar_usuario`):* Cuando una persona que fue previamente incorporada por el titular como integrante no registrado (`IntegrantesNoRegistrados`) decide registrarse formalmente en la plataforma utilizando la misma casilla de correo electrónico, el procedimiento almacenado de registro transfiere de manera atómica todas sus membresías preexistentes hacia la tabla `Integrantes` (asignándole `esDueño = 0` y preservando su rol artístico), eliminando en la misma transacción los registros temporales de `IntegrantesNoRegistrados`. Esto asegura la continuidad histórica del colectivo artístico y una experiencia de usuario transparente sin requerir reconfiguraciones manuales.
 
-Para registrarse en el sitio web, primero, los usuarios deberán completar los siguientes datos obligatorios: correo electrónico, contraseña, apellidos, nombres, CUIL, fecha de nacimiento y género, además, deberán enviar una imagen de un documento de identidad. Una actividad de Rentas/ARCA se puede agregar de manera opcional. Es importante que el usuario confirme estos datos antes de avanzar al siguiente paso de registro. La dirección de correo electrónico es obligatoria y única. La contraseña deberá tener una longitud mínima de 6 caracteres. Finalmente, se le enviará un correo electrónico a la dirección provista para activar la cuenta de usuario.
+*Estados y Reglas de Validación de Actores:*
+- Los actores transitan por los estados `'P'` (Pendiente de revisión), `'A'` (Activo / Publicado) e `'I'` (Inactivo / Dado de baja lógica).
+- *Límite de Actores Pendientes:* Para prevenir la saturación de las bandejas de moderación, un usuario puede tener como máximo *cinco actores en estado pendiente simultáneamente* en los que sea titular (`esDueño = 1`).
 
-Una vez que un usuario se encuentre activo y habilitado para iniciar sesión, podrá crear sus actores culturales (completando el formulario específico de su sector y con un máximo de cinco actores pendientes de revisión), armar su portafolio, editar sus datos, integrar agrupaciones, buscar y postular a convocatorias vigentes en la plataforma, y ver los datos públicos.
+*Portafolio y Agenda de Eventos:*
+- Cada actor dispone de una vitrina o galería multimedia (`ItemsPortafolio`) con soporte para imágenes, enlaces externos y redes sociales, aplicando un límite de negocio estricto de *hasta 10 imágenes por actor* implementado en la API y el diálogo de gestión.
+- Los actores pueden registrar eventos calendarizados vinculados a su perfil. Estos eventos se publican en la agenda cultural provincial y cuentan con exportación directa a Google Calendar y archivos descargables en estándar iCalendar.
 
-Un usuario puede darse de baja por comportamiento inapropiado, contrario a las políticas de la plataforma. El usuario pendiente es aquel que está en el proceso de registro y confirmación.
+=== Sistema de Formularios Dinámicos (Patrón EAV) y Banco de Preguntas
 
-=== Grupo de Moderadores:
+Para adaptarse a las diversas disciplinas culturales sin modificar la estructura de la base de datos, se implementó un motor de formularios dinámicos:
 
-Los moderadores (editores) son parte del _staff_ del Ente organizado por sector cultural. Una vez habilitados, pueden validar a los artistas de su categoría, registrar espacios culturales y crear las convocatorias en el sistema. Tienen restringida la modificación de datos sensibles (como el CUIL) de los usuarios.
+1. *Ámbitos de Formulario:* Se asocian a una Categoría (`idSubcategoria = 0`) o de forma especializada a una Subcategoría (`idSubcategoria > 0`).
+2. *Banco Reutilizable de Preguntas (`Preguntas`):* Almacena enunciados tipificados que pueden ser reutilizados entre distintos formularios. Soporta 11 tipos de datos:
+  - `TEXTO`, `NUMERO`, `BOOLEANO`, `FECHA`, `URL`, `EMAIL`, `TELEFONO`.
+  - `OPCION_UNICA`, `OPCION_MULTIPLE`, `OPCION_MULTIPLE_CHIPS`, `TAGS` (con opciones validadas en formato JSON).
+3. *Preguntas en Formularios (`PreguntasFormulario`):* Define el orden, la obligatoriedad (`esObligatorio`), la visibilidad pública (`esPublico`) y el estado de la pregunta.
+4. *Sustitución Histórica de Preguntas (`idPreguntaReemplazada`):* Cuando el Ente Cultural decide reformular o reemplazar una pregunta en un formulario activo, el sistema la desactiva y vincula la nueva pregunta con la anterior mediante `idPreguntaReemplazada`. Esto permite que los nuevos registros utilicen la versión actualizada sin invalidar ni borrar las respuestas históricas de los actores ya registrados.
+5. *Confirmación de Formularios (`sp_actor_confirmar_formulario`):* Valida que todas las preguntas obligatorias activas hayan sido debidamente respondidas antes de permitir la solicitud de publicación del actor.
 
-=== Grupo de Administradores:
+=== Moderación Descentralizada y Matriz de Roles
 
-Los administradores serán personas que tengan un correo electrónico, la posibilidad de ingresar al sitio y que estén registrados como administradores. La dirección de correo electrónico es obligatoria y única. La contraseña deberá tener una longitud mínima de 6 caracteres.
+La administración del sistema se rige por un esquema jerárquico de control de acceso:
 
-Una vez que un administrador se encuentre activo y habilitado para iniciar sesión, podrá gestionar los usuarios, roles y vinculaciones manuales, y aceptar o rechazar las solicitudes de creación o actualización de actores culturales desde la bandeja de registros pendientes. Además, podrán ver los datos públicos y privados de la plataforma, accediendo a _dashboards_ estadísticos con el historial de eventos y convocatorias, y tendrán la potestad de crear y gestionar los eventos anuales calendarizados.
+1. *Administradores:* Tienen acceso irrestricto a todas las funcionalidades del sistema: gestión de usuarios, asignación de moderadores, CRUD de categorías y subcategorías, gestión de formularios, administración de actividades ARCA, gestión de convocatorias y auditorías de integridad.
+2. *Moderadores (Editores):* Tienen asignada una o más categorías culturales en la tabla `ModeradoresCategorias`. Su alcance de lectura, edición, aprobación y cambio de estado se restringe estrictamente a los actores culturales y categorías que tienen asignadas (`sp_admin_listar_actores`, `sp_admin_cambiar_estado_actores`).
+3. *Promoción y Degradación Dinámica:* La asignación de al menos una categoría a un usuario estándar promueve automáticamente su rol a `'MODERADOR'`; la revocación de todas sus categorías restablece su rol a `'USUARIO'`.
 
-=== Actores culturales:
+=== Convocatorias Culturales
 
-Un actor cultural es la entidad lógica central de la plataforma y puede presentarse en tres naturalezas distintas:
+El módulo de convocatorias permite a los administradores lanzar y gestionar llamados públicos:
+- Creación, modificación y cierre de convocatorias con fecha límite obligatoria (`fechaCierre`).
+- *Bases y Condiciones en Markdown:* El campo de descripción y bases de la convocatoria admite texto enriquecido en Markdown (hasta 5.000 caracteres), facilitando la publicación de requisitos, cláusulas y enlaces institucionales.
+- Postulación en línea: Los actores culturales en estado `'A'` (Activo) pueden postularse mientras la convocatoria se encuentre abierta.
+- Cancelación de postulación: El titular del actor puede retirar su postulación antes del cierre.
+- Panel de evaluación administrativo: Visualización de métricas de postulación y reporte con datos de contacto del responsable de cada actor.
 
-- *Individuos*: Profesionales o hacedores particulares (ej. músicos, artesanos) que gestionan su propio perfil, su portafolio y su información artística de manera individual y unívoca con su cuenta de usuario.
-- *Agrupaciones / Colectivos*: Entidades propias (ej. bandas, colectivos de producción artesanal) que poseen un nombre, género o rama productiva y un historial de eventos. Están conformadas por múltiples integrantes. El usuario que inscribe a la agrupación funge como administrador principal del perfil de la misma, y puede cargar a los demás integrantes mediante CUIL o correo. El sistema los vinculará automáticamente a la agrupación si están registrados en la plataforma. //, o les enviará una invitación de registro si aún no lo están.
-- *Espacios Culturales*: Entidades físicas (ej. teatros, clubes, galerías, talleres) que cuentan con datos de geolocalización, dirección y tipo de espacio. Pueden ser administrados por un titular o cargados directamente por los moderadores para reflejar la realidad del sector informal.
+=== Catálogo de Actividades Económicas ARCA / Rentas
 
-Los actores culturales interactúan a través de Eventos (festivales o mercados calendarizados que se realizan todos los años), los cuales funcionan como el nexo que vincula a los individuos o agrupaciones con un espacio cultural en una fecha determinada. Esto permite llevar un registro histórico, visibilizar la cartelera para el público y generar las métricas de la actividad cultural en la provincia.
+El sistema cuenta con un catálogo administrable de actividades económicas (`ActividadesArca`) que permite:
+- Búsqueda, alta y edición de códigos y descripciones oficiales de actividad.
+- Importación masiva desde archivos oficiales F883 de ARCA.
+- Auditoría de utilización por parte de los usuarios registrados.
+- Asociación opcional en el formulario de registro y perfil de usuario para fines estadísticos provinciales.
 
-La identidad pública de cada actor se complementa mediante un Portafolio, el cual es una recopilación dinámica de ítems multimedia. El sistema permite a los actores organizar y enlazar evidencias de su trabajo (como imágenes descriptivas o enlaces a redes y videos externos) para construir su perfil público.
+=== Auditoría e Integridad del Sistema
+
+Para garantizar la consistencia de la base de datos a lo largo del tiempo, se implementaron mecanismos preventivos y diagnósticos:
+
+1. *Procedimiento Diagnóstico (`sp_sistema_auditar_integridad`):* Consumido desde la interfaz administrativa (`adminAuditoria.tsx`), evalúa y reporta:
+  - Registros huérfanos entre actores, usuarios, ubicaciones e integrantes.
+  - Formularios activos sin preguntas o categorías activas sin formularios definidos.
+  - Discrepancias en estados de actores y ubicaciones no públicas mal configuradas.
+  - Actores con formularios obligatorios incompletos en estado publicado.
+2. *Triggers de Auditoría para Bajas Lógicas:* Para asegurar la trazabilidad temporal del ciclo de vida de los registros sin depender exclusivamente del servidor de aplicaciones, MariaDB incorpora triggers automáticos:
+  - `trg_Usuarios_fecha_baja_insert` y `trg_Usuarios_fecha_baja_update`: Gestionan automáticamente la columna `fechaBaja` en la tabla `Usuarios`, asignando `CURRENT_TIMESTAMP` cuando el estado cambia a `'I'` e inicializándola en `NULL` si el usuario es reactivado a `'A'`.
+  - `trg_Actores_fecha_baja_insert` y `trg_Actores_fecha_baja_update`: Gestionan de forma análoga la columna `fechaBaja` en la tabla `Actores`, asegurando registros fidedignos para auditorías institucionales.
+
+=== Resumen Estadístico y Portal Público
+
+El portal público cuenta con el procedimiento `sp_publico_resumen_estadisticas`, el cual calcula en tiempo real métricas clave de impacto cultural (total de actores activos, total de espacios registrados, total de departamentos alcanzados y categorías activas), visibles en la portada institucional y en la página de licencia del sistema.
 
 == Suposiciones y dependencias
 
-- *Suposiciones*:
-  - Se asume que los requisitos descritos en este documento (gestión de actores, categorías y usuarios) serán considerados estables una vez que sean aprobados por los responsables del proyecto y el tutor. Cualquier solicitud de cambio en las especificaciones funcionales deberá ser evaluada en función de su impacto en el cronograma y deberá contar con la aprobación de las partes involucradas antes de su implementación por el equipo de desarrollo.
-  - Se estudió exhaustivamente el requerimiento analítico de permitir que la plataforma opere de manera offline (fuera de línea); sin embargo, esta posibilidad fue formalmente descartada debido a la alta complejidad técnica que representaba la resolución de conflictos en la sincronización de datos distribuidos, ponderada frente a la baja proporción de usuarios objetivo dentro del territorio que carecen totalmente de conectividad a internet.
-  - Se asume que inicialmente los espacios culturales serán  agregados en la base de datos por los moderadores.
+- *Suposiciones del Sistema*:
+  - La plataforma opera de manera _online_ 24x7; se descarta formalmente el almacenamiento local _offline_ debido a la complejidad de sincronización concurrente en formularios dinámicos y postulaciones con fecha límite estricta.
+  - La base de datos opera bajo el motor MariaDB 10.x / MySQL 8.x con el motor de almacenamiento InnoDB y modo estricto `STRICT_TRANS_TABLES`.
+  - Todas las mutaciones críticas de datos (creación de actores, transacciones de formularios, cambio de roles y supresión de cuentas) se ejecutan de manera atómica mediante procedimientos almacenados con control de excepciones (`DECLARE EXIT HANDLER FOR SQLEXCEPTION`, `START TRANSACTION`, `COMMIT`, `ROLLBACK` y bloqueos `FOR UPDATE`).
 
-- *Supuestos de la Base de Datos*:
-  - _Actividad de Rentas/ARCA_: Para categorizar el impacto económico del sector, el sistema se apoya en un padrón predefinido de actividades económicas (que deberá ser gestionado por los administradores). Durante el registro, los usuarios pueden vincularse opcionalmente a un código de actividad de este padrón (si están formalmente registrados), de lo contrario, el sistema soporta que este dato permanezca nulo.
-  - _Formularios Dinámicos (Patrón EAV)_: Se asume un modelo de "Entidad-Atributo-Valor" apoyado en el uso de campos JSON (`valor` en la tabla `RESPUESTASCAMPO`) para permitir que cada Categoría posea preguntas y esquemas de datos disímiles sin alterar el esquema relacional rígido.
-  - _Geolocalización Mandatoria_: Se asume que todo Actor /*y todo Evento*/ debe estar invariablemente ligado a una instancia de `UBICACIONES`, haciendo de la representación geoespacial una característica estructural y no opcional.
-  - _Identificación Fiscal_: La estructura impone la obligatoriedad de un documento fiscal (`CUIT CHAR(11) NOT NULL`). Se asume procedimentalmente que, para acoger al sector cultural informal, este campo se completará con el CUIL del usuario o un valor estandarizado transitorio.
-  - _Propiedad y Pertenencia_: El modelo asume que todo Actor Cultural posee un creador inicial de carácter obligatorio, determinado por el campo `esDueño` en la tabla asociativa `INTEGRANTES`, la cual gestiona al resto de los participantes de un colectivo.
-  - _Tipificación Ampliada_: Dado que el enumerador de la base de datos restringe el `tipoActor` a `('INDIVIDUO', 'COLECTIVO', 'ESPACIO')`, se asume lógicamente que los "Espacios Culturales" heredarán el comportamiento de los actores.
-
-- *Dependencias*:
-  - *Servicio de Correo Electrónico*: Para cumplir con el requisito de activación de cuentas de usuarios mediante enlace de verificación, el sistema requiere acceso a un servidor SMTP o servicio de envío de correos transaccionales.
-  - *Conectividad*: Dado que es una plataforma web distribuida y se ha descartado el almacenamiento local offline, su funcionamiento depende enteramente de una conexión estable a Internet tanto en el servidor como en los clientes.
+- *Dependencias Tecnológicas Externas*:
+  - *Firebase Authentication & Google Identity Services:* Dependencia de los servicios de autenticación en la nube para el inicio de sesión federado y el envío de correos transaccionales de verificación y cambio de contraseña.
+  - *Servidores de Cartografía (OpenStreetMap / Leaflet):* Dependencia de proveedores de teselas geográficas estándar para la representación visual del mapa provincial.
 
 == Requisitos de usuario y tecnológicos
 
-- *Requisitos de usuario*: Los usuarios del sistema se dividen en cuatro perfiles claros: Administradores, Moderadores, Usuarios y Personas. Las interfaces deben ser _responsive_ (adaptables), intuitivas y fáciles de navegar, permitiendo que un usuario sin conocimientos técnicos pueda registrarse y cargar su actor cultural sin necesidad de capacitación previa. Asimismo, los administradores deben poder gestionar la plataforma con una curva de aprendizaje mínima.
-- *Requisitos tecnológicos*: La aplicación seguirá una arquitectura Cliente/Servidor sobre Internet.
-  - *Servidor*: Deberá estar configurado para soportar el entorno de ejecución NodeJS y un motor de base de datos relacional robusto (que soporte sintaxis de comprobación de restricciones y tipos JSON, como MySQL 8.x o PostgreSQL), dimensionado para gestionar múltiples conexiones concurrentes.
-  - *Cliente*: La interfaz de usuario se ejecutará en el navegador web del cliente (Chrome, Firefox, Edge, Safari), comunicándose con el servidor mediante peticiones HTTP asíncronas (API REST).
-- *Disponibilidad*: La aplicación deberá operar en un régimen de 24x7 para permitir que las personas accedan a los datos públicos del sitio en todo momento.
+- *Requisitos de Usuario*:
+  - Interfaz gráfica intuitiva, moderna y accesible sin necesidad de capacitación técnica previa.
+  - Diseño totalmente adaptable (_responsive_) que garantice una experiencia de uso fluida tanto en dispositivos móviles táctiles como en equipos de escritorio.
+- *Requisitos de Arquitectura Tecnológica*:
+  - *Capa de Cliente (Frontend):* Aplicación de Página Única (SPA) construida con React 19, TypeScript y Vite, utilizando el sistema de diseño y componentes de interfaz de *Material UI* (`@mui/material`, `@mui/icons-material`, `@mui/x-date-pickers`, `@toolpad/core`) y librerías especializadas (Leaflet / React Leaflet para mapas georreferenciados, Day.js para gestión de fechas, React Toastify para notificaciones y React Markdown con Remark GFM para renderizado de texto enriquecido).
+  - *Capa de Servidor (Backend):* API REST construida en Node.js con Express y TypeScript, integrando Firebase Admin SDK, registro estructurado de eventos con Pino HTTP, especificación completa bajo el estándar *OpenAPI 3.1.0* (generada con `@asteasolutions/zod-to-openapi`) y documentación interactiva moderna renderizada mediante *Scalar API Reference* (`@scalar/express-api-reference`) accesible en la ruta `/docs`.
+  - *Capa de Datos (Base de Datos):* Motor relacional MariaDB / MySQL con esquema relacional normalizado, soporte para tipos JSON nativos, restricciones de integridad referencial, triggers automáticos de auditoría e implementación exhaustiva de lógica de negocio en Procedimientos Almacenados (Stored Procedures).
+  - *Servidor Web y Proxy Inverso:* Nginx configurado con políticas estrictas de seguridad (COOP, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) y reescritura de rutas para SPA.
+  - *Contenedorización:* Despliegue estandarizado mediante Docker y Docker Compose (`compose.yml`).
 
 == Requisitos de interfaces externas
 
-- *Interfaces de usuario*: La interfaz gráfica debe cumplir estrictamente con el diseño _web responsive_, adaptándose automáticamente a la resolución del dispositivo. Esto es crítico para los usuarios, quienes accederán mayoritariamente desde dispositivos móviles en el territorio provincial, y para los administradores que podrían requerir gestionar urgencias desde tabletas o teléfonos.
-- *Interfaces _hardware_*:
-  - Dispositivos móviles: Pantalla táctil con resolución mínima de 360x640 píxeles.
-  - Escritorio/_Laptop_: Pantalla con resolución mínima de 1366x768 píxeles (recomendado para la visualización de tablas de administración e historial de eventos), teclado y dispositivo señalizador (_mouse_/_trackpad_).
+- *Interfaces de Hardware*:
+  - Dispositivos móviles: Soporte para pantallas táctiles con resolución mínima de 360x640 píxeles.
+  - Equipos de escritorio / _laptops_: Resolución mínima de 1366x768 píxeles recomendada para paneles administrativos, tablas de auditoría y diseño de formularios.
+- *Interfaces de Software*:
+  - Navegadores web modernos compatibles con los estándares HTML5, CSS3 y JavaScript ECMAScript 2022+ (Google Chrome, Mozilla Firefox, Microsoft Edge, Safari).
+- *Almacenamiento y Protección de Archivos*:
+  - *Archivos Públicos (`/uploads/actores/`):* Fotografías de perfil y material de portafolio servidos con cabeceras `Cross-Origin-Resource-Policy: cross-origin`.
+  - *Archivos Privados (`/uploads/dni/`):* Imágenes de documentos de identidad almacenadas fuera del alcance estático público, accesibles exclusivamente mediante el endpoint autenticado `/uploads/dni/:filename` bajo validación estricta de titularidad o rol administrativo (`ADMIN`/`MODERADOR`).
 
-- *Interfaces software*: El sistema requiere un navegador web compatible con los estándares de HTML5, CSS3 y JavaScript (ES6+).
+== Requisitos de rendimiento y seguridad
 
-== Requisitos de rendimiento
-
-- *Tiempo de respuesta*: Las operaciones de lectura (listado de actores, categorías, portafolios) no deberán superar los 3 segundos bajo condiciones normales de red. Las operaciones de escritura (carga de imágenes, creación de actores y vinculación de integrantes mediante validación de JSON) no deberán superar los 10 segundos, dependiendo del ancho de banda del usuario para la subida de archivos.
-- *Concurrencia*: El sistema debe ser capaz de soportar múltiples personas accediendo simultáneamente a los datos públicos, así como registros masivos simultáneos durante periodos de convocatorias (festivales) o censos de relevamiento provinciales.
-
-== Requisitos de desarrollo
-
-El ciclo de vida adoptado es el de Prototipado Evolutivo. El desarrollo se orientará a la creación de versiones incrementales del software, permitiendo validar primero la visualización de los datos públicos, luego la gestión de usuarios y actores y finalmente la administración. El código debe ser modular para facilitar la incorporación de nuevas funcionalidades (como futuros sectores culturales) o cambios en la lógica de negocio sin afectar la estabilidad del sistema.
-
-== Restricciones de diseño
-
-- *Ajuste a estándares*: La especificación de requisitos se basa en el estándar IEEE 830. El desarrollo del código sigue estándares modernos de JavaScript y patrones de diseño estructurados (como MVC/MTV). La base de datos obedece a normativas de modelado relacional e integridad referencial. // (`STRICT_TRANS_TABLES`).
-- *Seguridad*:
-  - Las contraseñas se almacenarán encriptadas utilizando algoritmos de _hash_ robustos nativos (Bcrypt/SHA-256).
-  - El acceso a los recursos de la _API_ se controlará mediante _tokens_ de sesión (JWT) y _middlewares_ de validación de roles y permisos.
-
-- *Política de Respaldo*: Se establece una política de respaldo completo mensual de la base de datos y de los archivos cenados (volúmenes de portafolio). //, complementada con respaldos incrementales diarios.
-- *Política de Borrado*: Se implementará una política de borrado lógico guiado por estados paramétricos (e.g., `'A'`, `'I'`, `'P'`). Por ejemplo, las categorías, eventos o agrupaciones disueltas no se eliminarán físicamente de la base de datos, sino que cambiarán su estado a "Inactivo/DadoDeBaja" para mantener la integridad histórica de las métricas culturales vinculadas.
+- *Tiempos de Respuesta y Capacidad*:
+  - Las consultas públicas (búsqueda de actores en mapa, listado de eventos y visualización de portafolios) deben responder en menos de 2 segundos bajo condiciones normales de red.
+  - Soporte para concurrencia masiva en períodos de apertura de convocatorias culturales o festivales provinciales.
+- *Políticas de Seguridad y Mitigación de Amenazas*:
+  - *Mitigación de Denegación de Servicio (Rate Limiting):* Límites de tasa mediante `express-rate-limit` (300 peticiones por ventana de 15 minutos en la API general; 30 peticiones por 15 minutos en endpoints de autenticación).
+  - *Límite de Tamaño de Carga:* Restricción de _payload_ JSON a 10 MB para evitar saturación de memoria en el servidor.
+  - *Transmisión y Validación de Archivos (Base64 / Data URLs):* El backend no utiliza middleware multipart como Multer; las imágenes (DNI, fotos de perfil e imágenes de portafolio) se transmiten codificadas como Data URLs en Base64 en el cuerpo JSON de las peticiones. Son validadas estrictamente en backend mediante esquemas de Zod y expresiones regulares que verifican el encabezado MIME permitido (`image/jpeg`, `image/png`, `image/webp`) y un tamaño máximo de hasta 7 MB por imagen. Posteriormente, el backend decodifica la carga en buffers nativos de Node.js (`Buffer.from`) y escribe los archivos de forma atómica en el sistema de archivos con esquemas de nomenclatura que combinan identificadores criptográficamente seguros y marcas temporales (`crypto.randomUUID()` para fotos de perfil y portafolio, y el patrón `dni_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}` para documentos de identidad).
+  - *Encapsulamiento en Procedimientos Almacenados:* Todas las operaciones de base de datos se ejecutan mediante procedimientos almacenados con parámetros tipificados, anulando la superficie de ataque por inyección SQL.
+- *Integración y Despliegue Continuo (CI/CD)*:
+  - Pipeline automatizado en GitHub Actions que ejecuta pruebas de sintaxis (ESLint), validación de scripts SQL, y compilación automática de la documentación Typst con encriptación mediante QPDF y firma digital criptográfica con clave PGP/GPG.
