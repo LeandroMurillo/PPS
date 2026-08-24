@@ -257,10 +257,10 @@
 
 // Índice
 #pagebreak()
-/* #outline(
+#outline(
   title: "Tabla de contenido",
   depth: 2,
-) */
+)
 
 #include "2 - Introducción.typ"
 #include "3 - Especificación de requisitos complementarios del software.typ"
