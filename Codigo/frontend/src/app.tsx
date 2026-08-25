@@ -10,6 +10,7 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import CodeIcon from '@mui/icons-material/Code';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import GroupIcon from '@mui/icons-material/Group';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import MapIcon from '@mui/icons-material/Map';
 import PeopleIcon from '@mui/icons-material/People';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
@@ -68,6 +69,11 @@ function AppContent() {
 				title: 'Próximos eventos',
 				segment: 'eventos',
 				icon: <CalendarMonthIcon />,
+			},
+			{
+				title: 'Soporte',
+				segment: 'soporte',
+				icon: <HelpOutlineIcon />,
 			},
 		];
 

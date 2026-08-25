@@ -36,6 +36,7 @@ import Mapa from './pages/mapa';
 import RegistroPage from './pages/registro';
 import RegistroDatosPage from './pages/registroDatos';
 import AuthActionPage from './pages/authAction';
+import SoportePage from './pages/soporte';
 
 function DocsApiRedirect() {
 	React.useEffect(() => {
@@ -96,6 +97,10 @@ const router = createBrowserRouter([
 					{
 						path: 'eventos',
 						Component: ProximosEventosPage,
+					},
+					{
+						path: 'soporte',
+						Component: SoportePage,
 					},
 					{
 						path: 'login',
