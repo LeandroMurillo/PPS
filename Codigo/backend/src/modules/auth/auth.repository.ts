@@ -30,7 +30,10 @@ const usuarioDBRowSchema = z.object({
 		return String(val).split('T')[0]!;
 	}),
 	nacionalidad: z.string(),
-	CUIL: z.string(),
+	CUIL: z
+		.string()
+		.nullable()
+		.transform((val) => val ?? null),
 	actividadesArcaCodigo: z.string().nullable(),
 	fotoDniUrl: z
 		.string()

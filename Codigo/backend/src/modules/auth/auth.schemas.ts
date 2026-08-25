@@ -21,6 +21,28 @@ function normalizeOptionalArcaCode(value: unknown): unknown {
 	return value;
 }
 
+function normalizeOptionalCUIL(value: unknown): unknown {
+	if (value === null || value === undefined) {
+		return null;
+	}
+	if (typeof value === 'string') {
+		const trimmed = value.trim();
+		return trimmed === '' ? null : trimmed;
+	}
+	return value;
+}
+
+function normalizeOptionalDocumento(value: unknown): unknown {
+	if (value === null || value === undefined) {
+		return null;
+	}
+	if (typeof value === 'string') {
+		const trimmed = value.trim();
+		return trimmed === '' ? null : trimmed;
+	}
+	return value;
+}
+
 export function validarCUIL(cuil: string): boolean {
 	const cleaned = cuil.trim().replace(/\D/g, '');
 	if (cleaned.length !== 11) return false;
@@ -109,16 +131,18 @@ export const registrarUsuarioBodySchema = z.object({
 		),
 
 	CUIL: z
-		.string()
-		.transform((val) => val.trim())
-		.pipe(
+		.preprocess(
+			normalizeOptionalCUIL,
 			z
 				.string()
 				.regex(/^\d{11}$/, 'El CUIL debe contener exactamente 11 dígitos numéricos')
 				.refine((val) => validarCUIL(val), {
 					message: 'El CUIL ingresado no es válido (dígito verificador incorrecto)',
-				}),
-		),
+				})
+				.nullable()
+				.optional(),
+		)
+		.transform((val) => val ?? null),
 
 	actividadesArcaCodigo: z
 		.preprocess(
@@ -131,7 +155,9 @@ export const registrarUsuarioBodySchema = z.object({
 		)
 		.transform((val) => val ?? null),
 
-	documentoIdentidad: z.string().min(1, 'Debe adjuntar la imagen de su documento de identidad'),
+	documentoIdentidad: z
+		.preprocess(normalizeOptionalDocumento, z.string().nullable().optional())
+		.transform((val) => val ?? null),
 });
 
 export type RegistrarUsuarioBody = z.infer<typeof registrarUsuarioBodySchema>;
@@ -151,7 +177,7 @@ export const usuarioRegistradoSchema = z.object({
 	genero: generoUsuarioSchema,
 	fechaNacimiento: z.string(),
 	nacionalidad: z.string(),
-	CUIL: z.string(),
+	CUIL: z.string().nullable(),
 	actividadesArcaCodigo: z.string().nullable(),
 	fotoDniUrl: z.string().nullable(),
 	avatarEstilo: z.string().nullable().optional(),

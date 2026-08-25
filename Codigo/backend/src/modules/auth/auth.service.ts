@@ -59,7 +59,7 @@ export async function registrarUsuarioService(
 		throw new Error('EMAIL_NOT_VERIFIED');
 	}
 
-	const fotoDniUrl = saveDniImage(input.documentoIdentidad);
+	const fotoDniUrl = input.documentoIdentidad ? saveDniImage(input.documentoIdentidad) : null;
 
 	const usuario = await registrarUsuarioRepository({
 		idFirebase: identity.uid,
@@ -69,7 +69,7 @@ export async function registrarUsuarioService(
 		genero: input.genero,
 		fechaNacimiento: input.fechaNacimiento,
 		nacionalidad: input.nacionalidad,
-		CUIL: input.CUIL,
+		CUIL: input.CUIL ?? null,
 		actividadesArcaCodigo: input.actividadesArcaCodigo,
 		fotoDniUrl,
 	});

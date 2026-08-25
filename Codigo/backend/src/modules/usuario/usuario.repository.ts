@@ -39,7 +39,10 @@ const perfilUsuarioDBRowSchema = z.object({
 		return String(val).split('T')[0]!;
 	}),
 	nacionalidad: z.string(),
-	CUIL: z.string(),
+	CUIL: z
+		.string()
+		.nullable()
+		.transform((val) => val ?? null),
 	actividadesArcaCodigo: z.string().nullable(),
 	actividadArca: z.string().nullable().optional(),
 	fotoDniUrl: z
@@ -94,7 +97,7 @@ export type ActualizarPerfilRepositoryInput = {
 	genero: GeneroUsuario;
 	fechaNacimiento: string;
 	nacionalidad: string;
-	CUIL: string;
+	CUIL: string | null;
 	actividadesArcaCodigo: string | null;
 	fotoDniUrl?: string | null;
 	avatarEstilo?: string | null;

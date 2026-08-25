@@ -159,7 +159,7 @@ export default function PerfilUsuarioPage() {
 			setGenero(perfilData.genero);
 			setFechaNacimiento(perfilData.fechaNacimiento);
 			setNacionalidad(perfilData.nacionalidad || 'Argentina');
-			setCuil(perfilData.CUIL);
+			setCuil(perfilData.CUIL ?? '');
 
 			if (perfilData.actividadesArcaCodigo) {
 				const found = arcaList.find((a) => a.codigo === perfilData.actividadesArcaCodigo);
@@ -292,7 +292,7 @@ export default function PerfilUsuarioPage() {
 			notify.error('La nacionalidad no puede contener números.', { scope: 'perfil' });
 			return;
 		}
-		if (!cuil.trim() || !validarCUIL(cuil.trim())) {
+		if (cuil.trim() && !validarCUIL(cuil.trim())) {
 			notify.error('El CUIL no es válido (debe tener 11 dígitos y dígito verificador correcto).', {
 				scope: 'perfil',
 			});
@@ -307,7 +307,7 @@ export default function PerfilUsuarioPage() {
 				genero,
 				fechaNacimiento,
 				nacionalidad: nacionalidad.trim(),
-				CUIL: cuil.trim().replace(/\D/g, ''),
+				CUIL: cuil.trim() ? cuil.trim().replace(/\D/g, '') : null,
 				actividadesArcaCodigo: selectedArca?.codigo || null,
 				documentoIdentidad: fotoDniBase64 || undefined,
 			});
@@ -713,20 +713,20 @@ export default function PerfilUsuarioPage() {
 										<Grid size={{ xs: 12, sm: 6 }}>
 											<TextField
 												fullWidth
-												required
-												label="CUIL / CUIT"
+												label="CUIL / CUIT (Opcional)"
 												placeholder="Ej. 20301234567"
 												value={cuil}
 												onChange={(e) => setCuil(e.target.value)}
 												error={
 													profileValidationAttempted &&
-													(!cuil.trim() || !validarCUIL(cuil.trim()))
+													Boolean(cuil.trim() && !validarCUIL(cuil.trim()))
 												}
 												helperText={
 													profileValidationAttempted &&
-													(!cuil.trim() || !validarCUIL(cuil.trim()))
+													cuil.trim() &&
+													!validarCUIL(cuil.trim())
 														? 'Ingresá un CUIL válido de 11 dígitos'
-														: '11 dígitos sin guiones'
+														: '11 dígitos sin guiones (opcional)'
 												}
 											/>
 										</Grid>

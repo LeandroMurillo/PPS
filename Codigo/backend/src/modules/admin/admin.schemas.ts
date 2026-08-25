@@ -115,7 +115,7 @@ export const usuarioAdminSchema = z.object({
 	actividadArca: z.string().nullable(),
 	nombre: z.string(),
 	apellido: z.string(),
-	cuil: z.string(),
+	cuil: z.string().nullable(),
 	genero: generoUsuarioSchema,
 	fechaNacimiento: z.string(),
 	nacionalidad: z.string(),

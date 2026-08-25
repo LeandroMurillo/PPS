@@ -4987,7 +4987,7 @@ SET
   pNacionalidad = TRIM(pNacionalidad);
 
 SET
-  pCUIL = TRIM(pCUIL);
+  pCUIL = NULLIF(TRIM(pCUIL), '');
 
 SET
   pActividadesArcaCodigo = NULLIF(TRIM(pActividadesArcaCodigo), '');
@@ -5023,18 +5023,20 @@ SET
 
 END IF;
 
-SELECT
-  COUNT(*) INTO vCUILExistente
-FROM
-  `Usuarios`
-WHERE
-  `CUIL` = pCUIL;
+IF pCUIL IS NOT NULL THEN
+  SELECT
+    COUNT(*) INTO vCUILExistente
+  FROM
+    `Usuarios`
+  WHERE
+    `CUIL` = pCUIL;
 
-IF vCUILExistente > 0 THEN
-SIGNAL SQLSTATE '45000'
-SET
-  MESSAGE_TEXT = 'El CUIL ya se encuentra registrado.';
+  IF vCUILExistente > 0 THEN
+  SIGNAL SQLSTATE '45000'
+  SET
+    MESSAGE_TEXT = 'El CUIL ya se encuentra registrado.';
 
+  END IF;
 END IF;
 
 IF pFechaNacimiento > DATE_SUB(CURDATE(), INTERVAL 10 YEAR) THEN
