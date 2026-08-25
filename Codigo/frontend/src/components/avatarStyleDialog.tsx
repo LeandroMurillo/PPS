@@ -92,14 +92,14 @@ export const AvatarStyleDialog: React.FC<AvatarStyleDialogProps> = ({ open, onCl
 
 		try {
 			// Si contamos con los datos de perfil, guardamos en la base de datos a través de la API
-			if (user.nombre && user.apellido && user.genero && user.fechaNacimiento && user.CUIL) {
+			if (user.nombre && user.apellido && user.genero && user.fechaNacimiento) {
 				const res = await actualizarPerfilUsuarioApi({
 					nombre: user.nombre,
 					apellido: user.apellido,
 					genero: user.genero,
 					fechaNacimiento: user.fechaNacimiento,
 					nacionalidad: user.nacionalidad || 'Argentina',
-					CUIL: user.CUIL,
+					CUIL: user.CUIL ?? null,
 					actividadesArcaCodigo: user.actividadesArcaCodigo,
 					avatarEstilo: selectedStyle,
 					avatarSeed: seedToSave,

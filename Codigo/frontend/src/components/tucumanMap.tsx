@@ -40,6 +40,7 @@ import {
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import CategoryIcon from './categoryIcon';
 import FiltroCategoriasCulturales from './filtroCategoriasCulturales';
+import MarkdownContent from './markdownContent';
 
 // @ts-ignore
 import 'leaflet/dist/leaflet.css';
@@ -825,21 +826,19 @@ export default function TucumanMap() {
 									</Stack>
 
 									{activeActor.descripcion && (
-										<Typography
-											variant="body2"
-											color="text.secondary"
+										<MarkdownContent
 											sx={{
 												fontSize: '0.825rem',
+												color: 'text.secondary',
 												mb: 1.5,
-												overflow: 'hidden',
-												textOverflow: 'ellipsis',
-												display: '-webkit-box',
-												WebkitLineClamp: 3,
-												WebkitBoxOrient: 'vertical',
+												lineHeight: 1.5,
+												'& p': { my: 0.5, fontSize: '0.825rem' },
+												'& ul, & ol': { my: 0.5, pl: 2.5, fontSize: '0.825rem' },
+												'& li': { fontSize: '0.825rem' },
 											}}
 										>
 											{activeActor.descripcion}
-										</Typography>
+										</MarkdownContent>
 									)}
 
 									<Box sx={{ mt: 1 }}>

@@ -60,7 +60,10 @@ const usuarioDatabaseRowSchema = z.object({
 	actividadArca: z.string().nullable(),
 	nombre: z.string(),
 	apellido: z.string(),
-	CUIL: z.string(),
+	CUIL: z
+		.string()
+		.nullable()
+		.transform((v) => v ?? null),
 	genero: generoUsuarioSchema,
 	fechaNacimiento: databaseDateSchema,
 	nacionalidad: z.string(),

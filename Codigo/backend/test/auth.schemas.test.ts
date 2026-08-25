@@ -121,12 +121,44 @@ describe('validación del registro y login de usuario', () => {
 		expect(resultNacConNumero.success).toBe(false);
 	});
 
-	it('rechaza si no se adjunta el documento de identidad', () => {
-		const result = registrarUsuarioBodySchema.safeParse({
+	it('permite CUIL opcional/nulo o vacío', () => {
+		const parsedNull = registrarUsuarioBodySchema.parse({
 			...validPayload,
-			documentoIdentidad: '',
+			CUIL: null,
 		});
-		expect(result.success).toBe(false);
+		expect(parsedNull.CUIL).toBeNull();
+
+		const parsedEmpty = registrarUsuarioBodySchema.parse({
+			...validPayload,
+			CUIL: '   ',
+		});
+		expect(parsedEmpty.CUIL).toBeNull();
+
+		const parsedUndefined = registrarUsuarioBodySchema.parse({
+			...validPayload,
+			CUIL: undefined,
+		});
+		expect(parsedUndefined.CUIL).toBeNull();
+	});
+
+	it('permite documentoIdentidad opcional/nulo o vacío', () => {
+		const parsedNull = registrarUsuarioBodySchema.parse({
+			...validPayload,
+			documentoIdentidad: null,
+		});
+		expect(parsedNull.documentoIdentidad).toBeNull();
+
+		const parsedEmpty = registrarUsuarioBodySchema.parse({
+			...validPayload,
+			documentoIdentidad: '   ',
+		});
+		expect(parsedEmpty.documentoIdentidad).toBeNull();
+
+		const parsedUndefined = registrarUsuarioBodySchema.parse({
+			...validPayload,
+			documentoIdentidad: undefined,
+		});
+		expect(parsedUndefined.documentoIdentidad).toBeNull();
 	});
 
 	it('genera el documento OpenAPI sin errores', () => {

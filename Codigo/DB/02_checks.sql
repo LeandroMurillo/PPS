@@ -33,7 +33,7 @@ ADD CONSTRAINT `chk_Usuarios_idFirebase` CHECK (
   `idFirebase` = TRIM(`idFirebase`)
   AND `idFirebase` <> ''
 ),
-ADD CONSTRAINT `chk_Usuarios_CUIL_formato` CHECK (`CUIL` REGEXP '^[0-9]{11}$'),
+ADD CONSTRAINT `chk_Usuarios_CUIL_formato` CHECK (`CUIL` IS NULL OR `CUIL` REGEXP '^[0-9]{11}$'),
 ADD CONSTRAINT `chk_Usuarios_fechas` CHECK (`fechaNacimiento` <= DATE_SUB(`fechaRegistro`, INTERVAL 10 YEAR));
 
 ALTER TABLE `cultura`.`Ubicaciones`

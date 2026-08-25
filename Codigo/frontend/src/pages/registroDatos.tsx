@@ -239,12 +239,12 @@ export default function RegistroDatosPage() {
 			errors.email = 'Máximo 99 caracteres';
 		}
 
-		if (!formData.CUIL.trim()) {
-			errors.CUIL = 'El CUIL es obligatorio';
-		} else if (!/^\d{11}$/.test(formData.CUIL.trim())) {
-			errors.CUIL = 'Debe contener exactamente 11 dígitos numéricos sin guiones';
-		} else if (!validarCUIL(formData.CUIL.trim())) {
-			errors.CUIL = 'El CUIL ingresado no es válido (dígito verificador incorrecto)';
+		if (formData.CUIL.trim()) {
+			if (!/^\d{11}$/.test(formData.CUIL.trim())) {
+				errors.CUIL = 'Debe contener exactamente 11 dígitos numéricos sin guiones';
+			} else if (!validarCUIL(formData.CUIL.trim())) {
+				errors.CUIL = 'El CUIL ingresado no es válido (dígito verificador incorrecto)';
+			}
 		}
 
 		if (!formData.genero) {
@@ -276,10 +276,6 @@ export default function RegistroDatosPage() {
 			errors.actividadesArcaCodigo = 'El código ARCA debe contener 6 dígitos numéricos';
 		}
 
-		if (!formData.documentoIdentidad) {
-			errors.documentoIdentidad = 'Debe enviar una imagen de su documento de identidad';
-		}
-
 		setFormErrors(errors);
 		return Object.keys(errors).length === 0;
 	};
@@ -302,12 +298,12 @@ export default function RegistroDatosPage() {
 		const payload: RegistrarUsuarioPayload = {
 			nombre: formData.nombre.trim(),
 			apellido: formData.apellido.trim(),
-			CUIL: formData.CUIL.trim(),
+			CUIL: formData.CUIL.trim() || null,
 			fechaNacimiento: formData.fechaNacimiento,
 			genero: formData.genero as GeneroCodigo,
 			nacionalidad: formData.nacionalidad.trim(),
 			actividadesArcaCodigo: formData.actividadesArcaCodigo.trim() || null,
-			documentoIdentidad: formData.documentoIdentidad,
+			documentoIdentidad: formData.documentoIdentidad || null,
 		};
 
 		try {
@@ -454,9 +450,8 @@ export default function RegistroDatosPage() {
 
 								<Grid size={{ xs: 12, sm: 6 }}>
 									<TextField
-										required
 										fullWidth
-										label="CUIL (11 dígitos)"
+										label="CUIL (11 dígitos) (Opcional)"
 										value={formData.CUIL}
 										onChange={handleChange('CUIL')}
 										error={!!formErrors.CUIL}
@@ -591,7 +586,7 @@ export default function RegistroDatosPage() {
 										}}
 									>
 										<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-											Imagen del Documento de Identidad *
+											Imagen del Documento de Identidad (Opcional)
 										</Typography>
 										<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
 											Adjuntá una foto legible de tu DNI / Documento para validar tu identidad.
@@ -701,7 +696,7 @@ export default function RegistroDatosPage() {
 												CUIL
 											</Typography>
 											<Typography variant="body1" fontWeight="bold">
-												{formData.CUIL}
+												{formData.CUIL.trim() || 'No especificado'}
 											</Typography>
 										</Grid>
 
@@ -753,7 +748,16 @@ export default function RegistroDatosPage() {
 												Documento de Identidad
 											</Typography>
 											<Box sx={{ mt: 0.5 }}>
-												<Chip label="Imagen Adjunta" color="success" size="small" />
+												{formData.documentoIdentidad ? (
+													<Chip label="Imagen Adjunta" color="success" size="small" />
+												) : (
+													<Chip
+														label="No adjuntado"
+														color="default"
+														size="small"
+														variant="outlined"
+													/>
+												)}
 											</Box>
 										</Grid>
 									</Grid>

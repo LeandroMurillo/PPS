@@ -7,9 +7,9 @@ export type RegistrarUsuarioPayload = {
 	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
-	CUIL: string;
+	CUIL?: string | null;
 	actividadesArcaCodigo?: string | null;
-	documentoIdentidad: string;
+	documentoIdentidad?: string | null;
 };
 
 export type UsuarioSession = {
@@ -20,7 +20,7 @@ export type UsuarioSession = {
 	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
-	CUIL: string;
+	CUIL?: string | null;
 	actividadesArcaCodigo: string | null;
 	fotoDniUrl?: string | null;
 	avatarEstilo?: string | null;

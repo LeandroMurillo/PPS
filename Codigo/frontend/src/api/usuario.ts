@@ -19,7 +19,7 @@ export type ActualizarPerfilPayload = {
 	genero: GeneroCodigo;
 	fechaNacimiento: string;
 	nacionalidad: string;
-	CUIL: string;
+	CUIL?: string | null;
 	actividadesArcaCodigo?: string | null;
 	documentoIdentidad?: string;
 	avatarEstilo?: string | null;
