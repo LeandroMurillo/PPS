@@ -27,6 +27,28 @@ app.set('trust proxy', 1);
 
 app.disable('x-powered-by');
 
+// Si Traefik / Coolify aplicó StripPrefix (envía x-forwarded-prefix), restauramos el prefijo original
+app.use((req, _res, next) => {
+	const rawPrefix = req.headers['x-forwarded-prefix'];
+	const prefix = Array.isArray(rawPrefix) ? rawPrefix[0] : rawPrefix;
+	if (typeof prefix === 'string' && prefix) {
+		const cleanPrefix = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix;
+		if (!req.url.startsWith(cleanPrefix)) {
+			req.url = `${cleanPrefix}${req.url}`;
+			next();
+			return;
+		}
+	}
+
+	// Fallback si el proxy eliminó /api pero no envió el header x-forwarded-prefix
+	const apiRoots = ['/publico/', '/mis-actores', '/usuario', '/convocatorias', '/admin', '/health'];
+	if (apiRoots.some((root) => req.url.startsWith(root))) {
+		req.url = `/api${req.url}`;
+	}
+
+	next();
+});
+
 app.use(
 	pinoHttp({
 		logger,
