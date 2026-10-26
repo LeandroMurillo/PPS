@@ -37,7 +37,7 @@ services:
       start_period: 15s
 
   # ----------------------------------------
-  # Frontend Service (Servido por NGINX + Proxy para /api)
+  # Frontend Service (SPA estática servida por NGINX)
   # ----------------------------------------
   frontend:
     container_name: cultura-frontend
@@ -62,6 +62,7 @@ services:
       - backend
     networks:
       - default
+      - coolify
 
 volumes:
   actor-uploads:
@@ -69,4 +70,3 @@ volumes:
 networks:
   coolify:
     external: true
-
