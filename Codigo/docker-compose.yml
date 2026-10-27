@@ -27,8 +27,9 @@ services:
     volumes:
       - actor-uploads:/app/uploads
     networks:
-      - default
       - coolify
+    # labels:
+    #   - "traefik.docker.network=coolify"
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 60s
@@ -61,8 +62,9 @@ services:
     depends_on:
       - backend
     networks:
-      - default
       - coolify
+    # labels:
+    #   - "traefik.docker.network=coolify"
 
 volumes:
   actor-uploads:
